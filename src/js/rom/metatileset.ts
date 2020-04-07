@@ -4,7 +4,8 @@ import {Metatile} from './metatile.js';
 import {TileEffects} from './tileeffects.js';
 import {Tileset} from './tileset.js';
 import {DefaultMap} from '../util.js';
-import {ConnectionType, Feature, featureMask} from './metascreendata.js';
+import {ConnectionType, Feature, featureMask,
+        MetascreenData} from './metascreendata.js';
 
 // NOTE: Must be initialized BEFORE Metascreens
 export class Metatilesets implements Iterable<Metatileset> {
@@ -160,6 +161,10 @@ export class Metatileset implements Iterable<Metascreen> {
     return this.cache.exits.get(type);
   }
 
+  getMetascreensFromTileString(tile: string): readonly Metascreen[] {
+    return this.cache.tiles.has(tile) ? this.cache.tiles.get(tile) : [];
+  }
+
   getScreensWithOnlyFeatures(...features: Feature[]): Metascreen[] {
     let mask = 0;
     for (const feature of features) {
@@ -170,6 +175,14 @@ export class Metatileset implements Iterable<Metascreen> {
       if (!(s.features & ~mask)) screens.push(s);
     }
     return screens;
+  }
+
+  withMod(tile: string, mod: MetascreenData['mod']): Metascreen[] {
+    const out: Metascreen[] = [];
+    for (const s of this.cache.tiles.get(tile)) {
+      if (s.data.mod === mod) out.push(s);
+    }
+    return out;
   }
 
   /**
@@ -217,6 +230,7 @@ class NeighborCache {
   readonly fromId = new DefaultMap<number, Metascreen[]>(() => []);
   readonly exits = new DefaultMap<ConnectionType, Metascreen[]>(() => []);
   readonly empty: Metascreen;
+  readonly tiles = new DefaultMap<string, Metascreen[]>(() => []);
   // private readonly toggles = new DefaultMap<UidDir, Set<Uid>>(() => new Set);
 
   constructor(readonly tileset: Metatileset) {
@@ -233,6 +247,12 @@ class NeighborCache {
       }
       for (const exit of s.data.exits ?? []) {
         this.exits.get(exit.type).push(s);
+      }
+      // Add to tiles
+      const tiles =
+          typeof s.data.tile === 'string' ? [s.data.tile] : s.data.tile;
+      for (const tile of tiles ?? []) {
+        this.tiles.get(tile.replace(/\|/g, '')).push(s);
       }
     }
     this.empty = empty ?? tileset.rom.metascreens.caveEmpty;

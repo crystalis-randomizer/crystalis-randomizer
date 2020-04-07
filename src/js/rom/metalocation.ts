@@ -2,13 +2,12 @@ import {Location} from './location.js'; // import type
 import {Exit, Flag as LocationFlag} from './locationtables.js';
 import {Flag} from './flags.js';
 import {Metascreen, Uid} from './metascreen.js';
-import {Dir, Metatileset} from './metatileset.js';
+import {Metatileset} from './metatileset.js';
 import {hex} from './util.js';
-import {Failure, Ok, ok} from '../failure.js';
 import {Rom} from '../rom.js';
-import {Multiset, Table, iters} from '../util.js';
+import {Table, iters, format} from '../util.js';
 import {UnionFind} from '../unionfind.js';
-import {ConnectionType, Feature, featureMask} from './metascreendata.js';
+import {ConnectionType} from './metascreendata.js';
 
 const [] = [hex];
 
@@ -57,51 +56,25 @@ export class Metalocation {
   freeFlags = new Set<Flag>();
 
   readonly rom: Rom;
-  private readonly _empty: Metascreen;
 
   private _height: number;
   private _width: number;
 
   private _pos: Pos[]|undefined = undefined;
 
-  /** Metascreens that need to be consolidated, mapped to a unique tile ID. */
-  private readonly _counted = new Map<Metascreen, number>();
-
   private _exits = new Table<Pos, ConnectionType, ExitSpec>();
 
   private _monstersInvalidated = false;
 
-  ////////////////////////////////////////////////////////////////
-  // The following are all backed up by saveExcursion
-  /** Key: ((y+1)<<4)|x; Value: Uid */
+  /** Key: (y<<4)|x */
   private _screens: Metascreen[];
-  /** Count of consolidateable screen tile IDs. */
-  private _counts?: Multiset<number>;
-  /** Current number of filled tiles. */
-  private _filled = 0;
-  /** Fixed feature constraints. */
-  private _features = new Map<Pos, number>(); // maps to required mask
-  /** Edges that need to be validated: pos << 1 | (0 if above, 1 if left). */
-  private _invalidated = new Set<number>(); // edges needing validation
-  /** Whether the map has been found to be invalid. */
-  private _invalid = false;
-  ////////////////////////////////////////////////////////////////
 
   constructor(readonly id: number, readonly tileset: Metatileset,
               height: number, width: number) {
     this.rom = tileset.rom;
-    this._empty = tileset.empty;
     this._height = height;
     this._width = width;
-    this._screens = new Array((height + 2) << 4).fill(this._empty);
-    this._counts = tileset.data.consolidated ? new Multiset() : undefined;
-    if (this._counts) {
-      for (const screen of tileset) {
-        if (screen.hasFeature('consolidate')) {
-          this._counted.set(screen, screen.sid);
-        }
-      }
-    }
+    this._screens = new Array((height + 2) << 4).fill(tileset.empty);
   }
 
   /**
@@ -260,7 +233,6 @@ export class Metalocation {
     // }
     metaloc._screens = screens;
     metaloc._exits = exits;
-    metaloc.bookkeep();
 
     // Fill in custom flags
     for (const f of location.flags) {
@@ -292,15 +264,11 @@ export class Metalocation {
   }
 
   getUid(pos: Pos): Uid {
-    return this._screens[pos + 16].uid;
+    return this._screens[pos].uid;
   }
 
   get(pos: Pos): Metascreen {
-    return this._screens[pos + 16];
-  }
-
-  get size(): number {
-    return this._filled;
+    return this._screens[pos];
   }
 
   // Readonly accessor.
@@ -324,7 +292,7 @@ export class Metalocation {
       this._screens.splice((height + 2) << 4, (this._height - height) << 4);
     } else if (this._height < height) {
       this._screens.length = (height + 2) << 4;
-      this._screens.fill(this._empty,
+      this._screens.fill(this.tileset.empty,
                          (this.height + 2) << 4, this._screens.length);
     }
     this._height = height;
@@ -345,29 +313,7 @@ export class Metalocation {
   }
 
   set(pos: Pos, scr: Metascreen | null) {
-    // TODO - merge?
-    this.setInternal(pos, scr, true);
-  }
-
-  private setInternal(pos: Pos, scr: Metascreen | null, invalidate: boolean) {
-    if (!scr) scr = this._empty;
-    const inBounds = this.inBounds(pos);
-    const t0 = pos + 16;
-    if (inBounds && !this._screens[t0].isEmpty()) this._filled--;
-    if (inBounds && !scr.isEmpty()) this._filled++;
-    const prev = this._counted.get(this._screens[t0]);
-    this._screens[t0] = scr;
-    if (this._counts) {
-      if (prev != null) this._counts.delete(prev);
-      const next = this._counted.get(scr);
-      if (next != null) this._counts.add(next);
-    }
-    if (!invalidate) return;
-    const i0 = pos << 1;
-    this._invalidated.add(i0);
-    this._invalidated.add(i0 + 1);
-    this._invalidated.add(i0 + 3);
-    this._invalidated.add(i0 + 32);
+    this._screens[pos] = scr ?? this.tileset.empty;
   }
 
   invalidateMonsters() { this._monstersInvalidated = true; }
@@ -375,19 +321,6 @@ export class Metalocation {
   inBounds(pos: Pos): boolean {
     // return inBounds(pos, this.height, this.width);
     return (pos & 15) < this.width && pos >= 0 && pos >>> 4 < this.height;
-  }
-
-  setFeature(pos: Pos, feature: Feature) {
-    this._features.set(pos, this._features.get(pos)! | featureMask[feature]);
-  }
-  getFeatures(pos: Pos): number {
-    return this._features.get(pos) || 0;
-  }
-  setFeatures(pos: Pos, features: number) {
-    this._features.set(pos, features);
-  }
-  isConstrained(pos: Pos): boolean {
-    return !!this._features.get(pos);
   }
 
   // isFixed(pos: Pos): boolean {
@@ -399,112 +332,52 @@ export class Metalocation {
    * only at the end.  Does not do anything with features, since they're
    * only set in later passes (i.e. shuffle, which is last).
    */
-  set2d(pos: Pos, screens: ReadonlyArray<ReadonlyArray<Metascreen|null>>): Ok {
-    return this.saveExcursion(() => {
-      for (const row of screens) {
-        let dx = 0;
-        for (const scr of row) {
-          if (scr) this.setInternal(pos + dx++, scr, true);
-        }
-        pos += 16;
+  set2d(pos: Pos,
+        screens: ReadonlyArray<ReadonlyArray<Metascreen|null>>): boolean {
+    for (const row of screens) {
+      let dx = 0;
+      for (const scr of row) {
+        if (scr) this.set(pos + dx++, scr);
       }
-      // return this.verify(pos0, screens.length,
-      //                    Math.max(...screens.map(r => r.length)));
-      return this.validate();
-    });
+      pos += 16;
+    }
+    // return this.verify(pos0, screens.length,
+    //                    Math.max(...screens.map(r => r.length)));
+    return this.validate();
   }
 
   /** Check all the currently invalidated edges, then clears it. */
-  validate(): Ok {
-    const failures: Failure[] = [];
-    const seen = new Set<Pos>();
-    for (const edge of this._invalidated) {
-      // Check each pair.  Unconstrained empties get a pass.
-      const dir = edge & 1;
-      const pos0: Pos = edge >>> 1;
-      const scr0 = this._screens[pos0 + 16];
-      const feat0 = this._features.get(pos0) || 0;
-      const pos1: Pos = pos0 - (dir ? 16 : 1);
-      const scr1 = this._screens[pos1 + 16];
-      const feat1 = this._features.get(pos1) || 0;
-      if (feat0 & ~scr0.features && !seen.has(pos0)) {
-        failures.push(Failure.of('missing feature %x: %s (%02x)',
-                                 feat0, scr0.name, pos0));
-        seen.add(pos0);
-      }
-      if (feat1 & ~scr1.features && !seen.has(pos1)) {
-        failures.push(Failure.of('missing feature %x: %s (%02x)',
-                                 feat1, scr1.name, pos1));
-        seen.add(pos1);
-      }
-      if (!feat0 && scr0.isEmpty()) continue;
-      if (!feat1 && scr1.isEmpty()) continue;
-      if (!scr0.checkNeighbor(scr1, dir)) {
-        failures.push(Failure.of('bad neighbor %s (%02x) %s %s (%02x)',
-                                 scr1, pos1, DIR_NAME[dir], scr0, pos0));
-      }
-    }
-    if (!failures.length) return;
-    this._invalid = true;
-    return Failure.all(failures, 'validation failed');
-  }
-
-  /** Check all screens in the given rectangle. Throw if invalid. */
-  verifyRect(pos0: Pos, height: number, width: number): Ok {
-    const maxY = (this.height + 1) << 4;
-    for (let dy = 0; dy <= height; dy++) {
-      const pos = pos0 + 16 + (dy << 4);
-      for (let dx = 0; dx <= width; dx++) {
-        const index = pos + dx;
-        const scr = this._screens[index];
-        if (scr == null) break; // happens when setting border screens via set2d
-        const above = this._screens[index - 16];
-        const left = this._screens[index - 1];
-        if ((index & 0xf) < this.width && !scr.checkNeighbor(above, 0)) {
-          return Failure.of('bad neighbor %s above %s at %s @ %x',
-                            above.name, scr.name,
-                            this.rom.locations[this.id], index - 32);
-        }
-        if (index < maxY && !scr.checkNeighbor(left, 1)) {
-          return Failure.of('bad neighbor %s left of %s at %s @ %x',
-                            left.name, scr.name,
-                            this.rom.locations[this.id], index - 17);
+  validate(): boolean {
+    for (const dir of [0, 1]) {
+      for (let y = dir ? 0 : 1; y < this.height; y++) {
+        for (let x = dir; x < this.width; x++) {
+          const pos0: Pos = y << 4 | x;
+          const scr0 = this._screens[pos0];
+          const pos1: Pos = pos0 - (dir ? 16 : 1);
+          const scr1 = this._screens[pos1];
+          if (scr0.isEmpty()) continue;
+          if (scr1.isEmpty()) continue;
+          if (!scr0.checkNeighbor(scr1, dir)) {
+            throw new Error(format('bad neighbor %s (%02x) %s %s (%02x)',
+                                   scr1, pos1, DIR_NAME[dir], scr0, pos0));
+          }
         }
       }
     }
-  }
-
-  // Recomputes all the memoized data (e.g. after a large change).
-  bookkeep() {
-    this._pos = undefined;
-    this._filled = 0;
-    if (this._counts) this._counts = new Multiset();
-    for (const pos of this.allPos()) {
-      const scr = this._screens[pos + 16];
-      if (this._counts) {
-        const counted = this._counted.get(scr);
-        if (counted != null) this._counts.add(counted);
-      }
-      if (!scr.isEmpty()) this._filled++;
-    }
+    return true;
   }
 
   spliceColumns(left: number, deleted: number, inserted: number,
                 screens: ReadonlyArray<ReadonlyArray<Metascreen>>) {
-    if (this._features.size) throw new Error(`bad features`);
-    this.saveExcursion(() => {
-      // First adjust the screens.
-      for (let p = 0; p < this._screens.length; p += 16) {
-        this._screens.copyWithin(p + left + inserted, p + left + deleted, p + 10);
-        this._screens.splice(p + left, inserted, ...screens[p >> 4]);
-      }
-      return true;
-    });
+    // First adjust the screens.
+    for (let p = 0; p < this._screens.length; p += 16) {
+      this._screens.copyWithin(p + left + inserted, p + left + deleted, p + 10);
+      this._screens.splice(p + left, inserted, ...screens[p >> 4]);
+    }
     // Update dimensions and accounting
     const delta = inserted - deleted;
     this.width += delta;
     this._pos = undefined;
-    this.bookkeep();
     // Move relevant exits
     const move: [Pos, ConnectionType, Pos, ConnectionType][] = [];
     for (const [pos, type] of this._exits) {
@@ -536,25 +409,6 @@ export class Metalocation {
 
   }
 
-  // Options for setting: ???
-  trySet(pos: Pos, scr: Metascreen): Ok {
-    const features = this._features.get(pos);
-    if (features != null && !scr.hasFeatures(features)) {
-      return Failure.of('missing required features %x in %s at %x',
-                        features, scr.name, pos);
-    }
-    for (let dir = 0; dir < 4; dir++) {
-      const delta = DPOS[dir];
-      const other = pos + delta;
-      const neighbor = this._screens[other + 16];
-      if (!scr.checkNeighbor(neighbor, dir)) {
-        return Failure.of('bad neighbor %s %s %s', neighbor.name,
-                          DIR_NAME[dir], scr.name);
-      }
-    }
-    this.setInternal(pos, scr, false);
-  }
-
   ////////////////////////////////////////////////////////////////
   // Exit handling
 
@@ -584,28 +438,6 @@ export class Metalocation {
     return hasExit;
   }
 
-  // NOTE: candidates pre-shuffled?
-  tryAddOneOf(pos: Pos, candidates: readonly Metascreen[]): Ok {
-    // check neighbors... - TODO - need to distinguish empty from unset... :-(
-    // alternatively, we could _FIX_ the mandatory empties...?
-
-    // BUT... where do we even keep track of it?
-    //  - is fixed the concern of cave or metaloc?
-    // const feature = this._features.get(pos);
-    
-
-    // const scr = this.rom.metascreens[uid];
-    // if (feature != null && !scr.hasFeature(feature)) return false;
-    
-    const failures: Failure[] = [];
-    for (const candidate of candidates) {
-      const result = this.trySet(pos, candidate);
-      if (ok(result)) return;
-      failures.push(result);
-    }
-    return Failure.all(failures, 'No candidate could be added at %02x', pos);
-  }
-
   // TODO - short vs full?
   show(): string {
     const lines = [];
@@ -618,7 +450,7 @@ export class Metalocation {
       for (let r = 0; r < 3; r++) {
         line = [r === 1 ? y.toString(16) : ' ', ' '];
         for (let x = 0; x < this.width; x++) {
-          const screen = this._screens[(y + 1) << 4 | x];
+          const screen = this._screens[y << 4 | x];
           line.push(screen?.data.icon?.full[r] ?? (r === 1 ? ' ? ' : '   '));
         }
         lines.push(line.join(''));
@@ -632,7 +464,7 @@ export class Metalocation {
     for (let y = 0; y < this.height; y++) {
       let line = [];
       for (let x = 0; x < this.width; x++) {
-        const screen = this._screens[(y + 1) << 4 | x];
+        const screen = this._screens[y << 4 | x];
         line.push(screen?.name);
       }
       lines.push(line.join(' '));
@@ -640,42 +472,16 @@ export class Metalocation {
     return lines.join('\n');
   }
 
-  /** If T is Failure then revert. */
-  saveExcursion<T>(f: () => T): T|Failure {
-    const screens = [...this._screens];
-    const counts = this._counts && [...this._counts];
-    const filled = this._filled;
-    const features = [...this._features];
-    const invalidated = [...this._invalidated];
-    const invalid = this._invalid;
-    let result: T|Failure;
-    try {
-      result = f();
-    } catch (err) {
-      result = Failure.of(err.stack);
-    } finally {
-      if (ok(result!)) return result;
-      this._screens = screens;
-      if (counts) this._counts = new Multiset(counts);
-      this._filled = filled;
-      this._features = new Map(features);
-      this._invalidated = new Set(invalidated);
-      this._invalid = invalid;
-    }
-    return result;
-  }
-
   traverse(opts: TraverseOpts = {}): Map<number, Set<number>> {
     // Returns a map from unionfind root to a list of all reachable tiles.
     // All elements of set are keys pointing to the same value ref.
-    const without = new Set(opts.without || []);
     const uf = new UnionFind<number>();
     const connectionType = (opts.flight ? 2 : 0) | (opts.noFlagged ? 1 : 0);
     for (const pos of this.allPos()) {
-      if (without.has(pos)) continue;
-      const scr = this._screens[pos + 16];
+      const scr = opts.with?.get(pos) ?? this._screens[pos];
       //if (opts.flight && spec.deadEnd) continue;
       for (const segment of scr.connections[connectionType]) {
+        if (!segment.length) continue; // e.g. empty
         // Connect within each segment
         uf.union(segment.map(c => (pos << 8) + c));
       }
@@ -692,26 +498,6 @@ export class Metalocation {
 
     return map;
   }  
-
-  /** @return [position, direction of edge, screen inside edge, true if exit. */
-  * borders(): IterableIterator<[Pos, Dir, Metascreen, boolean]> {
-    const exit = this.tileset.exit;
-    for (let x = 0; x < this.width; x++) {
-      const top = x;
-      const bottom = this.height << 4 | x;
-      yield [top, Dir.N, this._screens[top + 16], this._screens[top] === exit];
-      yield [bottom, Dir.S, this._screens[bottom + 16],
-             this._screens[bottom + 32] === exit];
-    }
-    for (let y = 1; y <= this.height; y++) {
-      const left = y << 4;
-      const right = left | (this.width - 1);
-      yield [left, Dir.W, this._screens[left + 16],
-             this._screens[left + 15] === exit];
-      yield [right, Dir.E, this._screens[right + 16],
-             this._screens[right + 17] === exit];
-    }
-  }
 
   /**
    * Attach an exit/entrance pair in two directions.
@@ -797,7 +583,7 @@ export class Metalocation {
   }  
 
   pickTypeFromScreens(pos: Pos): ConnectionType {
-    const exits = this._screens[pos + 16].data.exits;
+    const exits = this._screens[pos].data.exits;
     const types = (exits ?? []).map(e => e.type);
     if (types.length !== 1) {
       throw new Error(`No single type for ${hex(pos)}: [${types.join(', ')}]`);
@@ -846,7 +632,7 @@ export class Metalocation {
   write() {
     const srcLoc = this.rom.locations[this.id];
     for (const [srcPos, srcType, [destTile, destType]] of this._exits) {
-      const srcScreen = this._screens[srcPos + 0x10];
+      const srcScreen = this._screens[srcPos];
       const dest = destTile >> 8;
       let destPos = destTile & 0xff;
       const destLoc = this.rom.locations[dest];
@@ -881,7 +667,7 @@ export class Metalocation {
       const row: number[] = [];
       srcLoc.screens.push(row);
       for (let x = 0; x < this._width; x++) {
-        row.push(this._screens[(y + 1) << 4 | x].sid);
+        row.push(this._screens[y << 4 | x].sid);
       }
     }
     srcLoc.tileset = this.tileset.tilesetId;
@@ -891,7 +677,7 @@ export class Metalocation {
     srcLoc.flags = [];
     const freeFlags = [...this.freeFlags];
     for (const screen of this.allPos()) {
-      const scr = this._screens[screen + 16];
+      const scr = this._screens[screen];
       let flag: number|undefined;
       if (scr.data.wall != null) {
         flag = freeFlags.pop()?.id ?? this.rom.flags.alloc(0x200);
@@ -917,7 +703,7 @@ export class Metalocation {
 
 interface TraverseOpts {
   // Do not pass certain tiles in traverse
-  readonly without?: readonly Pos[];
+  readonly with?: ReadonlyMap<Pos, Metascreen>;
   // Whether to break walls/form bridges
   readonly noFlagged?: boolean;
   // Whether to assume flight
@@ -941,5 +727,5 @@ const unknownExitWhitelist = new Set([
   0xa90629,
 ]);
 
-const DPOS = [-16, -1, 16, 1];
+//const DPOS = [-16, -1, 16, 1];
 const DIR_NAME = ['above', 'left of', 'below', 'right of'];

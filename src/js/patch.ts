@@ -10,6 +10,7 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {Graph} from './logic/graph.js';
 import {World} from './logic/world.js';
+import {CaveShuffle} from './maze/caveshuffle.js';
 import {compressMapData} from './pass/compressmapdata.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
@@ -37,9 +38,28 @@ import {Spoiler} from './rom/spoiler.js';
 import {hex, seq, watchArray} from './rom/util.js';
 import {DefaultMap} from './util.js';
 import * as version from './version.js';
-import {Maze} from './maze/maze2.js';
 
 const EXPAND_PRG: boolean = true;
+
+(window as any).CaveShuffle = CaveShuffle;
+function shuffleCave(seed: number, params: any, num = 1000) {
+  for (let i = seed; i < seed + num; i++) {
+    const s = new CaveShuffle({...params, tileset: (window as any).rom.metatilesets.cave}, i);
+    s.minSpikes = 3;
+    try {
+      if (s.build()) {
+        console.log(`seed ${i}:\n${s.grid.show()}\n${s.meta!.show()}`);
+        return;
+      } else {
+        console.log(`fail:\n${s.grid.show()}`);
+      }
+    } catch (err) {
+      console.error(err);
+      console.log(`fail ${i}:\n${s.grid.show()}`);
+    }
+  }
+  console.log(`fail`);
+}
 
 // class ShimAssembler {
 //   pre: Preprocessor;
@@ -208,6 +228,8 @@ export async function shuffle(rom: Uint8Array,
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
   const parsed = new Rom(rom);
+(window as any).cave = shuffleCave;
+if ((window as any).rom = parsed) throw new Error('skip');
   parsed.flags.defrag();
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
@@ -429,10 +451,9 @@ export async function shuffle(rom: Uint8Array,
 
 function misc(rom: Rom, flags: FlagSet, random: Random) {
 // TODO - remove hack to visualize maps from the console...
-(Object.getPrototypeOf(rom.locations[0]) as any).show = function(ts: typeof rom.metatilesets.river) {
-  console.log(Maze.from(this, random, ts).show());
-
-};
+// (Object.getPrototypeOf(rom.locations[0]) as any).show = function(ts: typeof rom.metatilesets.river) {
+//   console.log(Maze.from(this, random, ts).show());
+// };
 
   const {} = {rom, flags, random} as any;
   // NOTE: we still need to do some work actually adjusting

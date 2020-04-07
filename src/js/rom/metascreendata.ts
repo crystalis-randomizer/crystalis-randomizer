@@ -63,6 +63,49 @@ export interface MetascreenData {
    */
   edges?: string;
   /**
+   * Similar to edges (may supercede?), but 9 instead of 4
+   * since it includes corners and center, which each have
+   * their own thing.
+   * Cave:
+   *   c = corridor, ordinary center
+   *   w = wide edge, wide center
+   *   n = narrow edge
+   *   r = river (center of river tiles, and edges)
+   *   # = blockage (wall, non-bridged river, extra block)
+   *       NOTE: we add walls but _remove_ bridges...
+   *       NOTE: no longer used - just fill in normal now...
+   *   b = bridge (wrong side??? probably not...)
+   *   s = spikes
+   *   p = pit
+   *   / = ramp
+   *   
+   * Overworld:
+   *   o = open
+   *   < = cave or other up exit
+   *   > = down exit (i.e. crypt)
+   *   x = edge exit (never used interior)
+   *   l = long grass/forest
+   *   g = short grass
+   *   r = river (or bridge if in center and there's an unbridged option)
+   *       also used for oasis lake
+   *   # = blockage in center (e.g. unbridged river, whirlpool)
+   *   b = beach (on sea)
+   *   ↓ = slope
+   *   [0-9A-F] = off-center edge exits (top:6-7 or left:6-7 is centered)
+   *     1 = bridge to portoa 12, 5 = leaf/mezame entrance 2d,
+   *     8 = brynmaer exit 1c, boat channel 60, B = lower-left exit 1a
+   *     => TODO - consider either deleting these or swapping for just 'x'
+   *   W = windmill (also a < exit)
+   *   A = altar
+   *   L = lighthouse
+   *   H = house
+   *   F = fortress
+   *   C = cabin
+   *   P = pyramid
+   *   Y = crypt
+   */
+  tile?: string|string[];
+  /**
    * String of connected access points for routing, grouped by connection type.
    * Points are hex digits [123] for top edge, [567] for left, [9ab] for bottom,
    * or [def] for right edge.  Separators are '|' for impassible, '=' for wall,
@@ -115,6 +158,17 @@ export interface MetascreenData {
   /** Conditions for matching this tile. */
   match?: (reachable: (dy: number, dx: number) => boolean,
            flag: boolean) => boolean;
+
+  /** Whether this screen is _not allowed_ to be placed automatically. */
+  placement?: 'manual' | 'mod';
+  /**
+   * Type of modification this screen is from a same-layout tile.
+   * Mod tiles will not be inferred normally, and must be added afterwards.
+   * Inferred tiles will be maximally open.  Mods will close paths.  We
+   * may need to add a fixed number of walls, and/or remove a fixed nubmer
+   * of bridges.  We add as many non-flag blocks as possible.
+   */
+  mod?: 'block' | 'wall' | 'bridge';
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;

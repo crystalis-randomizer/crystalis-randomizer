@@ -3,7 +3,7 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import {Flag, Spawn} from '../rom/locationtables.js';
 import {Location} from '../rom/location.js';
-import { Metalocation } from '../rom/metalocation.js';
+import {Metalocation} from '../rom/metalocation.js';
 
 type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
 
@@ -26,6 +26,8 @@ export function standardMapEdits(rom: Rom, opts: Options) {
   addTowerExit(rom);
   reversibleSwanGate(rom);
   shrinkMado2(rom);
+  removeUnusedGoaKensuExits(rom);
+  adjustAbductionTrigger(rom);
   // closeCaveEntrances(rom); // NOTE: after other map edits
 }
 
@@ -47,25 +49,22 @@ export namespace standardMapEdits {
 
 function eastCave(rom: Rom, opts: EastCaveOptions) {
   const {
-    locations: {EastCave1, EastCave2, EastCave3,
-                Leaf_StudentHouse, SealedCave1, ValleyOfWind,
-               },
+    locations: {EastCave1, EastCave2, EastCave3, SealedCave1, ValleyOfWind},
     metascreens: {boundaryE_cave,
                   branchNSE, branchNWE, branchNWSE, branchNWS, branchWSE,
                   caveEmpty,
                   deadEndE, deadEndE_downStair, deadEndE_upStair,
                   deadEndN_stairs, deadEndS, deadEndS_stairs,
-                  deadEndW, deadEndW_downStair, exit,
+                  deadEndW, deadEndW_downStair,
                   hallNE, hallNS, hallNW, hallSE, hallWS, hallWE,
                   hallNS_entrance, hallNS_ramp, hallNS_wall,
                  },
-    npcs: {WindmillGuard},
     //flags: {AlwaysTrue},
   } = rom;
 
   rom.locations.allocate(EastCave1);
   rom.locations.allocate(EastCave2);
-  if (opts.exit2) rom.locations.allocate(rom.locations.EastCave3);
+  if (opts.exit2) rom.locations.allocate(EastCave3);
 
   for (const l of [EastCave1, EastCave2, EastCave3]) {
     l.bgm = l.originalBgm = 0x17; // mt sabre cave music?
@@ -93,8 +92,6 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
     [hallSE,          branchNWSE,  branchNWS, caveEmpty,        caveEmpty],
     [hallNS,          hallNS_ramp, hallNE,    hallWE,           hallWS],
     [hallNS_entrance, hallNE,      deadEndW,  deadEndE_upStair, hallNW],
-    // Border
-    [exit,            caveEmpty,   caveEmpty, caveEmpty,        caveEmpty],
   ]);
 
   EastCave2.meta = new Metalocation(EastCave2.id, rom.metatilesets.cave, 5, 5);
@@ -105,7 +102,6 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
     [caveEmpty, hallNS_ramp, caveEmpty, hallNE,    hallWS],
     [deadEndE,  hallNW,      caveEmpty, caveEmpty, deadEndN_stairs],
   ]);
-
 
   // Add entrance to valley of wind
   ValleyOfWind.meta.set2d(0x33, [[boundaryE_cave]]);
@@ -124,13 +120,11 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
   }
 
   if (opts.exit2) {
-    rom.locations.allocate(EastCave3);
     EastCave3.meta = new Metalocation(EastCave3.id, rom.metatilesets.cave, 3, 1);
     EastCave3.meta.set2d(0x00, [
       [deadEndS_stairs],
       [hallNS_wall],
       [hallNS_entrance],
-      [exit], // Border
     ]);
 
     // Add a rock wall (id=0).
@@ -163,13 +157,15 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
     Spawn.of({screen: 0x33, tile: 0x8a, timed: false, id: 0x2}),
     Spawn.of({screen: 0x34, tile: 0x98, timed: true, id: 0x2}),
     Spawn.of({screen: 0x41, tile: 0x82, timed: true, id: 0x2}),
-    // chest: alarm flute
-    Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x31}),
+    // chest: medical herb
+    Spawn.of({y: 0x110, x: 0x478, type: 2, id: 0x59}),
     // chest: mimic
     Spawn.of({y: 0x070, x: 0x108, type: 2, id: 0x7c}),
   );
-  WindmillGuard.data[1] = 0x59; // alarm flute -> medical herb
-  WindmillGuard.dialog(Leaf_StudentHouse)[0].condition = ~0x159;
+  rom.slots.swap(0x31, 0x59);
+  // swap out alarm flute for medical herb - this makes it a unique check.
+  // WindmillGuard.data[1] = 0x59; // alarm flute -> medical herb
+  // WindmillGuard.dialog(Leaf_StudentHouse)[0].condition = ~0x159;
 }
 
 function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {
@@ -177,7 +173,6 @@ function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {
     bendNE, bendSE,
     boundaryN_trees, boundaryW_cave,
     cornerNE, cornerNW, cornerSE, cornerSE_cave, cornerSW,
-    overworldEmpty,
   }} = loc.rom;
   let dest: Location;
   let destScr: number;
@@ -188,11 +183,9 @@ function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {
       destScr = 0x10;
       dest.resizeScreens(0, 1, 0, 0); // add one screen to left edge
       dest.meta.spliceColumns(0, 1, 2, [
-        [overworldEmpty, overworldEmpty], // top border
         [cornerNW,       boundaryN_trees],
         [boundaryW_cave, bendSE],
         [cornerSW,       cornerSE],
-        [overworldEmpty, overworldEmpty], // bottom border
       ]);
       break;
 
@@ -334,3 +327,23 @@ function shrinkMado2(rom: Rom) {
 //   WaterfallValleyNorth.spawns.splice(1, 0, explosion);
 //   WaterfallValleyNorth.spawns.push(keyTrigger);
 // }
+
+function removeUnusedGoaKensuExits(rom: Rom) {
+  // These exits are never actually reachable, and they cause problems
+  // when their other side ends up getting shuffled.  Possibly the best
+  // option is to detect the unreciprocated exits and update them when
+  // we transfer.  But for now this is all that's really needed.
+  const loc = rom.locations.GoaFortress_Kensu;
+  loc.exits.splice(0, loc.exits.length - 4);
+  loc.meta = Metalocation.of(loc);
+
+  // NOTE: maps $21 and $ba are seamless pairs of maps with flags, but they
+  // lack the actual same flags.  We need to keep them in sync...?  Probably
+  // shouldn't allocate a separate flag for them - just reuse the other one.
+}
+
+function adjustAbductionTrigger(rom: Rom) {
+  // Ensure we can step on it even when there's just a solid wall behind the
+  // breakable wall.
+  rom.locations.ZebuCave.spawns.find(s => s.isTrigger())!.yt += 3;
+}

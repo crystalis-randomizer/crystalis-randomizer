@@ -5,9 +5,11 @@ import {Metascreen, Uid} from './metascreen.js';
 import {Metatileset} from './metatileset.js';
 import {hex} from './util.js';
 import {Rom} from '../rom.js';
-import {Table, iters, format} from '../util.js';
+import {DefaultMap, Table, iters, format} from '../util.js';
 import {UnionFind} from '../unionfind.js';
 import {ConnectionType} from './metascreendata.js';
+import {Random} from '../random.js';
+import {Monster} from './monster.js';
 
 const [] = [hex];
 
@@ -64,7 +66,7 @@ export class Metalocation {
 
   private _exits = new Table<Pos, ConnectionType, ExitSpec>();
 
-  private _monstersInvalidated = false;
+  //private _monstersInvalidated = false;
 
   /** Key: (y<<4)|x */
   private _screens: Metascreen[];
@@ -74,7 +76,7 @@ export class Metalocation {
     this.rom = tileset.rom;
     this._height = height;
     this._width = width;
-    this._screens = new Array((height + 2) << 4).fill(tileset.empty);
+    this._screens = new Array(height << 4).fill(tileset.empty);
   }
 
   /**
@@ -113,10 +115,28 @@ export class Metalocation {
     // This is used to inform which metascreen to select for some of the
     // redundant ones (i.e. double dead ends).  This is a simple traversal
     const reachable = location.reachableTiles(true); // traverseReachable(0x04);
+    const reachableScreens = new Set<Pos>();
+    for (const tile of reachable.keys()) {
+      reachableScreens.add(tile >>> 8);
+      //reachableScreens.add((tile & 0xf000) >>> 8 | (tile & 0xf0) >>> 4);
+    }
+    // NOTE: some entrances are on impassable tiles but we still care about
+    // the screens under them (e.g. boat and shop entrances).  Also make sure
+    // to handle the seamless tower exits.
+    for (const entrance of location.entrances) {
+      reachableScreens.add(entrance.screen);
+    }
+    for (const exit of location.exits) {
+      reachableScreens.add(exit.screen);
+    }
     const exit = tileset.exit;
-    const screens = new Array<Metascreen>((height + 2) << 4).fill(tileset.empty);
+    const screens = new Array<Metascreen>(height << 4).fill(tileset.empty);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
+        const t0 = y << 4 | x;
+        if (tileset !== rom.metatilesets.tower && !reachableScreens.has(t0)) {
+          continue;
+        }
         const metascreens = tileset.getMetascreens(location.screens[y][x]);
         let metascreen: Metascreen|undefined = undefined;
         if (metascreens.length === 1) {
@@ -155,15 +175,14 @@ export class Metalocation {
           if (!metascreen) metascreen = best[0];
         }
         if (!metascreen) throw new Error('impossible');
-        const t0 = (y + 1) << 4 | x;
         screens[t0] = metascreen;
-        // If we're on the border and it's an edge exit then change the border
-        // screen to reflect an exit.
-        const edges = metascreen.edgeExits();
-        if (y === 0 && (edges & 1)) screens[t0 - 16] = exit;
-        if (x === 0 && (edges & 2)) screens[t0 - 1] = exit;
-        if (y === height && (edges & 4)) screens[t0 + 16] = exit;
-        if (x === width && (edges & 8)) screens[t0 + 1] = exit;
+        // // If we're on the border and it's an edge exit then change the border
+        // // screen to reflect an exit.
+        // const edges = metascreen.edgeExits();
+        // if (y === 0 && (edges & 1)) screens[t0 - 16] = exit;
+        // if (x === 0 && (edges & 2)) screens[t0 - 1] = exit;
+        // if (y === height && (edges & 4)) screens[t0 + 16] = exit;
+        // if (x === width && (edges & 8)) screens[t0 + 1] = exit;
       }
     }
 
@@ -171,7 +190,7 @@ export class Metalocation {
     const exits = new Table<Pos, ConnectionType, ExitSpec>();
     for (const exit of location.exits) {
       const srcPos = exit.screen;
-      const srcScreen = screens[srcPos + 16];
+      const srcScreen = screens[srcPos];
       const srcExit = srcScreen.findExitType(exit.tile, height === 1,
                                              !!(exit.entrance & 0x20));
       const srcType = srcExit?.type;
@@ -236,7 +255,7 @@ export class Metalocation {
 
     // Fill in custom flags
     for (const f of location.flags) {
-      const scr = metaloc._screens[f.screen + 16];
+      const scr = metaloc._screens[f.screen];
       if (scr.flag?.startsWith('custom')) {
         metaloc.customFlags.set(f.screen, rom.flags[f.flag]);
       } else if (!scr.flag) {
@@ -316,7 +335,7 @@ export class Metalocation {
     this._screens[pos] = scr ?? this.tileset.empty;
   }
 
-  invalidateMonsters() { this._monstersInvalidated = true; }
+  //invalidateMonsters() { this._monstersInvalidated = true; }
 
   inBounds(pos: Pos): boolean {
     // return inBounds(pos, this.height, this.width);
@@ -353,13 +372,14 @@ export class Metalocation {
         for (let x = dir; x < this.width; x++) {
           const pos0: Pos = y << 4 | x;
           const scr0 = this._screens[pos0];
-          const pos1: Pos = pos0 - (dir ? 16 : 1);
+          const pos1: Pos = pos0 - (dir ? 1 : 16);
           const scr1 = this._screens[pos1];
           if (scr0.isEmpty()) continue;
           if (scr1.isEmpty()) continue;
           if (!scr0.checkNeighbor(scr1, dir)) {
             throw new Error(format('bad neighbor %s (%02x) %s %s (%02x)',
-                                   scr1, pos1, DIR_NAME[dir], scr0, pos0));
+                                   scr1.name, pos1, DIR_NAME[dir],
+                                   scr0.name, pos0));
           }
         }
       }
@@ -591,6 +611,196 @@ export class Metalocation {
     return types[0];
   }
 
+  transferFlags(orig: Metalocation, random: Random) {
+    // Copy over the free flags
+    this.freeFlags = new Set(orig.freeFlags);
+    // Collect all the custom flags.
+    const customs = new DefaultMap<Metascreen, Flag[]>(() => []);
+    for (const [pos, flag] of orig.customFlags) {
+      customs.get(orig._screens[pos]).push(flag);
+    }
+    // Shuffle them just in case they're not all the same...
+    // TODO - for seamless pairs, only shuffle once, then copy.
+    for (const flags of customs.values()) random.shuffle(flags);
+    // Find all the custom-flag screens in the new location.
+    for (const pos of this.allPos()) {
+      const scr = this._screens[pos];
+      if (scr.flag?.startsWith('custom')) {
+        const flag = customs.get(scr).pop();
+        if (!flag) {
+          throw new Error(`No flag for ${scr.name} at ${
+                           this.rom.locations[this.id]} @${hex(pos)}`);
+        }
+        this.customFlags.set(pos, flag);
+      }
+    }
+  }
+
+  /** Takes ownership of exits from another metalocation with the same ID. */
+  transferExits(orig: Metalocation, random?: Random) {
+    // Determine all the eligible exit screens.
+    const exits = new DefaultMap<ConnectionType, Pos[]>(() => []);
+    for (const pos of this.allPos()) {
+      const scr = this._screens[pos];
+      for (const {type} of scr.data.exits ?? []) {
+        if (type === 'edge:top' && (pos >>> 4)) continue;
+        if (type === 'edge:left' && (pos & 0xf)) continue;
+        if (type === 'edge:bottom' && (pos >>> 4) < this.height - 1) continue;
+        if (type === 'edge:right' && (pos & 0xf) < this.width - 1) continue;
+        exits.get(type).push(pos);
+      }
+    }
+    if (random) {
+      for (const arr of exits.values()) {
+        random.shuffle(arr);
+      }
+    }
+    // Find a match for each original exit.
+    for (const [opos, type, exit] of orig._exits) {
+      const oy = opos >>> 4;
+      const ox = opos & 0xf;
+      let pos: Pos|undefined;
+      let dist = Infinity;
+      let index = 0;
+      const arr = exits.get(type);
+      if (!random) {
+        // Attempt to keep exits as close as possible to previous positions.
+        // Note that the greedy algorithm is *not* globally optimal.
+        for (let i = 0; i < arr.length; i++) {
+          const npos = arr[i];
+          const ny = npos >>> 4;
+          const nx = npos & 0xf;
+          const d2 = (nx - ox) ** 2 + (ny - oy) ** 2;
+          if (d2 < dist) {
+            dist = d2;
+            pos = npos;
+            index = i;
+          }
+        }
+      } else {
+        pos = arr[0];
+      }
+      if (pos == null) throw new Error(`Could not transfer exit ${type}`);
+      arr.splice(index, 1);
+      const eloc = this.rom.locations[exit[0] >>> 8].meta;
+      const epos = exit[0] & 0xff;
+      const etype = exit[1];
+      const ret = eloc._exits.get(epos, etype)!;
+      if (!ret) {
+        const eeloc = this.rom.locations[exit[0] >>> 8];
+        console.log(eloc);
+        throw new Error(`No exit for ${eeloc} at ${hex(epos)} ${etype}\n${eloc.show()}
+${this.id} ${hex(opos)} ${type}`);
+      }
+      if ((ret[0] >>> 8) === this.id && ((ret[0] & 0xff) === opos) &&
+          ret[1] === type) {
+        eloc._exits.set(epos, etype, [this.id << 8 | pos, type]);
+      }
+      this._exits.set(pos, type, exit);
+    }
+  }
+
+  /**
+   * Moves NPCs, triggers, and chests based on proximity to screens,
+   * exits, and POI.
+   */
+  transferSpawns(that: Metalocation, random: Random) {
+    // Start by building a map between exits and specific screen types.
+    const reverseExits = new Map<ExitSpec, [number, number]>(); // map to y,x
+    const map: Array<[number, number, number, number]> = []; // [oy,ox,ny,nx]
+    const walls: Array<[number, number]> = [];
+    const bridges: Array<[number, number]> = [];
+    // Pair up arenas.
+    const arenas: Array<[number, number]> = [];
+    for (const loc of [this, that]) {
+      for (const pos of loc.allPos()) {
+        const scr = loc._screens[pos];
+        const y = pos & 0xf0;
+        const x = (pos & 0xf) << 4;
+        if (loc === this && scr.hasFeature('wall')) {
+          if (scr.data.wall == null) throw new Error(`Missing wall prop`);
+          walls.push([y | (scr.data.wall >> 4), x | (scr.data.wall & 0xf)]);
+        } else if (loc === this && scr.hasFeature('bridge')) {
+          if (scr.data.wall == null) throw new Error(`Missing wall prop`);
+          bridges.push([y | (scr.data.wall >> 4), x | (scr.data.wall & 0xf)]);
+        }
+        if (!scr.hasFeature('arena')) continue;
+        if (loc === this) {
+          arenas.push([y | 8, x | 8]);
+        } else {
+          const [ny, nx] = arenas.pop()!;
+          map.push([y | 8, x | 8, ny, nx]);
+        }
+      }
+      if (loc === this) random.shuffle(arenas);
+    }
+    // Now pair up exits.
+    for (const loc of [this, that]) {
+      for (const [pos, type, exit] of loc._exits) {
+        const scr = loc._screens[pos];
+        const spec = scr.data.exits?.find(e => e.type === type);
+        if (!spec) throw new Error(`Invalid exit: ${scr.name} ${type}`);
+        const x0 = pos & 0xf;
+        const y0 = pos >>> 4;
+        const x1 = spec.exits[0] & 0xf;
+        const y1 = spec.exits[0] >>> 4;
+        if (loc === this) {
+          reverseExits.set(exit, [y0 << 4 | y1, x0 << 4 | x1]);
+        } else {
+          const [ny, nx] = reverseExits.get(exit)!;
+          map.push([y0 << 4 | y1, x0 << 4 | x1, ny, nx]);
+        }
+      }
+    }
+    // Make a list of POI by priority (0..5).
+    const ppoi: Array<Array<[number, number]>> = [[], [], [], [], [], []];
+    for (const pos of this.allPos()) {
+      const scr = this._screens[pos];
+      for (const [p, dy = 0x70, dx = 0x78] of scr.data.poi ?? []) {
+        const y = ((pos & 0xf0) << 4) + dy;
+        const x = ((pos & 0x0f) << 8) + dx;
+        ppoi[p].push([y, x]);
+      }
+    }
+    for (const poi of ppoi) {
+      random.shuffle(poi);
+    }
+    const allPoi = [...iters.concat(...ppoi)];
+    // Iterate over the spawns, look for NPC/chest/trigger.
+    const loc = this.rom.locations[this.id];
+    for (let i = 0; i < loc.spawns.length; i++) {
+      const spawn = loc.spawns[i];
+      if (spawn.isChest()) {
+        const next = allPoi.shift();
+        if (!next) throw new Error(`Ran out of POI`);
+        const [y, x] = next;
+        spawn.y = y;
+        spawn.x = x;
+        continue;
+      } else if (spawn.isWall()) {
+        const wall = (spawn.wallType() === 'bridge' ? bridges : walls).pop();
+        if (!wall) throw new Error(`Not enough wall screens ${loc}`);
+        const [y, x] = wall;
+        spawn.yt = y;
+        spawn.xt = x;
+        continue;
+      } else if (!(spawn.isNpc() || spawn.isBoss() || spawn.isTrigger())) {
+        continue;
+      }
+      //let j = 0;
+      for (const [y0, x0, y1, x1] of map) {
+        const d = (spawn.yt - y0) ** 2 + (spawn.xt - x0) ** 2;
+        if (d < 145) { // 12 tiles (TODO - just take closest?)
+          spawn.yt += (y1 - y0);
+          spawn.xt += (x1 - x0);
+          //map.splice(j, 1);  // multiple spawns can be near same landmark
+          break;
+        }
+        //j++;
+      }
+    }
+  }
+
   /**
    * Given a seamless pair location, sync up the exits.  For each exit of
    * either, check if it's symmetric, and if so, copy it over to the other side.
@@ -631,23 +841,26 @@ export class Metalocation {
    */
   write() {
     const srcLoc = this.rom.locations[this.id];
+    let seamlessPartner: Location|undefined;
     for (const [srcPos, srcType, [destTile, destType]] of this._exits) {
       const srcScreen = this._screens[srcPos];
       const dest = destTile >> 8;
       let destPos = destTile & 0xff;
       const destLoc = this.rom.locations[dest];
       const destMeta = destLoc.meta!;
-      const destScreen = destMeta._screens[(destTile & 0xff) + 0x10];
+      const destScreen = destMeta._screens[destTile & 0xff];
       const srcExit = srcScreen.data.exits?.find(e => e.type === srcType);
       const destExit = destScreen.data.exits?.find(e => e.type === destType);
       if (!srcExit || !destExit) {
-        throw new Error(`Missing exit:
+        throw new Error(`Missing ${srcExit ? 'dest' : 'source'} exit:
   From: ${srcLoc} @ ${hex(srcPos)}:${srcType} ${srcScreen.name}
   To:   ${destLoc} @ ${hex(destPos)}:${destType} ${destScreen.name}`);
       }
       // See if the dest entrance exists yet...
       let entrance = 0x20;
-      if (!destExit.type.startsWith('seamless')) {
+      if (destExit.type.startsWith('seamless')) {
+        seamlessPartner = destLoc;
+      } else {
         let destCoord = destExit.entrance;
         if (destCoord > 0xefff) { // handle special case in Oak
           destPos += 0x10;
@@ -679,7 +892,7 @@ export class Metalocation {
     for (const screen of this.allPos()) {
       const scr = this._screens[screen];
       let flag: number|undefined;
-      if (scr.data.wall != null) {
+      if (scr.data.wall != null && !seamlessPartner) {
         flag = freeFlags.pop()?.id ?? this.rom.flags.alloc(0x200);
       } else if (scr.flag === 'always') {
         flag = this.rom.flags.AlwaysTrue.id;
@@ -694,9 +907,24 @@ export class Metalocation {
         srcLoc.flags.push(LocationFlag.of({screen, flag}));
       }
     }
+  }
 
-    if (this._monstersInvalidated) {
-      // TODO - if monsters invalidated, then replace them...
+  replaceMonsters(random: Random) {
+    // Move all the monsters to reasonable locations.
+    const loc = this.rom.locations[this.id];
+    const placer = loc.monsterPlacer(random);
+    for (const spawn of loc.spawns) {
+      if (!spawn.isMonster()) continue;
+      const monster = loc.rom.objects[spawn.monsterId];
+      if (!(monster instanceof Monster)) return;
+      const pos = placer(monster);
+      if (pos == null) {
+        console.error(`no valid location for ${hex(monster.id)} in ${loc}`);
+        spawn.used = false;
+      } else {
+        spawn.screen = pos >>> 8;
+        spawn.tile = pos & 0xff;
+      }
     }
   }
 }

@@ -236,7 +236,7 @@ export class Flags {
   0x063 = obsolete(0x147); // check: change
   // unused 064
   // SwanGateOpened = movable(~0x064); // why would we add this? use 2b3
-  CuredKensu = movable(0x065);
+  CuredKensu = movable(0x065, TRACK);
   // unused 066
   0x067 = obsolete(0x10b); // check: ball of thunder / mado 1
   0x068 = obsolete(0x104); // check: forged crystalis

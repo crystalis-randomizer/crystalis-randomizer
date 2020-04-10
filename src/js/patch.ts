@@ -229,7 +229,6 @@ export async function shuffle(rom: Uint8Array,
 
   const parsed = new Rom(rom);
 (window as any).cave = shuffleCave;
-if ((window as any).rom = parsed) throw new Error('skip');
   parsed.flags.defrag();
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
@@ -259,9 +258,8 @@ if ((window as any).rom = parsed) throw new Error('skip');
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
-  parsed.locations.copyFromMeta();
-
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
+  parsed.locations.copyFromMeta();
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);

@@ -18,3 +18,16 @@ http://localhost:8081/#init=crystalis/debug&rom=orig.nes&patch=crystalis/patch&f
 9. tiles below sabera elevator -> vanilla
 10. fall past entrance in sabera palace -> normalized the exit
      (but it's complicated)
+
+====
+
+flags=DsErsGtRostWm&seed=9e3ac8fd
+
+oasis cave near leather boots - bad dead end
+bogus stairs in windmill cave and vampire room
+bottom-most exit of swamp edge (re-add)
+east cave not shuffling
+windmill guard not moved w/ random level - in general, NPCs should be on a POI
+ - make it an error to _not_ move a trigger or NPC?
+shuffle mado2 area
+waterfall n -> s gets stray mountains b/c seamless pair not mirrored

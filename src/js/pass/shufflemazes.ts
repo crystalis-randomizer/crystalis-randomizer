@@ -1,8 +1,8 @@
 import {FlagSet} from '../flagset.js';
-import {shuffleCave} from '../maze/cave.js';
-import {extendGoaScreens, shuffleGoa1} from '../maze/goa.js';
-import {shuffleSwamp} from '../maze/swamp.js';
-import {shufflePyramid} from '../maze/pyramid.js';
+import {shuffleCave} from '../maze/caveshuffle.js';
+import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
+//import {shuffleSwamp} from '../maze/swamp.js';
+//import {shufflePyramid} from '../maze/pyramid.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
@@ -12,9 +12,9 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   //           .filter(f => f != 0x200).map(x=>x.toString(16))))].sort()
   // Also map over triggers, dialogs - find what's set/cleared
   // Also 2f0 is co-opted as an "always true" trigger.
-  shufflePyramid(rom, random);
-  shuffleSwamp(rom, random);
-  shuffleGoa1(rom, random);
+  // shufflePyramid(rom, random);
+  // shuffleSwamp(rom, random);
+  // shuffleGoa1(rom, random);
   for (const cave of SHUFFLED_CAVES) {
     shuffleCave(rom.locations[cave], random);
   }
@@ -47,33 +47,33 @@ const SHUFFLED_CAVES = [
   // Fog Lamp
   0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
   // Waterfall
-  0x54, 0x55, 0x56, 0x57, // can't handle this one yet
+  0x54, 0x55, //0x56, 0x57, // can't handle this one yet
   // Evil spirit
-  0x69, // 0x6a, 0x6b
+  //0x69, // 0x6a, 0x6b
   // Sabera palace (probably just skip sabera map 6e)
   // 0x6c, 0x6d
   // Joel passage
   0x70,
   // Mt Hydra
-  0x7d, 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+  //0x7d, 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
   // Stxy
   // 0x88, 0x89, 0x8a,
   // Goa Basement
-  0x8f,
+  //0x8f,
   // Oasis Cave
   // 0x91, 0xb8, 
   // Connectors
   0x92, 0x95,
   // Pyramid
-  0x9d, //0x9e,
+  //0x9d, //0x9e,
   // Crypt
   // 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
   // Goa - Kelbesque 2
   // 0xa8, 0xa9, // NOTE: a9 handled by shuffleGoa1
   // Goa - Sabera 2
-  0xab,
+  //0xab,
   // Goa - Mado 2
   // 0xad, 0xae, 0xaf, 0xb9
   // Goa - Karmine
-  0xb0, 0xb1, 0xb2, 0xb3, // 0xb4, 0xb5, 0xb8,
+  0xb0, 0xb1, 0xb2, 0xb3, /* 0xb4,*/ 0xb5, //0xb8,
 ];

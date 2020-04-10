@@ -194,21 +194,14 @@ export class Graph {
       }
       const path: number[][]|undefined = spoiler ? [] : undefined;
       const final = this.traverse(i => indexFill.get(i), Bits.of(), path);
-      if (spoiler && path) {
-        for (const [target, ...deps] of path) {
-          if (target < this.common || indexFill.has(target as SlotIndex)) {
-            spoiler.addCheck(
-                this.slots.get(target as SlotIndex)!,
-                deps.map(d => this.items.get(d as ItemIndex)!));
-          }
-        }
-      }
       // TODO - flags to loosen this requirement?
       if (final.size !== this.slots.length) {
-        const ns = (si: SlotIndex) => this.checkName(this.slots.get(si)!);
+        const ns = (si: SlotIndex) => `${String(si).padStart(3)} ${
+            this.slots.get(si)!.toString(16).padStart(3, '0')} ${
+            this.checkName(this.slots.get(si)!)}`;
         const missing = new Set([...this.slots].map(x => x[0]));
         for (const s of final) missing.delete(s);
-        console.error(`Initial fill never filled slots:
+        console.error(`Initial fill never reached slots:
   ${[...missing].map(ns).sort().join('\n  ')}`, final, this);
         continue;
       }
@@ -223,6 +216,15 @@ export class Graph {
           // TODO - clean this up.
           const name = this.checkName(slot).replace(/^[0-9a-f]{3} /, '');
           spoiler.addSlot(slot, name, item);
+        }
+        if (path) {
+          for (const [target, ...deps] of path) {
+            if (target < this.common || indexFill.has(target as SlotIndex)) {
+              spoiler.addCheck(
+                  this.slots.get(target as SlotIndex)!,
+                  deps.map(d => this.items.get(d as ItemIndex)!));
+            }
+          }
         }
       }
       return out;
@@ -444,6 +446,15 @@ export class Graph {
         break;
       }
     }
+
+    // If we get errors about initial fill never filled slots, see what
+    // items are missing (note: rom is global)
+//     if(path)console.log(new Array(this.items.length).fill(0).map((_,i) => i)
+//         .filter(i=>!Bits.has(has, i)).map(i => [i,this.items.get(i)]).sort((a,b)=>a[1]-b[1])
+//         .map(([j,i]) => `${String(j).padStart(3)} ${hex(i).padStart(3,'0')} ${
+//                            this.checkName(i)}`).join('\n'));
+// (window as any).FINALHAS = has;
+
     return reachable;
   }
 

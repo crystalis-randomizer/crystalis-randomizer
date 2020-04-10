@@ -4,6 +4,7 @@ import { seq, hex } from '../rom/util.js';
 import { Metatileset } from '../rom/metatileset.js';
 import { Metascreen } from '../rom/metascreen.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
+import { Location } from '../rom/location.js';
 
 const [] = [hex];
 
@@ -73,7 +74,6 @@ export class CaveShuffle {
   readonly screens: readonly GridCoord[] = [];
   meta!: Metalocation;
   count = 0;
-  flags = 0;
   walls = 0;
   bridges = 0;
   maxPartitions = 1;
@@ -107,7 +107,7 @@ export class CaveShuffle {
     //if (!this.addEarlyFeatures()) return false;
     this.addEdges();
     if (!this.addEarlyFeatures()) return;
-    this.refine();
+    if (!this.refine()) return;
     this.removeSpurs();
     this.removeTightLoops();
     if (!this.addLateFeatures()) return;
@@ -301,7 +301,7 @@ export class CaveShuffle {
       arenas--;
       if (!arenas) return true;
     }
-    console.error('could not add arena');
+    //console.error('could not add arena');
     return false;
   }
 
@@ -323,7 +323,7 @@ export class CaveShuffle {
       ramps--;
       if (!ramps) return true;
     }
-    console.error('could not add arena');
+    //console.error('could not add ramp');
     return false;
   }
 
@@ -423,7 +423,7 @@ export class CaveShuffle {
     return orphaned;
   }
 
-  refine() {
+  refine(): boolean {
     let filled = new Set<GridCoord>();
     for (let i = 0 as GridIndex; i < this.grid.data.length; i++) {
       if (this.grid.data[i]) filled.add(this.grid.coord(i));
@@ -433,7 +433,8 @@ export class CaveShuffle {
       if (attempts++ > 50) throw new Error(`refine failed: attempts`);
       //console.log(`main: ${this.count} > ${this.params.size}`);
       let removed = 0;
-      for (const coord of this.random.ishuffle(filled)) {
+//if(this.params.id===4){debugger;[...this.random.ishuffle(filled)];}
+      for (const coord of this.random.ishuffle([...filled])) {
         if (this.grid.isBorder(coord) ||
             !this.canRemove(this.grid.get(coord)) ||
             this.fixed.has(coord)) {
@@ -444,7 +445,7 @@ export class CaveShuffle {
         const parts = this.grid.partition(new Map([[coord, '']]));
         //console.log(`  coord: ${coord.toString(16)} => ${parts.size}`);
         const [first] = parts.values();
-        if (first.size === parts.size) { // a single partition
+        if (first.size === parts.size && parts.size > 1) { // a single partition
           // ok to remove
           removed++;
           filled.delete(coord);
@@ -472,8 +473,9 @@ export class CaveShuffle {
           }
         }
       }
-      if (!removed) throw new Error(`refine failed: progress`);
+      if (!removed) return false; // throw new Error(`refine failed: progress`);
     }
+    return true;
   }
 
   /**
@@ -499,7 +501,7 @@ export class CaveShuffle {
             this.grid.set(left, '');
             this.grid.set(right, '');
           }
-          console.log(`remove ${y} ${x}:\n${this.grid.show()}`);
+          //console.log(`remove ${y} ${x}:\n${this.grid.show()}`);
         }
       }
     }
@@ -607,7 +609,6 @@ export class CaveShuffle {
     for (const pos of this.random.ishuffle(this.meta.allPos())) {
       const c = ((pos << 8 | pos << 4) & 0xf0f0) as GridCoord;
       const tile = extract(this.grid, c)
-console.log(pos.toString(16), tile);
       const scr = this.meta.get(pos);
       if (this.tryMeta(pos, this.tileset.withMod(tile, 'block'))) continue;
       if (this.bridges > bridges && scr.hasFeature('bridge')) {
@@ -626,7 +627,7 @@ console.log(pos.toString(16), tile);
         }
       }
     }
-    console.warn(`bridges ${this.bridges} ${bridges} / walls ${this.walls} ${walls}`);
+    //console.warn(`bridges ${this.bridges} ${bridges} / walls ${this.walls} ${walls}`);
     return this.bridges === bridges && this.walls === walls;
   }
 
@@ -641,7 +642,6 @@ console.log(pos.toString(16), tile);
 
   checkMeta(pos: Pos, scr: Metascreen): boolean {
     const parts = this.meta.traverse({with: new Map([[pos, scr]])});
-    console.log(pos.toString(16), parts);
     return new Set(parts.values()).size === this.maxPartitions;
   }
 
@@ -661,4 +661,66 @@ function extract(g: Grid<string>, c: GridCoord): string {
     }
   }
   return out;
+}
+
+export function shuffleCave(loc: Location, random: Random) {
+  // take a survey.
+  const meta = loc.meta;
+  const survey = {
+    id: loc.id,
+    random,
+    tileset: meta.tileset,
+    size: 0,
+    edges: [0, 0, 0, 0],
+    stairs: [0, 0],
+    features: {'a': 0, 'b': 0, 'p': 0, 'r': 0, 's': 0, 'w': 0},
+  };
+  for (const pos of meta.allPos()) {
+    const scr = meta.get(pos);
+    if (!scr.isEmpty() || scr.data.exits?.length) survey.size++;
+    for (const exit of scr.data.exits ?? []) {
+      const {type} = exit;
+      if (type === 'edge:top') {
+        if ((pos >>> 4) === 0) survey.edges[0]++;
+        continue;
+      } else if (type === 'edge:left') {
+        if ((pos & 0xf) === 0) survey.edges[1]++;
+        continue;
+      } else if (type === 'edge:bottom') {
+        if ((pos >>> 4) === loc.height - 1) survey.edges[2]++;
+        continue;
+      } else if (type === 'edge:right') {
+        if ((pos & 0xf) === loc.width - 1) survey.edges[3]++;
+        continue;
+      } else if (exit.dir & 1) {
+        throw new Error(`Bad exit direction: ${exit.dir}`);
+      } else {
+        survey.stairs[exit.dir >>> 1]++;
+      }
+    }
+    if (scr.hasFeature('arena')) survey.features['a']++;
+    if (scr.hasFeature('bridge')) survey.features['b']++;
+    if (scr.hasFeature('pit')) survey.features['p']++;
+    if (scr.hasFeature('ramp')) survey.features['r']++;
+    if (scr.hasFeature('spikes')) survey.features['s']++;
+    if (scr.hasFeature('wall')) survey.features['w']++;
+  }
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const width =
+        Math.max(1, Math.min(8, loc.width +
+                             Math.floor((random.nextInt(6) - 1) / 3)));
+    const height =
+        Math.max(1, Math.min(16, loc.height +
+                             Math.floor((random.nextInt(6) - 1) / 3)));
+    const params = {...survey, height, width};
+    const shuffle = new CaveShuffle(params);
+    if (shuffle.build()) {
+      shuffle.meta.transferFlags(meta, random);
+      shuffle.meta.transferExits(meta, random);
+      shuffle.meta.transferSpawns(meta, random);
+      shuffle.meta.replaceMonsters(random);
+      loc.meta = shuffle.meta;
+      return;
+    }
+  }
 }

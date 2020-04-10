@@ -9,7 +9,8 @@ import {Metalocation, Pos} from '../rom/metalocation.js';
 import {ConnectionType} from '../rom/metascreendata.js';
 
 type Exit = [Metalocation, Pos, ConnectionType];
-type Exit2 = [Metalocation, Pos, ConnectionType, ((e: Exit) => void)?];
+type Exit2 = [Metalocation, Pos, ConnectionType,
+              ((e: Exit, r: Random) => void)?];
 
 function flipSaberaEntrance(exit: Exit) {
   console.log(`flip sabera entrance`);
@@ -21,13 +22,13 @@ function flipSaberaEntrance(exit: Exit) {
   exit[2] = 'stair:up';
 }
 
-function flipKarmineEntrance(exit: Exit) {
+function flipKarmineEntrance(exit: Exit, random: Random) {
   console.log(`flip karmine entrance`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
-  loc.invalidateMonsters();
   loc.set2d(0x20, [[ms.caveEmpty, ms.hallNS],
                    [ms.deadEndE_upStair, ms.hallNW]]);
+  loc.replaceMonsters(random);
   loc.moveExits([0x30, 'stair:down', 0x30, 'stair:up']);
   exit[2] = 'stair:up';
 }
@@ -53,8 +54,8 @@ function flipExit(exit: Exit) {
   exit[2] = 'stair:down';
 }
 
-function flip(e: Exit2) {
-  e[3]!(e as Exit);
+function flip(e: Exit2, random: Random) {
+  e[3]!(e as Exit, random);
   e[3] = undefined;
 }
 
@@ -92,16 +93,16 @@ export function shuffleGoa(rom: Rom, random: Random) {
     b.push(lastB);
     if (up !== (lastB[2] === 'stair:down')) {
       if (lastB[3]) {
-        flip(lastB);
+        flip(lastB, random);
       } else {
-        flip(lastA);
+        flip(lastA, random);
       }
     }
     a.push(lastA = reverse ? entrances[f] : exits[f]);
     console.log(`push a ${rom.locations[lastA[0].id].name}`);
     up = lastA[2] === 'stair:up';
   }
-  if (up) flip(lastA); // NOTE: all entrances can be down, only some can be up
+  if (up) flip(lastA, random); // NOTE: all entrances can be down, only some up
   b.push([$.GoaFortress_Exit.meta!, 0x01, 'stair:up']);
 
   for (let i = 0; i < a.length; i++) {

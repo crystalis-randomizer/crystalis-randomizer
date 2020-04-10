@@ -96,9 +96,8 @@ export class Random {
       if (hasSize(iterable)) {
         const iter = iterable[Symbol.iterator]();
         for (let i = 0; i < iterable.size; i++) {
-          const j = this.nextInt(iterable.size - i);
-          const k = Math.max(i, j);
-          while (arr.length <= k) {
+          const j = i + this.nextInt(iterable.size - i);
+          while (arr.length <= j) {
             arr.push(iter.next().value);
           }
           yield arr[j];

@@ -1903,10 +1903,12 @@ export class Metascreens {
       |   |`,
     tile: ' c |ccc|   ',
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wall'],
     edges: 'cc c',
     connect: '2=6e',
     exits: [topEdge({left: 6, width: 4})],
     mod: 'wall',
+    wall: 0x37,
   });
   readonly branchNWE_upStair = this.metascreen({
     id: 0x95,

@@ -10,7 +10,6 @@ import {FetchReader} from './fetchreader.js';
 import {FlagSet} from './flagset.js';
 import {Graph} from './logic/graph.js';
 import {World} from './logic/world.js';
-import {CaveShuffle} from './maze/caveshuffle.js';
 import {compressMapData} from './pass/compressmapdata.js';
 import {crumblingPlatforms} from './pass/crumblingplatforms.js';
 import {deterministic, deterministicPreParse} from './pass/deterministic.js';
@@ -28,6 +27,7 @@ import {shuffleTrades} from './pass/shuffletrades.js';
 import {standardMapEdits} from './pass/standardmapedits.js';
 import {toggleMaps} from './pass/togglemaps.js';
 import {unidentifiedItems} from './pass/unidentifieditems.js';
+import {writeLocationsFromMeta} from './pass/writelocationsfrommeta.js';
 import {Random} from './random.js';
 import {Rom} from './rom.js';
 import {Area} from './rom/area.js';
@@ -41,25 +41,25 @@ import * as version from './version.js';
 
 const EXPAND_PRG: boolean = true;
 
-(window as any).CaveShuffle = CaveShuffle;
-function shuffleCave(seed: number, params: any, num = 1000) {
-  for (let i = seed; i < seed + num; i++) {
-    const s = new CaveShuffle({...params, tileset: (window as any).rom.metatilesets.cave}, i);
-    s.minSpikes = 3;
-    try {
-      if (s.build()) {
-        console.log(`seed ${i}:\n${s.grid.show()}\n${s.meta!.show()}`);
-        return;
-      } else {
-        console.log(`fail:\n${s.grid.show()}`);
-      }
-    } catch (err) {
-      console.error(err);
-      console.log(`fail ${i}:\n${s.grid.show()}`);
-    }
-  }
-  console.log(`fail`);
-}
+// (window as any).CaveShuffle = CaveShuffle;
+// function shuffleCave(seed: number, params: any, num = 1000) {
+//   for (let i = seed; i < seed + num; i++) {
+//     const s = new CaveShuffle({...params, tileset: (window as any).rom.metatilesets.cave}, i);
+//     s.minSpikes = 3;
+//     try {
+//       if (s.build()) {
+//         console.log(`seed ${i}:\n${s.grid.show()}\n${s.meta!.show()}`);
+//         return;
+//       } else {
+//         console.log(`fail:\n${s.grid.show()}`);
+//       }
+//     } catch (err) {
+//       console.error(err);
+//       console.log(`fail ${i}:\n${s.grid.show()}`);
+//     }
+//   }
+//   console.log(`fail`);
+// }
 
 // class ShimAssembler {
 //   pre: Preprocessor;
@@ -228,7 +228,7 @@ export async function shuffle(rom: Uint8Array,
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
   const parsed = new Rom(rom);
-(window as any).cave = shuffleCave;
+// (window as any).cave = shuffleCave;
   parsed.flags.defrag();
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
@@ -259,7 +259,7 @@ export async function shuffle(rom: Uint8Array,
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
-  parsed.locations.copyFromMeta();
+  writeLocationsFromMeta(parsed);
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);

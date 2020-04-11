@@ -1,6 +1,6 @@
 import {FlagSet} from '../flagset.js';
-import {shuffleCave} from '../maze/caveshuffle.js';
-import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
+import {CaveShuffle} from '../maze/cave.js';
+// import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
 //import {shufflePyramid} from '../maze/pyramid.js';
 import {Random} from '../random.js';
@@ -16,19 +16,17 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // shuffleSwamp(rom, random);
   // shuffleGoa1(rom, random);
   for (const cave of SHUFFLED_CAVES) {
-    shuffleCave(rom.locations[cave], random);
+    new CaveShuffle().shuffle(rom.locations[cave], random);
   }
-  if (flags.addEastCave()) {
-    shuffleCave(rom.locations.EastCave1, random);
-    shuffleCave(rom.locations.EastCave2, random);
-    if (rom.locations.EastCave3.used) {
-      shuffleCave(rom.locations.EastCave3, random);
-    }
+  for (const loc of [rom.locations.EastCave1,
+                     rom.locations.EastCave2,
+                     rom.locations.EastCave3]) {
+    if (loc.used) new CaveShuffle().shuffle(loc, random);
   }
 }
 
 export function prepareScreens(rom: Rom) {
-  extendGoaScreens(rom);
+  // extendGoaScreens(rom);
 }
 
 const SHUFFLED_CAVES = [

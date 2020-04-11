@@ -1309,7 +1309,8 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 'ss  ',
     connect: '26',
-    exits: [topEdge({left: 6, width: 4}), leftEdge({top: 7, height: 3})],
+    exits: [topEdge({left: 6, width: 4}),
+            leftEdge({top: 7, height: 4, shift: -0.5})],
   });
   readonly swampE = this.metascreen({
     id: 0x76,
@@ -1350,9 +1351,9 @@ export class Metascreens {
     edges: 'ssss',
     connect: '26ae',
     exits: [topEdge({left: 6, width: 4}),
-            leftEdge({top: 7, height: 3}),
+            leftEdge({top: 7, height: 4, shift: -0.5}),
             bottomEdge({left: 6, width: 4}),
-            rightEdge({top: 7, height: 3})],
+            rightEdge({top: 7, height: 4, shift: -0.5})],
   });
   readonly swampNWS = this.metascreen({
     id: 0x78,
@@ -1366,7 +1367,7 @@ export class Metascreens {
     edges: 'sss ',
     connect: '26a',
     exits: [topEdge({left: 6, width: 4}),
-            leftEdge({top: 7, height: 3}),
+            leftEdge({top: 7, height: 4, shift: -0.5}),
             bottomEdge({left: 6, width: 4})],
   });
   readonly swampNE = this.metascreen({
@@ -1380,7 +1381,8 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 's  s',
     connect: '2e',
-    exits: [topEdge({left: 6, width: 4}), rightEdge({top: 7, height: 3})],
+    exits: [topEdge({left: 6, width: 4}),
+            rightEdge({top: 7, height: 4, shift: -0.5})],
   });
   readonly swampWSE = this.metascreen({
     id: 0x7a,
@@ -1393,9 +1395,9 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: ' sss',
     connect: '6ae',
-    exits: [leftEdge({top: 7, height: 3}),
+    exits: [leftEdge({top: 7, height: 4, shift: -0.5}),
             bottomEdge({left: 6, width: 4}),
-            rightEdge({top: 7, height: 3})],
+            rightEdge({top: 7, height: 4, shift: -0.5})],
   });
   readonly swampWSE_door = this.metascreen({
     id: 0x7a,
@@ -1474,8 +1476,8 @@ export class Metascreens {
     edges: 'ss s',
     connect: '26e',
     exits: [topEdge({left: 6, width: 4}),
-            leftEdge({top: 7, height: 3}),
-            rightEdge({top: 7, height: 3})],
+            leftEdge({top: 7, height: 4}),
+            rightEdge({top: 7, height: 4})],
   });
   readonly swampWS = this.metascreen({
     id: 0x7e,
@@ -1492,7 +1494,7 @@ export class Metascreens {
     }]],
     edges: ' ss ',
     connect: '6a',
-    exits: [leftEdge({top: 7, height: 3}), bottomEdge({left: 6, width: 4})],
+    exits: [leftEdge({top: 7, height: 4}), bottomEdge({left: 6, width: 4})],
   });
   readonly swampWS_door = this.metascreen({
     id: 0x7e,
@@ -1568,7 +1570,8 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: ' s s',
     connect: '6e',
-    exits: [leftEdge({top: 7, height: 3}), rightEdge({top: 7, height: 3})],
+    exits: [leftEdge({top: 7, height: 4, shift: -0.5}),
+            rightEdge({top: 7, height: 4, shift: -0.5})],
   });
   readonly swampWE_door = this.metascreen({
     id: ~0x72,
@@ -1596,7 +1599,8 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: '  ss',
     connect: 'ae',
-    exits: [leftEdge({top: 7, height: 3}), bottomEdge({left: 6, width: 4})],
+    exits: [leftEdge({top: 7, height: 4, shift: -0.5}),
+            bottomEdge({left: 6, width: 4})],
   });
   readonly swampSE_door = this.metascreen({
     id: ~0x73,
@@ -1625,7 +1629,7 @@ export class Metascreens {
     connect: '2ae',
     exits: [topEdge({left: 6, width: 4}),
             bottomEdge({left: 6, width: 4}),
-            rightEdge({top: 7, height: 3})],
+            rightEdge({top: 7, height: 4, shift: -0.5})],
   });
   // Cave screens
   readonly caveEmpty = this.metascreen({

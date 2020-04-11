@@ -479,21 +479,6 @@ export class Locations extends Array<Location> {
     }
     return [a.module()];
   }
-
-  copyFromMeta() {
-    // First sync up Cordel's exits.
-    this.CordelPlainEast.meta.reconcileExits(this.CordelPlainWest.meta);
-    // Now do the actual copy.
-    for (const loc of this) {
-      if (!loc.used) continue;
-      loc.exits = [];
-      loc.entrances = [];
-    }
-    for (const loc of this) {
-      if (!loc.used) continue;
-      loc.meta.write();
-    }
-  }
 }
 
 // Location entities

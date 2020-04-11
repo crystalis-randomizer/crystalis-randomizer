@@ -71,6 +71,15 @@ export class Metalocation {
   /** Key: (y<<4)|x */
   private _screens: Metascreen[];
 
+  // NOTE: keeping track of reachability is important because when we
+  // do the survey we need to only count REACHABLE tiles!  Seamless
+  // pairs and bridges can cause lots of important-to-retain unreachable
+  // tiles.  Moreover, some dead-end tiles can't actually be walked on.
+  // For now we'll just zero out feature metascreens that aren't
+  // reachable, since trying to do it correctly requires storing
+  // reachability at the tile level (again due to bridge double stairs).
+  // private _reachable: Uint8Array|undefined = undefined;
+
   constructor(readonly id: number, readonly tileset: Metatileset,
               height: number, width: number) {
     this.rom = tileset.rom;
@@ -129,14 +138,11 @@ export class Metalocation {
     for (const exit of location.exits) {
       reachableScreens.add(exit.screen);
     }
-    const exit = tileset.exit;
+    //const exit = tileset.exit;
     const screens = new Array<Metascreen>(height << 4).fill(tileset.empty);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const t0 = y << 4 | x;
-        if (tileset !== rom.metatilesets.tower && !reachableScreens.has(t0)) {
-          continue;
-        }
         const metascreens = tileset.getMetascreens(location.screens[y][x]);
         let metascreen: Metascreen|undefined = undefined;
         if (metascreens.length === 1) {
@@ -175,6 +181,14 @@ export class Metalocation {
           if (!metascreen) metascreen = best[0];
         }
         if (!metascreen) throw new Error('impossible');
+        if ((metascreen.data.exits || metascreen.data.wall) &&
+            !reachableScreens.has(t0) &&
+            tileset !== rom.metatilesets.tower) {
+          // Make sure we don't survey unreachable screens (and it's hard to
+          // to figure out which is which later).  Make sure not to do this for
+          // tower because otherwise it'll clobber important parts of the map.
+          metascreen = tileset.empty;
+        }
         screens[t0] = metascreen;
         // // If we're on the border and it's an edge exit then change the border
         // // screen to reflect an exit.
@@ -190,6 +204,7 @@ export class Metalocation {
     const exits = new Table<Pos, ConnectionType, ExitSpec>();
     for (const exit of location.exits) {
       const srcPos = exit.screen;
+      if (!reachableScreens.has(srcPos)) continue;
       const srcScreen = screens[srcPos];
       const srcExit = srcScreen.findExitType(exit.tile, height === 1,
                                              !!(exit.entrance & 0x20));
@@ -281,6 +296,22 @@ export class Metalocation {
       return undefined;
     }
   }
+
+  // isReachable(pos: Pos): boolean {
+  //   this.computeReachable();
+  //   return !!(this._reachable![pos >>> 4] & (1 << (pos & 7)));
+  // }
+
+  // computeReachable() {
+  //   if (this._reachable) return;
+  //   this._reachable = new Uint8Array(this.height);
+  //   const map = this.traverse({flight: true});
+  //   const seen = new Set<number>();
+  //   const reachable = new Set<Pos>();
+  //   for (const [pos] of this._exits) {
+  //     const set = map.get(pos)
+  //   }
+  // }
 
   getUid(pos: Pos): Uid {
     return this._screens[pos].uid;
@@ -680,7 +711,10 @@ export class Metalocation {
       } else {
         pos = arr[0];
       }
-      if (pos == null) throw new Error(`Could not transfer exit ${type}`);
+      if (pos == null) {
+        throw new Error(`Could not transfer exit ${type} in ${
+                         this.rom.locations[this.id]}`);
+      }
       arr.splice(index, 1);
       const eloc = this.rom.locations[exit[0] >>> 8].meta;
       const epos = exit[0] & 0xff;
@@ -689,8 +723,8 @@ export class Metalocation {
       if (!ret) {
         const eeloc = this.rom.locations[exit[0] >>> 8];
         console.log(eloc);
-        throw new Error(`No exit for ${eeloc} at ${hex(epos)} ${etype}\n${eloc.show()}
-${this.id} ${hex(opos)} ${type}`);
+        throw new Error(`No exit for ${eeloc} at ${hex(epos)} ${etype}\n${
+                         eloc.show()}\n${this.id} ${hex(opos)} ${type}`);
       }
       if ((ret[0] >>> 8) === this.id && ((ret[0] & 0xff) === opos) &&
           ret[1] === type) {
@@ -707,7 +741,8 @@ ${this.id} ${hex(opos)} ${type}`);
   transferSpawns(that: Metalocation, random: Random) {
     // Start by building a map between exits and specific screen types.
     const reverseExits = new Map<ExitSpec, [number, number]>(); // map to y,x
-    const map: Array<[number, number, number, number]> = []; // [oy,ox,ny,nx]
+    // Array of [old y, old x, new y, new x, max distance (squared)]
+    const map: Array<[number, number, number, number, number]> = [];
     const walls: Array<[number, number]> = [];
     const bridges: Array<[number, number]> = [];
     // Pair up arenas.
@@ -729,7 +764,7 @@ ${this.id} ${hex(opos)} ${type}`);
           arenas.push([y | 8, x | 8]);
         } else {
           const [ny, nx] = arenas.pop()!;
-          map.push([y | 8, x | 8, ny, nx]);
+          map.push([y | 8, x | 8, ny, nx, 144]); // 12 tiles
         }
       }
       if (loc === this) random.shuffle(arenas);
@@ -748,7 +783,7 @@ ${this.id} ${hex(opos)} ${type}`);
           reverseExits.set(exit, [y0 << 4 | y1, x0 << 4 | x1]);
         } else {
           const [ny, nx] = reverseExits.get(exit)!;
-          map.push([y0 << 4 | y1, x0 << 4 | x1, ny, nx]);
+          map.push([y0 << 4 | y1, x0 << 4 | x1, ny, nx, 25]); // 5 tiles
         }
       }
     }
@@ -768,15 +803,10 @@ ${this.id} ${hex(opos)} ${type}`);
     const allPoi = [...iters.concat(...ppoi)];
     // Iterate over the spawns, look for NPC/chest/trigger.
     const loc = this.rom.locations[this.id];
-    for (let i = 0; i < loc.spawns.length; i++) {
-      const spawn = loc.spawns[i];
-      if (spawn.isChest()) {
-        const next = allPoi.shift();
-        if (!next) throw new Error(`Ran out of POI`);
-        const [y, x] = next;
-        spawn.y = y;
-        spawn.x = x;
-        continue;
+    for (const spawn of random.shuffle(loc.spawns)) {
+      if (spawn.isMonster()) {
+        // TODO - move platforms, statues?
+        continue; // these are handled elsewhere.
       } else if (spawn.isWall()) {
         const wall = (spawn.wallType() === 'bridge' ? bridges : walls).pop();
         if (!wall) throw new Error(`Not enough wall screens ${loc}`);
@@ -784,20 +814,38 @@ ${this.id} ${hex(opos)} ${type}`);
         spawn.yt = y;
         spawn.xt = x;
         continue;
-      } else if (!(spawn.isNpc() || spawn.isBoss() || spawn.isTrigger())) {
-        continue;
-      }
-      //let j = 0;
-      for (const [y0, x0, y1, x1] of map) {
-        const d = (spawn.yt - y0) ** 2 + (spawn.xt - x0) ** 2;
-        if (d < 145) { // 12 tiles (TODO - just take closest?)
-          spawn.yt += (y1 - y0);
-          spawn.xt += (x1 - x0);
-          //map.splice(j, 1);  // multiple spawns can be near same landmark
-          break;
+      } else if (spawn.isNpc() || spawn.isBoss() || spawn.isTrigger()) {
+        //let j = 0;
+        let best = [-1, -1, Infinity];
+        for (const [y0, x0, y1, x1, dmax] of map) {
+          const d = (spawn.yt - y0) ** 2 + (spawn.xt - x0) ** 2;
+          if (d <= dmax && d < best[2]) {
+            best = [spawn.yt + y1 - y0, spawn.xt + x1 - x0, d];
+          }
         }
-        //j++;
+        if (Number.isFinite(best[2])) {
+          // Keep track of any NPCs we already moved so that anything that's
+          // on top of it (i.e. dual spawns) move along with.
+          //if (best[2] > 4) map.push([spawn.xt, spawn.yt, best[0], best[1], 4]);
+          // - TODO - I don't think we need this, since any future spawn should
+          //   be placed by the same rules.
+          [spawn.yt, spawn.xt] = best;
+          continue;
+        }
       }
+      // Wasn't able to map an arena or exit.  Pick a new POI, but triggers and
+      // bosses are ineligible.
+      if (spawn.isTrigger() || spawn.isBoss()) {
+        throw new Error(`Could not place ${loc} ${
+                         spawn.isBoss() ? 'Boss' : 'Trigger'} ${spawn.hex()
+                         }\n${this.show()}`);
+      }
+      const next = allPoi.shift();
+      if (!next) throw new Error(`Ran out of POI for ${loc}`);
+      const [y, x] = next;
+      map.push([spawn.y >>> 4, spawn.x >>> 4, y >>> 4, x >>> 4, 4]);
+      spawn.y = y;
+      spawn.x = x;
     }
   }
 
@@ -944,7 +992,6 @@ const unknownExitWhitelist = new Set([
   0x01003b,
   0x1540a0, // " " seamless equivalent " "
   0x1a3060, // swamp exit
-  0x1a30a0,
   0x402000, // bridge to fisherman island
   0x402030,
   0x4180d0, // below exit to lime tree valley

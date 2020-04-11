@@ -194,15 +194,37 @@ export class Graph {
       }
       const path: number[][]|undefined = spoiler ? [] : undefined;
       const final = this.traverse(i => indexFill.get(i), Bits.of(), path);
-      // TODO - flags to loosen this requirement?
+      // TODO - flags to loosen this requirement (before logging)???
+      //      - but it's also a useful diagnostic.
       if (final.size !== this.slots.length) {
         const ns = (si: SlotIndex) => `${String(si).padStart(3)} ${
             this.slots.get(si)!.toString(16).padStart(3, '0')} ${
             this.checkName(this.slots.get(si)!)}`;
+        const ni = (ii: ItemIndex) => `${String(ii).padStart(3)} ${
+            this.items.get(ii)!.toString(16).padStart(3, '0')} ${
+            this.checkName(this.items.get(ii)!)}`;
         const missing = new Set([...this.slots].map(x => x[0]));
-        for (const s of final) missing.delete(s);
-        console.error(`Initial fill never reached slots:
-  ${[...missing].map(ns).sort().join('\n  ')}`, final, this);
+        for (const slot of final) missing.delete(slot);
+        const missingMap = new Map<string, string>();
+        for (const slot of missing) {
+          missingMap.set(
+              ns(slot),
+              this.graph.get(slot)!
+                  .map(r => '\n    ' + (Bits.bits(r) as ItemIndex[]).map(ni)
+                  .join(' & ')).join(''));
+        }
+        // NOTE: path[i][0] is slot indexes, not items, so this does not work.
+        // const has =
+        //     (new Set(path ? path.map(i => i[0]) : seq(this.items.length))) as
+        //         Set<ItemIndex>;
+        // const notHas =
+        //     seq(this.items.length, i => i as ItemIndex).filter(i => !has.has(i))
+        //         .sort((a, b) => a - b).map(ni);
+        console.error(`Initial fill never reached slots:\n  ${
+                      [...missingMap.keys()].sort()
+                          .map(k => k + missingMap.get(k)!).join('\n  ')}`);
+                      // }\nUnavailable items:\n  ${notHas.join('\n  ')}`);
+                      // final, this);
         continue;
       }
       this.expandFill(indexFill, fill);

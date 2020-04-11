@@ -169,17 +169,21 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
 }
 
 function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {
-  const {metascreens: {
-    bendNE, bendSE,
-    boundaryN_trees, boundaryW_cave,
-    cornerNE, cornerNW, cornerSE, cornerSE_cave, cornerSW,
-  }} = loc.rom;
+  const {
+    locations: {
+      CordelPlainEast, CordelPlainWest, Desert2, GoaValley, LimeTreeValley,
+    },
+    metascreens: {
+      bendNE, bendSE,
+      boundaryN_trees, boundaryW_cave,
+      cornerNE, cornerNW, cornerSE, cornerSE_cave, cornerSW,
+    }} = loc.rom;
   let dest: Location;
   let destScr: number;
   switch (exit) {
     case 'lime':
       // Add entrance to lime tree valley
-      dest = loc.rom.locations.LimeTreeValley;
+      dest = LimeTreeValley;
       destScr = 0x10;
       dest.resizeScreens(0, 1, 0, 0); // add one screen to left edge
       dest.meta.spliceColumns(0, 1, 2, [
@@ -194,15 +198,15 @@ function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {
         [boundaryW_cave, bendSE],
         [cornerSW,       cornerSE],
       ];
-      dest = loc.rom.locations.CordelPlainEast;
+      dest = CordelPlainEast;
       destScr = 0x55;
       dest.meta.set2d(0x55, mapEdit);
       // Also need to mirror the map edit on west
-      loc.rom.locations.CordelPlainWest.meta.set2d(0x55, mapEdit);
+      CordelPlainWest.meta.set2d(0x55, mapEdit);
       break;
 
     case 'goa':
-      dest = loc.rom.locations.GoaValley;
+      dest = GoaValley;
       destScr = 0x11;
       dest.meta.set2d(0x01, [
         [cornerNW,       cornerNE],
@@ -210,7 +214,7 @@ function connectEastCaveExit(loc: Location, scr: number, exit: EastCaveExit) {
       break;
 
     case 'desert':
-      dest = loc.rom.locations.Desert2;
+      dest = Desert2;
       destScr = 0x53;
       dest.meta.set2d(0x53, [[cornerSE_cave]]);
       break;

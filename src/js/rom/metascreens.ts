@@ -1667,6 +1667,14 @@ export class Metascreens {
     poi: [[4]],
     exits: [bottomEdge({left: 6, width: 4, manual: true})],
   });
+  readonly hallNS_unreachable = this.metascreen({
+    id: 0x81,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly hallWE = this.metascreen({
     id: 0x82,
     icon: icon`
@@ -1678,6 +1686,14 @@ export class Metascreens {
     edges: ' c c',
     connect: '6e',
     poi: [[4]],
+  });
+  readonly hallWE_unreachable = this.metascreen({
+    id: 0x82,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly hallSE = this.metascreen({
     id: 0x83,
@@ -1691,6 +1707,14 @@ export class Metascreens {
     connect: 'ae',
     poi: [[2]],
   });
+  readonly hallSE_unreachable = this.metascreen({
+    id: 0x83,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly hallWS = this.metascreen({
     id: 0x84,
     icon: icon`
@@ -1702,6 +1726,14 @@ export class Metascreens {
     edges: ' cc ',
     connect: '6a',
     poi: [[2]],
+  });
+  readonly hallWS_unreachable = this.metascreen({
+    id: 0x84,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly hallNE = this.metascreen({
     id: 0x85,
@@ -1715,6 +1747,14 @@ export class Metascreens {
     connect: '2e',
     poi: [[2]],
   });
+  readonly hallNE_unreachable = this.metascreen({
+    id: 0x85,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly hallNW = this.metascreen({
     id: 0x86,
     icon: icon`
@@ -1726,6 +1766,14 @@ export class Metascreens {
     edges: 'cc  ',
     connect: '26',
     poi: [[2]],
+  });
+  readonly hallNW_unreachable = this.metascreen({
+    id: 0x86,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly branchNSE = this.metascreen({
     id: 0x87,
@@ -1739,6 +1787,14 @@ export class Metascreens {
     connect: '2ae',
     poi: [[3]],
   });
+  readonly branchNSE_unreachable = this.metascreen({
+    id: 0x87,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly branchNWSE = this.metascreen({
     id: 0x88,
     icon: icon`
@@ -1750,6 +1806,14 @@ export class Metascreens {
     edges: 'cccc',
     connect: '26ae',
     poi: [[3]],
+  });
+  readonly branchNWSE_unreachable = this.metascreen({
+    id: 0x88,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly branchNWS = this.metascreen({
     id: 0x89,
@@ -1763,6 +1827,14 @@ export class Metascreens {
     connect: '26a',
     poi: [[3]],
   });
+  readonly branchNWS_unreachable = this.metascreen({
+    id: 0x89,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly branchWSE = this.metascreen({
     id: 0x8a,
     icon: icon`
@@ -1774,6 +1846,14 @@ export class Metascreens {
     edges: ' ccc',
     connect: '6ae',
     poi: [[3]],
+  });
+  readonly branchWSE_unreachable = this.metascreen({
+    id: 0x8a,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly branchNWE = this.metascreen({
     id: 0x8b,
@@ -1788,6 +1868,14 @@ export class Metascreens {
     poi: [[3]],
     exits: [seamlessDown(0x06, 4)], // kensu
   });
+  readonly branchNWE_unreachable = this.metascreen({
+    id: 0x8b,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly hallNS_ramp = this.metascreen({
     id: 0x8c,
     icon: icon`
@@ -1799,6 +1887,14 @@ export class Metascreens {
     feature: ['ramp'],
     edges: 'c c ',
     connect: '2a',
+  });
+  readonly hallNS_ramp_unreachable = this.metascreen({
+    id: 0x8c,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly hallNS_overBridge = this.metascreen({
     id: 0x8d,
@@ -1846,6 +1942,14 @@ export class Metascreens {
     mod: 'wall',
     // TODO - record the wall
   });
+  readonly hallNS_wall_unreachable = this.metascreen({
+    id: 0x8f,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly hallWE_wall = this.metascreen({
     id: 0x90,
     icon: icon`
@@ -1859,6 +1963,14 @@ export class Metascreens {
     connect: '6=e',
     wall: 0x67,
     mod: 'wall',
+  });
+  readonly hallWE_wall_unreachable = this.metascreen({
+    id: 0x90,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly hallNS_arena = this.metascreen({
     id: 0x91,
@@ -1914,6 +2026,14 @@ export class Metascreens {
     mod: 'wall',
     wall: 0x37,
   });
+  readonly branchNWE_wall_unreachable = this.metascreen({
+    id: 0x94,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+  });
   readonly branchNWE_upStair = this.metascreen({
     id: 0x95,
     icon: icon`<
@@ -1925,6 +2045,14 @@ export class Metascreens {
     edges: ' c c',
     connect: '6e',
     exits: [upStair(0x47)],
+  });
+  readonly branchNWE_upStair_unreachable = this.metascreen({
+    id: 0x95,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly deadEndW_upStair = this.metascreen({
     id: 0x96,
@@ -1938,6 +2066,14 @@ export class Metascreens {
     connect: '6',
     exits: [upStair(0x42)],
   });
+  readonly deadEndW_upStair_unreachable = this.metascreen({
+    id: 0x96,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x20),
+  });
   readonly deadEndW_downStair = this.metascreen({
     id: 0x97,
     icon: icon`>
@@ -1949,6 +2085,14 @@ export class Metascreens {
     edges: ' c  ',
     connect: '6',
     exits: [downStair(0xa2)],
+  });
+  readonly deadEndW_downStair_unreachable = this.metascreen({
+    id: 0x97,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x20),
   });
   readonly deadEndE_upStair = this.metascreen({
     id: 0x98,
@@ -1962,6 +2106,14 @@ export class Metascreens {
     connect: 'e',
     exits: [upStair(0x4c)],
   });
+  readonly deadEndE_upStair_unreachable = this.metascreen({
+    id: 0x98,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0xd0),
+  });
   readonly deadEndE_downStair = this.metascreen({
     id: 0x99,
     icon: icon`>
@@ -1973,6 +2125,14 @@ export class Metascreens {
     edges: '   c',
     connect: 'e',
     exits: [downStair(0xac)],
+  });
+  readonly deadEndE_downStair_unreachable = this.metascreen({
+    id: 0x99,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0xd0),
   });
   readonly deadEndNS_stairs = this.metascreen({
     id: 0x9a,
@@ -1987,6 +2147,15 @@ export class Metascreens {
     edges: 'c c ',
     connect: '2|a',
     exits: [downStair(0x17), upStair(0xd7)],
+    match: (reachable) => reachable(0x108, 0x78) && reachable(-0x30, 0x78),
+  });
+  readonly deadEndNS_stairs_unreachable = this.metascreen({
+    id: 0x9a,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x108, 0x78) && !reachable(-0x30, 0x78),
   });
   readonly deadEndN_stairs = this.metascreen({
     id: 0x9a,
@@ -2000,7 +2169,7 @@ export class Metascreens {
     edges: 'c   ',
     connect: '2',
     exits: [downStair(0x17)],
-    match: (reachable) => !reachable(0x108, 0x78),
+    match: (reachable) => !reachable(0x108, 0x78) && reachable(-0x30, 0x78),
   });
   readonly deadEndS_stairs = this.metascreen({
     id: 0x9a,
@@ -2014,7 +2183,7 @@ export class Metascreens {
     edges: '  c ',
     connect: 'a',
     exits: [upStair(0xd7)],
-    match: (reachable) => !reachable(-0x30, 0x78),
+    match: (reachable) => !reachable(-0x30, 0x78) && reachable(0x108, 0x78),
   });
   readonly deadEndNS = this.metascreen({
     id: 0x9b,
@@ -2112,6 +2281,14 @@ export class Metascreens {
     edges: 'c n ',
     connect: '2a',
     exits: [bottomEdge()],
+  });
+  readonly hallNS_entrance_unreachable = this.metascreen({
+    id: 0x9e,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
   });
   readonly channelExitSE = this.metascreen({
     id: 0x9f,

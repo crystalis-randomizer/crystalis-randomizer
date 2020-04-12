@@ -241,6 +241,7 @@ class NeighborCache {
       // Check for empty
       if (!empty &&
           s.data.edges === '    ' &&
+          s.data.placement !== 'manual' &&
           s.hasFeature('empty') &&
           !s.data.exits?.length) {
         empty = s;

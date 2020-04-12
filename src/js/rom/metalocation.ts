@@ -181,14 +181,14 @@ export class Metalocation {
           if (!metascreen) metascreen = best[0];
         }
         if (!metascreen) throw new Error('impossible');
-        if ((metascreen.data.exits || metascreen.data.wall) &&
-            !reachableScreens.has(t0) &&
-            tileset !== rom.metatilesets.tower) {
-          // Make sure we don't survey unreachable screens (and it's hard to
-          // to figure out which is which later).  Make sure not to do this for
-          // tower because otherwise it'll clobber important parts of the map.
-          metascreen = tileset.empty;
-        }
+        // if ((metascreen.data.exits || metascreen.data.wall) &&
+        //     !reachableScreens.has(t0) &&
+        //     tileset !== rom.metatilesets.tower) {
+        //   // Make sure we don't survey unreachable screens (and it's hard to
+        //   // to figure out which is which later).  Make sure not to do this for
+        //   // tower because otherwise it'll clobber important parts of the map.
+        //   metascreen = tileset.empty;
+        // }
         screens[t0] = metascreen;
         // // If we're on the border and it's an edge exit then change the border
         // // screen to reflect an exit.

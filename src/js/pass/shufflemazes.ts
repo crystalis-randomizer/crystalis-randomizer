@@ -6,6 +6,8 @@ import {CaveShuffle} from '../maze/cave.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 import { OverpassShuffle } from '../maze/doublecave.js';
+import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
+import { MazeShuffle } from '../maze/maze.js';
 
 export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // TODO - consolidate free flags?  Find a list of what's used...
@@ -32,7 +34,9 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
 
 
   for (const cave of SHUFFLED_CAVES) {
-    new CaveShuffle().shuffle(rom.locations[cave], random);
+    const ctor = STRATEGIES.get(cave) ?? CaveShuffle;
+    // @ts-ignore not actually abstract.
+    new ctor().shuffle(rom.locations[cave], random);
   }
   for (const loc of [rom.locations.EastCave1,
                      rom.locations.EastCave2,
@@ -41,6 +45,17 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   }
 
 }
+
+const STRATEGIES = new Map<number, typeof MazeShuffle>([
+  [0x27, CycleCaveShuffle],
+  [0x4b, TightCycleCaveShuffle],
+  [0x54, CycleCaveShuffle],
+  // [0x56, WideCaveShuffle],
+  // [0x57, WaterfallRiverCaveShuffle],
+  // [0x69, RiverCaveShuffle],
+  // [0x84, WideCaveShuffle],
+  // [0xab, RiverCaveShuffle],
+]);
 
 export function prepareScreens(rom: Rom) {
   // extendGoaScreens(rom);

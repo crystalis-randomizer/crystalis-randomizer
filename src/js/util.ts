@@ -445,6 +445,13 @@ export namespace iters {
     return count;
   }
 
+  export function * take<T>(iter: Iterable<T>, count: number): IterableIterator<T> {
+    for (const elem of iter) {
+      if (--count < 0) return;
+      yield elem;
+    }
+  }
+
   export function first<T>(iter: Iterable<T>): T;
   export function first<T>(iter: Iterable<T>, fallback: T): T;
   export function first<T>(iter: Iterable<T>, fallback?: T): T {

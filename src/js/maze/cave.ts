@@ -181,7 +181,7 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
     this.removeSpurs();
     this.removeTightLoops();
     if (!this.addLateFeatures()) return 'lateFeatures';
-    if (!this.addStairs()) return 'stairs';
+    if (!this.addStairs(...(this.params.stairs ?? []))) return 'stairs';
 
     // try to translate to metascreens at this point...
     if (!this.inferScreens()) return 'infer';
@@ -668,10 +668,10 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
     this.grid.set((coord + delta) as GridCoord, '');
   }
 
-  addStairs(): boolean {
+  addStairs(up = 0, down = 0): boolean {
     // Find spots where we can add stairs
 //if(this.params.id===5)debugger;
-    const stairs = [this.params.stairs?.[0] ?? 0, this.params.stairs?.[1] ?? 0];
+    const stairs = [up, down];
     if (!stairs[0] && !stairs[1]) return true; // no stairs
     for (const c of this.random.ishuffle(this.screens)) {
       if (!this.tryAddStair(c, stairs)) continue;
@@ -681,7 +681,7 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
   }
 
   tryAddStair(c: GridCoord, stairs: number[]): boolean {
-    if (this.fixed.has(c | 0x808)) return false;
+    if (this.fixed.has((c | 0x808) as GridCoord)) return false;
     const tile = this.extract(c);
     const both = stairs[0] && stairs[1];
     const total = stairs[0] + stairs[1];

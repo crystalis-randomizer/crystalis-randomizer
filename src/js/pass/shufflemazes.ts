@@ -17,14 +17,16 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // shuffleSwamp(rom, random);
   // shuffleGoa1(rom, random);
   new OverpassShuffle(0x04).shuffle(rom.locations[0x05], random);
-
-  // TODO - two exits, one bridge
-  new OverpassShuffle(0x4d).shuffle(rom.locations[0x4c], random);
-
+  new OverpassShuffle(0x4d, true).shuffle(rom.locations[0x4c], random);
   new OverpassShuffle(0x4f).shuffle(rom.locations[0x4e], random);
 
   // TODO - two bridges, one exit
-  new OverpassShuffle(0xb4).shuffle(rom.locations[0xb2], random);
+  // NOTE: this is complicated by the fact that the overpass (which is
+  // shuffled _after_) is much smaller than the underpass, so chances
+  // are very high that the width will exceed the overpass map size.
+  // There's also the seamless exit to kensu (ba), which we don't know
+  // how to shuffle yet.  This will probably need a new dedicated algo.
+  // new OverpassShuffle(0xb4).shuffle(rom.locations[0xb2], random);
 
 
 
@@ -59,7 +61,7 @@ const SHUFFLED_CAVES = [
   // Kirisa
   0x44, 0x45, 0x46,
   // Fog Lamp
-  0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f,
+  0x48, 0x49, 0x4a, 0x4b, //0x4c, 0x4d, 0x4e, 0x4f,
   // Waterfall
   0x54, 0x55, //0x56, 0x57, // can't handle this one yet
   // Evil spirit
@@ -81,6 +83,7 @@ const SHUFFLED_CAVES = [
   // Pyramid
   //0x9d, //0x9e,
   // Crypt
+  // TODO - WIDE, PITS
   // 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
   // Goa - Kelbesque 2
   // 0xa8, 0xa9, // NOTE: a9 handled by shuffleGoa1
@@ -89,5 +92,6 @@ const SHUFFLED_CAVES = [
   // Goa - Mado 2
   // 0xad, 0xae, 0xaf, 0xb9
   // Goa - Karmine
-  0xb0, 0xb1, 0xb2, 0xb3, /* 0xb4,*/ 0xb5, //0xb8,
+  // TODO - currently b5 fails in refine?
+  0xb0, 0xb1, 0xb2, 0xb3, // 0xb4, 0xb5, //0xb8,
 ];

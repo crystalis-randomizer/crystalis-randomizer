@@ -2,7 +2,7 @@ import { Grid, GridCoord } from './grid.js';
 import { Random } from '../random.js';
 import { hex } from '../rom/util.js';
 import { Metatileset } from '../rom/metatileset.js';
-import { Metalocation, Pos } from '../rom/metalocation.js';
+import { Metalocation } from '../rom/metalocation.js';
 import { Location } from '../rom/location.js';
 
 const [] = [hex];
@@ -19,10 +19,12 @@ export interface Survey {
 
 export abstract class MazeShuffle {
 
+  maxAttempts = 100;
+
   shuffle(loc: Location, random: Random) {
     const meta = loc.meta;
     const survey = this.survey(meta);
-    for (let attempt = 0; attempt < 100; attempt++) {
+    for (let attempt = 0; attempt < this.maxAttempts; attempt++) {
       const width =
           Math.max(1, Math.min(8, loc.meta.width +
                                Math.floor((random.nextInt(6) - 1) / 3)));
@@ -32,7 +34,7 @@ export abstract class MazeShuffle {
       const shuffle = this.attempt(height, width, survey, random);
       const result = shuffle.build();
       if (result) {
-        if (loc.id === 0x31) console.error(`Shuffle failed: ${result}`);
+        console.log(`Shuffle failed ${loc.id.toString(16)}: ${result}`);
       } else {
         this.finish(loc, shuffle.meta, random);
         return;
@@ -44,14 +46,10 @@ export abstract class MazeShuffle {
 
   finish(loc: Location, newMeta: Metalocation, random: Random) {
     newMeta.transferFlags(loc.meta, random);
-    newMeta.transferExits(loc.meta, random, this.getFixedExits());
+    newMeta.transferExits(loc.meta, random);
     newMeta.transferSpawns(loc.meta, random);
     newMeta.replaceMonsters(random);
     loc.meta = newMeta;
-  }
-
-  getFixedExits(): Map<number, Pos>|undefined {
-    return undefined;
   }
 
   abstract attempt(height: number, width: number,

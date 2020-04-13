@@ -5,6 +5,7 @@ import {CaveShuffle} from '../maze/cave.js';
 //import {shufflePyramid} from '../maze/pyramid.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
+import { OverpassShuffle } from '../maze/doublecave.js';
 
 export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // TODO - consolidate free flags?  Find a list of what's used...
@@ -15,6 +16,19 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // shufflePyramid(rom, random);
   // shuffleSwamp(rom, random);
   // shuffleGoa1(rom, random);
+  new OverpassShuffle(0x04).shuffle(rom.locations[0x05], random);
+
+  // TODO - two exits, one bridge
+  new OverpassShuffle(0x4d).shuffle(rom.locations[0x4c], random);
+
+  new OverpassShuffle(0x4f).shuffle(rom.locations[0x4e], random);
+
+  // TODO - two bridges, one exit
+  new OverpassShuffle(0xb4).shuffle(rom.locations[0xb2], random);
+
+
+
+
   for (const cave of SHUFFLED_CAVES) {
     new CaveShuffle().shuffle(rom.locations[cave], random);
   }
@@ -23,6 +37,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
                      rom.locations.EastCave3]) {
     if (loc.used) new CaveShuffle().shuffle(loc, random);
   }
+
 }
 
 export function prepareScreens(rom: Rom) {
@@ -31,7 +46,8 @@ export function prepareScreens(rom: Rom) {
 
 const SHUFFLED_CAVES = [
   // Sealed Cave
-  0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0c,
+  //0x04, 0x05,
+  0x06, 0x07, 0x08, 0x09, 0x0a, 0x0c,
   // Windmill Cave
   0x0e,
   // Zebu Cave

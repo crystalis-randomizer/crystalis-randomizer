@@ -2,7 +2,7 @@ import { Grid, GridCoord } from './grid.js';
 import { Random } from '../random.js';
 import { hex } from '../rom/util.js';
 import { Metatileset } from '../rom/metatileset.js';
-import { Metalocation } from '../rom/metalocation.js';
+import { Metalocation, Pos } from '../rom/metalocation.js';
 import { Location } from '../rom/location.js';
 
 const [] = [hex];
@@ -44,10 +44,14 @@ export abstract class MazeShuffle {
 
   finish(loc: Location, newMeta: Metalocation, random: Random) {
     newMeta.transferFlags(loc.meta, random);
-    newMeta.transferExits(loc.meta, random);
+    newMeta.transferExits(loc.meta, random, this.getFixedExits());
     newMeta.transferSpawns(loc.meta, random);
     newMeta.replaceMonsters(random);
     loc.meta = newMeta;
+  }
+
+  getFixedExits(): Map<number, Pos>|undefined {
+    return undefined;
   }
 
   abstract attempt(height: number, width: number,

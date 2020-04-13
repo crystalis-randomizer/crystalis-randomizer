@@ -1904,7 +1904,7 @@ export class Metascreens {
       | ╿ |`,
     tile: ' c | b | c ',
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    feature: ['overBridge'],
+    feature: ['overpass'],
     edges: 'cbcb', // TODO - 'b' for other side of bridge??
     connect: '2a',
   });
@@ -1916,7 +1916,7 @@ export class Metascreens {
       | ╿ |`,
     tile: '   |cbc|   ',
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
-    feature: ['underBridge'],
+    feature: ['underpass'],
     edges: 'bcbc',
     connect: '6e',
   });
@@ -1940,7 +1940,6 @@ export class Metascreens {
     connect: '2=a', // wall will always connect the first two?
     wall: 0x87, 
     mod: 'wall',
-    // TODO - record the wall
   });
   readonly hallNS_wall_unreachable = this.metascreen({
     id: 0x8f,

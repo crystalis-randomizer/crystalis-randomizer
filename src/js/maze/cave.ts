@@ -11,7 +11,8 @@ const [] = [hex];
 export class CaveShuffle extends MazeShuffle {
 
   attempt(h: number, w: number, s: Survey, r: Random): MazeShuffleAttempt {
-    return new CaveShuffleAttempt(h, w, s, r);
+    const size = s.size + (r.nextInt(5) < 2 ? 1 : 0); // 40% chance of +1 size
+    return new CaveShuffleAttempt(h, w, {...s, size}, r);
   }
 
   // shuffle(loc: Location, random: Random) {
@@ -44,7 +45,16 @@ export class CaveShuffle extends MazeShuffle {
       size: 0,
       edges: [0, 0, 0, 0],
       stairs: [0, 0],
-      features: {'a': 0, 'b': 0, 'p': 0, 'r': 0, 's': 0, 'w': 0},
+      features: {
+        arena: 0,
+        bridge: 0,
+        over: 0,
+        pit: 0,
+        ramp: 0,
+        spike: 0,
+        under: 0,
+        wall: 0,
+      },
     };
     for (const pos of meta.allPos()) {
       const scr = meta.get(pos);
@@ -72,12 +82,14 @@ export class CaveShuffle extends MazeShuffle {
           continue;
         }
       }
-      if (scr.hasFeature('arena')) survey.features['a']++;
-      if (scr.hasFeature('bridge')) survey.features['b']++;
-      if (scr.hasFeature('pit')) survey.features['p']++;
-      if (scr.hasFeature('ramp')) survey.features['r']++;
-      if (scr.hasFeature('spikes')) survey.features['s']++;
-      if (scr.hasFeature('wall')) survey.features['w']++;
+      if (scr.hasFeature('arena')) survey.features.arena++;
+      if (scr.hasFeature('bridge')) survey.features.bridge++;
+      if (scr.hasFeature('overpass')) survey.features.over++;
+      if (scr.hasFeature('pit')) survey.features.pit++;
+      if (scr.hasFeature('ramp')) survey.features.ramp++;
+      if (scr.hasFeature('spikes')) survey.features.spike++;
+      if (scr.hasFeature('underpass')) survey.features.under++;
+      if (scr.hasFeature('wall')) survey.features.wall++;
     }
     if (survey.size < 2 && (meta.width > 1 || meta.height > 1)) survey.size = 2;
     return survey;
@@ -162,7 +174,9 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
     //if (!this.addEarlyFeatures()) return false;
     this.addEdges();
     if (!this.addEarlyFeatures()) return 'earlyFeatures';
+    //console.log(`refine:\n${this.grid.show()}`);
     if (!this.refine()) return 'refine';
+    //console.log(`postrefine:\n${this.grid.show()}`);
     if (!this.refineEdges()) return 'refineEdges';
     this.removeSpurs();
     this.removeTightLoops();
@@ -320,14 +334,16 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
   // }
 
   addEarlyFeatures(): boolean {
-    if (!this.addSpikes(this.params.features?.['s'] ?? 0)) return false;
+    if (!this.addSpikes(this.params.features?.spike ?? 0)) return false;
+    if (!this.addOverpasses(this.params.features?.over ?? 0)) return false;
     return true;
   }
 
   addLateFeatures(): boolean {
-    if (!this.addArenas(this.params.features?.['a'] ?? 0)) return false;
-    // if (!this.addPits(this.params.features?.['p'] ?? 0)) return false;
-    if (!this.addRamps(this.params.features?.['r'] ?? 0)) return false;
+    if (!this.addArenas(this.params.features?.arena ?? 0)) return false;
+    if (!this.addUnderpasses(this.params.features?.under ?? 0)) return false;
+    // if (!this.addPits(this.params.features?.pit ?? 0)) return false;
+    if (!this.addRamps(this.params.features?.ramp ?? 0)) return false;
     return true;
   }
 
@@ -361,23 +377,53 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
     return false;
   }
 
+  addUnderpasses(under: number): boolean {
+    return this.addStraightScreenLate(under, 0x800, 'b');
+  }
+
+  addOverpasses(over: number): boolean {
+    let attempts = 0;
+    while (over) {
+      const y = this.random.nextInt(this.h - 2) + 1;
+      const x = this.random.nextInt(this.w - 2) + 1;
+      const c = (y << 12 | x << 4 | 0x808) as GridCoord;
+      if (this.grid.get(c) !== 'c') {
+        if (++attempts > 10) throw new Error('Bad attempts');
+        continue;
+      }
+      this.grid.set(c, 'b');
+      this.fixed.add(c);
+      this.grid.set(c - 8 as GridCoord, '');
+      this.grid.set(c + 8 as GridCoord, '');
+      over--;
+    }
+    return true;
+  }
+
   addRamps(ramps: number): boolean {
-    if (!ramps) return true;
+    return this.addStraightScreenLate(ramps, 8, '/');
+  }
+
+  /** @param delta GridCoord difference for edges that need to be empty. */
+  addStraightScreenLate(count: number, delta: number, char: string): boolean {
+    if (!count) return true;
     const g = this.grid;
     for (const c of this.random.ishuffle(this.screens)) {
       const middle = (c | 0x808) as GridCoord;
-      const left = (middle - 8) as GridCoord;
-      const right = (middle + 8) as GridCoord;
+      const side1 = (middle - delta) as GridCoord;
+      const side2 = (middle + delta) as GridCoord;
       if (g.get(middle) !== 'c') continue;
-      if (g.get(left) || g.get(right)) continue;
+      if (g.get(side1) || g.get(side2)) continue;
       const tile = this.extract(c);
-      const arenaTile = tile.substring(0, 4) + '/' + tile.substring(5);
-      const options = this.tileset.getMetascreensFromTileString(arenaTile);
+      const newTile = tile.substring(0, 4) + char + tile.substring(5);
+      const options = this.tileset.getMetascreensFromTileString(newTile);
       if (!options.length) continue;
+      // TODO - return false if not on a critical path???
+      //      - but POI aren't placed yet.
       this.fixed.add(middle);
-      g.set(middle, '/');
-      ramps--;
-      if (!ramps) return true;
+      g.set(middle, char);
+      count--;
+      if (!count) return true;
     }
     //console.error('could not add ramp');
     return false;
@@ -624,6 +670,7 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
 
   addStairs(): boolean {
     // Find spots where we can add stairs
+//if(this.params.id===5)debugger;
     const stairs = [this.params.stairs?.[0] ?? 0, this.params.stairs?.[1] ?? 0];
     if (!stairs[0] && !stairs[1]) return true; // no stairs
     for (const c of this.random.ishuffle(this.screens)) {
@@ -634,6 +681,7 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
   }
 
   tryAddStair(c: GridCoord, stairs: number[]): boolean {
+    if (this.fixed.has(c | 0x808)) return false;
     const tile = this.extract(c);
     const both = stairs[0] && stairs[1];
     const total = stairs[0] + stairs[1];
@@ -654,7 +702,7 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
 
   /** Make arrangements to maximize the success chances of infer. */
   preinfer() {
-    if (this.params.features?.['s']) this.preinferSpikes();
+    if (this.params.features?.spike) this.preinferSpikes();
   }
 
   preinferSpikes() {
@@ -691,8 +739,8 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
 
   refineMetascreerns(): boolean {
     // make sure we have the right number of walls and bridges
-    const bridges = this.params.features?.['b'] || 0;
-    const walls = this.params.features?.['w'] || 0;
+    const bridges = this.params.features?.bridge || 0;
+    const walls = this.params.features?.wall || 0;
     for (const pos of this.random.ishuffle(this.meta.allPos())) {
       const c = ((pos << 8 | pos << 4) & 0xf0f0) as GridCoord;
       const tile = this.extract(c)

@@ -184,8 +184,8 @@ export const featureMask = {
   'bridge': 0x40,
   'wall': 0x80,
   'ramp': 0x100,
-  'overBridge': 0x200,
-  'underBridge': 0x400,
+  'overpass': 0x200,
+  'underpass': 0x400,
   'whirlpool': 0x800,
 
   // Not actually listed as features, but added separately - we could add others
@@ -216,7 +216,7 @@ export const featureMask = {
 export type Feature = keyof typeof featureMask;
   // 'pit' | 'arena' | 'spikes' | 'bridge' | 'wall' | 'ramp' | 'empty' |
   // 'portoa1' | 'portoa2' | 'portoa3' | // path from sabre to portoa
-  // 'lake' | 'overBridge' | 'underBridge' | 'whirlpool' |
+  // 'lake' | 'overpass' | 'underpass' | 'whirlpool' |
   // 'lighthouse' | 'cabin' | 'windmill' | 'altar' | 'pyramid' | 'crypt' |
   // 'consolidate';
 

@@ -268,7 +268,7 @@ const connectionBlocks = [
   
 
 const manualFeatures = new Set<Feature>([
-  'arena', 'portoa1', 'portoa2', 'portoa3', 'lake', 'overBridge', 'underBridge',
+  'arena', 'portoa1', 'portoa2', 'portoa3', 'lake', 'overpass', 'underpass',
   'lighthouse', 'cabin', 'windmill', 'altar', 'pyramid', 'crypt',
 ]);
 const countedFeatures = new Set<Feature>([

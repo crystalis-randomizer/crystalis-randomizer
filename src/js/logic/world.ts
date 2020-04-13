@@ -881,6 +881,8 @@ export class World {
         // We can simulate this by hard-coding a requirement on either to get
         // past him.
         antiReq = or(this.rom.flags.MesiaRecording, this.rom.flags.Paralysis);
+      } else if (npc === this.rom.npcs.SoldierGuard) {
+        antiReq = undefined; // they'll just attack if approached.
       }
       // if spawn is always false then req needs to be open?
       if (antiReq) this.addTerrain(hitbox, this.terrainFactory.statue(antiReq));

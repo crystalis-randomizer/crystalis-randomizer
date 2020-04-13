@@ -46,7 +46,8 @@ const [] = [hex];
 
 
 export type Pos = number;
-export type ExitSpec = readonly [Pos, ConnectionType];
+export type LocPos = number; // location << 8 | pos
+export type ExitSpec = readonly [LocPos, ConnectionType];
 
 export class Metalocation {
 
@@ -478,6 +479,10 @@ export class Metalocation {
     this._exits.set(pos, type, spec);
   }
 
+  getExit(pos: Pos, type: ConnectionType): ExitSpec|undefined {
+    return this._exits.get(pos, type);
+  }
+
   // TODO - counted candidates?
   exitCandidates(type: ConnectionType): Metascreen[] {
     // TODO - figure out a way to use the double-staircase?  it won't
@@ -604,7 +609,7 @@ export class Metalocation {
    */
   // TODO - rebuilding a map involves moving to a NEW metalocation...
   //      - given this, we need a different approach?
-  moveExits(...moves: Array<[Pos, ConnectionType, Pos, ConnectionType]>) {
+  moveExits(...moves: Array<[Pos, ConnectionType, LocPos, ConnectionType]>) {
     const newExits: Array<[Pos, ConnectionType, ExitSpec]> = [];
     for (const [oldPos, oldType, newPos, newType] of moves) {
       const destExit = this._exits.get(oldPos, oldType)!;
@@ -667,10 +672,14 @@ export class Metalocation {
     }
   }
 
-  /** Takes ownership of exits from another metalocation with the same ID. */
-  transferExits(orig: Metalocation, random?: Random) {
+  /**
+   * Takes ownership of exits from another metalocation with the same ID.
+   * @param {fixed} maps destination location ID to pos where the exit is.
+   */
+  transferExits(orig: Metalocation, random?: Random, fixed?: Map<number, Pos>) {
     // Determine all the eligible exit screens.
     const exits = new DefaultMap<ConnectionType, Pos[]>(() => []);
+    const fixedExits = new Set(fixed?.values() ?? []);
     for (const pos of this.allPos()) {
       const scr = this._screens[pos];
       for (const {type} of scr.data.exits ?? []) {
@@ -678,7 +687,11 @@ export class Metalocation {
         if (type === 'edge:left' && (pos & 0xf)) continue;
         if (type === 'edge:bottom' && (pos >>> 4) < this.height - 1) continue;
         if (type === 'edge:right' && (pos & 0xf) < this.width - 1) continue;
-        exits.get(type).push(pos);
+        if (fixedExits.has(pos)) {
+          continue;
+        } else {
+          exits.get(type).push(pos);
+        }
       }
     }
     if (random) {
@@ -690,32 +703,34 @@ export class Metalocation {
     for (const [opos, type, exit] of orig._exits) {
       const oy = opos >>> 4;
       const ox = opos & 0xf;
-      let pos: Pos|undefined;
       let dist = Infinity;
       let index = 0;
-      const arr = exits.get(type);
-      if (!random) {
-        // Attempt to keep exits as close as possible to previous positions.
-        // Note that the greedy algorithm is *not* globally optimal.
-        for (let i = 0; i < arr.length; i++) {
-          const npos = arr[i];
-          const ny = npos >>> 4;
-          const nx = npos & 0xf;
-          const d2 = (nx - ox) ** 2 + (ny - oy) ** 2;
-          if (d2 < dist) {
-            dist = d2;
-            pos = npos;
-            index = i;
-          }
-        }
-      } else {
-        pos = arr[0];
-      }
+      let pos = fixed?.get(exit[0] >>> 8);
       if (pos == null) {
-        throw new Error(`Could not transfer exit ${type} in ${
-                         this.rom.locations[this.id]}`);
+        const arr = exits.get(type);
+        if (!random) {
+          // Attempt to keep exits as close as possible to previous positions.
+          // Note that the greedy algorithm is *not* globally optimal.
+          for (let i = 0; i < arr.length; i++) {
+            const npos = arr[i];
+            const ny = npos >>> 4;
+            const nx = npos & 0xf;
+            const d2 = (nx - ox) ** 2 + (ny - oy) ** 2;
+            if (d2 < dist) {
+              dist = d2;
+              pos = npos;
+              index = i;
+            }
+          }
+        } else {
+          pos = arr[0];
+        }
+        if (pos == null) {
+          throw new Error(`Could not transfer exit ${type} in ${
+                           this.rom.locations[this.id]}`);
+        }
+        arr.splice(index, 1);
       }
-      arr.splice(index, 1);
       const eloc = this.rom.locations[exit[0] >>> 8].meta;
       const epos = exit[0] & 0xff;
       const etype = exit[1];

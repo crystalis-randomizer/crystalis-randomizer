@@ -1,5 +1,6 @@
 import { Random } from '../random.js';
 import { UnionFind } from '../unionfind.js';
+import { Pos } from '../rom/metalocation.js';
 
 export type GridIndex = number & {__grid_index__: never};
 export type GridCoord = number & {__grid_coord__: never};
@@ -184,4 +185,9 @@ export class Grid<T> {
     }
     return lines.join('\n');
   }
+}
+
+// TODO - posToCoord? (presumably center)
+export function coordToPos(c: GridCoord): Pos {
+  return (c >> 4) & 0xf | (c >> 8) & 0xf0;
 }

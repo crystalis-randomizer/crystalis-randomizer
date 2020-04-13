@@ -34,3 +34,4 @@ east cave not shuffling
 windmill guard not moved w/ random level - in general, NPCs should be on a POI
  - make it an error to _not_ move a trigger or NPC?
 waterfall n -> s gets stray mountains b/c seamless pair not mirrored
+

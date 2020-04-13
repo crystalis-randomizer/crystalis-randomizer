@@ -1,0 +1,29 @@
+The tilesets are not nearly as efficient as they could be.
+We could consolidate them and gain a ton of real estate.
+
+In particular,
+ * Lime tree lake (94) uses ~37 tiles in a tileset shared with
+   sea and (non-river) mountain.  The tileset currently has only
+   24 free tiles, but we could get a lot more (e.g. to open up
+   reusing more different screens for sea) by moving Lime tree
+   elsewhere
+ * Shrine (98) is its own complete tileset, but has 112 free
+   tiles.
+ * Swamp and house (a0) have 52 free tiles (fewer when doors
+   are added).  Swamp is only 74 tiles, which could be
+   consolidated elsewhere if it helped.
+ * Ice cave (a8) somehow has 103 (!) free tiles: it could
+   possibly host swamp (though it's short flagged tiles), or
+   Dyna (ac, 101 tiles).
+ * Both mountain tilesets (94 and 9c) fit in 96 tiles (0..5f).
+   They're highly entangled, but could possibly be consolidated
+   into a single tileset to great effect.  98 is a good candidate
+   for this.
+
+The main question is where we want extras.  Sea (94) could
+definitely use the help, as could desert (9c), grass (80),
+river (90), fortress (8c), and cave (88).
+
+Possible options:
+ * Lime tree into swamp/house
+ * Mountain into shrine -> free up sea AND desert

@@ -680,9 +680,10 @@ export class Metalocation {
    * Takes ownership of exits from another metalocation with the same ID.
    * @param {fixed} maps destination location ID to pos where the exit is.
    */
-  transferExits(orig: Metalocation, random?: Random) {
+  transferExits(orig: Metalocation, random: Random) {
     // Determine all the eligible exit screens.
     const exits = new DefaultMap<ConnectionType, Pos[]>(() => []);
+    const selfExits = new DefaultMap<ConnectionType, Set<Pos>>(() => new Set());
     for (const pos of this.allPos()) {
       const scr = this._screens[pos];
       for (const {type} of scr.data.exits ?? []) {
@@ -693,50 +694,42 @@ export class Metalocation {
         exits.get(type).push(pos);
       }
     }
-    if (random) {
-      for (const arr of exits.values()) {
-        random.shuffle(arr);
-      }
+    for (const arr of exits.values()) {
+      random.shuffle(arr);
     }
     // Find a match for each original exit.
     for (const [opos, type, exit] of orig._exits) {
-      const oy = opos >>> 4;
-      const ox = opos & 0xf;
-      let dist = Infinity;
-      let index = 0;
-      let pos: Pos;
-      const arr = exits.get(type);
-      if (!random) {
-        // Attempt to keep exits as close as possible to previous positions.
-        // Note that the greedy algorithm is *not* globally optimal.
-        for (let i = 0; i < arr.length; i++) {
-          const npos = arr[i];
-          const ny = npos >>> 4;
-          const nx = npos & 0xf;
-          const d2 = (nx - ox) ** 2 + (ny - oy) ** 2;
-          if (d2 < dist) {
-            dist = d2;
-            pos = npos;
-            index = i;
-          }
-        }
-      } else {
-        pos = arr[0];
-      }
-      if (pos! == null) {
+      if (selfExits.get(type).has(opos)) continue;
+      // opos,exit from original version of this metalocation
+      const pos = exits.get(type).pop(); // a Pos in this metalocation
+      if (pos == null) {
         throw new Error(`Could not transfer exit ${type} in ${
                          this.rom.locations[this.id]}`);
       }
-      arr.splice(index, 1);
+      // Look for a reverse exit: exit is the spec from old meta.
+      // Find the metalocation it refers to and see if the exit
+      // goes back to the original position.
       const eloc = this.rom.locations[exit[0] >>> 8].meta;
       const epos = exit[0] & 0xff;
       const etype = exit[1];
+      if (eloc === orig) {
+        // Special case of a self-exit (happens in hydra and pyramid).
+        // In this case, just pick an exit of the correct type.
+        const npos = exits.get(etype).pop();
+        if (npos == null) throw new Error(`Impossible`);
+        this._exits.set(pos, type, [this.id << 8 | npos, etype]);
+        this._exits.set(npos, etype, [this.id << 8 | pos, type]);
+        // Also don't visit the other exit later.
+        selfExits.get(etype).add(epos);
+        continue;
+      }
       const ret = eloc._exits.get(epos, etype)!;
       if (!ret) {
         const eeloc = this.rom.locations[exit[0] >>> 8];
         console.log(eloc);
         throw new Error(`No exit for ${eeloc} at ${hex(epos)} ${etype}\n${
-                         eloc.show()}\n${this.id} ${hex(opos)} ${type}`);
+                         eloc.show()}\n${this.rom.locations[this.id]} at ${
+                         hex(opos)} ${type}\n${this.show()}`);
       }
       if ((ret[0] >>> 8) === this.id && ((ret[0] & 0xff) === opos) &&
           ret[1] === type) {
@@ -793,7 +786,7 @@ export class Metalocation {
         const y1 = spec.exits[0] >>> 4;
         if (loc === this) {
           reverseExits.set(exit, [y0 << 4 | y1, x0 << 4 | x1]);
-        } else {
+        } else if ((exit[0] >>> 8) !== this.id) { // skip self-exits
           const [ny, nx] = reverseExits.get(exit)!;
           map.push([y0 << 4 | y1, x0 << 4 | x1, ny, nx, 25]); // 5 tiles
         }

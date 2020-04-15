@@ -784,3 +784,18 @@ export class CaveShuffleAttempt extends MazeShuffleAttempt {
   //   throw new Error();
   // }
 }
+
+export class WideCaveShuffle extends CaveShuffle {
+  attempt(h: number, w: number, s: Survey, r: Random): WideCaveShuffleAttempt {
+    const size = s.size + (r.nextInt(5) < 2 ? 1 : 0); // 40% chance of +1 size
+    return new WideCaveShuffleAttempt(h, w, {...s, size}, r);
+  }
+}
+class WideCaveShuffleAttempt extends CaveShuffleAttempt {
+  addLateFeatures(): boolean {
+    for (let i = 0; i < this.grid.data.length; i++) {
+      if (this.grid.data[i] === 'c') this.grid.data[i] = 'w';
+    }
+    return super.addLateFeatures();
+  }
+}

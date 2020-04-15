@@ -1211,6 +1211,7 @@ export class Metascreens {
     edges: 'w   ',
     connect: '2',
     exits: [downStair(0xc7)],
+    statues: [4],
   });
   readonly goaWideDeadEndN = this.metascreen({
     id: 0x71,
@@ -1223,6 +1224,7 @@ export class Metascreens {
     edges: 'w   ',
     connect: '1|2|3',
     exits: [downStair(0xc7)],
+    statues: [4],
   });
   readonly wideHallNS = this.metascreen({
     id: 0x72,
@@ -1235,6 +1237,7 @@ export class Metascreens {
     feature: ['wide'],
     edges: 'w w ',
     connect: '2a',
+    statues: [1, 7, 0xd],
   });
   readonly goaWideHallNS = this.metascreen({
     id: 0x72,
@@ -1246,6 +1249,7 @@ export class Metascreens {
     tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '19|2a|3b',
+    statues: [1, 7, 0xd],
   });
   readonly goaWideHallNS_blockedRight = this.metascreen({
     id: 0x72,
@@ -3559,6 +3563,7 @@ export class Metascreens {
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
     wall: 0x37,
+    statues: [0xa],
   });
   readonly goaWideHallNS_wallTop = this.metascreen({
     id: 0xe9,    // NOTE: the passage narrows at the top
@@ -3573,6 +3578,7 @@ export class Metascreens {
     connect: '2a|9|b',
     exits: [topEdge({left: 6, width: 4})],
     wall: 0x37,
+    statues: [0xa],
   });
   readonly wideHallWE = this.metascreen({
     id: 0xea,

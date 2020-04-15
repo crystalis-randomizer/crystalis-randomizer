@@ -1,10 +1,10 @@
-import {FlagSet} from '../flagset.js';
-import {CaveShuffle} from '../maze/cave.js';
+import { FlagSet } from '../flagset.js';
+import { CaveShuffle, WideCaveShuffle } from '../maze/cave.js';
 // import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
 //import {shufflePyramid} from '../maze/pyramid.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import { Random } from '../random.js';
+import { Rom } from '../rom.js';
 import { OverpassShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
 import { MazeShuffle } from '../maze/maze.js';
@@ -50,10 +50,11 @@ const STRATEGIES = new Map<number, typeof MazeShuffle>([
   [0x27, CycleCaveShuffle],
   [0x4b, TightCycleCaveShuffle],
   [0x54, CycleCaveShuffle],
-  // [0x56, WideCaveShuffle],
+  [0x56, WideCaveShuffle],
   // [0x57, WaterfallRiverCaveShuffle],
   // [0x69, RiverCaveShuffle],
-  // [0x84, WideCaveShuffle],
+  [0x84, WideCaveShuffle],
+  [0x88, WideCaveShuffle],
   // [0xab, RiverCaveShuffle],
 ]);
 
@@ -78,7 +79,7 @@ const SHUFFLED_CAVES = [
   // Fog Lamp
   0x48, 0x49, 0x4a, 0x4b, //0x4c, 0x4d, 0x4e, 0x4f,
   // Waterfall
-  0x54, 0x55, //0x56, 0x57, // can't handle this one yet
+  0x54, 0x55, 0x56, //0x57, // can't handle this one yet
   // Evil spirit
   //0x69, // 0x6a, 0x6b
   // Sabera palace (probably just skip sabera map 6e)
@@ -86,9 +87,9 @@ const SHUFFLED_CAVES = [
   // Joel passage
   0x70,
   // Mt Hydra
-  //0x7d, 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
+  0x7d, 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
   // Stxy
-  // 0x88, 0x89, 0x8a,
+  0x88, //0x89, 0x8a,
   // Goa Basement
   //0x8f,
   // Oasis Cave

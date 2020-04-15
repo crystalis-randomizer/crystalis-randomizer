@@ -169,6 +169,13 @@ export interface MetascreenData {
    * of bridges.  We add as many non-flag blocks as possible.
    */
   mod?: 'block' | 'wall' | 'bridge';
+
+  /**
+   * Y-coordinate of statues on this map screen.  These may be populated
+   * with $3f monster spawns at x=5 and x=a (provided the necessary pattern
+   * tables are loaded).  This is only relevant on the fortress tileset.
+   */
+  statues?: number[];
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;

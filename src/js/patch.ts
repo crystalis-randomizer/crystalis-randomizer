@@ -21,6 +21,7 @@ import {rescaleMonsters} from './pass/rescalemonsters.js';
 import {shuffleGoa} from './pass/shufflegoa.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shuffleMimics} from './pass/shufflemimics.js';
+import {shuffleMonsterPositions} from './pass/shufflemonsterpositions.js';
 import {shuffleMonsters} from './pass/shufflemonsters.js';
 import {shufflePalettes} from './pass/shufflepalettes.js';
 import {shuffleTrades} from './pass/shuffletrades.js';
@@ -260,6 +261,7 @@ export async function shuffle(rom: Uint8Array,
   shuffleTrades(parsed, flags, random);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
   writeLocationsFromMeta(parsed);
+  shuffleMonsterPositions(parsed, random);
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
@@ -267,7 +269,7 @@ export async function shuffle(rom: Uint8Array,
 
   compressMapData(parsed);
              // TODO - the screens aren't moving?!?
-  parsed.moveScreens(parsed.metatilesets.swamp, 4); // move to new plane
+  //parsed.moveScreens(parsed.metatilesets.swamp, 4); // move to new plane
   parsed.moveScreens(parsed.metatilesets.house, 4); // move to new plane
 
   // This wants to go as late as possible since we need to pick up

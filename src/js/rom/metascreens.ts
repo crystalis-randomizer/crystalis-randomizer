@@ -5,6 +5,7 @@ import {DefaultMap} from '../util.js';
 import {Metascreen, Uid} from './metascreen.js';
 import {MetascreenData, ConnectionType,
         bottomEdge, bottomEdgeHouse, cave, door, downStair, icon, leftEdge,
+        readScreen,
         rightEdge, seamlessDown, seamlessUp, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
@@ -116,22 +117,36 @@ export class Metascreens {
 
   /**
    * Change the screen whose current id is `oldId` to have `newId` as its
-   * screen ID.  Updates all relevant links.
+   * screen ID.  Updates all relevant links.  `newId` must not be used by
+   * any existing metascreens.
    */
   renumber(oldId: number, newId: number) {
     const dest = this.screensById.get(newId);
     if (dest.length) throw new Error(`ID already used: ${newId}: ${dest}`);
+    let sourceDefinition: Uint8Array|undefined;
     for (const screen of this.getById(oldId)) {
+      if (screen.data.definition) {
+        sourceDefinition = screen.data.definition;
+        screen.data.definition = undefined;
+      }
       screen.unsafeSetId(newId);
       dest.push(screen);
     }
     this.screensById.delete(oldId);
     // TODO - should this be encapsulated in Screens? probably...
     const oldScreen = this.rom.screens.getScreen(oldId);
+    if (oldId >= 0 && newId < 0) { // back up the old screen
+      dest[0].data.definition = Uint8Array.from(oldScreen.tiles);
+    }
     const clone = oldScreen.clone(newId);
     this.rom.screens.setScreen(newId, clone);
     oldScreen.used = false;
-    if (oldId < 0) this.rom.screens.deleteScreen(oldId);
+    if (oldId < 0) {
+      this.rom.screens.deleteScreen(oldId);
+      if (sourceDefinition && newId >= 0) {
+        clone.tiles = Array.from(sourceDefinition);
+      }
+    }
     this.rom.locations.renumberScreen(oldId, newId);
   }
 
@@ -145,6 +160,7 @@ export class Metascreens {
     tilesets: {grass: {}, river: {}, sea: {}, desert: {}},
     feature: ['empty'],
     edges: '    ',
+    delete: true,
   });
   // boundaryW_trees: ???
   readonly boundaryW_trees = this.metascreen({
@@ -298,6 +314,7 @@ export class Metascreens {
     feature: ['empty', 'manual'],
     edges: '    ',
     match: () => false,
+    delete: true,
   });
   readonly cornerNE = this.metascreen({
     id: 0x0d,
@@ -1315,6 +1332,7 @@ export class Metascreens {
     connect: '26',
     exits: [topEdge({left: 6, width: 4}),
             leftEdge({top: 7, height: 4, shift: -0.5})],
+    poi: [[2]],
   });
   readonly swampE = this.metascreen({
     id: 0x76,
@@ -1328,6 +1346,7 @@ export class Metascreens {
     edges: '   s',
     connect: 'e',
     exits: [],
+    poi: [[0]],
   });
   readonly swampE_door = this.metascreen({
     id: 0x76,
@@ -1387,6 +1406,7 @@ export class Metascreens {
     connect: '2e',
     exits: [topEdge({left: 6, width: 4}),
             rightEdge({top: 7, height: 4, shift: -0.5})],
+    poi: [[2]],
   });
   readonly swampWSE = this.metascreen({
     id: 0x7a,
@@ -1406,7 +1426,7 @@ export class Metascreens {
   readonly swampWSE_door = this.metascreen({
     id: 0x7a,
     icon: icon`∩
-      | ∩  |
+      | ∩ |
       |─┬─|
       | │ |`,
     tile: '   |c<c| c ',
@@ -1429,7 +1449,7 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: ' s  ',
     connect: '6',
-    // TODO - flaggable
+    poi: [[0]],
   });
   readonly swampW_door = this.metascreen({
     id: 0x7b,
@@ -1499,6 +1519,7 @@ export class Metascreens {
     edges: ' ss ',
     connect: '6a',
     exits: [leftEdge({top: 7, height: 4}), bottomEdge({left: 6, width: 4})],
+    poi: [[2]],
   });
   readonly swampWS_door = this.metascreen({
     id: 0x7e,
@@ -1524,6 +1545,7 @@ export class Metascreens {
     feature: ['empty'],
     edges: '    ',
     connect: '',
+    delete: true,
   });
   // Missing swamp screens
   readonly swampN = this.metascreen({
@@ -1537,6 +1559,24 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: 's   ',
     connect: '2',
+    poi: [[0]],
+    definition: readScreen(
+        `.  .  .  .  cf f6 c7 ad c4 b7 f6 cc .  .  .  .
+         .  .  .  .  cf f6 b8 b9 c3 b7 f6 cc .  .  .  .
+         .  .  .  .  cf f6 b7 b8 ad ad d2 cc .  .  .  .
+         .  .  .  .  cf d3 c2 c3 b7 b8 d2 cc .  .  .  .
+         .  .  .  .  cf d3 b6 c2 b7 b7 f6 cc .  .  .  .
+         .  .  .  .  cf d3 ad ad b9 b7 f6 cc .  .  .  .
+         .  .  .  .  cf d3 ad ad ad ad d2 cc .  .  .  .
+         .  .  .  .  cf d3 b9 b8 ad ad d2 e2 .  .  .  .
+         .  .  .  .  e3 f6 c3 c3 b8 b6 d2 .  .  .  .  .
+         .  .  .  .  .  e3 fd ad ad fc e2 .  .  .  .  .
+         .  .  .  .  .  .  ff fb fb fa .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .`,
+        ['.', 0xc8]),
   });
   readonly swampS = this.metascreen({
     id: ~0x71,
@@ -1549,6 +1589,24 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: '  s ',
     connect: 'a',
+    poi: [[0]],
+    definition: readScreen(
+        `.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  cd c9 c9 ca .  .  .  .  .  .
+         .  .  .  .  .  cd eb a0 a0 cb ca .  .  .  .  .
+         .  .  .  .  cf a0 f9 f5 f7 f8 cb cc .  .  .  .
+         .  .  .  .  cf a0 ed 08 09 a0 a0 cc .  .  .  .
+         .  .  .  .  cf db ee 0c 0b ef a0 cc .  .  .  .
+         .  .  .  .  cf d0 d1 03 03 d8 db cc .  .  .  .
+         .  .  .  .  cf f6 c7 ad ad ae d2 cc .  .  .  .
+         .  .  .  .  cf d3 ad b9 b7 b7 f6 cc .  .  .  .
+         .  .  .  .  cf d3 c2 c3 c3 b7 f6 cc .  .  .  .
+         .  .  .  .  cf f6 c5 c3 c3 b7 f6 cc .  .  .  .
+         .  .  .  .  cf d3 b6 c2 c3 c3 f6 cc .  .  .  .
+         .  .  .  .  cf f6 b8 b6 b6 b6 d2 cc .  .  .  .
+         .  .  .  .  cf f6 b7 b7 b7 b7 f6 cc .  .  .  .
+         .  .  .  .  cf f6 b7 b7 b8 b6 d2 cc .  .  .  .`,
+        ['.', 0xc8]),
   });
   readonly swampNS = this.metascreen({
     id: ~0x72,
@@ -1562,9 +1620,26 @@ export class Metascreens {
     edges: 's s ',
     connect: '2a',
     exits: [topEdge({left: 6, width: 4}), bottomEdge({left: 6, width: 4})],
+    definition: readScreen(
+        `.  .  .  .  cf d3 b6 b6 c6 b6 f6 cc .  .  .  .
+         .  .  .  .  cf d3 b6 c3 c7 b6 f6 cc .  .  .  .
+         .  .  .  .  cf f5 c3 c7 b6 b6 d2 cc .  .  .  .
+         .  .  .  .  cf d3 b6 b6 c6 c5 f6 cc .  .  .  .
+         .  .  .  .  cf d9 b6 c6 c3 c7 d2 cc .  .  .  .
+         .  .  .  .  cf f5 c3 c3 c3 c3 f6 cc .  .  .  .
+         .  .  .  .  cf d9 ad c2 c3 c3 f6 cc .  .  .  .
+         .  .  .  .  cf d9 c4 c5 c3 c3 f6 cc .  .  .  .
+         .  .  .  .  cf f5 b7 b7 b8 b6 d2 cc .  .  .  .
+         .  .  .  .  cf d9 c2 b8 b6 b6 d2 cc .  .  .  .
+         .  .  .  .  cf d9 b6 c2 b7 b7 f6 cc .  .  .  .
+         .  .  .  .  cf d9 b6 b6 b6 b6 d2 cc .  .  .  .
+         .  .  .  .  cf f6 b7 b7 b8 b6 d2 cc .  .  .  .
+         .  .  .  .  cf d3 b9 b7 b7 b7 f6 cc .  .  .  .
+         .  .  .  .  cf f6 b7 b7 c7 b6 d2 cc .  .  .  .`,
+        ['.', 0xc8]),
   });
   readonly swampWE = this.metascreen({
-    id: ~0x72,
+    id: ~0x73,
     icon: icon`
       |   |
       |───|
@@ -1576,9 +1651,26 @@ export class Metascreens {
     connect: '6e',
     exits: [leftEdge({top: 7, height: 4, shift: -0.5}),
             rightEdge({top: 7, height: 4, shift: -0.5})],
+    definition: readScreen(
+        `.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9
+         a0 e4 e8 eb e4 a0 a0 a0 eb eb e8 f0 f1 a0 e4 a0
+         a0 e5 e9 f9 f5 f6 f6 f7 ec f9 f7 f8 f2 a0 e5 a0
+         a0 e6 f0 f1 e6 e0 08 09 ed de ea de f2 a0 e6 a0
+         db e7 db f3 e7 e1 0c 0b dd df e0 df f3 db e7 e0
+         d0 d1 da da d0 d1 03 03 d0 d1 d0 d1 da da da da
+         ad c4 ad ad ad ad ad ad ad ad ad ad ad ad ad ad
+         c2 c5 b8 c6 c4 c4 b9 c7 c4 c5 c5 c7 ad ad ad ad
+         ad ad ad ad c2 c3 c3 c3 c3 c3 c7 ad ad ad ad ad
+         fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .`,
+        ['.', 0xc8]),
   });
   readonly swampWE_door = this.metascreen({
-    id: ~0x72,
+    id: ~0x73,
     icon: icon`∩
       | ∩ |
       |───|
@@ -1589,11 +1681,10 @@ export class Metascreens {
     flag: 'always',
     edges: ' s s',
     connect: '6e',
-    exits: [upStair(0x56)],
-    // TODO - how to link to swampWE to indicate flag=false?
+    exits: [cave(0x56, 'swamp')],
   });
   readonly swampSE = this.metascreen({
-    id: ~0x73,
+    id: ~0x74,
     icon: icon`
       |   |
       | ┌─|
@@ -1603,11 +1694,29 @@ export class Metascreens {
     feature: ['consolidate'],
     edges: '  ss',
     connect: 'ae',
-    exits: [leftEdge({top: 7, height: 4, shift: -0.5}),
+    exits: [rightEdge({top: 7, height: 4, shift: -0.5}),
             bottomEdge({left: 6, width: 4})],
+    poi: [[2]],
+    definition: readScreen(
+        `.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+         .  .  .  .  .  .  cd c9 c9 c9 c9 c9 c9 c9 c9 c9
+         .  .  .  .  .  cd a0 a0 a0 e8 04 a0 e8 a0 a0 e4
+         .  .  .  .  cf f8 a0 f0 f1 f5 f5 f7 e9 f4 f7 e5
+         .  .  .  .  cf f6 f7 f8 f2 ea 06 aa e9 f0 f1 e6
+         .  .  .  .  cf a0 dd e0 f3 e0 07 0c ea db f3 e7
+         .  .  .  .  cf db d5 d0 d1 d1 03 03 d0 d1 da da
+         .  .  .  .  cf d5 af c4 c4 ad ad ad ad ad c4 ad
+         .  .  .  .  cf d3 b9 c3 c3 b8 ad ad ad c2 b7 b8
+         .  .  .  .  cf f6 c3 c3 c3 c3 b8 ad ad ad ad ad
+         .  .  .  .  cf f6 c7 ad c2 c3 c7 fc fb fb fb fb
+         .  .  .  .  cf d3 ad ad ad ad d6 cc .  .  .  .
+         .  .  .  .  cf d3 b9 b8 ad b9 f6 cc .  .  .  .
+         .  .  .  .  cf f6 c7 ad b9 c7 d2 cc .  .  .  . 
+         .  .  .  .  cf d3 b6 b9 c3 b8 d2 cc .  .  .  .`,
+        ['.', 0xc8]),
   });
   readonly swampSE_door = this.metascreen({
-    id: ~0x73,
+    id: ~0x74,
     icon: icon`∩
       | ∩ |
       | ┌─|
@@ -1621,7 +1730,7 @@ export class Metascreens {
     exits: [cave(0x5a, 'swamp')],
   });
   readonly swampNSE = this.metascreen({
-    id: ~0x74,
+    id: ~0x75,
     icon: icon`
       | │ |
       | ├─|
@@ -1634,6 +1743,23 @@ export class Metascreens {
     exits: [topEdge({left: 6, width: 4}),
             bottomEdge({left: 6, width: 4}),
             rightEdge({top: 7, height: 4, shift: -0.5})],
+    definition: readScreen(
+        `.  .  .  .  cf d3 c4 c3 c3 c3 f7 f8 ca .  .  .
+         .  .  .  .  cf f5 c3 c3 c3 c3 f7 f7 a0 ca c9 c9
+         .  .  .  .  cf f6 c3 c3 b8 b6 d2 f7 f8 e8 e4 a0
+         .  .  .  .  cf f5 b7 c3 b7 b8 d2 f0 f1 e9 e5 de
+         .  .  .  .  cf d3 c2 b8 c2 b8 d8 db f2 ea e6 df
+         .  .  .  .  cf d3 ad ad ad ad ae d4 f3 dd e7 df
+         .  .  .  .  cf d3 ad ad ad ad ad ae d0 d1 d0 d1
+         .  .  .  .  cf d3 c2 c3 c3 b7 b8 ad ad ad ad ad
+         .  .  .  .  cf d3 ad ad c2 b7 b7 b7 b8 c4 ad ad
+         .  .  .  .  cf d3 ad ad b6 b9 b7 b7 b7 b7 b8 ad
+         .  .  .  .  cf d3 ad c4 c3 b7 b8 fc fb fb fb fb
+         .  .  .  .  cf d3 b6 ad ad ad d6 cc .  .  .  .
+         .  .  .  .  cf d3 ad ad ad ad d2 cc .  .  .  .
+         .  .  .  .  cf d3 c4 c3 b7 b8 d2 cc .  .  .  .
+         .  .  .  .  cf d3 b6 b9 b7 b7 f6 cc .  .  .  .`,
+        ['.', 0xc8]),
   });
   // Cave screens
   readonly caveEmpty = this.metascreen({
@@ -1647,6 +1773,7 @@ export class Metascreens {
                iceCave: {}, dolphinCave: {}},
     feature: ['empty'],
     edges: '    ',
+    delete: true,
   });
   readonly open = this.metascreen({ // NOTE: not cave
     id: 0x80,
@@ -1678,6 +1805,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallWE = this.metascreen({
     id: 0x82,
@@ -1698,6 +1826,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallSE = this.metascreen({
     id: 0x83,
@@ -1718,6 +1847,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallWS = this.metascreen({
     id: 0x84,
@@ -1738,6 +1868,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallNE = this.metascreen({
     id: 0x85,
@@ -1758,6 +1889,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallNW = this.metascreen({
     id: 0x86,
@@ -1778,6 +1910,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly branchNSE = this.metascreen({
     id: 0x87,
@@ -1798,6 +1931,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly branchNWSE = this.metascreen({
     id: 0x88,
@@ -1818,6 +1952,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly branchNWS = this.metascreen({
     id: 0x89,
@@ -1838,6 +1973,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly branchWSE = this.metascreen({
     id: 0x8a,
@@ -1858,6 +1994,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly branchNWE = this.metascreen({
     id: 0x8b,
@@ -1879,6 +2016,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallNS_ramp = this.metascreen({
     id: 0x8c,
@@ -1899,6 +2037,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallNS_overBridge = this.metascreen({
     id: 0x8d,
@@ -1952,6 +2091,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallWE_wall = this.metascreen({
     id: 0x90,
@@ -1960,7 +2100,8 @@ export class Metascreens {
       |─┄─|
       |   |`,
     tile: '   |ccc|   ',
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    // NOTE: no fortress version of this wall!
+    tilesets: {cave: {}, iceCave: {}},
     feature: ['wall'],
     edges: ' c c',
     connect: '6=e',
@@ -1974,6 +2115,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallNS_arena = this.metascreen({
     id: 0x91,
@@ -1992,6 +2134,15 @@ export class Metascreens {
     exits: [topEdge(), // vampire 1 room
             bottomEdge({left: 6, width: 4, manual: true}), // goa sages
             seamlessUp(0xe6, 4)], // kensu
+  });
+  readonly hallNS_arena_unreachable = this.metascreen({
+    id: 0x91,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly hallNS_arenaWall = this.metascreen({
     id: 0x92,
@@ -2036,6 +2187,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly branchNWE_upStair = this.metascreen({
     id: 0x95,
@@ -2056,6 +2208,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly deadEndW_upStair = this.metascreen({
     id: 0x96,
@@ -2076,6 +2229,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x20),
+    delete: true,
   });
   readonly deadEndW_downStair = this.metascreen({
     id: 0x97,
@@ -2096,6 +2250,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x20),
+    delete: true,
   });
   readonly deadEndE_upStair = this.metascreen({
     id: 0x98,
@@ -2116,6 +2271,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0xd0),
+    delete: true,
   });
   readonly deadEndE_downStair = this.metascreen({
     id: 0x99,
@@ -2136,6 +2292,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0xd0),
+    delete: true,
   });
   readonly deadEndNS_stairs = this.metascreen({
     id: 0x9a,
@@ -2159,6 +2316,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x108, 0x78) && !reachable(-0x30, 0x78),
+    delete: true,
   });
   readonly deadEndN_stairs = this.metascreen({
     id: 0x9a,
@@ -2201,6 +2359,16 @@ export class Metascreens {
     edges: 'c c ',
     connect: '2|a',
     poi: [[0, 0x110, 0x78], [0, -0x30, 0x78]],
+    match: (reachable) => reachable(-0x30, 0x78) && reachable(0x110, 0x78),
+  });
+  readonly deadEndNS_unreachable = this.metascreen({
+    id: 0x9b,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(-0x30, 0x78) && !reachable(0x110, 0x78),
+    delete: true,
   });
   readonly deadEndN = this.metascreen({
     id: 0x9b,
@@ -2214,7 +2382,7 @@ export class Metascreens {
     edges: 'c   ',
     connect: '2',
     poi: [[0, -0x30, 0x78]],
-    match: (reachable) => !reachable(0x110, 0x78),
+    match: (reachable) => !reachable(0x110, 0x78) && reachable(-0x30, 0x78),
   });
   readonly deadEndS = this.metascreen({
     id: 0x9b,
@@ -2228,7 +2396,7 @@ export class Metascreens {
     edges: '  c ',
     connect: 'a',
     poi: [[0, 0x110, 0x78]],
-    match: (reachable) => !reachable(-0x30, 0x78),
+    match: (reachable) => !reachable(-0x30, 0x78) && reachable(0x110, 0x78),
   });
   readonly deadEndWE = this.metascreen({
     id: 0x9c,
@@ -2243,6 +2411,16 @@ export class Metascreens {
     edges: ' c c',
     connect: '6|e',
     poi: [[0, 0x70, 0x108], [0, 0x70, -0x28]],
+    match: (reachable) => reachable(0x70, -0x28) && reachable(0x70, 0x108),
+  });
+  readonly deadEndWE_unreachable = this.metascreen({
+    id: 0x9c,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x70, -0x28) && !reachable(0x70, 0x108),
+    delete: true,
   });
   readonly deadEndW = this.metascreen({
     id: 0x9c,
@@ -2256,7 +2434,7 @@ export class Metascreens {
     edges: ' c  ',
     connect: '6',
     poi: [[0, 0x70, -0x28]],
-    match: (reachable) => !reachable(0x70, 0x108),
+    match: (reachable) => !reachable(0x70, 0x108) && reachable(0x70, -0x28),
   });
   readonly deadEndE = this.metascreen({
     id: 0x9c,
@@ -2270,7 +2448,7 @@ export class Metascreens {
     edges: '   c',
     connect: 'e',
     poi: [[0, 0x70, 0x108]],
-    match: (reachable) => !reachable(0x70, -0x28),
+    match: (reachable) => !reachable(0x70, -0x28) && reachable(0x70, 0x108),
   });
   // NOTE: 9d missing
   readonly hallNS_entrance = this.metascreen({
@@ -2292,6 +2470,7 @@ export class Metascreens {
     feature: ['empty'],
     placement: 'manual',
     match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
   });
   readonly channelExitSE = this.metascreen({
     id: 0x9f,
@@ -2706,6 +2885,7 @@ export class Metascreens {
     tilesets: {mountain: {}, mountainRiver: {}},
     feature: ['empty'],
     edges: '    ',
+    delete: true,
   });
   readonly boundaryS = this.metascreen({
     id: 0xc0,
@@ -2964,7 +3144,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river', 'bridge'],
     edges: 'rrrr',
-    connect: '15:3d:79-af',
+    connect: '15:3d:79-bf',
     wall: 0xb6,
     poi: [[4, 0x00, 0x98]],
   });
@@ -2981,7 +3161,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: 'r r ',
-    connect: '19:3a',
+    connect: '19:3b',
     mod: 'bridge', // d6 is the bridged version
   });
   readonly riverCaveWE = this.metascreen({
@@ -3007,7 +3187,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river', 'bridge'],
     edges: 'r r ',
-    connect: '19-3a',
+    connect: '19-3b',
     wall: 0x87,
   });
   readonly riverCaveWE_bridge = this.metascreen({
@@ -3033,7 +3213,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: '  rr',
-    connect: '9d:af',
+    connect: '9d:bf',
   });
   readonly riverCaveWS = this.metascreen({
     id: 0xd9,
@@ -3045,7 +3225,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: ' rr ',
-    connect: '5a:79',
+    connect: '5b:79',
   });
   readonly riverCaveNE = this.metascreen({
     id: 0xda,
@@ -3093,7 +3273,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: ' rcr',
-    connect: '5d:7af',
+    connect: '5d:7bf',
   });
   readonly riverCaveNS_passageW = this.metascreen({
     id: 0xde,
@@ -3629,6 +3809,15 @@ export class Metascreens {
     connect: '2a',
     platform: {type: 'vertical', coord: 0x40_78},
   });
+  readonly pitNS_unreachable = this.metascreen({
+    id: 0xec,
+    icon: icon`\n|   |\n|   |\n|   |`,
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    placement: 'manual',
+    match: (reachable) => !reachable(0x80, 0x80),
+    delete: true,
+  });
   readonly spikesNS_hallS = this.metascreen({
     id: 0xed,
     icon: icon`
@@ -3718,7 +3907,7 @@ export class Metascreens {
     edges: 'r   ',
     connect: '1:3',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98]],
-    match: (reachable) => !reachable(-0x30, 0x48) && !reachable(-0x30, 0x98),
+    match: (reachable) => !reachable(0x108, 0x48) && !reachable(0x108, 0x98),
     mod: 'bridge', // f2 is bridged version
   });
   readonly riverCave_deadEndsS = this.metascreen({
@@ -3791,6 +3980,7 @@ export class Metascreens {
     connect: '1-3',
     wall: 0x17,
     // TODO - consider a poi(2) here?
+    match: (reachable) => !reachable(0xd0, 0x48) && !reachable(0xd0, 0x98),
   });
   readonly riverCaveS_bridge = this.metascreen({
     id: 0xf2,
@@ -3805,6 +3995,7 @@ export class Metascreens {
     connect: '9-b',
     wall: 0xc6,
     // TODO - consider a poi(2) here?
+    match: (reachable) => !reachable(0x10, 0x48) && !reachable(0x10, 0x98),
   });
   readonly riverCaveWSE = this.metascreen({
     id: 0xf3,
@@ -3841,7 +4032,7 @@ export class Metascreens {
     feature: ['river'],
     edges: 'r r ',
     connect: '19:3:b',
-    poi: [[1, 0xc0, 0x98], [1, 0x40, 0x98]],
+    poi: [[0, 0xc0, 0x98], [0, 0x40, 0x98]],
     mod: 'block',
   });
   readonly riverCaveNS_blockedLeft = this.metascreen({
@@ -3855,7 +4046,7 @@ export class Metascreens {
     feature: ['river'],
     edges: 'r r ',
     connect: '1:3b:9',
-    poi: [[1, 0xb0, 0x48], [1, 0x30, 0x48]],
+    poi: [[0, 0xb0, 0x48], [0, 0x30, 0x48]],
     mod: 'block',
   });
   readonly spikesNS = this.metascreen({

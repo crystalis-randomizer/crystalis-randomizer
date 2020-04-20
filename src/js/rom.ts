@@ -872,6 +872,11 @@ const ADJUSTMENTS = [
   [0x16dfd, 0xb0, 0xb9],
   [0x16dfe, 0x00, 0x02],
   [0x16dff, 0x07, 0xff],
+  // Also remove the bad entrances/exits on the asina version
+  // Mark bad entrance/exit in portoa
+  [0x16e5d, 0x02, 0xff],
+  [0x16e6a, 0xad, 0xff],
+  [0x16e6e, 0xad, 0xff],
   // Normalize aryllis entrance
   [0x174ee, 0x80, 0x88],
   // Normalize joel shed bottom and secret passage entrances

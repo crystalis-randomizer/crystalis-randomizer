@@ -175,7 +175,22 @@ export interface MetascreenData {
    * with $3f monster spawns at x=5 and x=a (provided the necessary pattern
    * tables are loaded).  This is only relevant on the fortress tileset.
    */
-  statues?: number[];
+  statues?: readonly number[];
+
+  /**
+   * True if the screen may be deleted entirely from a map (i.e. when trimming
+   * unused rows/columns).  This is a subset of empty screens, since some empty
+   * screens are important to retain (e.g. dead ends).
+   */
+  delete?: boolean;
+
+  /**
+   * Definition of the screen, in terms of metatile IDs at the time the screen
+   * is allocated.  This is only used for screens with a negative sid ('id' in
+   * this structure), and only one screen in a group of same-sid screens should
+   * specify it.  It must be 240 bytes long.
+   */
+  definition?: Uint8Array;
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
@@ -243,6 +258,15 @@ export function icon(arr: TemplateStringsArray): Icon {
   return {short, full: [full[0], full[1], full[2]]};
 }
 
+export function readScreen(spec: string,
+                           ...replacements: [string, number][]): Uint8Array {
+  const s = spec.split(/\s+/g);
+  if (!s[0]) s.shift();
+  if (!s[s.length - 1]) s.pop();
+  if (s.length !== 240) throw new Error(`Bad screen definition: ${s.length}`);
+  const map = new Map(replacements);
+  return Uint8Array.from(s, x => map.get(x) ?? parseInt(x, 16));
+}
 
 export type StairType = 'stair:up' | 'stair:down';
 export type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';

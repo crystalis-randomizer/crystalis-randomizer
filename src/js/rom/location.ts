@@ -479,6 +479,10 @@ export class Locations extends Array<Location> {
     }
     return [a.module()];
   }
+
+  location() {
+
+  }
 }
 
 // Location entities

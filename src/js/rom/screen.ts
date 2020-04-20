@@ -50,7 +50,8 @@ export class Screen extends Entity {
   }
 
   /** Write a 2d block into the tile array. */
-  set2d(start: number, data: ReadonlyArray<ReadonlyArray<number | null>>) {
+  set2d(start: number,
+        data: ReadonlyArray<ReadonlyArray<number | null | undefined>>) {
     const x0 = start & 0xf;
     const y0 = start >>> 4;
     for (let y = 0; y < data.length; y++) {

@@ -1,13 +1,20 @@
 import { FlagSet } from '../flagset.js';
-import { CaveShuffle, WideCaveShuffle } from '../maze/cave.js';
+import { CaveShuffle, KarmineBasementShuffle,
+         WideCaveShuffle } from '../maze/cave.js';
 // import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
 //import {shufflePyramid} from '../maze/pyramid.js';
 import { Random } from '../random.js';
 import { Rom } from '../rom.js';
-import { OverpassShuffle } from '../maze/doublecave.js';
+import { BridgeCaveShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
-import { MazeShuffle } from '../maze/maze.js';
+import { RiverCaveShuffle,
+         WaterfallRiverCaveShuffle } from '../maze/rivercave.js';
+import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
+
+interface Shuffle {
+  shuffle(random: Random): void;
+}
 
 export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // TODO - consolidate free flags?  Find a list of what's used...
@@ -18,96 +25,132 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // shufflePyramid(rom, random);
   // shuffleSwamp(rom, random);
   // shuffleGoa1(rom, random);
-  new OverpassShuffle(0x04).shuffle(rom.locations[0x05], random);
-  new OverpassShuffle(0x4d, true).shuffle(rom.locations[0x4c], random);
-  new OverpassShuffle(0x4f).shuffle(rom.locations[0x4e], random);
+  const $ = rom.locations;
 
-  // TODO - two bridges, one exit
-  // NOTE: this is complicated by the fact that the overpass (which is
-  // shuffled _after_) is much smaller than the underpass, so chances
-  // are very high that the width will exceed the overpass map size.
-  // There's also the seamless exit to kensu (ba), which we don't know
-  // how to shuffle yet.  This will probably need a new dedicated algo.
-  // new OverpassShuffle(0xb4).shuffle(rom.locations[0xb2], random);
+  addSwampDoors(rom);
 
-
-
-
-  for (const cave of SHUFFLED_CAVES) {
-    const ctor = STRATEGIES.get(cave) ?? CaveShuffle;
-    // @ts-ignore not actually abstract.
-    new ctor().shuffle(rom.locations[cave], random);
+  const shuffles: Shuffle[] = [
+    // new TownShuffle($.Leaf),
+    // new OverworldShuffle($.ValleyOfWind),
+    new CaveShuffle($.EastCave1),
+    new CaveShuffle($.EastCave2),
+    new CaveShuffle($.EastCave3),
+    new BridgeCaveShuffle($.SealedCave2, $.SealedCave1),
+    new CaveShuffle($.SealedCave3),
+    new CaveShuffle($.SealedCave4),
+    new CaveShuffle($.SealedCave5),
+    new CaveShuffle($.SealedCave6),
+    new CaveShuffle($.SealedCave7),
+    new CaveShuffle($.SealedCave8),
+    new CaveShuffle($.WindmillCave),
+    new CaveShuffle($.ZebuCave),
+    // new OverworldShuffle($.CordelPlainWest, $.CordelPlainEast),
+    // new TownShuffle($.Brynmaer),
+    // new TownShuffle($.Amazones),
+    new SwampShuffle($.Swamp),
+    // new TownShuffle($.Oak),
+    // new JoinedMountainShuffle($.MtSabreWest_Upper, $.MtSabreWest_Lower),
+    new CaveShuffle($.MtSabreWest_Cave1),
+    new CaveShuffle($.MtSabreWest_Cave2),
+    new CaveShuffle($.MtSabreWest_Cave3),
+    new CaveShuffle($.MtSabreWest_Cave4),
+    new CaveShuffle($.MtSabreWest_Cave5),
+    new CaveShuffle($.MtSabreWest_Cave6),
+    new CycleCaveShuffle($.MtSabreWest_Cave7),
+    // new SplitMountainShuffle($.MtSabreNorth_Main, $.MtSabreNorth_Middle),
+    new CaveShuffle($.MtSabreNorth_Cave1),
+    new CaveShuffle($.MtSabreNorth_Cave2),
+    new CaveShuffle($.MtSabreNorth_Cave3),
+    new CaveShuffle($.MtSabreNorth_Cave4),
+    new CaveShuffle($.MtSabreNorth_Cave5),
+    new CaveShuffle($.MtSabreNorth_Cave6),
+    new CaveShuffle($.MtSabreNorth_Cave7),
+    new CaveShuffle($.MtSabreNorth_Cave8),
+    new CaveShuffle($.MtSabreNorth_Cave9),
+    new CaveShuffle($.MtSabreNorth_LeftCell2),
+    new CaveShuffle($.MtSabreNorth_SummitCave),
+    // new OverworldShuffle($.WaterfallValleyNorth, $.WaterfallValleySouth),
+    // new OverworldShuffle($.LimeTreeValley),
+    new CaveShuffle($.KirisaPlantCave1),
+    new CaveShuffle($.KirisaPlantCave2),
+    new CaveShuffle($.KirisaPlantCave3),
+    // new OverworldShuffle($.KirisaMeadow),
+    new CaveShuffle($.FogLampCave1),
+    new CaveShuffle($.FogLampCave2),
+    new CaveShuffle($.FogLampCave3),
+    new TightCycleCaveShuffle($.FogLampCaveDeadEnd),
+    new BridgeCaveShuffle($.FogLampCave4, $.FogLampCave5, true /*reversed*/),
+    new BridgeCaveShuffle($.FogLampCave6, $.FogLampCave7),
+    // new TownShuffle($.Portoa),
+    new CycleCaveShuffle($.WaterfallCave1),
+    new CaveShuffle($.WaterfallCave2),
+    new WideCaveShuffle($.WaterfallCave3),
+    new WaterfallRiverCaveShuffle($.WaterfallCave4),
+    // new TowerShuffle($.Tower1, $.Tower2, $.Tower3, $.TowerOutsideMesia),
+    // new SeaShuffle($.AngrySea),
+    // new ChannelShuffle($.UndergroundChannel),
+    // new TownShuffle($.ZombieTown),
+    // new ChannelShuffle($.EvilSpiritIsland1),
+    new RiverCaveShuffle($.EvilSpiritIsland2),
+    // new PitCycleShuffle($.EvilSpiritIsland3, $.EvilSpiritIsland2),
+    new RiverCaveShuffle($.EvilSpiritIsland4),
+    new WideCaveShuffle($.SaberaPalace1),
+    // // TODO - consider just making this into two separate maps?
+    // new SplitPitShuffle($.SaberaPalace2, $.SaberaPalace1),
+    new CaveShuffle($.JoelSecretPassage),
+    // new TownShuffle($.Joel),
+    // new TownShuffle($.Swan),
+    // new OverworldShuffle($.GoaValley),
+    // new MountainShuffle($.MtHydra),
+    new CaveShuffle($.MtHydra_Cave1),
+    new CaveShuffle($.MtHydra_Cave2),
+    new CaveShuffle($.MtHydra_Cave3),
+    new CaveShuffle($.MtHydra_Cave4),
+    new CaveShuffle($.MtHydra_Cave5),
+    new CaveShuffle($.MtHydra_Cave6),
+    new WideCaveShuffle($.MtHydra_Cave7),
+    new CaveShuffle($.MtHydra_Cave8),
+    new CaveShuffle($.MtHydra_Cave9),
+    new CaveShuffle($.MtHydra_Cave10),
+    new WideCaveShuffle($.Styx1),
+    // // TODO - consider splitting this map, too!
+    // new StyxRiverCaveShuffle($.Styx2),
+    // new PitShuffle($.Styx3, $.Styx2),
+    // new TownShuffle($.Shyron),
+    // new TownShuffle($.Goa),
+    // new OverworldShuffle($.Desert1),
+    // new OasisCaveShuffle($.OasisCaveMain),
+    new CaveShuffle($.DesertCave1),
+    // new TownShuffle($.Sahara),
+    new CaveShuffle($.DesertCave2),
+    // new OverworldShuffle($.SaharaMeadow),
+    // new OverworldShuffle($.Desert2),
+    new CaveShuffle($.Pyramid_Branch),
+    // new PyramidShuffle($.Pyramid_Main, $.Pyramid_Draygon),
+    // new CaveShuffle($.Crypt_Entrance),  // TODO - fix arena crash
+    new WideCaveShuffle($.Crypt_Hall1),
+    new CaveShuffle($.Crypt_DeadEndLeft),
+    new CaveShuffle($.Crypt_DeadEndRight),
+    //new PitShuffle($.Crypt_Branch, $.Crypt_DeadEndLeft, $.Crypt_DeadEndRight),
+    // new PitShuffle($.Crypt_Hall2),
+    // new GoaMazeShuffle($.GoaFortress_Kelbesque),
+    new RiverCaveShuffle($.GoaFortress_Sabera),
+    new CaveShuffle($.GoaFortress_Mado1),
+    // new PitShuffle($.GoaFortress_Mado2, $.GoaFortress_Mado1),
+    // new PitShuffle($.GoaFortress_Mado3, $.GoaFortress_Mado1),
+    new CaveShuffle($.GoaFortress_Karmine1),
+    new CaveShuffle($.GoaFortress_Karmine2),
+    new CaveShuffle($.GoaFortress_Karmine4),
+    new KarmineBasementShuffle($.GoaFortress_Karmine6),
+    // new GoaKarmineShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5,
+    //                       $.GoaFortress_Kensu, $.GoaFortress_Karmine6),
+    // new SplitRiverCaveShuffle($.OasisCave_Entrance),
+  ];
+  for (const shuffle of shuffles) {
+    shuffle.shuffle(random);
   }
-  for (const loc of [rom.locations.EastCave1,
-                     rom.locations.EastCave2,
-                     rom.locations.EastCave3]) {
-    if (loc.used) new CaveShuffle().shuffle(loc, random);
-  }
-
 }
-
-const STRATEGIES = new Map<number, typeof MazeShuffle>([
-  [0x27, CycleCaveShuffle],
-  [0x4b, TightCycleCaveShuffle],
-  [0x54, CycleCaveShuffle],
-  [0x56, WideCaveShuffle],
-  // [0x57, WaterfallRiverCaveShuffle],
-  // [0x69, RiverCaveShuffle],
-  [0x84, WideCaveShuffle],
-  [0x88, WideCaveShuffle],
-  // [0xab, RiverCaveShuffle],
-]);
 
 export function prepareScreens(rom: Rom) {
   // extendGoaScreens(rom);
 }
-
-const SHUFFLED_CAVES = [
-  // Sealed Cave
-  //0x04, 0x05,
-  0x06, 0x07, 0x08, 0x09, 0x0a, 0x0c,
-  // Windmill Cave
-  0x0e,
-  // Zebu Cave
-  0x10,
-  // Mt Sabre W
-  0x11, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-  // Mt Sabre N
-  0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x31, 0x33, 0x34, 0x35, 0x38, 0x39,
-  // Kirisa
-  0x44, 0x45, 0x46,
-  // Fog Lamp
-  0x48, 0x49, 0x4a, 0x4b, //0x4c, 0x4d, 0x4e, 0x4f,
-  // Waterfall
-  0x54, 0x55, 0x56, //0x57, // can't handle this one yet
-  // Evil spirit
-  //0x69, // 0x6a, 0x6b
-  // Sabera palace (probably just skip sabera map 6e)
-  // 0x6c, 0x6d
-  // Joel passage
-  0x70,
-  // Mt Hydra
-  0x7d, 0x7f, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87,
-  // Stxy
-  0x88, //0x89, 0x8a,
-  // Goa Basement
-  //0x8f,
-  // Oasis Cave
-  // 0x91, 0xb8, 
-  // Connectors
-  0x92, 0x95,
-  // Pyramid
-  //0x9d, //0x9e,
-  // Crypt
-  // TODO - WIDE, PITS
-  // 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5,
-  // Goa - Kelbesque 2
-  // 0xa8, 0xa9, // NOTE: a9 handled by shuffleGoa1
-  // Goa - Sabera 2
-  //0xab,
-  // Goa - Mado 2
-  // 0xad, 0xae, 0xaf, 0xb9
-  // Goa - Karmine
-  // TODO - currently b5 fails in refine?
-  0xb0, 0xb1, 0xb2, 0xb3, // 0xb4, 0xb5, //0xb8,
-];

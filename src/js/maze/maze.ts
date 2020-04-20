@@ -1,7 +1,6 @@
 import { Grid, GridCoord } from './grid.js';
 import { Random } from '../random.js';
 import { hex } from '../rom/util.js';
-import { Metatileset } from '../rom/metatileset.js';
 import { Metalocation } from '../rom/metalocation.js';
 import { Location } from '../rom/location.js';
 
@@ -9,7 +8,7 @@ const [] = [hex];
 
 export interface Survey {
   readonly id: number;
-  readonly tileset: Metatileset;
+  readonly meta: Metalocation;
   readonly size: number;
   readonly edges?: number[]; // [top, left, bottom, right]
   readonly stairs?: number[]; // [up, down]
@@ -17,66 +16,86 @@ export interface Survey {
   readonly features?: Record<string, number>; // a, r, s, p, b, w
 }
 
-export abstract class MazeShuffle {
-
-  maxAttempts = 100;
-
-  shuffle(loc: Location, random: Random) {
-    const meta = loc.meta;
-    const survey = this.survey(meta);
-    for (let attempt = 0; attempt < this.maxAttempts; attempt++) {
-      const width =
-          Math.max(1, Math.min(8, loc.meta.width +
-                               Math.floor((random.nextInt(6) - 1) / 3)));
-      const height =
-          Math.max(1, Math.min(16, loc.meta.height +
-                               Math.floor((random.nextInt(6) - 1) / 3)));
-      const shuffle = this.attempt(height, width, survey, random);
-      const result = shuffle.build();
-      if (result) {
-        console.log(`Shuffle failed ${loc.id.toString(16)}: ${result}`);
-      } else {
-        this.finish(loc, shuffle.meta, random);
-        return;
-      }
-    }
-    //throw new Error(`Completely failed to map shuffle ${loc}`);
-    console.error(`Completely failed to map shuffle ${loc}`);
-  }
-
-  finish(loc: Location, newMeta: Metalocation, random: Random) {
-    newMeta.transferFlags(loc.meta, random);
-    newMeta.transferExits(loc.meta, random);
-    newMeta.transferSpawns(loc.meta, random);
-    newMeta.replaceMonsters(random);
-    loc.meta = newMeta;
-  }
-
-  abstract attempt(height: number, width: number,
-                   survey: Survey, random: Random): MazeShuffleAttempt;
-
-  abstract survey(meta: Metalocation): Survey;
+export interface Attempt {
+  readonly grid: Grid<string>;
+  readonly w: number;
+  readonly h: number;
+  readonly size: number;
+  count: number;
 }
 
-export abstract class MazeShuffleAttempt {
+//type SurveyType<T extends MazeShuffle> = ReturnType<T['survey']>;
+//type AttemptType<T extends MazeShuffle> = ReturnType<T['attempt']>;
 
-  abstract grid: Grid<string>;
-  abstract meta: Metalocation;
+export type Result<T> = {ok: true, value: T} | {ok: false, fail: string};
+export const OK: Result<void> = {ok: true, value: undefined};
 
-  abstract build(): string; // error message or none
+export abstract class MazeShuffle {
 
-  /** Extract a 3x3 section into a 9-character string. */
-  extract(c: GridCoord): string {
-    const index = this.grid.index(c);
+  random!: Random; // set in shuffle() for better API.
+  orig: Metalocation;
+  attempts = 0;
+  maxAttempts = 100;
+  params: Survey;
+
+  constructor(readonly loc: Location, params?: Survey) {
+    this.orig = loc.meta;
+    this.params = params ?? this.survey(this.orig);
+  }
+
+  shuffle(random: Random) {
+    this.random = random;
+    while (++this.attempts <= this.maxAttempts) {
+      const result = this.build();
+      if (result.ok) {
+        this.finish(result.value);
+        return;
+      }
+      //console.log(`Shuffle failed ${this.loc}: ${result.fail}`);
+    }
+    //throw new Error(`Completely failed to map shuffle ${loc}`);
+    console.error(`Completely failed to map shuffle ${this.loc}`);
+  }
+
+  abstract survey(meta: Metalocation): Survey;
+
+  abstract build(): Result<Metalocation>;
+
+  finish(newMeta: Metalocation) {
+    newMeta.transferFlags(this.loc.meta, this.random);
+    newMeta.transferExits(this.loc.meta, this.random);
+    newMeta.transferSpawns(this.loc.meta, this.random);
+    //newMeta.replaceMonsters(this.random);
+    this.loc.meta = newMeta;
+  }
+
+  pickHeight(): number {
+    return Math.max(1, Math.min(16, this.orig.height +
+                                Math.floor((this.random.nextInt(6) - 1) / 3)));
+  }
+
+  pickWidth(): number {
+    return Math.max(1, Math.min(8, this.orig.width +
+                                Math.floor((this.random.nextInt(6) - 1) / 3)));
+  }
+
+  pickSize(): number {
+    // 40% chance of +1 size
+    return this.params.size + (this.random.nextInt(5) < 2 ? 1 : 0);
+  }
+
+
+  /** Extract a 3x3 section into a (h×w)-character string. */
+  extract(g: Grid<any>, c: GridCoord, h = 3, w = 3): string {
+    const index = g.index(c);
     let out = '';
-    const end = index + 3 * this.grid.row;
-    const {row} = this.grid;
+    const end = index + h * g.row;
+    const {row} = g;
     for (let r = index as number; r < end; r += row) {
-      for (let i = r; i < r + 3; i++) {
-        out += (this.grid.data[i] || ' ');
+      for (let i = r; i < r + w; i++) {
+        out += (g.data[i] || ' ');
       }
     }
     return out;
   }
 }
-

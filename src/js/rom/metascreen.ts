@@ -59,9 +59,9 @@ export class Metascreen {
     // TODO - build "connections" by iterating over 0..3.
     const cxn: number[][][] = [[[]], [[]], [[]], [[]]];
     this.connections = cxn;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       for (const term of this.data.connect ?? '') {
-        if (connectionBlocks.includes(term)) {
+        if (connectionBlocks[i].includes(term)) {
           cxn[i].push([]);
           continue;
         }

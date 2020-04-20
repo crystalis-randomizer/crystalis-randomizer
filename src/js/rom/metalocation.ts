@@ -539,7 +539,6 @@ export class Metalocation {
     const connectionType = (opts.flight ? 2 : 0) | (opts.noFlagged ? 1 : 0);
     for (const pos of this.allPos()) {
       const scr = opts.with?.get(pos) ?? this._screens[pos];
-      //if (opts.flight && spec.deadEnd) continue;
       for (const segment of scr.connections[connectionType]) {
         if (!segment.length) continue; // e.g. empty
         // Connect within each segment
@@ -704,7 +703,8 @@ export class Metalocation {
       const pos = exits.get(type).pop(); // a Pos in this metalocation
       if (pos == null) {
         throw new Error(`Could not transfer exit ${type} in ${
-                         this.rom.locations[this.id]}`);
+                         this.rom.locations[this.id]}: no eligible screen\n${
+                         this.show()}`);
       }
       // Look for a reverse exit: exit is the spec from old meta.
       // Find the metalocation it refers to and see if the exit
@@ -793,6 +793,14 @@ export class Metalocation {
       }
     }
     // Make a list of POI by priority (0..5).
+
+
+    // TODO - consider first partitioning the screens with impassible
+    // walls and placing poi into as many separate partitions (from
+    // stairs/entrances) as possible ???  Or maybe just weight those
+    // higher?  don't want to _force_ things to be inaccessible...?
+
+
     const ppoi: Array<Array<[number, number]>> = [[], [], [], [], [], []];
     for (const pos of this.allPos()) {
       const scr = this._screens[pos];
@@ -814,7 +822,11 @@ export class Metalocation {
         continue; // these are handled elsewhere.
       } else if (spawn.isWall()) {
         const wall = (spawn.wallType() === 'bridge' ? bridges : walls).pop();
-        if (!wall) throw new Error(`Not enough wall screens ${loc}`);
+        if (!wall) {
+          throw new Error(`Not enough ${spawn.wallType()
+                           } screens in new metalocation: ${loc}\n${
+                           this.show()}`);
+        }
         const [y, x] = wall;
         spawn.yt = y;
         spawn.xt = x;
@@ -962,6 +974,7 @@ export class Metalocation {
     }
   }
 
+  // NOTE: this can only be done AFTER copying to the location!
   replaceMonsters(random: Random) {
     // Move all the monsters to reasonable locations.
     const loc = this.rom.locations[this.id];

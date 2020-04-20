@@ -37,10 +37,23 @@ export type GridCoord = number & {__grid_coord__: never};
 export class Grid<T> {
   data: T[];
   readonly row: number; // length of a row = 2 * width + 1
+  private _coords?: readonly GridCoord[] = undefined;
 
   constructor(readonly height: number, readonly width: number) {
     this.data = new Array((height << 1 | 1) * (width << 1 | 1));
     this.row = this.width << 1 | 1;
+  }
+
+  /** Returns GridCoords for the top-left corner of each screen. */
+  screens(): readonly GridCoord[] {
+    if (this._coords) return this._coords;
+    const coords: GridCoord[] = [];
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        coords.push((y << 12 | x << 4) as GridCoord);
+      }
+    }
+    return this._coords = coords;
   }
 
   index(c: GridCoord): GridIndex {
@@ -181,7 +194,11 @@ export class Grid<T> {
   show() {
     const lines = [];
     for (let y = 0; y < this.data.length; y += this.row) {
-      lines.push(this.data.slice(y, y + this.row).map(x => x || ' ').join(''));
+      let line = '';
+      for (let x = 0; x < this.row; x++) {
+        line += this.data[y + x] || ' ';
+      }
+      lines.push(line);
     }
     return lines.join('\n');
   }

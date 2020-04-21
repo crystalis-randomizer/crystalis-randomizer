@@ -14,6 +14,7 @@ export class CaveShuffleAttempt implements Attempt {
 
   // Current size and number of walls/bridges.
   rivers = 0;
+  wides = 0;
   count = 0;
   walls = 0;
   bridges = 0;
@@ -74,6 +75,7 @@ export class CaveShuffle extends MazeShuffle {
         spike: 0,
         under: 0,
         wall: 0,
+        wide: 0,
       },
     };
     for (const pos of meta.allPos()) {
@@ -93,6 +95,9 @@ export class CaveShuffle extends MazeShuffle {
         } else if (type === 'edge:right') {
           if ((pos & 0xf) === meta.width - 1) survey.edges[3]++;
           continue;
+        } else if (type === 'crypt') {
+          // stair is built into arena
+          continue;
         } else if (type.startsWith('seamless')) {
           // do nothing...
         } else if (exit.dir & 1) {
@@ -111,6 +116,7 @@ export class CaveShuffle extends MazeShuffle {
       if (scr.hasFeature('underpass')) survey.features.under++;
       if (scr.hasFeature('wall')) survey.features.wall++;
       if (scr.hasFeature('river')) survey.features.river++;
+      if (scr.hasFeature('wide')) survey.features.wide++;
     }
     if (survey.size < 2 && (meta.width > 1 || meta.height > 1)) survey.size = 2;
     return survey;
@@ -348,14 +354,7 @@ export class CaveShuffle extends MazeShuffle {
     const g = a.grid;
     for (const c of this.random.ishuffle(a.grid.screens())) {
       const middle = (c | 0x808) as GridCoord;
-      const left = (middle - 8) as GridCoord;
-      const left2 = (left - 8) as GridCoord;
-      const right = (middle + 8) as GridCoord;
-      const right2 = (right + 8) as GridCoord;
-      if (g.get(middle) !== 'c') continue;
-      if (g.get(left) || g.get(right)) continue;
-      if (!g.isBorder(left) && g.get(left2)) continue;
-      if (!g.isBorder(right) && g.get(right2)) continue;
+      if (!this.isEligibleArena(a, middle)) continue;
       const tile = this.extract(a.grid, c);
       const arenaTile = tile.substring(0, 4) + 'a' + tile.substring(5);
       const options = this.orig.tileset.getMetascreensFromTileString(arenaTile);
@@ -371,6 +370,19 @@ export class CaveShuffle extends MazeShuffle {
     }
     //console.error('could not add arena');
     return false;
+  }
+
+  isEligibleArena(a: A, middle: GridCoord): boolean {
+    const g = a.grid;
+    const left = (middle - 8) as GridCoord;
+    const left2 = (left - 8) as GridCoord;
+    const right = (middle + 8) as GridCoord;
+    const right2 = (right + 8) as GridCoord;
+    if (g.get(middle) !== 'c' && g.get(middle) !== 'w') return false;
+    if (g.get(left) || g.get(right)) return false;
+    if (!g.isBorder(left) && g.get(left2)) return false;
+    if (!g.isBorder(right) && g.get(right2)) return false;
+    return true;
   }
 
   addUnderpasses(a: A, under: number): boolean {
@@ -920,8 +932,26 @@ export class CaveShuffle extends MazeShuffle {
 
 export class WideCaveShuffle extends CaveShuffle {
   addLateFeatures(a: A): Result<void> {
+    let result = super.addLateFeatures(a);
+    if (!result.ok) return result;
     a.grid.data = a.grid.data.map(c => c === 'c' ? 'w' : c);
-    return super.addLateFeatures(a);
+    return OK;
+  }
+}
+
+export class CryptEntranceShuffle extends CaveShuffle {
+  refineMetascreens(a: A, meta: Metalocation): boolean {
+    // change arena into crypt arena
+    for (const pos of meta.allPos()) {
+      if (meta.get(pos).hasFeature('arena')) {
+        meta.set(pos, meta.rom.metascreens.cryptArena_statues);
+      }
+    }
+    return super.refineMetascreens(a, meta);
+  }
+
+  isEligibleArena(a: A, c: GridCoord): boolean {
+    return !a.grid.get(c - 0x800 as GridCoord) && super.isEligibleArena(a, c);
   }
 }
 

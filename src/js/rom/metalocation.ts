@@ -759,7 +759,10 @@ export class Metalocation {
         const x = (pos & 0xf) << 4;
         if (loc === this && scr.hasFeature('wall')) {
           if (scr.data.wall == null) throw new Error(`Missing wall prop`);
-          walls.push([y | (scr.data.wall >> 4), x | (scr.data.wall & 0xf)]);
+          const wall = [y | (scr.data.wall >> 4), x | (scr.data.wall & 0xf)];
+          walls.push(wall as [number, number]);
+          // Special-case the "double bridge" in lime tree lake
+          if (scr.data.tilesets.lime) walls.push([wall[0] - 1, wall[1]]);
         } else if (loc === this && scr.hasFeature('bridge')) {
           if (scr.data.wall == null) throw new Error(`Missing wall prop`);
           bridges.push([y | (scr.data.wall >> 4), x | (scr.data.wall & 0xf)]);

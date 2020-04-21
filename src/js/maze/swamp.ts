@@ -17,7 +17,7 @@ export class SwampShuffle extends CaveShuffle {
     const arenaY = h * w < 28 ? 0 : this.random.nextInt(h - 1);
     const arenaX = this.random.nextInt(w);
     function del(y: number, x: number) {
-      g.delete(y, x);
+      g.delete2(y, x);
       g.fixed.add(y * g.w + x);
     }
     function isDoor(type: string) {
@@ -53,24 +53,17 @@ export class SwampShuffle extends CaveShuffle {
 console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
 
     // Delete edges
-    let deleted = 0;
-    const edges: Array<() => void> = []
-    for (let y = 0; y < g.h; y++) {
-      for (let x = 0; x < g.w; x++) {
-        for (let dir = 0; dir < 2; dir++) {
-          if (!g.isBorder2(y, x, dir)) {
-            edges.push(() => g.deleteEdge(y, x, dir));
-          }
-        }
-      }
-    }
     // NOTE: may want multiple passes because earlier deletes
     // could enable later deletes?
     // Shoot for deleting anywhere from 0.4*h*w to 0.55*h*w of the edges.
+    let deleted = 0;
     const target = g.h * g.w * (this.random.next() * 0.15 + 0.4);
-    for (const edge of this.random.ishuffle(edges)) {
-      edge();
-      if (++deleted >= target) break;
+    for (const posDir of this.random.ishuffle(seq(g.data.length << 2))) {
+      const i = posDir >>> 2;
+      const dir = posDir & 3;
+      if (g.isBorder(i, dir) && g.deleteEdge(i, dir)) {
+        if (++deleted >= target) break;
+      }
     }
 
     // Consolidate.  TODO - recognize correct count!
@@ -92,10 +85,8 @@ console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
         plain[0] = s;
         continue;
       }
-      const edgeIndex =
-          [...(s.data.edges ?? '')]
-              .map((c, i) => c === 's' ? 1 << i : 0)
-              .reduce((a, b) => a + b, 0);
+      const edgeIndex = s.edgeIndex('s');
+      if (edgeIndex == null) throw new Error(`bad edges`);
       const hasDoor = s.data.exits?.some(e => isDoor(e.type));
       (hasDoor ? doors : plain)[edgeIndex] = s;
       (s.sid < 0 ? unallocd : allocd).add(s.sid);

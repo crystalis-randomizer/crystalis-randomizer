@@ -273,8 +273,8 @@ export type EdgeType = 'edge:top' | 'edge:bottom' | 'edge:left' | 'edge:right';
 export type SeamlessType = 'seamless:up' | 'seamless:down';
 export type ConnectionType =
     StairType | EdgeType | SeamlessType |
-    'cave' | 'door' | 'door2' | 'door3' | 'fortress' | 'gate' |
-    'swamp' | 'teleporter' | 'windmill';
+    'cave' | 'crypt' | 'door' | 'door2' | 'door3' | 'fortress' |
+    'gate' | 'swamp' | 'teleporter' | 'windmill';
 // TODO - is windmill just door2?
 
 // NOTE: swamp connects to edge:bottom for cave or town?

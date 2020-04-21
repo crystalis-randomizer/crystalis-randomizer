@@ -44,21 +44,31 @@ export class Monogrid {
   }
 
   // Delete a screen.
-  delete(y: number, x: number): boolean {
-    const i = y * this.w + x;
+  delete2(y: number, x: number, i = y * this.w + x): boolean {
+    if (this.fixed.has(i)) return false;
     const repl = new Map<number, number>();
     repl.set(i, 0);
     for (let dir = 0; dir < 4; dir++) {
       if (this.isBorder2(y, x, dir)) continue;
       const neighbor = i + this.delta(dir);
-      repl.set(neighbor, this.data[neighbor] & ~(1 << (dir ^ 2)));
+      const prev = this.data[neighbor];
+      const next = prev & ~(1 << (dir ^ 2));
+      if (prev !== next) {
+        if (this.fixed.has(neighbor)) return false;
+        repl.set(neighbor, next);
+      }
     }
     return this.try(repl);
   }
 
+  delete(i: number): boolean {
+    const x = i % this.w;
+    const y = (i - x) / this.w;
+    return this.delete2(y, x, i);
+  }
+
   // Delete an edge.
-  deleteEdge(y: number, x: number, dir: number): boolean {
-    const i0 = y * this.w + x;
+  deleteEdge2(y: number, x: number, dir: number, i0 = y * this.w + x): boolean {
     if (this.fixed.has(i0)) return false;
     if (this.isBorder2(y, x, dir)) {
       this.data[i0] &= ~(1 << dir);
@@ -70,6 +80,39 @@ export class Monogrid {
     repl.set(i0, this.data[i0] & ~(1 << dir));
     repl.set(i1, this.data[i1] & ~(1 << (dir ^ 2)));
     return this.try(repl);
+  }
+
+  deleteEdge(i: number, dir: number): boolean {
+    const x = i % this.w;
+    const y = (i - x) / this.w;
+    return this.deleteEdge2(y, x, dir, i);
+  }
+
+  refine(random: Random, target: number): boolean {
+    let count = 0;
+    const all = new Set<number>();
+    for (let i = 0; i < this.data.length; i++) {
+      if (this.data[i]) count++;
+      if (!this.fixed.has(i)) all.add(i);
+    }
+    // Find screens to delete
+    while (count > target) {
+      let found = false;
+      for (const pos of random.ishuffle(all)) {
+        if (count <= target) break;
+        const scr = this.data[pos];
+        if (!scr) {
+          count--;
+          continue;
+        }
+        if (this.delete(pos)) {
+          found = true;
+          count--;
+        }
+      }
+      if (!found) return false;
+    }
+    return true;
   }
 
   validate() {
@@ -102,11 +145,8 @@ export class Monogrid {
    */
   consolidate(random: Random, target: number): number[] {
     const counts = new Multiset<number>();
-    const mutable = new Set<number>();
     for (let i = 0; i < this.data.length; i++) {
-      if (this.fixed.has(i)) continue;
-      mutable.add(i);
-      if (this.data[i]) counts.add(this.data[i]);
+      if (!this.fixed.has(i) && this.data[i]) counts.add(this.data[i]);
     }
 
     let attempts = 1000;
@@ -114,32 +154,9 @@ export class Monogrid {
       const sorted = [...counts].sort((a, b) => b[1] - a[1]);
       const threshold = sorted[target][1];
       const bad = new Set(sorted.filter(a => a[1] <= threshold).map(x => x[0]));
-      const eligible: Array<Map<number, number>> = [];
-      let change: Map<number, number>|undefined;
-      for (const i of random.ishuffle(mutable)) {
-        const scr0 = this.data[i];
-        if (!bad.has(scr0)) continue;
-        for (let dir = 0; dir < 4; dir++) {
-          if (this.isBorder(i, dir)) continue;
-          const delta = this.delta(dir);
-          if (!mutable.has(i + delta)) continue;
-          const mask0 = 1 << dir;
-          if (bad.has(scr0 ^ mask0)) continue;
-          const mask1 = 1 << (dir ^ 2);
-          const scr1 = this.data[i + delta];
-          const repl = new Map([[i, scr0 ^ mask0], [i + delta, scr1 ^ mask1]]);
-          if (!this.check(repl)) continue;
-          eligible.push(repl);
-          if (!bad.has(scr1 ^ mask1) && bad.has(scr1)) {
-            change = repl;
-            break;
-          }
-        }
-        if (change) break;
-      }
-      if (!eligible.length) return [];;
-      if (!change) change = random.pick(eligible);
-      for (const [i, s] of change) {
+      const eligible = this.findEligibleConsolidates(bad);
+      if (!eligible.length) return [];
+      for (const [i, s] of random.pick(eligible)) {
         if (this.data[i]) counts.delete(this.data[i]);
         if (s) counts.add(s);
         this.data[i] = s;
@@ -147,6 +164,57 @@ export class Monogrid {
     }
     if (!attempts) return [];
     return [...counts].map(x => x[0]);
+  }
+
+  /** Try to remove all instances of bad screens. */
+  consolidateFixed(random: Random, bad: Set<number>): boolean {
+    const counts = new Multiset<number>();
+    for (let i = 0; i < this.data.length; i++) {
+      const scr = this.data[i];
+      if (!this.fixed.has(i) && bad.has(scr)) counts.add(scr);
+    }
+
+    let attempts = 1000;
+    while (counts.unique() && --attempts) {
+      const eligible = this.findEligibleConsolidates(bad);
+      if (!eligible.length) return false;
+      for (const [i, s] of random.pick(eligible)) {
+        const scr = this.data[i];
+        if (bad.has(scr)) counts.delete(scr);
+        if (bad.has(s)) counts.add(s);
+        this.data[i] = s;
+      }
+    }
+    if (!attempts) return false;
+    return true;
+  }
+
+  /** Returns a set of elibile consolidations. */
+  findEligibleConsolidates(bad: Set<number>): Array<Map<number, number>> {
+    const eligible: Array<Map<number, number>> = [];
+    const best: Array<Map<number, number>> = [];
+    for (let i = 0; i < this.data.length; i++) {
+      if (this.fixed.has(i)) continue;
+      const scr0 = this.data[i];
+      if (!bad.has(scr0)) continue;
+      for (let dir = 0; dir < 4; dir++) {
+        if (this.isBorder(i, dir)) continue;
+        const delta = this.delta(dir);
+        if (this.fixed.has(i + delta)) continue;
+        const mask0 = 1 << dir;
+        if (bad.has(scr0 ^ mask0)) continue;
+        const mask1 = 1 << (dir ^ 2);
+        const scr1 = this.data[i + delta];
+        const repl = new Map([[i, scr0 ^ mask0], [i + delta, scr1 ^ mask1]]);
+        if (!this.check(repl)) continue;
+        eligible.push(repl);
+        if (!bad.has(scr1 ^ mask1) && bad.has(scr1)) {
+          best.push(repl);
+          break;
+        }
+      }
+    }
+    return best.length ? best : eligible;
   }
 
   try(map: Map<number, number>): boolean {
@@ -186,6 +254,7 @@ export class Monogrid {
       for (let i = 0; i < this.data.length; i++) {
         if (this.data[i] && this.data[i] !== 0xf) eligible.push(i);
       }
+      if (!eligible.length) return false;
       const p = random.pick(eligible);
       x = p % this.w;
       y = (p - x) / this.w;
@@ -193,7 +262,9 @@ export class Monogrid {
     const path = new Map<number, number>();
     let i = y * this.w + x;
     let len = 0;
+    let ok = true;
     while (true) {
+      let closed = false;
       const prev = path.get(i) ?? this.data[i];
       let found = false;
       for (let dir of random.ishuffle([0, 1, 2, 3])) {
@@ -207,7 +278,13 @@ export class Monogrid {
         const i1 = y1 * this.w + x1;
         const prev1 = path.get(i1) ?? this.data[i1];
         const next1 = prev1 | (1 << (dir ^ 2));
-        if (this.valid && !this.valid.has(next1)) continue;
+        if (prev1) {
+          if (prev1 === next1 || (this.valid && !this.valid.has(next1))) {
+            continue; // either a complete retrace, or invalid
+          }
+          closed = true;
+        }
+        ok = !this.valid || this.valid.has(next1);
         path.set(i, next);
         path.set(i1, next1);
         x = x1;
@@ -217,12 +294,12 @@ export class Monogrid {
         break;
       }
       if (!found) break;
-      if (this.data[i]) break;
+      if (closed || this.data[i]) break;
       if (!this.size++) this.size++; // count 2 the first time
-      if (maxSize && this.size >= maxSize) break;
-      if (random.nextInt(15) < len++) break;
+      if (ok && maxSize && this.size >= maxSize) break;
+      if (ok && random.nextInt(15) < len++) break;
     }
-    if (!path.size) return false;
+    if (!path.size || !ok) return false;
     for (const [i, v] of path) {
       this.data[i] = v;
     }
@@ -250,6 +327,18 @@ export class Monogrid {
 
   delta(dir: number) {
     return (dir & 2 ? 1 : -1) * (dir & 1 ? 1 : this.w);
+  }
+
+  show(): string {
+    const lines = [];
+    for (let y = 0; y < this.h; y++) {
+      let line = '';
+      for (let x = 0; x < this.w; x++) {
+        line += ' ╵╴┘╷│┐┤╶└─┴┌├┬┼'[this.data[y * this.w + x]];
+      }
+      lines.push(line);
+    }
+    return lines.join('\n');
   }
 }
 

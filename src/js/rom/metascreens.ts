@@ -1315,7 +1315,8 @@ export class Metascreens {
     id: 0x74,
     tilesets: {lime: {}},
     exits: [bottomEdgeHouse(), cave(0x47)],
-    // TODO - bridge
+    feature: ['bridge'], // TODO - lake?
+    wall: 0x67,
   });
   // Swamp screens
   readonly swampNW = this.metascreen({
@@ -2124,7 +2125,7 @@ export class Metascreens {
       |│&│|
       |└┬┘|`,
     //acement: 'manual',
-    tile: [' n | a | c ', ' c | a | c '],
+    tile: [' n | a | c ', ' c | a | c ', ' c | a | w '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
     edges: 'n*c*', // 'n' for 'narrow'
@@ -2501,7 +2502,8 @@ export class Metascreens {
       | ╠┈|
       | ║ |`,
     tilesets: {dolphinCave: {}},
-    feature: ['river'],
+    feature: ['river', 'bridge'],
+    wall: 0x8b,
   });
   readonly channelEntranceSE = this.metascreen({
     id: 0xa2,
@@ -2510,11 +2512,12 @@ export class Metascreens {
       | ╔┈|
       |╷║ |`,
     tilesets: {dolphinCave: {}},
-    feature: ['river'],
+    feature: ['river', 'bridge'],
     // NOTE: This would ALMOST work as a connection to the
     // normal river cave tiles, but the river is one tile
     // taller at the top, so there's no match!
     exits: [bottomEdge({left: 2})],
+    wall: 0x7c,
   });
   readonly channelCross = this.metascreen({
     id: 0xa3,
@@ -2534,8 +2537,9 @@ export class Metascreens {
       |┈══|
       |  █|`,
     tilesets: {dolphinCave: {}},
-    feature: ['river'],
+    feature: ['river', 'bridge'],
     exits: [door(0x38)],
+    wall: 0x73,
   });
   readonly mountainFloatingIsland = this.metascreen({
     id: 0xa5,
@@ -3562,6 +3566,33 @@ export class Metascreens {
     feature: ['wide'],
     edges: 'w w ',
     connect: '2|a',
+    match: (reachable) => reachable(0x110, 0x78) && reachable(-0x30, 0x78),
+  });
+  readonly wideHall_deadEndN = this.metascreen({
+    id: 0xe5,
+    icon: icon`
+      | ╹ |
+      |   |
+      |   |`,
+    tile: [' w |   |   ', ' w | w |   '],
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
+    edges: 'w   ',
+    connect: '2',
+    match: (reachable) => !reachable(0x110, 0x78) && reachable(-0x30, 0x78),
+  });
+  readonly wideHall_deadEndS = this.metascreen({
+    id: 0xe5,
+    icon: icon`
+      |   |
+      |   |
+      | ╻ |`,
+    tile: ['   |   | w ', '   | w | w '],
+    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    feature: ['wide'],
+    edges: '  w ',
+    connect: 'a',
+    match: (reachable) => reachable(0x110, 0x78) && !reachable(-0x30, 0x78),
   });
   // TODO - add one-way views of this?!?
   readonly goaWideHallNS_deadEnd = this.metascreen({
@@ -4073,7 +4104,7 @@ export class Metascreens {
     edges: ' *c*',
     allowed: s => s.hasFeature('empty') ? 10 : 0,
     connect: 'a',
-    exits: [upStair(0x57)],
+    exits: [{...upStair(0x57), type: 'crypt'}],
     flag: 'custom:false',
   });
   readonly pyramidArena_draygon = this.metascreen({

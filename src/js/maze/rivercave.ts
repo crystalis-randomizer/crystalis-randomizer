@@ -1,14 +1,14 @@
-import { CaveShuffleAttempt, CaveShuffle } from './cave.js';
+import { CaveShuffleAttempt } from './cave.js';
 import { GridCoord, GridIndex } from './grid.js';
 import { Monogrid, Cursor } from './monogrid.js';
 import { Result, OK } from './maze.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
 import { Metascreen } from '../rom/metascreen.js';
-import { hex } from '../rom/util.js';
+import { TwoStageCaveShuffle } from './twostage.js';
 
 type A = CaveShuffleAttempt;
 
-export class RiverCaveShuffle extends CaveShuffle {
+export class RiverCaveShuffle extends TwoStageCaveShuffle {
   // basic problem: missing |- and -| pieces.
   //  one solution would be to just add them
   //  outside of that, we need to switch to a pathgen algo rather
@@ -20,101 +20,11 @@ export class RiverCaveShuffle extends CaveShuffle {
   //  - if we remove a horizontal edge then also remove the
   //    opposite edges of any neighbors, continuing.
   //  - or remove a vertical edge of one...?
-
+  early = 'r';
   maxAttempts = 250;
+  validRiverScreens?: Set<number>;
 
-  initialFill(a: A): Result<void> {
-    this.initialFillRiver(a);
-    this.initialFillLand(a);
-    this.connectLandToWater(a);
-    return OK;
-  }
-
-  initialFillRiver(a: A) {
-    const g = new Monogrid(a.h, a.w, this.getValidRiverScreens());
-    let attempts = 0;
-    const target = this.params.features?.river || 0;
-    while (attempts++ < 20 && g.size < target) {
-      if (g.addPath(this.random, target)) attempts = 0;
-    }
-
-    a.grid.data = g.toGrid('r').data;
-    this.addAllFixed(a);
-  }
-
-  getValidRiverScreens(): Set<number> {
-    // TODO - automatically infer this from the metatileset.
-    return new Set([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 14, 15]);
-  }
-
-  initialFillLand(a: A) {
-    // Add cave screens where possible
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
-        const c = (y << 12 | x << 4 | 0x808) as GridCoord;
-        if (!a.grid.get(c)) a.grid.set(c, 'c');
-      }
-    }
-
-    // Connect all the 'c' screens, don't connect to 'r'
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
-        for (const d of [8, 0x800]) {
-          const c = (y << 12 | x << 4 | 0x808) as GridCoord;
-          const c1 = c + d as GridCoord;
-          const c2 = c + 2 * d as GridCoord;
-          if (!a.grid.isBorder(c1) && !a.grid.get(c1) &&
-              a.grid.get(c) === 'c' && a.grid.get(c2) === 'c') {
-            a.grid.set(c1, 'c');
-          }
-        }
-      }
-    }
-  }
-
-  connectLandToWater(a: A) {
-    // Add connections between land and water
-    for (const s of this.random.ishuffle(a.grid.screens())) {
-      for (const d of [8, 0x800]) {
-        const c = s | 0x808 as GridCoord;
-        const c1 = c + d as GridCoord;
-        const c2 = c + 2 * d as GridCoord;
-        if (a.grid.isBorder(c1) || a.grid.get(c1)) continue;
-        // Check if adding c1 is valid
-        a.grid.set(c1, 'c');
-        const s1 = this.extract(a.grid, c - 0x808 as GridCoord);
-        const s2 = this.extract(a.grid, c2 - 0x808 as GridCoord);
-        if (!this.orig.tileset.getMetascreensFromTileString(s1).length ||
-            !this.orig.tileset.getMetascreensFromTileString(s2).length) {
-          a.grid.set(c1, '');
-        }
-      }
-    }
-  }
-
-  pruneDisconnectedLand(a: A): Result<void> {
-    // Prune anything not attached to river, make sure it's big enough.
-    const parts = new Set(a.grid.partition().values());
-    let size = 0;
-    for (const part of parts) {
-      const river = [...part].some(c => a.grid.get(c) === 'r');
-      if (river) {
-        size += [...part].filter(c => (c & 0x808) === 0x808).length;
-      } else {
-        for (const c of part) {
-          if (a.fixed.has(c)) {
-            return {ok: false, fail: `fixed tile ${hex(c)} disconnected`};
-          }
-          a.grid.set(c, '');
-        }
-      }
-    }
-    if (size < this.params.size) {
-      //console.error(a.grid.show());
-      return {ok: false, fail: 'lost too much land'};
-    }
-    return OK;
-  }
+  targetEarly() { return this.params.features?.river ?? 0; }
 
   // addEarlyFeatures(a: A): Result<void> {
   //   // fill with river and then refine down to the correct size.
@@ -185,15 +95,6 @@ export class RiverCaveShuffle extends CaveShuffle {
     return OK;
   }
 
-  addEarlyFeatures(a: A): Result<void> {
-    if (!this.addArenas(a, this.params.features?.arena ?? 0)) {
-      return {ok: false, fail: 'addArenas'};
-    }
-    let result: Result<void>
-    if ((result = this.pruneDisconnectedLand(a)), !result.ok) return result;
-    return super.addEarlyFeatures(a);
-  }
-
   addArenas(a: A, arenas: number): boolean {
     // This version works a little differently, since it runs as an early
     // feature (before refinement) rather than late.  We look for a 3x1
@@ -238,18 +139,12 @@ export class RiverCaveShuffle extends CaveShuffle {
       g.set(middle, 'a');
       arenas--;
       if (!arenas) {
-        this.pruneDisconnectedLand(a);
+        this.pruneDisconnected(a);
         return true;
       }
     }
     //console.error('could not add arena');
     return false;
-  }
-
-  addAllFixed(a: A) {
-    for (let i = 0; i < a.grid.data.length; i++) {
-      if (a.grid.data[i]) a.fixed.add(a.grid.coord(i as GridIndex));
-    }
   }
 }
 
@@ -258,7 +153,7 @@ export class WaterfallRiverCaveShuffle extends RiverCaveShuffle {
   addBlocks = false;
 
   initialFillRiver(a: A) {
-    const g = new Monogrid(a.h, a.w, this.getValidRiverScreens());
+    const g = new Monogrid(a.h, a.w, this.getValidEarlyScreens());
     const x0 = 2 + this.random.nextInt(a.w - 4);
     const x1 = 2 + this.random.nextInt(a.w - 4);
     const c = new Cursor(g, a.h - 1, x1);

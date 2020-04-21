@@ -6,6 +6,10 @@ import { Location } from '../rom/location.js';
 
 const [] = [hex];
 
+type Feature =
+    'arena' | 'bridge' | 'over' | 'pit' | 'ramp' | 'river' | 'spike' |
+    'under' | 'wall' | 'wide';
+
 export interface Survey {
   readonly id: number;
   readonly meta: Metalocation;
@@ -13,7 +17,7 @@ export interface Survey {
   readonly edges?: number[]; // [top, left, bottom, right]
   readonly stairs?: number[]; // [up, down]
   //poi?: number;
-  readonly features?: Record<string, number>; // a, r, s, p, b, w
+  readonly features?: Record<Feature, number>; // a, r, s, p, b, w
 }
 
 export interface Attempt {
@@ -51,8 +55,12 @@ export abstract class MazeShuffle {
         this.finish(result.value);
         return;
       }
-      //console.log(`Shuffle failed ${this.loc}: ${result.fail}`);
+      console.log(`Shuffle failed ${this.loc}: ${result.fail}`);
     }
+    this.reportFailure();
+  }
+
+  reportFailure() {
     //throw new Error(`Completely failed to map shuffle ${loc}`);
     console.error(`Completely failed to map shuffle ${this.loc}`);
   }

@@ -1,5 +1,5 @@
 import { FlagSet } from '../flagset.js';
-import { CaveShuffle, KarmineBasementShuffle,
+import { CaveShuffle, CryptEntranceShuffle, KarmineBasementShuffle,
          WideCaveShuffle } from '../maze/cave.js';
 // import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
@@ -11,6 +11,7 @@ import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
 import { RiverCaveShuffle,
          WaterfallRiverCaveShuffle } from '../maze/rivercave.js';
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
+import { SaberaPalaceShuffle } from '../maze/twostage.js';
 
 interface Shuffle {
   shuffle(random: Random): void;
@@ -28,6 +29,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   const $ = rom.locations;
 
   addSwampDoors(rom);
+new SaberaPalaceShuffle($.SaberaPalace1).shuffle(random);return;
 
   const shuffles: Shuffle[] = [
     // new TownShuffle($.Leaf),
@@ -94,7 +96,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new RiverCaveShuffle($.EvilSpiritIsland2),
     // new PitCycleShuffle($.EvilSpiritIsland3, $.EvilSpiritIsland2),
     new RiverCaveShuffle($.EvilSpiritIsland4),
-    new WideCaveShuffle($.SaberaPalace1),
+    new SaberaPalaceShuffle($.SaberaPalace1),
     // // TODO - consider just making this into two separate maps?
     // new SplitPitShuffle($.SaberaPalace2, $.SaberaPalace1),
     new CaveShuffle($.JoelSecretPassage),
@@ -127,7 +129,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     // new OverworldShuffle($.Desert2),
     new CaveShuffle($.Pyramid_Branch),
     // new PyramidShuffle($.Pyramid_Main, $.Pyramid_Draygon),
-    // new CaveShuffle($.Crypt_Entrance),  // TODO - fix arena crash
+    new CryptEntranceShuffle($.Crypt_Entrance),
     new WideCaveShuffle($.Crypt_Hall1),
     new CaveShuffle($.Crypt_DeadEndLeft),
     new CaveShuffle($.Crypt_DeadEndRight),

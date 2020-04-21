@@ -182,6 +182,17 @@ export class Metascreen {
     return mask;
   }
 
+  edgeIndex(edgeType: string): number|undefined {
+    let index = 0;
+    const edge = this.data.edges ?? '';
+    for (let i = 0; i < 4; i++) {
+      if (edge[i] === ' ') continue;
+      if (edge[i] !== edgeType) return undefined;
+      index |= (1 << i);
+    }
+    return index;
+  }
+
   findExitType(tile: number, single: boolean,
                seamless: boolean): Connection|undefined {
     for (const exit of this.data.exits ?? []) {

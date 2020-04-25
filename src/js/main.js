@@ -15,6 +15,7 @@ let romName;
 let race = false;
 let debug = false;
 
+window.global = window;
 const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
 
 function ga(cmd, ...args) {

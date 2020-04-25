@@ -23,6 +23,9 @@ export interface MetascreenData {
     requires?: ScreenFix[],
     /** ??? */
     type?: string, // for town?
+    /** Labyrinth data. */
+    addWall?: number[],
+    removeWall?: number,
   }};
   /** List of features present. */
   feature?: Feature[];

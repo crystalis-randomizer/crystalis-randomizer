@@ -1,7 +1,9 @@
 import {Rom} from '../rom.js';
 import {Context} from './context.js';
 import {ScreenEditor} from './screeneditor.js';
-import {extendSwampScreens} from '../maze/swamp.js';
+import {addSwampDoors} from '../maze/swamp.js';
+
+(window as any).global = window;
 
 async function main() {
   const el = document.getElementById('load-rom');
@@ -10,7 +12,7 @@ async function main() {
     el.classList.add('visible');
     el.appendChild(picker);
   });
-  extendSwampScreens(rom);
+  addSwampDoors(rom);
   el.classList.remove('visible');
 
   const context = new Context(rom);

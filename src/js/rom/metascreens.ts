@@ -11,40 +11,40 @@ import {MetascreenData, ConnectionType,
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {ScreenFix, withRequire} from './screenfix.js';
 
-// BASIC PLAN: Screen is the physical array, Metascreen has the extra info.
-//             Only Metascreen is tied to specific (Meta)tilesets.
+// // BASIC PLAN: Screen is the physical array, Metascreen has the extra info.
+// //             Only Metascreen is tied to specific (Meta)tilesets.
 
-/**
- * Adds a flag-togglable wall into a labyrinth screen.
- * @param bit     Unique number for each choice. Use -1 for unconditional.
- * @param variant 0 or 1 for each option. Use 0 with bit=-1 for unconditional.
- * @param flag    Position(s) of flag wall.
- * @param unflag  Position(s) of an existing wall to remove completely.
- * @return A function to generate the variant.
- */
-function labyrinthVariant(parentFn: (s: Metascreens) => Metascreen,
-                          bit: number, variant: 0|1,
-                          flag: number|number[], unflag?: number|number[]) {
-  return (s: Metascreen, seed: number, rom: Rom): boolean => {
-    // check variant
-    if (((seed >>> bit) & 1) !== variant) return false;
-    const parent = parentFn(rom.metascreens);
-    for (const pos of typeof flag === 'number' ? [flag] : flag) {
-      rom.screens[s.data.id].set2d(pos, [[0x19, 0x19], [0x1b, 0x1b]]);
-    }
-    for (const pos of typeof unflag === 'number' ? [unflag] : unflag || []) {
-      rom.screens[s.data.id].set2d(pos, [[0xc5, 0xc5], [0xd0, 0xc5]]);
-    }
-    if (s.flag !== 'always') {
-      // parent is a normally-open screen and we're closing it.
-      parent.flag = 'always';
-    } else if (unflag != null) {
-      // parent is the other alternative - delete it.
-      parent.remove();
-    }
-    return true;    
-  };
-}
+// /**
+//  * Adds a flag-togglable wall into a labyrinth screen.
+//  * @param bit     Unique number for each choice. Use -1 for unconditional.
+//  * @param variant 0 or 1 for each option. Use 0 with bit=-1 for unconditional.
+//  * @param flag    Position(s) of flag wall.
+//  * @param unflag  Position(s) of an existing wall to remove completely.
+//  * @return A function to generate the variant.
+//  */
+// function labyrinthVariant(parentFn: (s: Metascreens) => Metascreen,
+//                           bit: number, variant: 0|1,
+//                           flag: number|number[], unflag?: number|number[]) {
+//   return (s: Metascreen, seed: number, rom: Rom): boolean => {
+//     // check variant
+//     if (((seed >>> bit) & 1) !== variant) return false;
+//     const parent = parentFn(rom.metascreens);
+//     for (const pos of typeof flag === 'number' ? [flag] : flag) {
+//       rom.screens[s.data.id].set2d(pos, [[0x19, 0x19], [0x1b, 0x1b]]);
+//     }
+//     for (const pos of typeof unflag === 'number' ? [unflag] : unflag || []) {
+//       rom.screens[s.data.id].set2d(pos, [[0xc5, 0xc5], [0xd0, 0xc5]]);
+//     }
+//     if (s.flag !== 'always') {
+//       // parent is a normally-open screen and we're closing it.
+//       parent.flag = 'always';
+//     } else if (unflag != null) {
+//       // parent is the other alternative - delete it.
+//       parent.remove();
+//     }
+//     return true;    
+//   };
+// }
 
 // extends Set<Metascreen> ???
 export class Metascreens {
@@ -1276,9 +1276,10 @@ export class Metascreens {
       |│┃│|`,
     placement: 'mod',
     tile: ' w | w | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNS, 0, 0, 0x9d)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x9d]}},
+    // update: [[ScreenFix.LabyrinthParapets,
+    //           labyrinthVariant(s => s.goaWideHallNS, 0, 0, 0x9d)]],
     edges: 'w w ',
     connect: '19|2a|3|b',
   });
@@ -1290,9 +1291,10 @@ export class Metascreens {
       |│┃│|`,
     placement: 'mod',
     tile: ' w | w | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNS, 0, 1, 0x51)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x51]}},
+    // update: [[ScreenFix.LabyrinthParapets,
+    //           labyrinthVariant(s => s.goaWideHallNS, 0, 1, 0x51)]],
     edges: 'w w ',
     connect: '1|9|2a|3b',
   });
@@ -3333,12 +3335,10 @@ export class Metascreens {
       | ┗━|
       |└──|`,
     tile: ' w | ww|   ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNE, 1, 0, 0x61)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x61]}},
     edges: 'w  w',
     connect: '1|f|2e|3d',
-    mod: 'block',
   });
   readonly goaWideHallNE_blockedRight = this.metascreen({
     id: 0xe0,
@@ -3347,12 +3347,10 @@ export class Metascreens {
       |│┗━|
       |└──|`,
     tile: ' w | ww|   ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNE, 1, 1, 0x0d)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x0d]}},
     edges: 'w  w',
     connect: '1f|2e|3|d',
-    mod: 'block',
   });
   readonly wideHallNW = this.metascreen({
     id: 0xe1,
@@ -3373,11 +3371,8 @@ export class Metascreens {
       |━┛│|
       |──┘|`,
     tile: ' w |ww |   ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNW_blockedRight,
-                               -1, 0, 0x6d)]],
-    flag: 'always',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           removeWall: 0x6d}},
     edges: 'ww  ',
     connect: '15|26|37',
   });
@@ -3391,7 +3386,6 @@ export class Metascreens {
     tilesets: {labyrinth: {}},
     edges: 'ww  ',
     connect: '15|26|3|7',
-    mod: 'block',
   });
   readonly goaWideHallNW_blockedLeft = this.metascreen({
     id: 0xe1,
@@ -3400,13 +3394,10 @@ export class Metascreens {
       |━┛│|
       |──┘|`,
     tile: ' w |ww |   ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNW_blockedRight,
-                               2, 1, 0x01, 0x6d)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x01], removeWall: 0x6d}},
     edges: 'ww  ',
     connect: '1|5|26|37',
-    mod: 'block',
   });
   readonly wideHallSE = this.metascreen({
     id: 0xe2,
@@ -3438,12 +3429,10 @@ export class Metascreens {
       | ┏━|
       |│┃┌|`,
     tile: '   | ww| w ',
-    tilesets: {labyrinth: {}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallSE, 3, 0, 0x61)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x61]}},
     edges: '  ww',
     connect: '9|d|ae|bf',
-    mod: 'block',
   });
   readonly goaWideHallSE_blockedRight = this.metascreen({
     id: 0xe2,
@@ -3452,12 +3441,10 @@ export class Metascreens {
       |│┏━|
       |│┃ |`,
     tile: '   | ww| w ',
-    tilesets: {labyrinth: {}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallSE, 3, 1, 0xdd)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0xdd]}},
     edges: '  ww',
     connect: '9d|ae|b|f',
-    mod: 'block',
   });
   readonly wideHallWS = this.metascreen({
     id: 0xe3,
@@ -3478,11 +3465,8 @@ export class Metascreens {
       |━┓│|
       |┐┃│|`,
     tile: '   |ww | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallWS_blockedRight,
-                               -1, 0, 0x9d)]],
-    flag: 'always',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           removeWall: 0x9d}},
     edges: ' ww ',
     connect: '5b|6a|79',
   });
@@ -3496,7 +3480,6 @@ export class Metascreens {
     tilesets: {labyrinth: {}},
     edges: ' ww ',
     connect: '5|b|6a|79',
-    mod: 'block',
   });
   readonly goaWideHallWS_blockedLeft = this.metascreen({
     id: 0xe3,
@@ -3505,13 +3488,10 @@ export class Metascreens {
       |━┓│|
       | ┃│|`,
     tile: '   |ww | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallWS_blockedRight,
-                               4, 0, 0xd1, 0x9d)]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0xd1], removeWall: 0x9d}},
     edges: ' ww ',
     connect: '5b|6a|7|9',
-    mod: 'block',
   });
   readonly goaWideHallNS_stairs = this.metascreen({
     id: 0xe4,
@@ -3519,7 +3499,7 @@ export class Metascreens {
       |├┨│|
       |│┃│|
       |│┠┤|`,
-    tile: ' w | w | w ',
+    tile: ' w | H | w ',
     tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '1239ab',
@@ -3530,14 +3510,11 @@ export class Metascreens {
       |└┨│|
       |╷┃╵|
       |│┠┐|`,
-    tile: ' w | w | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNS_stairs,
-                               5, 0, [0x41, 0x8d])]],
+    tile: ' w | H | w ',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x41, 0x8d]}},
     edges: 'w w ',
     connect: '12ab|3|9',
-    mod: 'block',
   });
   readonly goaWideHallNS_stairsBlocked24 = this.metascreen({
     id: 0xe4,
@@ -3545,14 +3522,11 @@ export class Metascreens {
       |┌┨│|
       |│┃│|
       |│┠┘|`,
-    tile: ' w | w | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNS_stairs,
-                               5, 1, [0x01, 0xcd])]],
+    tile: ' w | H | w ',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x01, 0xcd]}},
     edges: 'w w ',
     connect: '1|239a|b',
-    mod: 'block',
   });
   // TODO - custom inverted version of e4 with the top stair on the right
   readonly wideHallNS_deadEnds = this.metascreen({
@@ -3601,7 +3575,7 @@ export class Metascreens {
       |│╹│|
       |├─┤|
       |│╻│|`,
-    tile: ' w | w | w ',
+    tile: ' w | = | w ',
     tilesets: {labyrinth: {}},
     edges: 'w w ',
     connect: '139b|2|a',
@@ -3612,14 +3586,11 @@ export class Metascreens {
       |╵╹│|
       |┌─┘|
       |│╻╷|`,
-    tile: ' w | w | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNS_deadEnd,
-                               6, 0, [0x61, 0xad])]],
+    tile: ' w | = | w ',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x61, 0xad]}},
     edges: 'w w ',
     connect: '1|2|39|a|b',
-    mod: 'block',
   });
   readonly goaWideHallNS_deadEndBlocked13 = this.metascreen({
     id: 0xe5,
@@ -3627,14 +3598,11 @@ export class Metascreens {
       |│╹╵|
       |└─┐|
       |╷╻│|`,
-    tile: ' w | w | w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNS_deadEnd,
-                               6, 1, [0x6d, 0xa1])]],
+    tile: ' w | = | w ',
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x6d, 0xa1]}},
     edges: 'w w ',
     connect: '1b|2|3|9|a',
-    mod: 'block',
   });
   readonly wideHallNWSE = this.metascreen({
     id: 0xe6,
@@ -3666,12 +3634,10 @@ export class Metascreens {
       |━╋━|
       | ┃┌|`,
     tile: ' w |www| w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNWSE, 7, 0, [0x0d, 0xd1])]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x0d, 0xd1]}},
     edges: 'wwww',
     connect: '26ae|15|3|d|7|9|bf',
-    mod: 'block',
   });
   readonly goaWideHallNWSE_blocked24 = this.metascreen({
     id: 0xe6,
@@ -3680,12 +3646,10 @@ export class Metascreens {
       |━╋━|
       |┐┃ |`,
     tile: ' w |www| w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNWSE, 7, 1, [0x01, 0xdd])]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x01, 0xdd]}},
     edges: 'wwww',
     connect: '26ae|1|5|3d|79|b|f',
-    mod: 'block',
   });
   readonly wideHallNWE = this.metascreen({
     id: 0xe7,
@@ -3717,12 +3681,10 @@ export class Metascreens {
       |━┻━|
       |───|`,
     tile: ' w |www|   ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallNWE, -1, 0, [0x01, 0x0d])]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0x01, 0x0d]}},
     edges: 'ww w',
     connect: '26e|1|5|3|d|7f',
-    mod: 'block',
   });
   readonly wideHallWSE = this.metascreen({
     id: 0xe8,
@@ -3754,12 +3716,10 @@ export class Metascreens {
       |━┳━|
       | ┃ |`,
     tile: '   |www| w ',
-    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets]}},
-    update: [[ScreenFix.LabyrinthParapets,
-              labyrinthVariant(s => s.goaWideHallWSE, -1, 0, [0xd1, 0xdd])]],
+    tilesets: {labyrinth: {requires: [ScreenFix.LabyrinthParapets],
+                           addWall: [0xd1, 0xdd]}},
     edges: ' www',
     connect: '6ae|5d|7|9|b|f',
-    mod: 'block',
   });
   readonly wideHallNS_wallTop = this.metascreen({
     id: 0xe9,    // NOTE: the passage narrows at the top

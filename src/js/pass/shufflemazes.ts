@@ -12,6 +12,7 @@ import { RiverCaveShuffle,
          WaterfallRiverCaveShuffle } from '../maze/rivercave.js';
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
+import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
 
 interface Shuffle {
   shuffle(random: Random): void;
@@ -29,7 +30,8 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   const $ = rom.locations;
 
   addSwampDoors(rom);
-new SaberaPalaceShuffle($.SaberaPalace1).shuffle(random);return;
+  fixLabyrinthScreens(rom, random);
+new LabyrinthShuffle($.GoaFortress_Kelbesque).shuffle(random);return;
 
   const shuffles: Shuffle[] = [
     // new TownShuffle($.Leaf),

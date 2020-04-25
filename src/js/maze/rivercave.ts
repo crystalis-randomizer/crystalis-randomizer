@@ -188,8 +188,9 @@ export class WaterfallRiverCaveShuffle extends RiverCaveShuffle {
 
   addStairs(): Result<void> { return OK; }
 
-  checkMeta(meta: Metalocation, pos: Pos, scr: Metascreen): boolean {
-    const parts = meta.traverse({flight: true, with: new Map([[pos, scr]])});
+  checkMeta(meta: Metalocation, repl?: Map<Pos, Metascreen>): boolean {
+    const opts = repl ? {flight: true, with: repl} : {flight: true};
+    const parts = meta.traverse(opts);
     return new Set(parts.values()).size === this.maxPartitions;
   }
 }

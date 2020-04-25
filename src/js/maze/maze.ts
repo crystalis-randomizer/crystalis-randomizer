@@ -1,4 +1,4 @@
-import { Grid, GridCoord } from './grid.js';
+import { Grid, GridCoord, GridIndex } from './grid.js';
 import { Random } from '../random.js';
 import { hex } from '../rom/util.js';
 import { Metalocation } from '../rom/metalocation.js';
@@ -94,13 +94,23 @@ export abstract class MazeShuffle {
 
 
   /** Extract a 3x3 section into a (h×w)-character string. */
-  extract(g: Grid<any>, c: GridCoord, h = 3, w = 3): string {
+  extract(g: Grid<any>, c: GridCoord,
+          {h = 3, w = 3,
+           replace = undefined as Map<GridCoord, string>|undefined,
+          } = {}): string {
     const index = g.index(c);
     let out = '';
     const end = index + h * g.row;
     const {row} = g;
     for (let r = index as number; r < end; r += row) {
       for (let i = r; i < r + w; i++) {
+        if (replace) {
+          const s = replace.get(g.coord(i as GridIndex));
+          if (s != null) {
+            out += (s || ' ');
+            continue;
+          }
+        }
         out += (g.data[i] || ' ');
       }
     }

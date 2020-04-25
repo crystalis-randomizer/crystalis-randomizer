@@ -279,14 +279,14 @@ export class SaberaPalaceShuffle extends TwoStageCaveShuffle {
     return OK;
   }
 
-  refineMetascreens(a: A, meta: Metalocation): boolean {
+  refineMetascreens(a: A, meta: Metalocation): Result<void> {
     for (const pos of meta.allPos()) {
       const scr = meta.get(pos);
       if (scr.hasFeature('arena')) {
         meta.set(pos, meta.rom.metascreens.fortressArena_through);
       }
     }
-    return true;
+    return OK;
   }
 
   refineEdges() { return true; }

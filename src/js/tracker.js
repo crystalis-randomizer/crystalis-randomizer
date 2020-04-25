@@ -3,6 +3,9 @@ import { Bits } from './bits.js';
 import { FlagSet } from './flagset.js';
 import { Location, Slot, TrackerNode } from './nodes.js';
 import { Rom } from './rom.js';
+
+window.global = window;
+
 const BOXES = `
 sword-of-wind $00
 sword-of-fire $01

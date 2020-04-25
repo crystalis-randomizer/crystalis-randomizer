@@ -1,3 +1,4 @@
+window.global = window;
 const upload = document.getElementById('pick-file');
 
 upload.addEventListener('change', () => {

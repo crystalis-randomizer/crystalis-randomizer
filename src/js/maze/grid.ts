@@ -1,6 +1,7 @@
 import { Random } from '../random.js';
 import { UnionFind } from '../unionfind.js';
 import { Pos } from '../rom/metalocation.js';
+import { hex } from '../rom/util.js';
 
 export type GridIndex = number & {__grid_index__: never};
 export type GridCoord = number & {__grid_coord__: never};
@@ -157,6 +158,17 @@ export class Grid<T> {
     return ((this.height << 12 | this.width << 4) - edge) as GridCoord;
   }
 
+  /** Returns the number of non-empty edges. */
+  edgeCoordination(center: GridCoord, want?: T): number {
+    let count = 0;
+    if ((center & 0x808) !== 0x808) throw new Error(`Bad tile: ${hex(center)}`);
+    for (const dir of [8, -8, 0x800, -0x800]) {
+      const s = this.get(center + dir as GridCoord);
+      if (want ? s === want : s) count++;
+    }
+    return count;
+  }
+
   isBorder(c: GridCoord): boolean {
     if (c & 8) {
       if (c & 0x800) return false;
@@ -207,4 +219,20 @@ export class Grid<T> {
 // TODO - posToCoord? (presumably center)
 export function coordToPos(c: GridCoord): Pos {
   return (c >> 4) & 0xf | (c >> 8) & 0xf0;
+}
+
+export function W(c: GridCoord, n = 1): GridCoord {
+  return c - n * 8 as GridCoord;
+}
+
+export function E(c: GridCoord, n = 1): GridCoord {
+  return c + n * 8 as GridCoord;
+}
+
+export function N(c: GridCoord, n = 1): GridCoord {
+  return c - n * 0x800 as GridCoord;
+}
+
+export function S(c: GridCoord, n = 1): GridCoord {
+  return c + n * 0x800 as GridCoord;
 }

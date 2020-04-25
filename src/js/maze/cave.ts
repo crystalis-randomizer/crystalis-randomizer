@@ -1,8 +1,10 @@
-import { Grid, GridCoord, GridIndex } from './grid.js';
+import { Grid, GridCoord, GridIndex, E, S } from './grid.js';
 import { seq, hex } from '../rom/util.js';
 import { Metascreen } from '../rom/metascreen.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
 import { MazeShuffle, Attempt, Survey, Result, OK } from '../maze/maze.js';
+import { UnionFind } from '../unionfind.js';
+import { DefaultMap } from '../util.js';
 
 const [] = [hex];
 
@@ -146,9 +148,9 @@ export class CaveShuffle extends MazeShuffle {
     if ((result = this.preinfer(a)), !result.ok) return result;
     const meta = this.inferScreens(a);
     if (!meta.ok) return meta;
-    if (!this.refineMetascreens(a, meta.value)) {
+    if ((result = this.refineMetascreens(a, meta.value)), !result.ok) {
       //console.error(meta.value.show());
-      return {ok: false, fail: 'refineMeta'};
+      return result;
     }
 
     return meta;
@@ -747,6 +749,104 @@ export class CaveShuffle extends MazeShuffle {
     return false;
   }
 
+  /**
+   * Attempt to make a path connecting start to end (both centers).
+   * Requires all 
+   */
+  tryConnect(a: A, start: GridCoord, end: GridCoord,
+             char: string, attempts = 1): boolean {
+    while (attempts-- > 0) {
+      const replace = new Map<GridCoord, string>();
+      let pos = start;
+      if ((start & end & 0x808) !== 0x808) {
+        throw new Error(`bad start ${hex(start)} or end ${hex(end)}`);
+      }
+      replace.set(pos, char);
+      while (pos !== end) {
+        // on a center - find eligible directions
+        const dirs: number[] = [];
+        for (const dir of [8, -8, 0x800, -0x800]) {
+          const pos1 = pos + dir as GridCoord;
+          const pos2 = pos + 2 * dir as GridCoord;
+          if (a.fixed.has(pos2)) continue;
+          if (replace.get(pos2) ?? a.grid.get(pos2)) continue;
+          if (a.grid.isBorder(pos1)) continue;
+          dirs.push(dir);
+        }
+        if (!dirs.length) break;
+        const dy = (end >> 12) - (pos >> 12)
+        const dx = (end & 0xf0) - (pos & 0xf0);
+        const preferred = new Set<number>(dirs);
+        if (dy < 0) preferred.delete(0x800);
+        if (dy > 0) preferred.delete(-0x800);
+        if (dx < 0) preferred.delete(8);
+        if (dx > 0) preferred.delete(-8);
+        // 3:1 bias for preferred directions  (TODO - backtracking?)
+        dirs.push(...preferred, ...preferred);
+        const dir = this.random.pick(dirs);
+        replace.set(pos + dir as GridCoord, char);
+        replace.set(pos = pos + 2 * dir as GridCoord, char);
+      }
+      if (pos !== end) continue;
+      // If we got there, make the changes.
+      for (const [c, v] of replace) {
+        a.grid.set(c, v);
+        if ((c & 0x808) === 0x808) a.count++;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  tryAddLoop(a: A, char: string, attempts = 1): boolean {
+    // pick a pair of coords for start and end
+    const uf = new UnionFind<GridCoord>();
+    for (let i = 0; i < a.grid.data.length; i++) {
+      const c = a.grid.coord(i as GridIndex);
+      if (a.grid.get(c) || a.grid.isBorder(c)) continue;
+      if (!a.grid.get(E(c))) uf.union([c, E(c)]);
+      if (!a.grid.get(S(c))) uf.union([c, S(c)]);
+    }
+    const eligible =
+        new DefaultMap<unknown, [GridCoord, GridCoord][]>(() => []);
+    for (const s of a.grid.screens()) {
+      const c = s + 0x808 as GridCoord;
+      if (!a.grid.get(c)) continue;
+      for (const d of [8, -8, 0x800, -0x800]) {
+        const e1 = c + d as GridCoord;
+        if (a.grid.isBorder(e1) || a.grid.get(e1)) continue;
+        const e2 = c + 2 * d as GridCoord;
+        if (a.grid.get(e2)) continue;
+        const replace = new Map([[e1 as GridCoord, char]]);
+        const tile = this.extract(a.grid, s, {replace});
+        if (this.orig.tileset.getMetascreensFromTileString(tile).length) {
+          eligible.get(uf.find(e2)).push([e1, e2]);
+        }
+      }
+    }
+    const weightedMap = new Map<GridCoord, [GridCoord, GridCoord][]>();
+    for (const partition of eligible.values()) {
+      if (partition.length < 2) continue; // TODO - 3 or 4?
+      for (const [e1] of partition) {
+        weightedMap.set(e1, partition);
+      }
+    }
+    const weighted = [...weightedMap.values()];
+    if (!weighted.length) return false;
+    while (attempts-- > 0) {
+      const partition = this.random.pick(weighted);
+      const [[e0, c0], [e1, c1]] = this.random.ishuffle(partition);
+      a.grid.set(e0, char);
+      a.grid.set(e1, char);
+      if (this.tryConnect(a, c0, c1, char, 5)) {
+        return true;
+      }
+      a.grid.set(e0, '');
+      a.grid.set(e1, '');
+    }
+    return false;
+  }
+
   /** Make arrangements to maximize the success chances of infer. */
   preinfer(a: A): Result<void> {
     let result;
@@ -792,7 +892,7 @@ export class CaveShuffle extends MazeShuffle {
     return {ok: true, value: meta};
   }
 
-  refineMetascreens(a: A, meta: Metalocation): boolean {
+  refineMetascreens(a: A, meta: Metalocation): Result<void> {
     // make sure we have the right number of walls and bridges
     // a.walls = a.bridges = 0; // TODO - don't bother making these instance
     // for (const pos of meta.allPos()) {
@@ -829,24 +929,32 @@ export class CaveShuffle extends MazeShuffle {
       }
     }
     // console.warn(`bridges ${a.bridges} ${bridges} / walls ${a.walls} ${walls}\n${a.grid.show()}\n${meta.show()}`);
-    return a.bridges === bridges && a.walls === walls;
+    if (a.bridges !== bridges) {
+      return {ok: false,
+              fail: `refineMeta bridges want ${bridges} got ${a.bridges}`};
+    }
+    if (a.walls !== walls) {
+      return {ok: false,
+              fail: `refineMeta walls want ${walls} got ${a.walls}`};
+    }
+    return OK;
   }
 
   tryMeta(meta: Metalocation, pos: Pos,
           screens: Iterable<Metascreen>): boolean {
     for (const s of screens) {
-      if (!this.checkMeta(meta, pos, s)) continue;
+      if (!this.checkMeta(meta, new Map([[pos, s]]))) continue;
       meta.set(pos, s);
       return true;
     }
     return false;
   }
 
-  checkMeta(meta: Metalocation, pos: Pos, scr: Metascreen): boolean {
+  checkMeta(meta: Metalocation, replacements?: Map<Pos, Metascreen>): boolean {
 
     // TODO - flight?  may have a diff # of flight vs non-flight partitions
-
-    const parts = meta.traverse({with: new Map([[pos, scr]])});
+    const opts = replacements ? {with: replacements} : {};
+    const parts = meta.traverse(opts);
     return new Set(parts.values()).size === this.maxPartitions;
   }
 }
@@ -940,7 +1048,7 @@ export class WideCaveShuffle extends CaveShuffle {
 }
 
 export class CryptEntranceShuffle extends CaveShuffle {
-  refineMetascreens(a: A, meta: Metalocation): boolean {
+  refineMetascreens(a: A, meta: Metalocation): Result<void> {
     // change arena into crypt arena
     for (const pos of meta.allPos()) {
       if (meta.get(pos).hasFeature('arena')) {

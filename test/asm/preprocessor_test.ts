@@ -323,7 +323,7 @@ describe('Preprocessor', function() {
            instruction('z'));
     });
 
-    it.only('should handle nested ifs', function() {
+    it('should handle nested ifs', function() {
       test(['.if 0',
             '  a',
             '  .if 1',

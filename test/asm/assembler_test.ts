@@ -914,6 +914,7 @@ function strip(o: Module): Module {
     stripExpr(s.expr);
   }
   for (const c of o.chunks || []) {
+    if (c.name === 'Code') delete c.name;
     for (const a of c.asserts || []) {
       stripExpr(a);
     }

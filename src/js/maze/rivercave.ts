@@ -152,7 +152,7 @@ export class WaterfallRiverCaveShuffle extends RiverCaveShuffle {
 
   addBlocks = false;
 
-  initialFillRiver(a: A) {
+  initialFillEarly(a: A): Result<void> {
     const g = new Monogrid(a.h, a.w, this.getValidEarlyScreens());
     const x0 = 2 + this.random.nextInt(a.w - 4);
     const x1 = 2 + this.random.nextInt(a.w - 4);
@@ -163,6 +163,7 @@ export class WaterfallRiverCaveShuffle extends RiverCaveShuffle {
 
     a.grid.data = g.toGrid('r').data;
     this.addAllFixed(a);
+    return OK;
   }
 
   addEdges(a: A): Result<void> {

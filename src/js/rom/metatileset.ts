@@ -123,10 +123,6 @@ export class Metatileset implements Iterable<Metascreen> {
     return e;
   }
 
-  get exit(): Metascreen {
-    return this.rom.metascreens.exit;
-  }
-
   // TODO - use EMPTY as a border square... also need
   // an EXIT border square?  How to link this into
   // "allowed"?  needs to link to check exits on edge.

@@ -150,14 +150,6 @@ export interface MetascreenData {
   /** Whether a special flag is needed for this screen. */
   flag?: 'always' | 'calm' | 'custom:false' | 'custom:true'; // | 'boss';
 
-  /**
-   * Mask of directions the other screen may be in relation to this
-   * (1 is up, 2 is right, 4 is down, 8 is left).  This is on top of
-   * anything that matches on edge types, and is particularly useful
-   * for matching '*' edge types.
-   */
-  allowed?: (s: Metascreen) => number;
-
   /** Conditions for matching this tile. */
   match?: (reachable: (dy: number, dx: number) => boolean,
            flag: boolean) => boolean;

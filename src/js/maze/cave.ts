@@ -1050,9 +1050,11 @@ export class WideCaveShuffle extends CaveShuffle {
 export class CryptEntranceShuffle extends CaveShuffle {
   refineMetascreens(a: A, meta: Metalocation): Result<void> {
     // change arena into crypt arena
-    for (const pos of meta.allPos()) {
-      if (meta.get(pos).hasFeature('arena')) {
-        meta.set(pos, meta.rom.metascreens.cryptArena_statues);
+    for (let y = 0; y < a.h; y++) {
+      for (let x = 0; x < a.w; x++) {
+        if (a.grid.get((y << 12 | x << 4 | 0x808) as GridCoord) === 'a') {
+          meta.set(y << 4 | x, meta.rom.metascreens.cryptArena_statues);
+        }
       }
     }
     return super.refineMetascreens(a, meta);

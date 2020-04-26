@@ -257,8 +257,6 @@ export class Metascreen {
       const opp = dir ^ 2;
       if (e1[opp] !== '*' && e1[opp] === e2[dir]) return true;
     }
-    if (this.data.allowed && (this.data.allowed(that) & (dir ^ 2))) return true;
-    if (that.data.allowed && (that.data.allowed(this) & dir)) return true;
     return false;
   }
 }

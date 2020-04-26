@@ -66,6 +66,10 @@ export class Monster extends ObjectData {
     this.wealth = vsGld && vsGld / (vsExp + vsGld);
   }
 
+  isUntouchedMonster(): boolean {
+    return !!UNTOUCHED_MONSTERS[this.id];
+  }
+
   placement(): Placement {
     const action = ACTION_SCRIPTS.get(this.action);
     return action && action.placement || 'normal';
@@ -497,3 +501,15 @@ function lookup<K extends Comparable, V>(x: K,
 }
 
 type Comparable = number | string;
+
+const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these keys
+  [0x7e]: true, // vertical platform
+  [0x7f]: true, // horizontal platform
+  [0x83]: true, // glitch in $7c (hydra)
+  [0x8d]: true, // glitch in location $ab (sabera 2) - crumbling horizontal platform
+  [0x8e]: true, // broken?, but sits on top of iron wall
+  [0x8f]: true, // shooting statue
+  [0x9f]: true, // crumbling vertical platform
+  // [0xa1]: true, // white tower robots
+  [0xa6]: true, // glitch in location $af (mado 2)
+};

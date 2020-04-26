@@ -384,11 +384,12 @@ export class Metalocation {
    * only set in later passes (i.e. shuffle, which is last).
    */
   set2d(pos: Pos,
-        screens: ReadonlyArray<ReadonlyArray<Metascreen|null>>): boolean {
+        screens: ReadonlyArray<ReadonlyArray<Optional<Metascreen>>>): boolean {
     for (const row of screens) {
       let dx = 0;
       for (const scr of row) {
-        if (scr) this.set(pos + dx++, scr);
+        if (scr) this.set(pos + dx, scr);
+        dx++;
       }
       pos += 16;
     }
@@ -983,9 +984,11 @@ export class Metalocation {
     const loc = this.rom.locations[this.id];
     const placer = loc.monsterPlacer(random);
     for (const spawn of loc.spawns) {
+      if (!spawn.used) continue;
       if (!spawn.isMonster()) continue;
       const monster = loc.rom.objects[spawn.monsterId];
-      if (!(monster instanceof Monster)) return;
+      if (!(monster instanceof Monster)) continue;
+      if (monster.isUntouchedMonster()) continue;
       const pos = placer(monster);
       if (pos == null) {
         console.error(`no valid location for ${hex(monster.id)} in ${loc}`);
@@ -1025,3 +1028,5 @@ const unknownExitWhitelist = new Set([
 
 //const DPOS = [-16, -1, 16, 1];
 const DIR_NAME = ['above', 'left of', 'below', 'right of'];
+
+type Optional<T> = T|null|undefined;

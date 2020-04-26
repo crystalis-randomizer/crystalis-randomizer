@@ -13,6 +13,7 @@ import { RiverCaveShuffle,
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
 import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
+import { PyramidShuffle } from '../maze/pyramid.js';
 
 interface Shuffle {
   shuffle(random: Random): void;
@@ -31,7 +32,6 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
 
   addSwampDoors(rom);
   fixLabyrinthScreens(rom, random);
-new LabyrinthShuffle($.GoaFortress_Kelbesque).shuffle(random);return;
 
   const shuffles: Shuffle[] = [
     // new TownShuffle($.Leaf),
@@ -130,14 +130,14 @@ new LabyrinthShuffle($.GoaFortress_Kelbesque).shuffle(random);return;
     // new OverworldShuffle($.SaharaMeadow),
     // new OverworldShuffle($.Desert2),
     new CaveShuffle($.Pyramid_Branch),
-    // new PyramidShuffle($.Pyramid_Main, $.Pyramid_Draygon),
+    new PyramidShuffle($.Pyramid_Main),
     new CryptEntranceShuffle($.Crypt_Entrance),
     new WideCaveShuffle($.Crypt_Hall1),
     new CaveShuffle($.Crypt_DeadEndLeft),
     new CaveShuffle($.Crypt_DeadEndRight),
     //new PitShuffle($.Crypt_Branch, $.Crypt_DeadEndLeft, $.Crypt_DeadEndRight),
     // new PitShuffle($.Crypt_Hall2),
-    // new GoaMazeShuffle($.GoaFortress_Kelbesque),
+    new LabyrinthShuffle($.GoaFortress_Kelbesque),
     new RiverCaveShuffle($.GoaFortress_Sabera),
     new CaveShuffle($.GoaFortress_Mado1),
     // new PitShuffle($.GoaFortress_Mado2, $.GoaFortress_Mado1),

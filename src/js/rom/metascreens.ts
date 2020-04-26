@@ -3,9 +3,8 @@ import {Rom} from '../rom.js';
 import {Mutable} from './util.js';
 import {DefaultMap} from '../util.js';
 import {Metascreen, Uid} from './metascreen.js';
-import {MetascreenData, ConnectionType,
-        bottomEdge, bottomEdgeHouse, cave, door, downStair, icon, leftEdge,
-        readScreen,
+import {MetascreenData, bottomEdge, bottomEdgeHouse, cave, door, downStair,
+        icon, leftEdge, readScreen,
         rightEdge, seamlessDown, seamlessUp, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
@@ -1308,8 +1307,7 @@ export class Metascreens {
     tile: '   | < | w ',
     tilesets: {labyrinth: {}},
     feature: ['arena'],
-    edges: 'w*w*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: 'w w ',
     connect: '9b|a',
     exits: [upStair(0x37)],
   });
@@ -1478,11 +1476,11 @@ export class Metascreens {
     tile: '   | a | c ',
     tilesets: {swamp: {}},
     feature: ['arena'],
-    edges: ' *s*',
+    edges: '  s ',
     connect: 'a',
     // For left/right neighbors, only allow edge or empty.
     // TODO - check that this is still the case.
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+
     // NOTE: no edge exit since we don't want to go straight here...
     // TODO - constraint that we put solids on either side?
     // TODO - undo the attempt to allow this not on the right edge,
@@ -2130,8 +2128,7 @@ export class Metascreens {
     tile: [' n | a | c ', ' c | a | c ', ' c | a | w '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
-    edges: 'n*c*', // 'n' for 'narrow'
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: 'n c ', // 'n' for 'narrow'
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
     exits: [topEdge(), // vampire 1 room
@@ -2157,8 +2154,7 @@ export class Metascreens {
     tile: [' n | a | c ', ' c | a | c '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena', 'wall'],
-    edges: 'n*c*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: 'n c ',
     connect: '2=a',
     wall: 0x27,
     mod: 'wall',
@@ -2584,11 +2580,10 @@ export class Metascreens {
       |█║█|
       | ┆ |
       |█║█|`,
-    tile: ' r |ppp| r ', // |   | for bottom row?
+    tile: [' r |ppp| r ', ' r |ppp|   '],
     tilesets: {mountainRiver: {}},
     feature: ['bridge'],
     edges: 'wpwp',
-    allowed: s => s.hasFeature('empty') ? 4 : 0,
     connect: '6-e:2a',
     wall: 0x87,
   });
@@ -2742,8 +2737,7 @@ export class Metascreens {
     tile: '   | < | / ',
     tilesets: {mountain: {}, mountainRiver: {}},
     feature: ['arena'],
-    edges: ' *l*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: '  l ',
     connect: 'a',
     exits: [{...upStair(0x47, 3), type: 'cave'}],
     flag: 'custom:false',
@@ -2812,10 +2806,9 @@ export class Metascreens {
       |█║█|
       |█║█|
       |█║█|`,
-    tile: ' r | r | r ',
+    tile: [' r | r | r ', ' r | r |   '],
     tilesets: {mountainRiver: {}},
     edges: 'w w ',
-    allowed: s => s.hasFeature('empty') ? 4 : 0,
     connect: '2:e',
   });
   readonly mountainPathE_gate = this.metascreen({
@@ -2861,10 +2854,9 @@ export class Metascreens {
       |█║█|
       | ═ |
       |█║█|`,
-    tile: ' r |ppp| r ',
+    tile: [' r |ppp| r ', ' r |ppp|   '],
     tilesets: {mountainRiver: {}},
     edges: 'wpwp',
-    allowed: s => s.hasFeature('empty') ? 4 : 0,
     connect: '6e|2|a',
   });
   readonly mountainSlope_underBridge = this.metascreen({
@@ -4061,8 +4053,7 @@ export class Metascreens {
     tile: '   | a | c ',
     tilesets: {pyramid: {}},
     feature: ['arena'],
-    edges: ' *c*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: '  c ',
     connect: 'a',
     exits: [{...upStair(0x57), type: 'crypt'}],
     flag: 'custom:false',
@@ -4076,8 +4067,7 @@ export class Metascreens {
     tile: '   | a | w ',
     tilesets: {pyramid: {}},
     feature: ['arena', 'pit'],
-    edges: ' *w*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: '  w ',
     connect: 'a',
   });
   readonly cryptArena_draygon2 = this.metascreen({
@@ -4089,8 +4079,7 @@ export class Metascreens {
     tile: ' x | a | w ',
     tilesets: {pyramid: {}},
     feature: ['arena'],
-    edges: 'c*w*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: 'c w ',
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
     flag: 'custom:false',
@@ -4118,12 +4107,11 @@ export class Metascreens {
       |┌┴┐|
       |│ │|
       |┕┳┙|`,
-    tile: [' c | a | w ', ' x | a | w '],
+    tile: [' c | a | w ', ' n | a | w '], // x | a | w ??
     tilesets: {fortress: {}, pyramid: {}},
     // NOTE: we could use this for a pit that requires flight to cross?
     feature: ['arena'],
-    edges: 'n*w*',
-    allowed: s => s.hasFeature('empty') ? 10 : 0,
+    edges: 'n w ',
     connect: '2a',
     exits: [topEdge()],
   });
@@ -4173,18 +4161,6 @@ export class Metascreens {
     tilesets: {house: {}},
     exits: [{...door(0x86), entrance: 0x94_68}],
   });
-  readonly exit = this.metascreen({
-    id: ~0x7fff, // will never be instantiated
-    tilesets: {}, // not directly included in any
-    // Check for edge exits in potential neighbors
-    allowed: (s) => {
-      let mask = 0;
-      for (const e of s.data.exits ?? []) {
-        mask |= edgeTypeMap[e.type]!;
-      }
-      return mask;
-    },
-  });
 
   checkExitTypes() {
     // Does a quick check to make sure there's no conflicting exit types
@@ -4199,13 +4175,6 @@ export class Metascreens {
     }
   }
 }
-
-const edgeTypeMap: {[C in ConnectionType]?: number} = {
-  'edge:top': 1,
-  'edge:left': 2,
-  'edge:bottom': 4,
-  'edge:right': 8,
-};
 
 
 //   ╔╦╗         ╢  ╥

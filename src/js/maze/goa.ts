@@ -207,8 +207,10 @@ export function fixLabyrinthScreens(rom: Rom, random: Random) {
     iceCave.getTile(0x17).copyFrom(0x19).replaceIn(...iceCave);
     iceCave.getTile(0x18).copyFrom(0x1b).replaceIn(...iceCave);
     // Fill in c5's graphics for ordinary caves to clean up graphical glitches
-    cave.getTile(0x19).copyFrom(0xc5);
-    cave.getTile(0x1b).copyFrom(0xc5);
+    for (const ts of [cave, pyramid]) {
+      ts.getTile(0x19).copyFrom(0xc5);
+      ts.getTile(0x1b).copyFrom(0xc5);
+    }
 
     // Now that space has been allocated, fill it.
     labyrinth.getTile(0x19).copyFrom(0xc6).setAlternative(0xc5);

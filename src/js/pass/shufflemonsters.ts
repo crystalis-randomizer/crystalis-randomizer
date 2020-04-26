@@ -72,10 +72,11 @@ class MonsterPool {
       ++slot;
       if (!spawn.used || !spawn.isMonster()) continue;
       const id = spawn.monsterId;
-      if (id in UNTOUCHED_MONSTERS || !SCALED_MONSTERS.has(id) ||
+      if (!SCALED_MONSTERS.has(id) ||
           SCALED_MONSTERS.get(id)!.type !== 'm') continue;
       const object = location.rom.objects[id];
-      if (!object) continue;
+      if (!(object instanceof Monster)) continue;
+      if (object.isUntouchedMonster()) continue;
       const patBank = spawn.patternBank;
       const pat = location.spritePatterns[patBank];
       const pal = object.palettes(true);
@@ -129,7 +130,8 @@ class MonsterPool {
             // sleeping kensu (6b) leaves behind a treasure chest
             constraint = constraint.meet(Constraint.KENSU_CHEST, true);
           }
-        } else if (spawn.isMonster() && UNTOUCHED_MONSTERS[spawn.monsterId]) {
+        } else if (spawn.isMonster() &&
+                   isUntouchedMonster(location.rom, spawn.monsterId)) {
           const c = graphics.getMonsterConstraint(location.id, spawn.monsterId);
           constraint = constraint.meet(c, true);
         } else if (spawn.isShootingWall(location)) {
@@ -283,6 +285,11 @@ class MonsterPool {
       }
     }
   }
+}
+
+function isUntouchedMonster(rom: Rom, id: number): boolean {
+  const obj = rom.objects[id];
+  return obj instanceof Monster && obj.isUntouchedMonster();
 }
 
 const FLYERS: Set<number> = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);
@@ -598,16 +605,4 @@ const MONSTER_ADJUSTMENTS: {[loc: number]: MonsterAdjustment} = {
     // There's a random slime in this room that would cause glitches
     skip: true,
   },
-};
-
-const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these keys
-  [0x7e]: true, // vertical platform
-  [0x7f]: true, // horizontal platform
-  [0x83]: true, // glitch in $7c (hydra)
-  [0x8d]: true, // glitch in location $ab (sabera 2) - crumbling horizontal platform
-  [0x8e]: true, // broken?, but sits on top of iron wall
-  [0x8f]: true, // shooting statue
-  [0x9f]: true, // crumbling vertical platform
-  // [0xa1]: true, // white tower robots
-  [0xa6]: true, // glitch in location $af (mado 2)
 };

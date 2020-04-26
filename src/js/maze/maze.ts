@@ -48,6 +48,7 @@ export abstract class MazeShuffle {
   }
 
   shuffle(random: Random) {
+    if (!this.loc.used) return;
     this.random = random;
     while (++this.attempts <= this.maxAttempts) {
       const result = this.build();

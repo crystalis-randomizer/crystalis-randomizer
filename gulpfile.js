@@ -13,7 +13,6 @@ const COMMON = [
   'data/*.js',
   'depgraph.js',
   'externs.js',
-  'failure.js',
   'fetchreader.js',
   'flags/*.js',
   'flagset.js',

@@ -858,6 +858,67 @@ CheckSacredShieldForCurse:
 .org $9b96 ; clear dolphin bit => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
+
+.ifdef _EXTRA_EXTENDED_SCREENS
+;;; Normally the check for tile effects just looks at the
+;;; current map screen and clamps the page switch to the
+;;; first 8 pages, but if we're reading screen data from
+;;; extended locations, this won't work.  We need to patch
+;;; the tile effects reader to read from extended pages
+;;; when the extended flag is set ($62ff)
+
+;;; NOTE: We could save some space by just calling directly
+;;; into PatchPrepareScreenMapRead, but possibly the original
+;;; code used the quick version for a reason?  It looks like
+;;; it's not generally called more than a handful of times
+;;; per frame (12-14, maybe a few more with a lot of objects)
+;;; and it only saves 3 cycles each (the jsr and rts also
+;;; o few instructions).
+.if 1
+
+.org $9a58
+  jsr PatchPrepareScreenMapRead
+  bne $9a73
+FREE_UNTIL $9a73
+
+.else ; false
+
+.org $9a58
+  pha
+   sta $11
+   lda $62ff
+   asl $11
+   rol
+   asl $11
+   rol
+   asl $11
+   rol
+   sta $6f
+   jsr QuickSwapPageA
+  pla
+  and #$1f
+  ora #$a0
+  sta $11
+.assert * = $9a73
+
+;;; This is a faster version of page swap ($a000) that destroys Y
+;;; (Remove "1b" because it would change the page out from under itself).
+.pushseg "1a", "fe", "ff"
+.reloc
+QuickSwapPageA:
+  sta $6f
+  ldy #$07
+  sty $50
+  sty $8000
+  sta $8001
+  rts
+.popseg
+
+.endif ; 1
+
+.endif ; _EXTRA_EXTENDED_SCREENS
+
+
 ;; Adjusted stab damage for populating sword object ($02)
 .org $9c5f
   lda #$02
@@ -1476,8 +1537,12 @@ ReloadLocationGraphicsAfterChest:
 .assert * = $eb44
 
 
+;;; These are available because the "0a" screens are all for single-screen maps.
+;;; We do use the 48 bytes at the end of the 142 screen for extra global data.
+FREE "0a" [$80c0, $8100)
+FREE "0a" [$81c0, $8200)
+
 .ifdef _EXTRA_EXTENDED_SCREENS
-FREE "0a" [$80f0, $8100)
 .pushseg "0a", "fe", "ff"
 ;;; In this setup, we compress the map data by two bytes:
 ;;;  - The layout table (0) is now [music], [yx], [ext+anim],
@@ -1525,6 +1590,48 @@ FREE_UNTIL $e652
   beq $ebef
    jsr $c418  ; BankSwitch8k_8000
 .assert * = $ebef
+
+.org $ef36
+  jsr PatchPrepareScreenMapRead
+  bne $ef46  ; uncond
+FREE_UNTIL $ef46
+
+.pushseg "fe", "ff"
+.reloc
+PatchPrepareScreenMapRead:
+    ;; First swap in the correct page into the $8000 bank.
+    ;; Ultimately we want A = %00pp_paaa where ppp is $62ff (the low
+    ;; 3 bits) and aaa is the upper 3 bits of the input ($11 for temp).
+    pha
+     sta $11
+     lda $62ff
+     asl $11
+     rol
+     asl $11
+     rol
+     asl $11
+     rol
+     jsr BankSwitch8k_a000
+    pla
+    and #$1f
+    ora #$a0
+    sta $11
+    rts
+    ; jmp $ef46  ; Pick up where we left off in the original code
+.popseg
+  
+
+;;; TODO - PrepareMapScreenRead (ff:ef36) hardcodes assumptions about the
+;;; segments - we probably need to patch into it to do something else.
+;;; There's 4 calls to this.  Consider always loading out of the 8000
+;;; bank rather than using both?  Will need to follow up on all 4 calls to
+;;; see about swapping in the correct bank always?
+
+
+
+
+
+
 .endif ; _EXTRA_EXTENDED_SCREENS
 
 

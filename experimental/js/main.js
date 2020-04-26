@@ -15,6 +15,7 @@ let romName;
 let race = false;
 let debug = false;
 
+window.global = window;
 const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
 
 function ga(cmd, ...args) {
@@ -96,8 +97,10 @@ const main = () => {
 const initVersion = () => {
   if (version.HASH !== 'latest') {
     const prefix = permalink ? '' : 'Current version: ';
-    document.getElementById('version').textContent =
-        `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
+    for (const span of document.getElementsByClassName('version')) {
+      span.textContent =
+          `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
+    }
   }
   document.body.classList.add('js-works');
   document.body.classList.remove('js-broken');
@@ -190,6 +193,9 @@ const read = (arr, index, len) => {
 };
 
 const shuffleRom = async (seed) => {
+  for (const span of document.getElementsByClassName('seed-out')) {
+    span.textContent = seed.toString(16).padStart(8, '0');
+  }
   const progressEl = document.getElementById('progress');
   const progressTracker = new ProgressTracker();
   const orig = rom.slice();
@@ -203,9 +209,20 @@ const shuffleRom = async (seed) => {
     setTimeout(showWork, 120);
   }
   showWork();
-  const [shuffled, crc] =
-      await patch.shuffle(
-          orig, seed, flagsClone, new FetchReader(), log, progressTracker);
+  let shuffled;
+  let crc;
+  try {
+    [shuffled, crc] =
+        await patch.shuffle(
+            orig, seed, flagsClone, new FetchReader(), log, progressTracker);
+  } catch (err) {
+    document.body.classList.add('failure');
+    const errorText = document.getElementById('error-text');
+    errorText.textContent = err.stack;
+    errorText.parentElement.parentElement.scrollIntoViewIfNeeded();
+    document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
+    throw err;
+  }
   if (crc < 0) {
     document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
     return [null, null];
@@ -313,6 +330,7 @@ const makeCheckbox = (el) => {
 };
 
 const updateDom = () => {
+  document.body.classList.remove('failure');
   for (const cb of document.querySelectorAll('input[data-flag]')) {
     const flag = cb.dataset['flag'];
     const mode = flags.get(flag);
@@ -324,7 +342,9 @@ const updateDom = () => {
   const flagString = String(flags).replace(/ /g, '');
   document.getElementById('seed').value = seed || '';
   const hash = ['#flags=', flagString];
-  if (seed) hash.push('&seed=', encodeURIComponent(seed));
+  if (seed) {
+    hash.push('&seed=', encodeURIComponent(seed));
+  }
   if (debug) hash.push('&debug');
   history.replaceState({flags: String(flags), seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
   if (version.STATUS == 'stable' || version.STATUS == 'rc') {
@@ -340,7 +360,9 @@ const updateRaceDom = () => {
   const flagString = String(flags)
   document.body.classList.toggle('spoiled', flags.check('Ds'));
   document.body.classList.toggle('debug-mode', /D/.test(flagString));
-  document.getElementById('flagstring-out').textContent = flagString;
+  for (const span of document.getElementsByClassName('flagstring-out')) {
+    span.textContent = flagString;
+  }
   document.getElementById('track-url').href =
       `track#flags=${flagString.replace(/ /g, '')}`;
 }

@@ -634,3 +634,7 @@ export function relocExportLabel(a: IAssembler, seg: Segment[], name: string) {
   a.label(name);
   a.export(name);
 }
+
+export function cloneArray<T extends ReadonlyArray<any>>(arr: T): Mutable<T> {
+  return [...arr] as Mutable<T>;
+}

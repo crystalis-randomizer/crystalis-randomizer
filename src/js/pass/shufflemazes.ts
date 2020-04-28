@@ -8,7 +8,7 @@ import { Random } from '../random.js';
 import { Rom } from '../rom.js';
 import { BridgeCaveShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
-import { RiverCaveShuffle,
+import { RiverCaveShuffle, StyxRiverCaveShuffle,
          WaterfallRiverCaveShuffle } from '../maze/rivercave.js';
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
@@ -95,11 +95,13 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     // new ChannelShuffle($.UndergroundChannel),
     // new TownShuffle($.ZombieTown),
     // new ChannelShuffle($.EvilSpiritIsland1),
-    new RiverCaveShuffle($.EvilSpiritIsland2),
-    // new PitCycleShuffle($.EvilSpiritIsland3, $.EvilSpiritIsland2),
+    new RiverCaveShuffle($.EvilSpiritIsland2).requirePitDestination(),
+    new CycleCaveShuffle($.EvilSpiritIsland3), // pit: $.EvilSpiritIsland2
     new RiverCaveShuffle($.EvilSpiritIsland4),
-    new SaberaPalaceShuffle($.SaberaPalace1),
+    new SaberaPalaceShuffle($.SaberaPalace1).requirePitDestination(),
     // // TODO - consider just making this into two separate maps?
+    new CaveShuffle($.SaberaPalace2),
+    new CaveShuffle($.SaberaPalace2_West),
     // new SplitPitShuffle($.SaberaPalace2, $.SaberaPalace1),
     new CaveShuffle($.JoelSecretPassage),
     // new TownShuffle($.Joel),
@@ -118,8 +120,10 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new CaveShuffle($.MtHydra_Cave10),
     new WideCaveShuffle($.Styx1),
     // // TODO - consider splitting this map, too!
+    new StyxRiverCaveShuffle($.Styx2).requirePitDestination(),
+    //new StyxRiverCaveShuffle($.Styx2_East),
     // new StyxRiverCaveShuffle($.Styx2),
-    // new PitShuffle($.Styx3, $.Styx2),
+    new CaveShuffle($.Styx3), // pit: $.Styx2
     // new TownShuffle($.Shyron),
     // new TownShuffle($.Goa),
     // new OverworldShuffle($.Desert1),
@@ -135,13 +139,13 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new WideCaveShuffle($.Crypt_Hall1),
     new CaveShuffle($.Crypt_DeadEndLeft),
     new CaveShuffle($.Crypt_DeadEndRight),
-    //new PitShuffle($.Crypt_Branch, $.Crypt_DeadEndLeft, $.Crypt_DeadEndRight),
-    // new PitShuffle($.Crypt_Hall2),
+    new CaveShuffle($.Crypt_Branch), // down: Crypt_DeadEndLeft and DeadEndRight
+    new CaveShuffle($.Crypt_Hall2), // down: $.Crypt_Branch
     new LabyrinthShuffle($.GoaFortress_Kelbesque),
     new RiverCaveShuffle($.GoaFortress_Sabera),
-    new CaveShuffle($.GoaFortress_Mado1),
-    // new PitShuffle($.GoaFortress_Mado2, $.GoaFortress_Mado1),
-    // new PitShuffle($.GoaFortress_Mado3, $.GoaFortress_Mado1),
+    new CaveShuffle($.GoaFortress_Mado1).requirePitDestination(),
+    new CaveShuffle($.GoaFortress_Mado2), // downstairs: $.GoaFortress_Mado1
+    new CaveShuffle($.GoaFortress_Mado3), // downstairs: $.GoaFortress_Mado1
     new CaveShuffle($.GoaFortress_Karmine1),
     new CaveShuffle($.GoaFortress_Karmine2),
     new CaveShuffle($.GoaFortress_Karmine4),

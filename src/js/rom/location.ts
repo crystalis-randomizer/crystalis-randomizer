@@ -245,6 +245,7 @@ export class Locations extends Array<Location> {
   readonly SaberaPalace1            = $(0x6c, {area: Areas.SaberaFortress,
                                                bossScreen: 0xfd});
   readonly SaberaPalace2            = $(0x6d);
+  readonly SaberaPalace2_West       = $(-1);  // will get the west part of palace2
   readonly SaberaPalace3            = $(0x6e, {bossScreen: 0xfd});
   // INVALID: 0x6f -- Sabera Palace 3 unused copy
   readonly JoelSecretPassage        = $(0x70, {area: Areas.JoelPassage});
@@ -274,6 +275,7 @@ export class Locations extends Array<Location> {
   readonly MtHydra_Cave10           = $(0x87, CAVE);
   readonly Styx1                    = $(0x88, {area: Areas.Styx});
   readonly Styx2                    = $(0x89);
+  readonly Styx2_East               = $(-1);  // will get the east part of stxy 2
   readonly Styx3                    = $(0x8a);
   // INVALID: 0x8b
   readonly Shyron                   = $(0x8c, {area: Areas.Shyron});
@@ -455,10 +457,10 @@ export class Locations extends Array<Location> {
     }
   }
 
-  allocate(location: Location): Location {
+  allocate(location: Location, after?: Location): Location {
     // pick an unused location
     for (const l of this) {
-      if (l.used) continue;
+      if (l.used || (after && l.id < after.id)) continue;
       (location as any).id = l.id;
       location.used = true;
       this.indexScreens(location);

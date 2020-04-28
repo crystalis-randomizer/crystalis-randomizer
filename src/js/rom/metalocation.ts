@@ -1,15 +1,15 @@
-import {Location} from './location.js'; // import type
-import {Exit, Flag as LocationFlag} from './locationtables.js';
-import {Flag} from './flags.js';
-import {Metascreen, Uid} from './metascreen.js';
-import {Metatileset} from './metatileset.js';
-import {hex} from './util.js';
-import {Rom} from '../rom.js';
-import {DefaultMap, Table, iters, format} from '../util.js';
-import {UnionFind} from '../unionfind.js';
-import {ConnectionType} from './metascreendata.js';
-import {Random} from '../random.js';
-import {Monster} from './monster.js';
+import { Location } from './location.js'; // import type
+import { Exit, Flag as LocationFlag, Pit } from './locationtables.js';
+import { Flag } from './flags.js';
+import { Metascreen, Uid } from './metascreen.js';
+import { Metatileset } from './metatileset.js';
+import { hex } from './util.js';
+import { Rom } from '../rom.js';
+import { DefaultMap, Table, iters, format } from '../util.js';
+import { UnionFind } from '../unionfind.js';
+import { ConnectionType } from './metascreendata.js';
+import { Random } from '../random.js';
+import { Monster } from './monster.js';
 
 const [] = [hex];
 
@@ -66,6 +66,7 @@ export class Metalocation {
   private _pos: Pos[]|undefined = undefined;
 
   private _exits = new Table<Pos, ConnectionType, ExitSpec>();
+  private _pits = new Map<Pos, number>(); // Maps to loc << 8 | pos
 
   //private _monstersInvalidated = false;
 
@@ -262,12 +263,19 @@ export class Metalocation {
       // if (destType) exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
     }
 
+    // Build the pits map.
+    const pits = new Map<Pos, number>();
+    for (const pit of location.pits) {
+      pits.set(pit.fromScreen, pit.dest << 8 | pit.toScreen);
+    }
+
     const metaloc = new Metalocation(location.id, tileset, height, width);
     // for (let i = 0; i < screens.length; i++) {
     //   metaloc.setInternal(i, screens[i]);
     // }
     metaloc._screens = screens;
     metaloc._exits = exits;
+    metaloc._pits = pits;
 
     // Fill in custom flags
     for (const f of location.flags) {
@@ -640,7 +648,28 @@ export class Metalocation {
                     [this.id << 8 | next, nextType]);
     this._exits.set(next, nextType, destExit);
     this._exits.delete(prev, prevType);
-  }  
+  }
+
+  moveExitsAndPitsTo(other: Metalocation) {
+    const moved = new Set<Pos>();
+    for (const pos of other.allPos()) {
+      if (!other.get(pos).data.delete) {
+        moved.add(pos);
+      }
+    }
+    for (const [pos, type, [destTile, destType]] of this._exits) {
+      if (!moved.has(pos)) continue;
+      const dest = this.rom.locations[destTile >>> 8].meta;
+      dest._exits.set(destTile & 0xff, destType, [other.id << 8 | pos, type]);
+      other._exits.set(pos, type, [destTile, destType]);
+      this._exits.delete(pos, type);
+    }
+    for (const [from, to] of this._pits) {
+      if (!moved.has(from)) continue;
+      other._pits.set(from, to);
+      this._pits.delete(from);
+    }
+  }
 
   pickTypeFromScreens(pos: Pos): ConnectionType {
     const exits = this._screens[pos].data.exits;
@@ -672,6 +701,82 @@ export class Metalocation {
                            this.rom.locations[this.id]} @${hex(pos)}`);
         }
         this.customFlags.set(pos, flag);
+      }
+    }
+  }
+
+  /** Read pits from the original.  The destination must be shuffled already. */
+  transferPits(orig: Metalocation, random: Random) {
+    // Find all pit destinations.
+    this._pits.clear();
+    const dests = new Set<number>();
+    for (const [, dest] of orig._pits) {
+      dests.add(this.rom.locations[dest >>> 8].id);
+    }
+
+    // Look for existing pits.  Sort by location, [pit pos, dest pos]
+    const pits = new DefaultMap<Metalocation, Array<[Pos, Pos]>>(() => []);
+    for (const pos of this.allPos()) {
+      const scr = this.get(pos);
+      if (!scr.hasFeature('pit')) continue;
+      // Find the nearest exit to one of those destinations: [delta, loc, dist]
+      let closest: [Pos, Metalocation, number] = [-1, this, Infinity];
+      for (const [exitPos,, [dest]] of this._exits) {
+        const dist = distance(pos, exitPos);
+        if (dests.has(dest >>> 8) && dist < closest[2]) {
+          const dloc = this.rom.locations[dest >>> 8].meta;
+          const dpos = dest & 0xff;
+          closest = [addDelta(pos, dpos, exitPos, dloc), dloc, dist];
+        }
+      }
+      if (closest[0] < 0) throw new Error(`no exit found`);
+      pits.get(closest[1]).push([pos, closest[0]]);
+    }
+
+    // For each destination location, look for spikes, these will override
+    // any position-based destinations.
+    for (const [dest, list] of pits) {
+      // vertical, horizontal
+      const eligible: Pos[][] = [[], []];
+      const spikes = new Map<Pos, number>();
+      for (const pos of dest.allPos()) {
+        const scr = dest.get(pos);
+        if (scr.hasFeature('river') || scr.hasFeature('empty')) continue;
+        const edges =
+            (scr.data.edges || '').split('').map(x => x === ' ' ? '' : x);
+        if (edges[0] && edges[2]) eligible[0].push(pos);
+        // NOTE: we clamp the target X coords so that spike screens are all good
+        // this prevents errors from not having a viable destination screen.
+        if ((edges[1] && edges[3]) || scr.hasFeature('spikes')) {
+          eligible[1].push(pos);
+        }
+        if (scr.hasFeature('spikes')) {
+          spikes.set(pos, [...edges].filter(c => c === 's').length);
+        }
+      }
+console.log(`dest:\n${dest.show()}\neligible: ${eligible.map(e => e.map(h => h.toString(16)).join(',')).join('  ')}`);
+      // find the closest destination for the first pit, keep a running delta.
+      let delta: [Pos, Pos] = [0, 0];
+      for (const [upstairs, downstairs] of list) {
+        const scr = this.get(upstairs);
+        const edges = scr.data.edges || '';
+        const dir = edges[0] === 'c' && edges[2] === 'c' ? 0 : 1
+        // eligible dest tile, distance
+        let closest: [Pos, number, number] = [-1, Infinity, 0];
+        const target = addDelta(downstairs, delta[0], delta[1], dest);
+        for (const pos of eligible[dir]) { //for (let i = 0; i < eligible[dir].length; i++) {
+          //          const pos = eligible[dir][i];
+          const spikeCount = spikes.get(pos) ?? 0;
+          if (spikeCount < closest[2]) continue;
+          const dist = distance(target, pos);
+          if (dist < closest[1]) {
+            closest = [pos, dist, spikeCount];
+          }
+        }
+        const endPos = closest[0];
+        if (endPos < 0) throw new Error(`no eligible dest`);
+        delta = [endPos, target];
+        this._pits.set(upstairs, dest.id << 8 | endPos);
       }
     }
   }
@@ -747,6 +852,8 @@ export class Metalocation {
   transferSpawns(that: Metalocation, random: Random) {
     // Start by building a map between exits and specific screen types.
     const reverseExits = new Map<ExitSpec, [number, number]>(); // map to y,x
+    const pits = new Map<Pos, number>(); // maps to dir (0 = vert, 1 = horiz)
+    const statues: Array<[Pos, number]> = []; // array of spawn [screen, coord]
     // Array of [old y, old x, new y, new x, max distance (squared)]
     const map: Array<[number, number, number, number, number]> = [];
     const walls: Array<[number, number]> = [];
@@ -758,6 +865,16 @@ export class Metalocation {
         const scr = loc._screens[pos];
         const y = pos & 0xf0;
         const x = (pos & 0xf) << 4;
+        if (scr.hasFeature('pit') && loc === this) {
+          pits.set(pos, scr.edgeIndex('c') === 5 ? 0 : 1);
+        } else if (scr.data.statues?.length && loc === this) {
+          for (let i = 0; i < scr.data.statues.length; i++) {
+            const row = scr.data.statues[i] << 12;
+            const parity = ((pos & 0xf) ^ (pos >>> 4) ^ i) & 1;
+            const col = parity ? 0x50 : 0xa0;
+            statues.push([pos, row | col]);
+          }
+        }
         if (loc === this && scr.hasFeature('wall')) {
           if (scr.data.wall == null) throw new Error(`Missing wall prop`);
           const wall = [y | (scr.data.wall >> 4), x | (scr.data.wall & 0xf)];
@@ -776,7 +893,10 @@ export class Metalocation {
           map.push([y | 8, x | 8, ny, nx, 144]); // 12 tiles
         }
       }
-      if (loc === this) random.shuffle(arenas);
+      if (loc === this) { // TODO - this is a mess, factor out the commonality
+        random.shuffle(arenas);
+        random.shuffle(statues);
+      }
     }
     // Now pair up exits.
     for (const loc of [this, that]) {
@@ -804,7 +924,6 @@ export class Metalocation {
     // stairs/entrances) as possible ???  Or maybe just weight those
     // higher?  don't want to _force_ things to be inaccessible...?
 
-
     const ppoi: Array<Array<[number, number]>> = [[], [], [], [], [], []];
     for (const pos of this.allPos()) {
       const scr = this._screens[pos];
@@ -820,9 +939,21 @@ export class Metalocation {
     const allPoi = [...iters.concat(...ppoi)];
     // Iterate over the spawns, look for NPC/chest/trigger.
     const loc = this.rom.locations[this.id];
+    
     for (const spawn of random.shuffle(loc.spawns)) {
       if (spawn.isMonster()) {
-        // TODO - move platforms, statues?
+        const platform = PLATFORMS.indexOf(spawn.monsterId);
+        if (platform >= 0 && pits.size) {
+          const [[pos, dir]] = pits;
+          pits.delete(pos);
+          spawn.monsterId = PLATFORMS[platform & 2 | dir];
+          spawn.screen = pos;
+          spawn.tile = dir ? 0x73 : 0x47;
+        } else if (spawn.monsterId === 0x8f && statues.length) {
+          const [screen, coord] = statues.pop()!;
+          spawn.screen = screen;
+          spawn.coord = coord;
+        }
         continue; // these are handled elsewhere.
       } else if (spawn.isWall()) {
         const wall = (spawn.wallType() === 'bridge' ? bridges : walls).pop();
@@ -976,10 +1107,19 @@ export class Metalocation {
         srcLoc.flags.push(LocationFlag.of({screen, flag}));
       }
     }
+
+    // write pits
+    srcLoc.pits = [];
+    for (const [fromScreen, to] of this._pits) {
+      const toScreen = to & 0xff;
+      const dest = to >>> 8;
+      srcLoc.pits.push(Pit.of({fromScreen, toScreen, dest}));
+    }
   }
 
   // NOTE: this can only be done AFTER copying to the location!
   replaceMonsters(random: Random) {
+    if (this.id === 0x68) return; // water levels, don't place on land???
     // Move all the monsters to reasonable locations.
     const loc = this.rom.locations[this.id];
     const placer = loc.monsterPlacer(random);
@@ -1030,3 +1170,22 @@ const unknownExitWhitelist = new Set([
 const DIR_NAME = ['above', 'left of', 'below', 'right of'];
 
 type Optional<T> = T|null|undefined;
+
+function distance(a: Pos, b: Pos): number {
+  return ((a >>> 4) - (b >>> 4)) ** 2 + ((a & 0xf) - (b & 0xf)) ** 2;
+}
+
+function addDelta(start: Pos, plus: Pos, minus: Pos, meta: Metalocation): Pos {
+  const px = plus & 0xf;
+  const py = plus >>> 4;
+  const mx = minus & 0xf;
+  const my = minus >>> 4;
+  const sx = start & 0xf;
+  const sy = start >>> 4;
+  const ox = Math.max(0, Math.min(meta.width - 1, sx + px - mx));
+  const oy = Math.max(0, Math.min(meta.height - 1, sy + py - my));
+  return oy << 4 | ox;
+}
+
+// bit 1 = crumbling, bit 0 = horizontal: [v, h, cv, ch]
+const PLATFORMS: readonly number[] = [0x7e, 0x7f, 0x9f, 0x8d];

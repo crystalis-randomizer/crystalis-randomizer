@@ -2134,6 +2134,7 @@ export class Metascreens {
     exits: [topEdge(), // vampire 1 room
             bottomEdge({left: 6, width: 4, manual: true}), // goa sages
             seamlessUp(0xe6, 4)], // kensu
+    arena: 1,
   });
   readonly hallNS_arena_unreachable = this.metascreen({
     id: 0x91,
@@ -2162,6 +2163,7 @@ export class Metascreens {
     // NOTE: top exit needs to move up a tile...?
     exits: [bottomEdge({left: 6, width: 4, manual: true}),
             topEdge({top: 1})], // prisons need extra exits
+    arena: 1,
   });
   // NOTE: screen 93 is missing!
   readonly branchNWE_wall = this.metascreen({
@@ -3271,7 +3273,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: ' rcr',
-    connect: '5d:7bf',
+    connect: '5d:7af',
   });
   readonly riverCaveNS_passageW = this.metascreen({
     id: 0xde,
@@ -4057,6 +4059,7 @@ export class Metascreens {
     connect: 'a',
     exits: [{...upStair(0x57), type: 'crypt'}],
     flag: 'custom:false',
+    arena: 2,
   });
   readonly pyramidArena_draygon = this.metascreen({
     id: 0xf9,
@@ -4069,6 +4072,7 @@ export class Metascreens {
     feature: ['arena', 'pit'],
     edges: '  w ',
     connect: 'a',
+    arena: 3,
   });
   readonly cryptArena_draygon2 = this.metascreen({
     id: 0xfa,
@@ -4083,6 +4087,7 @@ export class Metascreens {
     connect: '2a',
     exits: [topEdge({left: 6, width: 4})],
     flag: 'custom:false',
+    arena: 4,
   });
   readonly cryptArena_entrance = this.metascreen({
     id: 0xfb,
@@ -4114,6 +4119,7 @@ export class Metascreens {
     edges: 'n w ',
     connect: '2a',
     exits: [topEdge()],
+    arena: 5,
   });
   // readonly fortressArena_pit = this.metascreen({
   //   id: 0xfd,
@@ -4134,7 +4140,7 @@ export class Metascreens {
       |└─┘|
       | ╳ |
       |╶┬╴|`,
-    tile: '   | a | c ', // TODO - same as statues...?
+    tile: '   | x | c ', // TODO - same as statues...?
     tilesets: {fortress: {}, pyramid: {}},
     feature: ['pit'],
     edges: '  n ',

@@ -35,6 +35,12 @@ export class CaveShuffle extends MazeShuffle {
   maxSpikes = 5;
   looseRefine = false;
   addBlocks = true;
+  private _requirePitDestination = false;
+
+  requirePitDestination(): this {
+    this._requirePitDestination = true;
+    return this;
+  }
 
   // shuffle(loc: Location, random: Random) {
   //   const meta = loc.meta;
@@ -75,11 +81,19 @@ export class CaveShuffle extends MazeShuffle {
         ramp: 0,
         river: 0,
         spike: 0,
+        statue: 0,
         under: 0,
         wall: 0,
         wide: 0,
       },
     };
+    if (meta.id >= 0) {
+      for (const spawn of meta.rom.locations[meta.id].spawns) {
+        if (spawn.isMonster() && spawn.monsterId === 0x8f) {
+          survey.features.statue++;
+        }
+      }
+    }
     for (const pos of meta.allPos()) {
       const scr = meta.get(pos);
       if (!scr.isEmpty() || scr.data.exits?.length) survey.size++;
@@ -130,6 +144,28 @@ export class CaveShuffle extends MazeShuffle {
     let result: Result<void>;
     //const r = this.random;
     const a = new CaveShuffleAttempt(h, w, size);
+    if ((result = this.fillGrid(a)), !result.ok) return result;
+
+    // try to translate to metascreens at this point...
+    if ((result = this.preinfer(a)), !result.ok) return result;
+    const meta = this.inferScreens(a);
+    if (!meta.ok) return meta;
+    if ((result = this.refineMetascreens(a, meta.value)), !result.ok) {
+      //console.error(meta.value.show());
+      return result;
+    }
+    if ((result = this.checkMetascreens(a, meta.value)), !result.ok) {
+      return result;
+    }
+    if (this._requirePitDestination &&
+        !this.requireEligiblePitDestination(meta.value)) {
+      return {ok: false, fail: `no eligible pit destination`};
+    }
+    return meta;
+  }
+
+  fillGrid(a: A): Result<void> {
+    let result: Result<void>;
     if ((result = this.initialFill(a)), !result.ok) return result;
     //if (!this.addEarlyFeatures()) return false;
     if ((result = this.addEdges(a)), !result.ok) return result;
@@ -143,17 +179,7 @@ export class CaveShuffle extends MazeShuffle {
     if ((result = this.addLateFeatures(a)), !result.ok) return result;
     if ((result = this.addStairs(a, ...(this.params.stairs ?? []))),
         !result.ok) return result;
-
-    // try to translate to metascreens at this point...
-    if ((result = this.preinfer(a)), !result.ok) return result;
-    const meta = this.inferScreens(a);
-    if (!meta.ok) return meta;
-    if ((result = this.refineMetascreens(a, meta.value)), !result.ok) {
-      //console.error(meta.value.show());
-      return result;
-    }
-
-    return meta;
+    return OK;
   }
 
   ////////////////////////////////////////////////////////////////
@@ -344,7 +370,9 @@ export class CaveShuffle extends MazeShuffle {
     if (!this.addUnderpasses(a, this.params.features?.under ?? 0)) {
       return {ok: false, fail: 'addUnderpasses'};
     }
-    // if (!this.addPits(this.params.features?.pit ?? 0)) return false;
+    if (!this.addPits(a, this.params.features?.pit ?? 0)) {
+      return {ok: false, fail: 'addPits'};
+    }
     if (!this.addRamps(a, this.params.features?.ramp ?? 0)) {
       return {ok: false, fail: 'addRamps'};
     }
@@ -388,7 +416,9 @@ export class CaveShuffle extends MazeShuffle {
   }
 
   addUnderpasses(a: A, under: number): boolean {
-    return this.addStraightScreenLate(a, under, 0x800, 'b');
+    // Only add horizontal '   |cbc|   ', not ' c | b | c '.  Could possibly
+    // use 'b' and 'B' instead?
+    return this.addStraightScreenLate(a, under, 'b', 0x800);
   }
 
   addOverpasses(a: A, over: number): boolean {
@@ -410,20 +440,26 @@ export class CaveShuffle extends MazeShuffle {
     return true;
   }
 
+  addPits(a: A, pits: number): boolean {
+    return this.addStraightScreenLate(a, pits, 'p');
+  }
+
   addRamps(a: A, ramps: number): boolean {
-    return this.addStraightScreenLate(a, ramps, 8, '/');
+    return this.addStraightScreenLate(a, ramps, '/', 8);
   }
 
   /** @param delta GridCoord difference for edges that need to be empty. */
   addStraightScreenLate(a: A, count: number,
-                        delta: number, char: string): boolean {
+                        char: string, delta?: number): boolean {
     if (!count) return true;
     for (const c of this.random.ishuffle(a.grid.screens())) {
       const middle = (c | 0x808) as GridCoord;
-      const side1 = (middle - delta) as GridCoord;
-      const side2 = (middle + delta) as GridCoord;
       if (a.grid.get(middle) !== 'c') continue;
-      if (a.grid.get(side1) || a.grid.get(side2)) continue;
+      if (delta) {
+        const side1 = (middle - delta) as GridCoord;
+        const side2 = (middle + delta) as GridCoord;
+        if (a.grid.get(side1) || a.grid.get(side2)) continue;
+      }
       const tile = this.extract(a.grid, c);
       const newTile = tile.substring(0, 4) + char + tile.substring(5);
       const options = this.orig.tileset.getMetascreensFromTileString(newTile);
@@ -751,7 +787,7 @@ export class CaveShuffle extends MazeShuffle {
 
   /**
    * Attempt to make a path connecting start to end (both centers).
-   * Requires all 
+   * Requires all ...?
    */
   tryConnect(a: A, start: GridCoord, end: GridCoord,
              char: string, attempts = 1): boolean {
@@ -847,6 +883,193 @@ export class CaveShuffle extends MazeShuffle {
     return false;
   }
 
+  /**
+   * Attempt to extend an existing screen into a direction that's
+   * currently empty.  Length is probabilistic, each successful
+   * attempt will have a 1/length chance of stopping.  Returns number
+   * of screens added.
+   */
+  tryExtrude(a: A, char: string, length: number, attempts = 1): number {
+    // Look for a place to start.
+    while (attempts--) {
+      for (const c of this.random.ishuffle(a.grid.screens())) {
+        const mid = c + 0x808 as GridCoord;
+        if (!a.grid.get(mid)) continue;
+        const tile = this.extract(a.grid, c);
+        for (let dir of this.random.ishuffle([0, 1, 2, 3])) {
+          const n1 = mid + GRIDDIR[dir] as GridCoord;
+          const n2 = mid + 2 * GRIDDIR[dir] as GridCoord;
+//console.log(`mid: ${mid.toString(16)}; n1(${n1.toString(16)}): ${a.grid.get(n1)}; n2(${n2.toString(16)}): ${a.grid.get(n2)}`);
+          if (a.grid.get(n1) || a.grid.isBorder(n1) || a.grid.get(n2)) continue;
+          const i = TILEDIR[dir];
+          const rep = tile.substring(0, i) + char + tile.substring(i + 1);
+          if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
+            a.grid.set(n1, char);
+            a.grid.set(n2, char);
+            const added = this.tryContinueExtrude(a, char, length, n2);
+            if (added) return added;
+            a.grid.set(n2, '');
+            a.grid.set(n1, '');
+          }
+        }
+      }
+    }
+    return 0;
+  }
+
+  /** Recursive attempt. */
+  tryContinueExtrude(a: A, char: string, length: number, c: GridCoord): number {
+    const tile = this.extract(a.grid, c - 0x808 as GridCoord);
+    const ok = this.orig.tileset.getMetascreensFromTileString(tile).length > 0;
+    if (length === 1) return ok ? 1 : 0;
+    // maybe return early
+    if (ok && !this.random.nextInt(length)) return 1;
+    // find a new direction
+    for (const dir of this.random.ishuffle([0, 1, 2, 3])) {
+      const n1 = c + GRIDDIR[dir] as GridCoord;
+      const n2 = c + 2 * GRIDDIR[dir] as GridCoord;
+      if (a.grid.get(n1) || a.grid.isBorder(n1) || a.grid.get(n2)) continue;
+      const i = TILEDIR[dir];
+      const rep = tile.substring(0, i) + char + tile.substring(i + 1);
+      if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
+        a.grid.set(n1, char);
+        a.grid.set(n2, char);
+        const added = this.tryContinueExtrude(a, char, length - 1, n2);
+        if (added) return added + 1;
+        a.grid.set(n2, '');
+        a.grid.set(n1, '');
+      }
+      if (ok) break;
+    }
+    return ok ? 1 : 0;
+  }
+
+  /** Attempt to add a grid type. */
+  tryAdd(a: A, opts: AddOpts = {}): number {
+    // Optionally start at the given screen only.
+    const tileset = this.orig.tileset;
+    const {attempts = 1, char = 'c', start, loop = false} = opts;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const startIter =
+          start != null ?
+              [(start & 0xf0f0) as GridCoord] :
+              this.random.ishuffle(a.grid.screens());
+      for (const c of startIter) {
+        const mid = c + 0x808 as GridCoord;
+        if (!a.grid.get(mid)) continue;
+        const tile = this.extract(a.grid, c);
+        for (let dir of this.random.ishuffle([0, 1, 2, 3])) {
+          const n1 = mid + GRIDDIR[dir] as GridCoord;
+          const n2 = mid + 2 * GRIDDIR[dir] as GridCoord;
+          if (a.fixed.has(n1) || a.fixed.has(n2)) continue;
+          const o1 = a.grid.get(n1);
+          const o2 = a.grid.get(n2);
+//console.log(`mid(${mid.toString(16)}): ${a.grid.get(mid)}; n1(${n1.toString(16)}): ${a.grid.get(n1)}; n2(${n2.toString(16)}): ${a.grid.get(n2)}`);
+          // allow making progress on top of an edge-only connection.
+          if ((o1 && (o2 || o1 !== char)) || a.grid.isBorder(n1)) continue;
+          if (!loop) {
+            const neighborTile = this.extract(a.grid, n2 - 0x808 as GridCoord,
+                                              {replace: new Map([[n1, '']])});
+            if (/\S/.test(neighborTile)) continue;
+          }
+          const i = TILEDIR[dir];
+          const rep = tile.substring(0, i) + char + tile.substring(i + 1);
+          if (tileset.getMetascreensFromTileString(rep).length) {
+            a.grid.set(n1, char);
+            a.grid.set(n2, char);
+            if (length > 1) {
+              const added = this.tryContinueExtrude(a, char, length, n2);
+              if (added) return added;
+            } else {
+              const neighborTile = this.extract(a.grid, n2 - 0x808 as GridCoord);
+              if (tileset.getMetascreensFromTileString(neighborTile).length) {
+                return 1;
+              } 
+            }
+            a.grid.set(n2, o2);
+            a.grid.set(n1, o1);
+          }
+        }
+      }
+    }
+    return 0;
+  }
+
+  // /**
+  //  * Attempt to extend an existing screen into a direction that's
+  //  * currently empty.  Length is probabilistic, each successful
+  //  * attempt will have a 1/length chance of stopping.  Returns number
+  //  * of screens added.
+  //  */
+  // tryExtrude(a: A, char: string, length: number, attempts = 1): number {
+  //   // Look for a place to start.
+  //   while (attempts--) {
+  //     for (const c of this.random.ishuffle(a.grid.screens())) {
+  //       const mid = c + 0x808 as GridCoord;
+  //       if (!a.grid.get(mid)) continue;
+  //       const tile = this.extract(a.grid, c);
+  //       for (let dir of [0, 1, 2, 3]) {
+  //         if (a.grid.get(mid + 2 * GRIDDIR[dir] as GridCoord)) continue;
+  //         const i = TILEDIR[dir];
+  //         if (tile[i] !== ' ') continue;
+  //         const rep = tile.substring(0, i) + char + tile.substring(i + 1);
+  //         if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
+  //           const added = this.tryContinueExtrude(a, char, length, mid, dir);
+  //           if (added) return added;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return 0;
+  // }
+
+  // tryContinueExtrude(a: A, char: string, length: number,
+  //                    mid: GridCoord, dir: number): number {
+  //   const replace = new Map<GridCoord, string>([]);
+  //   let works: Array<[GridCoord, string]>|undefined;
+  //   let weight = 0;
+  //   OUTER:
+  //   while (true) {
+  //     replace.set(mid + GRIDDIR[dir] as GridCoord, char);
+  //     replace.set(mid + 2 * GRIDDIR[dir] as GridCoord, char);
+  //     mid = (mid + 2 * GRIDDIR[dir]) as GridCoord;
+
+  //     const tile = this.extract(a.grid, mid - 0x808 as GridCoord, {replace});
+  //     weight++;
+  //     if (this.orig.tileset.getMetascreensFromTileString(tile).length) {
+  //       works = [...replace];
+  //       // we can quit now - see if we should.
+  //       while (weight > 0) {
+  //         if (!this.random.nextInt(length)) break OUTER;
+  //         weight--;
+  //       }
+  //     }
+
+  //     // Find a viable next step.
+  //     for (const nextDir of this.random.ishuffle([0, 1, 2, 3])) {
+  //       const delta = GRIDDIR[nextDir];
+  //       const edge = mid + delta as GridCoord;
+  //       if (a.grid.isBorder(edge)) continue;
+  //       if (replace.get(...) || a.grid.get(mid + 2 * delta as GridCoord)) continue;
+  //       const i = TILEDIR[dir];
+  //       if (tile[i] !== ' ') continue;
+  //       const rep = tile.substring(0, i) + char + tile.substring(i + 1);
+  //       if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
+  //         replace.set(mid + delta as GridCoord, char);
+  //         replace.set(mid + 2 * delta as GridCoord, char);
+  //         dir = nextDir;
+  //         continue OUTER;
+  //       }
+  //     }
+  //     break; // never found a follow-up, so quit
+  //   }
+  //   if (!works) return 0;
+  //   for (const [c, v] of works) {
+  //     a.grid.set(c, v);
+  //   }
+  //   return works.length >>> 1;
+  // }
+
   /** Make arrangements to maximize the success chances of infer. */
   preinfer(a: A): Result<void> {
     let result;
@@ -871,7 +1094,8 @@ export class CaveShuffle extends MazeShuffle {
               .filter(s => !s.data.mod);
       if (!candidates.length) {
         //console.error(a.grid.show());
-        return {ok: false, fail: `infer screen ${hex(s)}: [${tile}]`};
+if (a.grid.show().length > 100000) debugger;
+        return {ok: false, fail: `infer screen ${hex(s)}: [${tile}]\n${a.grid.show()}`};
       }
       const pick = this.random.pick(candidates);
       screens.push(pick);
@@ -956,6 +1180,38 @@ export class CaveShuffle extends MazeShuffle {
     const opts = replacements ? {with: replacements} : {};
     const parts = meta.traverse(opts);
     return new Set(parts.values()).size === this.maxPartitions;
+  }
+
+  requireEligiblePitDestination(meta: Metalocation): boolean {
+    let v = false;
+    let h = false;
+    for (const pos of meta.allPos()) {
+      const scr = meta.get(pos);
+      if (scr.hasFeature('river') || scr.hasFeature('empty')) continue;
+      const edges =
+        (scr.data.edges || '').split('').map(x => x === ' ' ? '' : x);
+      if (edges[0] && edges[2]) v = true;
+      // NOTE: we clamp the target X coords so that spike screens are all good
+      // this prevents errors from not having a viable destination screen.
+      if ((edges[1] && edges[3]) || scr.hasFeature('spikes')) {
+        h = true;
+      }
+      if (v && h) return true;
+    }
+    return false;
+  }
+
+  checkMetascreens(a: A, meta: Metalocation): Result<void> {
+    if (!this.params.features?.statue) return OK;
+    let statues = 0;
+    for (const pos of meta.allPos()) {
+      const scr = meta.get(pos);
+      statues += scr.data.statues?.length || 0;
+    }
+    if (statues < this.params.features.statue) {
+      return {ok: false, fail: `insufficient statue screens`};
+    }
+    return OK;
   }
 }
 
@@ -1140,3 +1396,35 @@ export class KarmineBasementShuffle extends CaveShuffle {
     '                 ',
   ].join('');
 }
+
+const TILEDIR = [1, 3, 7, 5];
+const GRIDDIR = [-0x800, -8, 0x800, 8];
+
+// This might cover all of tryExtrude, tryContinueExtrude, tryConnect
+//  - could also find a way to add tryAddLoop?
+interface AddOpts {
+  char?: string;
+  // length: number;
+  start?: GridCoord;
+  // end: GridCoord;
+  loop?: boolean; // allow vs require?
+
+  attempts?: number;
+
+  // branch: boolean;
+  // reducePartitions: boolean;  -- or provide a "smart pick start/end" wrapper
+
+  // TODO - some idea of whether to prefer extending an existing
+  // dead end or not - this would provide some sort of "branching factor"
+  // whereby we can tightly control how many dead ends we get...?
+  // Provide a "find dead ends" function?
+  //   - imagine a version of windmill cave where we wander two screens,
+  //     then connect the dead ends, then branch and wander a little more?
+}
+
+// TODO - potentially we could look at the whole problem
+// as making a list of extrude/feature types:
+//   - r, c, branch, arena, bridge, stair, ...?
+// nucleate w/ any edges, have a list of these operations and then
+// try each one, if it doesn't work, reshuffle it later (fixed # of draws
+// before giving up).

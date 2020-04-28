@@ -163,7 +163,7 @@ export interface MetascreenData {
    * may need to add a fixed number of walls, and/or remove a fixed nubmer
    * of bridges.  We add as many non-flag blocks as possible.
    */
-  mod?: 'block' | 'wall' | 'bridge';
+  mod?: 'block' | 'wall' | 'bridge'; // | 'manual';
 
   /**
    * Y-coordinate of statues on this map screen.  These may be populated
@@ -186,6 +186,9 @@ export interface MetascreenData {
    * specify it.  It must be 240 bytes long.
    */
   definition?: Uint8Array;
+
+  /** Arena type.  This should be preserved when inferring screens. */
+  arena?: number;
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;

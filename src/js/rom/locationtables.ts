@@ -154,7 +154,7 @@ export class Spawn extends DataTuple {
   /** 8-bit tile coordinate within the screen (yx). */
   tile   = this.prop([0, 0x0f, -4], [1, 0x0f]);
   /** 16-bit pixel coordinate within the screen (y0xx). */
-  coord  = this.prop([0, 0xff, -8], [1, 0x7f, -4], [2, 0x40, 3]);
+  coord  = this.prop([0, 0x0f, -12], [1, 0x0f, -4], [2, 0x40, 3]);
 
   /** Spawn type (0..4). */
   type   = this.prop([2, 0x07]);

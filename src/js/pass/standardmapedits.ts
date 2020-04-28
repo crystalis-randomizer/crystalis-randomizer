@@ -4,6 +4,7 @@ import {Rom} from '../rom.js';
 import {Flag, Spawn} from '../rom/locationtables.js';
 import {Location} from '../rom/location.js';
 import {Metalocation} from '../rom/metalocation.js';
+import {cloneArray} from '../rom/util.js';
 
 type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
 
@@ -28,6 +29,9 @@ export function standardMapEdits(rom: Rom, opts: Options) {
   shrinkMado2(rom);
   removeUnusedGoaKensuExits(rom);
   adjustAbductionTrigger(rom);
+
+  splitSaberaPalace2(rom);
+  //splitStyx2(rom); // don't actually do this one?
   // closeCaveEntrances(rom); // NOTE: after other map edits
 }
 
@@ -265,6 +269,58 @@ function reversibleSwanGate(rom: Rom) {
   //rom.trigger(0xb3).conditions.push(OpenedSwanGate.id);
   // TODO - can we do away with the trigger?  Just spawn them on the same condition...
 }
+
+function splitSaberaPalace2(rom: Rom) {
+  splitMap(rom.locations.SaberaPalace2_West, rom.locations.SaberaPalace2,
+           0x00, 0x01, 0x10, 0x20, 0x30, 0x31, 0x41, 0x51, 0x61);
+}
+
+// function splitStyx2(rom: Rom) {
+//   const {riverCave_deadEndsE, riverCave_deadEndsW} = rom.metascreens;
+//   splitMap(rom.locations.Styx2_East, rom.locations.Styx2,
+//            0x24, 0x33, 0x34, 0x43, 0x44, 0x53);
+//   rom.locations.Styx2.meta.set(0x42, riverCave_deadEndsW);
+//   rom.locations.Styx2_East.meta.set(0x42, riverCave_deadEndsE);
+// }
+
+function splitMap(newLoc: Location, loc: Location, ...splitPos: number[]) {
+  const rom = newLoc.rom;
+  rom.locations.allocate(newLoc, loc);
+  newLoc.bgm = loc.bgm;
+  newLoc.entrances = [];
+  newLoc.exits = [];
+  newLoc.pits = [];
+  newLoc.spawns = [];
+  newLoc.flags = [];
+  newLoc.width = newLoc.height = 1;
+  newLoc.screens = [[0x80]];
+  newLoc.tilePalettes = cloneArray(loc.tilePalettes);
+  newLoc.originalTilePalettes = cloneArray(loc.originalTilePalettes);
+  newLoc.tileset = loc.tileset;
+  newLoc.tileEffects = loc.tileEffects;
+  newLoc.tilePatterns = cloneArray(loc.tilePatterns);
+  newLoc.spritePatterns = cloneArray(loc.spritePatterns);
+  newLoc.spritePalettes = cloneArray(loc.spritePalettes);
+
+  let h = 0;
+  let w = 0;
+  for (const pos of splitPos) {
+    h = Math.max(h, (pos >>> 4) + 1);
+    w = Math.max(w, (pos & 0xf) + 1);
+  }
+  newLoc.meta = new Metalocation(newLoc.id, loc.meta.tileset, h, w);
+  for (const pos of splitPos) {
+    newLoc.meta.set(pos, loc.meta.get(pos));
+    loc.meta.set(pos, loc.meta.tileset.empty);
+  }
+  const posSet = new Set(splitPos);
+  newLoc.flags = loc.flags.filter(f => posSet.has(f.screen));
+  loc.flags = loc.flags.filter(f => !posSet.has(f.screen));
+  newLoc.spawns = loc.spawns.filter(s => posSet.has(s.screen));
+  loc.spawns = loc.spawns.filter(s => !posSet.has(s.screen));
+  loc.meta.moveExitsAndPitsTo(newLoc.meta);
+}
+
 
 /** Mado 2's area has a 4x4 section of unused tiles at the top.  Delete them. */
 function shrinkMado2(rom: Rom) {

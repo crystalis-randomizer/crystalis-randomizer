@@ -662,6 +662,11 @@ export class World {
             inTower ? this.rom.flags.AlwaysTrue.id :
             wall != null ? this.wallCapability(wall) :
             location.flags.find(f => f.screen === flagYx)?.flag;
+        const pit = location.pits.find(p => p.fromScreen === screenId);
+        if (pit) {
+          this.exits.set(TileId(screenId << 8 | 0x88),
+                         TileId(pit.toScreen << 8 | 0x88));
+        }
         const logic: Logic = this.rom.flags[flag!]?.logic ?? {};
         for (let t = 0; t < 0xf0; t++) {
           const tid = TileId(screenId << 8 | t);

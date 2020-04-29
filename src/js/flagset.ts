@@ -180,7 +180,7 @@ class Presets {
         World.UnidentifiedKeyItems,
       ]);
 
-  readonly Random = new Preset(this, 'Truly Random', `
+  readonly Mystery = new Preset(this, 'Mystery', `
       Even the options are random.`, [
         [World.RandomizeMaps, '?'],
         [World.RandomizeTrades, '?'],

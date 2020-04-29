@@ -392,7 +392,7 @@ export class Metalocation {
    * only set in later passes (i.e. shuffle, which is last).
    */
   set2d(pos: Pos,
-        screens: ReadonlyArray<ReadonlyArray<Optional<Metascreen>>>): boolean {
+        screens: ReadonlyArray<ReadonlyArray<Optional<Metascreen>>>): void {
     for (const row of screens) {
       let dx = 0;
       for (const scr of row) {
@@ -403,7 +403,9 @@ export class Metalocation {
     }
     // return this.verify(pos0, screens.length,
     //                    Math.max(...screens.map(r => r.length)));
-    return this.validate();
+    // TODO - this is kind of broken... :-(
+    // return this.validate();
+    //return true;
   }
 
   /** Check all the currently invalidated edges, then clears it. */
@@ -486,6 +488,9 @@ export class Metalocation {
     //   if (other) other._exits.delete(prev[0] & 0xff, prev[1]);
     // }
     this._exits.set(pos, type, spec);
+  }
+  deleteExit(pos: Pos, type: ConnectionType) {
+    this._exits.delete(pos, type);
   }
 
   getExit(pos: Pos, type: ConnectionType): ExitSpec|undefined {

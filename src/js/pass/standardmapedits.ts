@@ -393,9 +393,11 @@ function removeUnusedGoaKensuExits(rom: Rom) {
   // when their other side ends up getting shuffled.  Possibly the best
   // option is to detect the unreciprocated exits and update them when
   // we transfer.  But for now this is all that's really needed.
-  const loc = rom.locations.GoaFortress_Kensu;
-  loc.exits.splice(0, loc.exits.length - 4);
-  loc.meta = Metalocation.of(loc);
+  const meta = rom.locations.GoaFortress_Kensu.meta;
+  for (const [pos, type] of meta.exits()) {
+    if (pos < 0x10 || type.startsWith('seamless')) continue;
+    meta.deleteExit(pos, type);
+  }
 
   // NOTE: maps $21 and $ba are seamless pairs of maps with flags, but they
   // lack the actual same flags.  We need to keep them in sync...?  Probably

@@ -2129,7 +2129,7 @@ export class Metascreens {
     tile: [' n | a | c ', ' c | a | c ', ' c | a | w '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
-    edges: 'n c ', // 'n' for 'narrow'
+    edges: 'c c ', // 'n' for 'narrow' on top???
     connect: '2a',
     poi: [[1, 0x60, 0x78]],
     exits: [topEdge(), // vampire 1 room

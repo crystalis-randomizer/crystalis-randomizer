@@ -22,6 +22,7 @@ export interface Survey {
 
 export interface Attempt {
   readonly grid: Grid<string>;
+  readonly fixed: Set<GridCoord>;
   readonly w: number;
   readonly h: number;
   readonly size: number;
@@ -117,5 +118,30 @@ export abstract class MazeShuffle {
       }
     }
     return out;
+  }
+
+  canSet(a: Attempt, c: GridCoord, v: string): boolean {
+    return this.canSetAll(a, new Map([[c, v]]));
+  }
+
+  canSetAll(a: Attempt, replace: Map<GridCoord, string>): boolean {
+    const screens = new Set<GridCoord>();
+    for (const c of replace.keys()) {
+      if (a.fixed.has(c)) return false;
+      const s = (c & ~0x808) as GridCoord;
+      const y = s >>> 12;
+      const x = (s >>> 4) & 0xf;
+      if (x < a.w && y < a.h) screens.add(s);
+      if (!(c & 8) && y < a.h && x) screens.add(s - 0x10 as GridCoord);
+      if (!(c & 0x800) && x < a.w && y) screens.add(s - 0x1000 as GridCoord);
+      if (!(c & 0x808) && x && y) screens.add(s - 0x1010 as GridCoord);
+    }
+    for (const s of screens) {
+      const tile = this.extract(a.grid, s, {replace});
+      if (!this.orig.tileset.getMetascreensFromTileString(tile).length) {
+        return false;
+      }
+    }
+    return true;
   }
 }

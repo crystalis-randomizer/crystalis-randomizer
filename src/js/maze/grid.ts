@@ -214,6 +214,17 @@ export class Grid<T> {
     }
     return lines.join('\n');
   }
+
+  static writeGrid2d(g: Grid<String>, c: GridCoord, data: readonly string[]) {
+    const top = g.index(c);
+    for (let y = 0; y < data.length; y++) {
+      const row = data[y];
+      for (let x = 0; x < row.length; x++) {
+        const c = row[x];
+        g.data[top + y * g.row + x] = c !== ' ' ? c : '';
+      }
+    }
+  }
 }
 
 // TODO - posToCoord? (presumably center)

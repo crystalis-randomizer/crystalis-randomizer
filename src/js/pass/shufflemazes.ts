@@ -9,7 +9,8 @@ import { Rom } from '../rom.js';
 import { BridgeCaveShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
 import { RiverCaveShuffle, StyxRiverCaveShuffle,
-         WaterfallRiverCaveShuffle } from '../maze/rivercave.js';
+  WaterfallRiverCaveShuffle,
+  OasisCaveShuffle} from '../maze/rivercave.js';
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
 import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
@@ -102,7 +103,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     // // TODO - consider just making this into two separate maps?
     new CaveShuffle($.SaberaPalace2),
     new CaveShuffle($.SaberaPalace2_West),
-    // new SplitPitShuffle($.SaberaPalace2, $.SaberaPalace1),
+    // // new SplitPitShuffle($.SaberaPalace2, $.SaberaPalace1),
     new CaveShuffle($.JoelSecretPassage),
     // new TownShuffle($.Joel),
     // new TownShuffle($.Swan),
@@ -121,13 +122,13 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new WideCaveShuffle($.Styx1),
     // // TODO - consider splitting this map, too!
     new StyxRiverCaveShuffle($.Styx2).requirePitDestination(),
-    //new StyxRiverCaveShuffle($.Styx2_East),
-    // new StyxRiverCaveShuffle($.Styx2),
+    // //new StyxRiverCaveShuffle($.Styx2_East),
+    // // new StyxRiverCaveShuffle($.Styx2),
     new CaveShuffle($.Styx3), // pit: $.Styx2
     // new TownShuffle($.Shyron),
     // new TownShuffle($.Goa),
     // new OverworldShuffle($.Desert1),
-    // new OasisCaveShuffle($.OasisCaveMain),
+    new OasisCaveShuffle($.OasisCaveMain),
     new CaveShuffle($.DesertCave1),
     // new TownShuffle($.Sahara),
     new CaveShuffle($.DesertCave2),

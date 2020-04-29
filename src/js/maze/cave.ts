@@ -977,15 +977,15 @@ export class CaveShuffle extends MazeShuffle {
           if (tileset.getMetascreensFromTileString(rep).length) {
             a.grid.set(n1, char);
             a.grid.set(n2, char);
-            if (length > 1) {
-              const added = this.tryContinueExtrude(a, char, length, n2);
-              if (added) return added;
-            } else {
-              const neighborTile = this.extract(a.grid, n2 - 0x808 as GridCoord);
-              if (tileset.getMetascreensFromTileString(neighborTile).length) {
-                return 1;
-              } 
-            }
+            // if (length > 1) {
+            //   const added = this.tryContinueExtrude(a, char, length, n2);
+            //   if (added) return added;
+            // } else {
+            const neighborTile = this.extract(a.grid, n2 - 0x808 as GridCoord);
+            if (tileset.getMetascreensFromTileString(neighborTile).length) {
+              return 1;
+            } 
+            // }
             a.grid.set(n2, o2);
             a.grid.set(n1, o1);
           }
@@ -1130,12 +1130,13 @@ if (a.grid.show().length > 100000) debugger;
       const c = ((pos << 8 | pos << 4) & 0xf0f0) as GridCoord;
       const tile = this.extract(a.grid, c)
       const scr = meta.get(pos);
+      if (a.bridges <= bridges && scr.hasFeature('bridge')) continue;
       if (this.addBlocks &&
           this.tryMeta(meta, pos, this.orig.tileset.withMod(tile, 'block'))) {
         if (scr.hasFeature('bridge')) a.bridges--;
         continue;
       }
-      if (a.bridges > bridges && scr.hasFeature('bridge')) {
+      if (scr.hasFeature('bridge')) {
         if (this.tryMeta(meta, pos,
                          this.orig.tileset.withMod(tile, 'bridge'))) {
           a.bridges--;
@@ -1155,7 +1156,7 @@ if (a.grid.show().length > 100000) debugger;
     // console.warn(`bridges ${a.bridges} ${bridges} / walls ${a.walls} ${walls}\n${a.grid.show()}\n${meta.show()}`);
     if (a.bridges !== bridges) {
       return {ok: false,
-              fail: `refineMeta bridges want ${bridges} got ${a.bridges}`};
+              fail: `refineMeta bridges want ${bridges} got ${a.bridges}\n${meta.show()}`};
     }
     if (a.walls !== walls) {
       return {ok: false,
@@ -1333,10 +1334,7 @@ export class KarmineBasementShuffle extends CaveShuffle {
     //    four columns as spikes, and full connections around the
     //    edges.
     if (a.grid.height !== 5 || a.grid.width !== 8) throw new Error('bad size');
-    for (let i = 0; i < a.grid.data.length; i++) {
-      const c = KarmineBasementShuffle.PATTERN[i];
-      a.grid.data[i] = c !== ' ' ? c : '';
-    }
+    Grid.writeGrid2d(a.grid, 0 as GridCoord, KarmineBasementShuffle.PATTERN);
     return OK;
   }
 
@@ -1394,7 +1392,7 @@ export class KarmineBasementShuffle extends CaveShuffle {
     '   c c c c c c   ',
     '   ccccccccccc   ',
     '                 ',
-  ].join('');
+  ];
 }
 
 const TILEDIR = [1, 3, 7, 5];

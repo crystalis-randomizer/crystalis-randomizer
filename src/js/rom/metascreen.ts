@@ -15,6 +15,13 @@ export class Metascreen {
   // value: segments, each containing an offset to add to pos<<8 to get
   //        connection points (e.g. 0001, 0101, 1020, etc).
   readonly connections: ReadonlyArray<ReadonlyArray<ReadonlyArray<number>>>;
+  // TODO - it might make sense to build in '<>p' into the connections string,
+  // indicating which partitions have exits or POI (in order).  But the API
+  // for exposing this is ugly.  Another alternative would be to dedicate
+  // a portion of "spectrum" to poi and exits, e.g. [f0..f3] for POI, [e0..e3]
+  // for exits, and then we can build it directly into connections, and they
+  // will show up in the results.
+  //poi: Array<{x: number, y: number, priority: number, segment: number}>;
 
   used = false;
 
@@ -52,24 +59,43 @@ export class Metascreen {
       }
     }
     this._features = features;
-    this._isEmpty = Boolean(features & featureMask.empty);
+    this._isEmpty = Boolean(features & featureMask['empty']);
     this.flag = data.flag;
     // this.fixed = fixed;
     // this.featureCount = featureCount;
     // TODO - build "connections" by iterating over 0..3.
     const cxn: number[][][] = [[[]], [[]], [[]], [[]]];
+
     this.connections = cxn;
     for (let i = 0; i < 4; i++) {
+      let poiIndex = 0;
+      let exitIndex = 0;
+      let cur = cxn[i][0];
       for (const term of this.data.connect ?? '') {
         if (connectionBlocks[i].includes(term)) {
-          cxn[i].push([]);
+          cxn[i].push(cur = []);
           continue;
         }
-        const num = parseInt(term, 16);
-        if (!num) continue;
-        const channel = (num & 3) << (num & 4); // 01, 02, 03, 10, 20, or 30
-        const offset = num & 8 ? (num & 4 ? 0x0100 : 0x1000) : 0;
-        cxn[i][cxn[i].length - 1].push(channel | offset);
+        let delta;
+        if (connectionBlockSet.has(term)) continue;
+        if (term === 'p') {
+          delta = 0xf0 | poiIndex++;
+        } else if (term === 'x') {
+          delta = 0xe0 | exitIndex++;
+        } else {
+          const num = parseInt(term, 16);
+          if (!num) throw new Error(`bad term: '${term}'`); // continue???
+          const channel = (num & 3) << (num & 4); // 01, 02, 03, 10, 20, or 30
+          const offset = num & 8 ? (num & 4 ? 0x0100 : 0x1000) : 0;
+          delta = channel | offset;
+        }
+        cur.push(delta);
+      }
+      while (poiIndex < this.data.poi?.length!) {
+        cur.push(0xf0 | poiIndex++);
+      }
+      while (exitIndex < this.data.exits?.length!) {
+        cur.push(0xe0 | exitIndex++);
       }
     }
   }
@@ -106,6 +132,11 @@ export class Metascreen {
 
   isEmpty(): boolean {
     return this._isEmpty;
+  }
+
+  hasStair(): boolean {
+    return Boolean(this._features & (featureMask['stair:up'] |
+                                     featureMask['stair:down']));
   }
 
   /** Return a new metascreen with the same profile but more obstructed. */
@@ -274,7 +305,7 @@ const connectionBlocks = [
   '|', // flight and break walls
   '|=', // flight only
 ];
-  
+const connectionBlockSet = new Set(['|', ':', '-', '=']);
 
 const manualFeatures = new Set<Feature>([
   'arena', 'portoa1', 'portoa2', 'portoa3', 'lake', 'overpass', 'underpass',

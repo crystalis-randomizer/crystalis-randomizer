@@ -151,7 +151,7 @@ class OverpassShuffle extends DoubleShuffle {
   }
 
   // Expected to have several failures
-  overpassFailure() {}
+  reportFailure() {}
 }
 
 class UnderpassShuffle extends DoubleShuffle {

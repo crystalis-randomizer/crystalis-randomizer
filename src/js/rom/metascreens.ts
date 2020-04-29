@@ -1238,7 +1238,7 @@ export class Metascreens {
     tile: ' w | > |   ',
     tilesets: {labyrinth: {}},
     edges: 'w   ',
-    connect: '1|2|3',
+    connect: '1|2x|3',
     exits: [downStair(0xc7)],
     statues: [4],
   });
@@ -2156,13 +2156,13 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena', 'wall'],
     edges: 'n c ',
-    connect: '2=a',
+    connect: '2x=apx',
     wall: 0x27,
     mod: 'wall',
     poi: [[1, 0x60, 0x78]],
     // NOTE: top exit needs to move up a tile...?
-    exits: [bottomEdge({left: 6, width: 4, manual: true}),
-            topEdge({top: 1})], // prisons need extra exits
+    exits: [topEdge({top: 1}), // prisons need extra exits
+            bottomEdge({left: 6, width: 4, manual: true})],
     arena: 1,
   });
   // NOTE: screen 93 is missing!
@@ -2176,7 +2176,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['wall'],
     edges: 'cc c',
-    connect: '2=6e',
+    connect: '2x=6e',
     exits: [topEdge({left: 6, width: 4})],
     mod: 'wall',
     wall: 0x37,
@@ -2306,7 +2306,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: 'c c ',
-    connect: '2|a',
+    connect: '2x|ax',
     exits: [downStair(0x17), upStair(0xd7)],
     match: (reachable) => reachable(0x108, 0x78) && reachable(-0x30, 0x78),
   });
@@ -2358,8 +2358,8 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: 'c c ',
-    connect: '2|a',
-    poi: [[0, 0x110, 0x78], [0, -0x30, 0x78]],
+    connect: '2p|ap',
+    poi: [[0, -0x30, 0x78], [0, 0x110, 0x78]],
     match: (reachable) => reachable(-0x30, 0x78) && reachable(0x110, 0x78),
   });
   readonly deadEndNS_unreachable = this.metascreen({
@@ -2410,8 +2410,8 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['empty'],
     edges: ' c c',
-    connect: '6|e',
-    poi: [[0, 0x70, 0x108], [0, 0x70, -0x28]],
+    connect: '6p|ep',
+    poi: [[0, 0x70, -0x28], [0, 0x70, 0x108]],
     match: (reachable) => reachable(0x70, -0x28) && reachable(0x70, 0x108),
   });
   readonly deadEndWE_unreachable = this.metascreen({
@@ -3144,9 +3144,9 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river', 'bridge'],
     edges: 'rrrr',
-    connect: '15:3d:79-bf',
+    connect: '15p:3dp:79-bf',
     wall: 0xb6,
-    poi: [[4, 0x00, 0x98]],
+    poi: [[4, 0x00, 0x48], [4, 0x00, 0x98]],
   });
   readonly riverCaveNS = this.metascreen({
     id: 0xd4,
@@ -3740,7 +3740,7 @@ export class Metascreens {
     tilesets: {labyrinth: {}},
     feature: ['wall'],
     edges: 'c w ',
-    connect: '2a|9|b',
+    connect: '2ax|9|b',
     exits: [topEdge({left: 6, width: 4})],
     wall: 0x37,
     statues: [0xa],
@@ -3876,7 +3876,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['empty', 'river'],
     edges: 'r r ',
-    connect: '1:3|9:b',
+    connect: '1p:3p|9p:bp',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98],
           [1, 0x110, 0x48], [1, 0x110, 0x98]],
   });
@@ -3890,7 +3890,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['empty', 'river'],
     edges: 'r   ',
-    connect: '1:3',
+    connect: '1p:3p',
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98]],
     match: (reachable) => !reachable(0x108, 0x48) && !reachable(0x108, 0x98),
     mod: 'bridge', // f2 is bridged version
@@ -3905,7 +3905,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['empty', 'river'],
     edges: '  r ',
-    connect: '9:b',
+    connect: '9p:bp',
     poi: [[1, 0x110, 0x48], [1, 0x110, 0x98]],
     match: (reachable) => !reachable(-0x30, 0x48) && !reachable(-0x30, 0x98),
     mod: 'bridge', // f2 is bridged version
@@ -3920,9 +3920,9 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['empty', 'river'],
     edges: ' r r',
-    connect: '5:7|d:f',
-    poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108],
-          [1, 0x60, -0x28], [1, 0xa0, -0x28]],
+    connect: '5p:7p|dp:fp',
+    poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28],
+          [1, 0x60, 0x108], [1, 0xa0, 0x108]],
   });
   readonly riverCave_deadEndsW = this.metascreen({
     id: 0xf1,
@@ -3934,7 +3934,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['empty', 'river'],
     edges: ' r  ',
-    connect: '5:7',
+    connect: '5p:7p',
     poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28]],
     match: (reachable) => !reachable(0x60, 0x108) && !reachable(0xa0, 0x108),
   });
@@ -3948,7 +3948,7 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['empty', 'river'],
     edges: '   r',
-    connect: 'd:f',
+    connect: 'dp:fp',
     poi: [[1, 0x60, 0x108], [1, 0xa0, 0x108]],
     match: (reachable) => !reachable(0x60, -0x28) && !reachable(0xa0, -0x28),
   });
@@ -3958,7 +3958,7 @@ export class Metascreens {
       | ┇ |
       | ╨ |
       |   |`,
-    tile: ' r | r |   ',
+    tile: [' r | r |   ', ' r |   |   '],
     tilesets: {cave: {}, fortress: {}},
     feature: ['river', 'bridge'],
     edges: 'r   ',
@@ -3973,7 +3973,7 @@ export class Metascreens {
       |   |
       | ╥ |
       | ┇ |`,
-    tile: '   | r | r ',
+    tile: ['   | r | r ', '   |   | r '],
     tilesets: {cave: {}, fortress: {}},
     feature: ['river', 'bridge'],
     edges: '  r ',
@@ -4004,7 +4004,8 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: 'rr r',
-    connect: '15:3d:7f',
+    connect: '15p:3dp:7f',
+    poi: [[4, 0x00, 0x48], [4, 0x00, 0x98]],
   });
   readonly riverCaveNS_blockedRight = this.metascreen({
     id: 0xf5,
@@ -4016,8 +4017,8 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: 'r r ',
-    connect: '19:3:b',
-    poi: [[0, 0xc0, 0x98], [0, 0x40, 0x98]],
+    connect: '19:3p:bp',
+    poi: [[0, 0x40, 0x98], [0, 0xc0, 0x98]],
     mod: 'block',
   });
   readonly riverCaveNS_blockedLeft = this.metascreen({
@@ -4030,8 +4031,8 @@ export class Metascreens {
     tilesets: {cave: {}, fortress: {}},
     feature: ['river'],
     edges: 'r r ',
-    connect: '1:3b:9',
-    poi: [[0, 0xb0, 0x48], [0, 0x30, 0x48]],
+    connect: '1p:3b:9p',
+    poi: [[0, 0x30, 0x48], [0, 0xb0, 0x48]],
     mod: 'block',
   });
   readonly spikesNS = this.metascreen({

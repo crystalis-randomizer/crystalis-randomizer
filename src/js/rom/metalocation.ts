@@ -567,6 +567,29 @@ export class Metalocation {
     return map;
   }  
 
+  /** @param edge A value from a traverse set. */
+  exitType(edge: number): ConnectionType|undefined {
+    if ((edge & 0xf0) !== 0xe0) return;
+    const pos = edge >>> 8;
+    const scr = this.get(pos);
+    const type = scr.data.exits?.[edge & 0xf].type;
+    if (!type?.startsWith('edge:')) return type;
+    // may not actually be an exit.
+    if (type === 'edge:top' && (pos >>> 4)) return;
+    if (type === 'edge:bottom' && (pos >>> 4) === this.height - 1) return;
+    if (type === 'edge:left' && (pos & 0xf)) return;
+    if (type === 'edge:bottom' && (pos & 0xf) === this.width - 1) return;
+    return type;
+  }
+
+  /**
+   * @param edge A value from a traverse set.
+   * @return An YyXx position for the given poi, if it exists.
+   */
+  poiTile(edge: number): number|undefined {
+    throw new Error('not implemented');
+  }
+
   /**
    * Attach an exit/entrance pair in two directions.
    * Also reattaches the former other ends of each to each other.
@@ -754,7 +777,7 @@ export class Metalocation {
           spikes.set(pos, [...edges].filter(c => c === 's').length);
         }
       }
-console.log(`dest:\n${dest.show()}\neligible: ${eligible.map(e => e.map(h => h.toString(16)).join(',')).join('  ')}`);
+//console.log(`dest:\n${dest.show()}\neligible: ${eligible.map(e => e.map(h => h.toString(16)).join(',')).join('  ')}`);
       // find the closest destination for the first pit, keep a running delta.
       let delta: [Pos, Pos] = [0, 0];
       for (const [upstairs, downstairs] of list) {

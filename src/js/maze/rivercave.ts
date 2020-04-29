@@ -1,5 +1,5 @@
 import { CaveShuffleAttempt, CaveShuffle } from './cave.js';
-import { GridCoord, GridIndex, N, S } from './grid.js';
+import { GridCoord, GridIndex, N, S, Grid } from './grid.js';
 import { Monogrid, Cursor } from './monogrid.js';
 import { Result, OK } from './maze.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
@@ -295,7 +295,6 @@ export class StyxRiverCaveShuffle3 extends CaveShuffle {
       rivers += added;
       size += added;
     }
-console.log(a.grid.show());
     // extrude cave.
     const sizeTarget = this.params.size;
     while (size < sizeTarget) {
@@ -309,7 +308,7 @@ console.log(a.grid.show());
 
   refineMetascreens(a: A, meta: Metalocation): Result<void> {
     let result = super.refineMetascreens(a, meta);
-    if (!result.ok) {console.log(meta.show());return result;}
+    if (!result.ok) return result;
     // Last step: try to split the river with a pair of dead ends and
     // ensure that it creates 3 separate partitions!
     for (const pos of meta.allPos()) {
@@ -405,10 +404,14 @@ export class StyxRiverCaveShuffle extends RiverCaveShuffle {
     // (2) flight is required for some tile.
     function accessible(map: Map<number, Set<number>>): number {
       let count = 0;
-      for (let x = 0; x < meta.width; x++) {
-        const pos = (meta.height - 1) << 4 | x
-        if (meta.get(pos).isEmpty()) continue;
-        count += map.get(pos << 8 | 2)!.size;
+      for (const set of new Set(map.values())) {
+        for (const edge of set) {
+          // only check accessibility from bottom edge.
+          if (meta.exitType(edge) === 'edge:bottom') {
+            count += set.size;
+            break;
+          }
+        }
       }
       return count;
     }
@@ -417,6 +420,169 @@ export class StyxRiverCaveShuffle extends RiverCaveShuffle {
     if (parts1 === parts2) return {ok: false, fail: `bridge didn't matter`};
     const parts3 = accessible(meta.traverse({flight: true}));
     if (parts2 === parts3) return {ok: false, fail: `flight not required`};
+    return OK;
+  }
+}
+
+
+export class OasisCaveShuffle extends RiverCaveShuffle {
+
+  readonly pattern = [
+    '               ',
+    ' rrrrrrrrrrrrr ',
+    ' r           r ',
+    ' r rrrrrrrrr r ',
+    ' r r       r r ',
+    ' r r rrrrr r r ',
+    ' r r r   r r r ',
+    ' r r r   r r r ',
+    ' r r r   r r r ',
+    ' r r r < r r r ',
+    ' r r r c r r r ',
+    ' r r rrrrr r r ',
+    ' r r       r r ',
+    ' r rrrrrrrrr r ',
+    ' r           r ',
+    ' rrrrrrrrrrrrr ',
+    '               ',
+  ];
+
+  initialFill(a: A): Result<void> {
+    // Initial fill: make sure there's enough room and then copy the pattern.
+    const ph = (this.pattern.length - 1) >>> 1;
+    const pw = (this.pattern[0].length - 1) >>> 1;
+    if (a.h < ph) return {ok: false, fail: `too short`};
+    if (a.w < pw) return {ok: false, fail: `too narrow`};
+    const y0 = this.random.nextInt(a.h - ph - 1);
+    const x0 = this.random.nextInt(a.w - pw - 1);
+    const c0 = (y0 + 1) << 12 | (x0 + 1) << 4;
+    Grid.writeGrid2d(a.grid, c0 as GridCoord, this.pattern);
+    for (let y = 0x3000; y <= 0x5000; y += 0x800) {
+      for (let x = 0x30; x <= 0x40; x += 0x8) {
+        a.fixed.add(c0 + (y | x) as GridCoord);
+      }
+    }
+    return OK;
+  }
+
+  addEdges(a: A): Result<void> {
+    // Find the top-left corner (TODO - save this somewhere?)
+    let corner!: GridCoord;
+    for (let i = 0; i < a.grid.data.length; i++) {
+      if (a.grid.data[i] === 'r') {
+        corner = a.grid.coord(i as GridIndex) - 0x808 as GridCoord;
+        break;
+      }
+    }
+    if (corner == null) throw new Error(`no corner`);
+
+    const edges: GridCoord[] = [];
+    for (let y = 0; y < this.pattern.length; y++) {
+      for (let x = 1; x < this.pattern[y].length - 1; x++) {
+        if (!((x ^ y) & 1)) continue;
+        if (this.pattern[y][x] !== ' ') continue;
+        edges.push(corner + (y << 11 | x << 3) as GridCoord);
+      }
+    }
+
+    let chars = this.random.shuffle([...'ccrrrrrrrr']);
+    for (const edge of this.random.ishuffle(edges)) {
+      const char = chars[chars.length - 1];
+      // don't place caves on the outer boundary.
+      if (char === 'c' &&
+          [...this.extract(a.grid, edge - 0x808 as GridCoord)]
+              .filter(v => v === 'r').length < 4) {
+        continue;
+      }
+      if (this.canSet(a, edge, char)) a.grid.set(edge, chars.pop()!);
+      if (!chars.length) break;
+    }
+
+    // Add a few extra 'c' tiles.
+    for (let i = 0; i < 6; i++) {
+      this.tryAdd(a, {char: 'c'});
+    }
+    return OK;
+  }
+
+  refine(a: A): Result<void> {
+    // Add stairs.
+    const stairs = [...(this.params.stairs ?? [])];
+    stairs[0]--;
+    if (stairs[0] || stairs[1]) {
+      const result = this.addStairs(a, ...stairs);
+      if (!result.ok) return result;
+    }
+    // Find two cave dead ends and try to pin them (?)
+    let deadEnds = 0;
+    for (const s of this.random.ishuffle(a.grid.screens())) {
+      if (this.extract(a.grid, s).replace(/ /g, '') === 'c') {
+        if (stairs[0] && !a.grid.get(s + 8 as GridCoord)) {
+          a.grid.set(s + 0x808 as GridCoord, '<');
+          stairs[0]--;
+        }
+        a.fixed.add(s + 0x808 as GridCoord);
+        if (++deadEnds >= 2) break;
+      }
+    }
+    // Make sure it's traversible.
+    const parts = a.grid.partition();
+    if (new Set(parts.values()).size > 1) return {ok: false, fail: `orphans`};
+    // // Look for edges we can delete and not actually cut anything off.
+    // for (const i of this.random.ishuffle(seq(a.grid.data.length))) {
+    //   const c = a.grid.coord(i as GridIndex);
+    //   if (!((c ^ (c >> 8)) & 8)) continue; // only look at edges
+    //   if (!a.grid.data[i]) continue;
+    // }
+    return OK;
+  }
+
+  fillGrid(a: A): Result<void> {
+    let result: Result<void>;
+    if ((result = this.initialFill(a)), !result.ok) return result;
+    if ((result = this.addEdges(a)), !result.ok) return result;
+    if ((result = this.refine(a)), !result.ok) return result;
+    return OK;
+  }
+
+  // Flight may be required for anything.
+  checkMeta(meta: Metalocation, rep?: Map<Pos, Metascreen>) {
+    const parts = meta.traverse(rep ? {with: rep} : {});
+    const allStairs: number[] = [];
+    for (const edges of new Set(parts.values())) {
+      let stairs = 0;
+      for (const edge of new Set([...edges])) {
+        // NOTE: pos can be off the right or bottom edge
+        if (meta.exitType(edge)) stairs++;
+      }
+      allStairs.push(stairs);
+    }
+    return allStairs.filter(s => s > 0).length === 1;
+  }
+
+  refineMetascreens(a: A, meta: Metalocation): Result<void> {
+    if (!this.checkMeta(meta)) return {ok: false, fail: `initial checkMeta`};
+    const result = super.refineMetascreens(a, meta);
+    if (!result.ok) return result;
+
+    // Check that flight is required for some tile.
+    // TODO - bias a POI to be on that tile!
+    function accessible(map: Map<number, Set<number>>): number {
+      let count = 0;
+      for (const set of new Set(map.values())) {
+        for (const edge of set) {
+          if (meta.exitType(edge)) {
+            count += set.size;
+            break;
+          }
+        }
+      }
+      return count;
+    }
+    const parts1 = accessible(meta.traverse());
+    const parts2 = accessible(meta.traverse({flight: true}));
+    if (parts1 === parts2) return {ok: false, fail: `flight not required`};
+
     return OK;
   }
 }

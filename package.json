@@ -39,7 +39,7 @@
   "devDependencies": {
     "@zoltu/typescript-transformer-append-js-extension": "^1.0.1",
     "chai": "^4.2.0",
-    "google-closure-compiler": "^20190121.0.0",
+    "google-closure-compiler": "^20200406.0.0",
     "gulp": "^4.0.2",
     "mocha": "^5.2.0",
     "source-map-support": "^0.5.16",

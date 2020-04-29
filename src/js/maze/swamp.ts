@@ -16,20 +16,24 @@ export class SwampShuffle extends CaveShuffle {
     // Add arena (TODO - consider condition (this.random.nextInt(4))
     const arenaY = h * w < 28 ? 0 : this.random.nextInt(h - 1);
     const arenaX = this.random.nextInt(w);
+    const fixed = new Set<number>();
     function del(y: number, x: number) {
       g.delete2(y, x);
-      g.fixed.add(y * g.w + x);
+      fixed.add(y * g.w + x);
     }
     function isDoor(type: string) {
       return !type.startsWith('edge');
     }
-    g.fixed.add(arenaY * g.w + arenaX);
+    fixed.add(arenaY * g.w + arenaX);
     if (arenaX) del(arenaY, arenaX - 1);
     if (arenaX < g.w - 1) del(arenaY, arenaX + 1);
     if (arenaY) {
       del(arenaY - 1, arenaX);
       if (arenaX) del(arenaY - 1, arenaX - 1);
       if (arenaX < g.w - 1) del(arenaY - 1, arenaX + 1);
+    }
+    for (const i of fixed) {
+      g.fixed.add(i);
     }
 
     // Add edge exits.
@@ -50,7 +54,7 @@ export class SwampShuffle extends CaveShuffle {
       }
       if (count) return {ok: false, fail: `could not add all edges: ${dir} ${count}\n${g.toGrid('c').show()}\n${g.data}`};
     }
-console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
+    //console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
 
     // Delete edges
     // NOTE: may want multiple passes because earlier deletes
@@ -61,7 +65,7 @@ console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
     for (const posDir of this.random.ishuffle(seq(g.data.length << 2))) {
       const i = posDir >>> 2;
       const dir = posDir & 3;
-      if (g.isBorder(i, dir) && g.deleteEdge(i, dir)) {
+      if (!g.isBorder(i, dir) && g.deleteEdge(i, dir)) {
         if (++deleted >= target) break;
       }
     }
@@ -93,8 +97,8 @@ console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
     }
     if (!arena) throw new Error(`never found arena`);
 
-    const used =
-        new Set(g.consolidate(this.random, allocd.size).map(e => plain[e].sid));
+    const consolidate = g.consolidate(this.random, allocd.size);
+    const used = new Set(consolidate.map(e => plain[e].sid));
     if (!used.size) return {ok: false, fail: `consolidate failed`};
     const newlyUsed = [...unallocd].filter(e => used.has(e));
     const newlyUnused = [...allocd].filter(e => !used.has(e));
@@ -104,12 +108,13 @@ console.log(g.toGrid('c').show()); // TODO - why is edge exit disappearing?!?
       // Find an available sid to swap out with.  Cycle everything through.
       let unusedId = -1;
       while (rom.metascreens.getById(unusedId).length) unusedId--;
+      const origUnusedId = unusedId;
       for (let i = 0; i < newlyUsed.length; i++) {
         rom.metascreens.renumber(newlyUnused[i], unusedId);
         rom.metascreens.renumber(newlyUsed[i], newlyUnused[i]);
         unusedId = newlyUsed[i];
       }
-      rom.metascreens.renumber(unusedId, newlyUsed.pop()!);
+      rom.metascreens.renumber(origUnusedId, newlyUsed[newlyUsed.length - 1]);
     }
 
     const meta = new Metalocation(this.orig.id, this.orig.tileset, h, w);

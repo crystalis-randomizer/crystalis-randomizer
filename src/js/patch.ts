@@ -231,6 +231,11 @@ export async function shuffle(rom: Uint8Array,
   const parsed = new Rom(rom);
 // (window as any).cave = shuffleCave;
   parsed.flags.defrag();
+  compressMapData(parsed);
+             // TODO - the screens aren't moving?!?
+  // NOTE: delete these if we want more free space back...
+  parsed.moveScreens(parsed.metatilesets.swamp, 4); // move to new plane
+  parsed.moveScreens(parsed.metatilesets.house, 4); // move to new plane
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) log.spoiler = parsed.spoiler;
@@ -266,11 +271,6 @@ export async function shuffle(rom: Uint8Array,
   // NOTE: Shuffle mimics and monsters *after* shuffling maps.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
-
-  compressMapData(parsed);
-             // TODO - the screens aren't moving?!?
-  //parsed.moveScreens(parsed.metatilesets.swamp, 4); // move to new plane
-  parsed.moveScreens(parsed.metatilesets.house, 4); // move to new plane
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.

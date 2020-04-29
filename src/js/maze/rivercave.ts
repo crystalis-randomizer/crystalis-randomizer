@@ -288,7 +288,7 @@ export class StyxRiverCaveShuffle3 extends CaveShuffle {
     // TODO - use 'fixed' more?
 
     // extend river.
-    const riversTarget = this.params.features!.river;
+    const riversTarget = this.params.features!.river!;
     while (rivers < riversTarget) {
       const added = this.tryExtrude(a, 'r', riversTarget - rivers, 1);
       if (!added) return {ok: false, fail: `failed to extrude river\n${a.grid.show()}`};
@@ -376,7 +376,7 @@ export class StyxRiverCaveShuffle extends RiverCaveShuffle {
       a.fixed.add(((a.h - 1) << 12 | i << 3 | 0x800) as GridCoord);
     }
     // extend river.
-    const riversTarget = this.params.features!.river;
+    const riversTarget = this.params.features!.river!;
     while (rivers < riversTarget) {
       const added = this.tryAdd(a, {char: 'r'});
       if (!added) return {ok: false, fail: `failed to extrude river\n${a.grid.show()}`};

@@ -7,8 +7,11 @@ import { Location } from '../rom/location.js';
 const [] = [hex];
 
 type Feature =
+    // caves
     'arena' | 'bridge' | 'over' | 'pit' | 'ramp' | 'river' | 'spike' |
-    'statue' | 'under' | 'wall' | 'wide';
+    'statue' | 'under' | 'wall' | 'wide' |
+    // overworld
+    'cave' | 'shortGrass' | 'longGrass' | 'iceBridge' | 'woodBridge' | 'canyon';
 
 export interface Survey {
   readonly id: number;
@@ -17,7 +20,7 @@ export interface Survey {
   readonly edges?: number[]; // [top, left, bottom, right]
   readonly stairs?: number[]; // [up, down]
   //poi?: number;
-  readonly features?: Record<Feature, number>; // a, r, s, p, b, w
+  readonly features?: {[f in Feature]?: number}; // a, r, s, p, b, w
 }
 
 export interface Attempt {

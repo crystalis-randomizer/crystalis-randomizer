@@ -120,6 +120,7 @@ export class Metascreens {
    * any existing metascreens.
    */
   renumber(oldId: number, newId: number) {
+    console.log(`renumber ${oldId} -> ${newId}`);
     const dest = this.screensById.get(newId);
     if (dest.length) throw new Error(`ID already used: ${newId}: ${dest}`);
     let sourceDefinition: Uint8Array|undefined;

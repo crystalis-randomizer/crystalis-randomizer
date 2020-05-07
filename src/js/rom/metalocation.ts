@@ -968,7 +968,7 @@ export class Metalocation {
     // Iterate over the spawns, look for NPC/chest/trigger.
     const loc = this.rom.locations[this.id];
     
-    for (const spawn of random.shuffle(loc.spawns)) {
+    for (const spawn of random.ishuffle(loc.spawns)) {
       if (spawn.isMonster()) {
         const platform = PLATFORMS.indexOf(spawn.monsterId);
         if (platform >= 0 && pits.size) {

@@ -1069,7 +1069,8 @@ export class Metalocation {
    */
   write() {
     const srcLoc = this.rom.locations[this.id];
-    let seamlessPartner: Location|undefined;
+    //let seamlessPartner: Location|undefined;
+    const seamlessPos = new Set<Pos>();
     for (const [srcPos, srcType, [destTile, destType]] of this._exits) {
       const srcScreen = this._screens[srcPos];
       const dest = destTile >> 8;
@@ -1087,7 +1088,8 @@ export class Metalocation {
       // See if the dest entrance exists yet...
       let entrance = 0x20;
       if (destExit.type.startsWith('seamless')) {
-        seamlessPartner = destLoc;
+        seamlessPos.add(srcPos);
+        //seamlessPartner = destLoc;
       } else {
         let destCoord = destExit.entrance;
         if (destCoord > 0xefff) { // handle special case in Oak
@@ -1114,13 +1116,36 @@ export class Metalocation {
     srcLoc.tileset = this.tileset.tilesetId;
     srcLoc.tileEffects = this.tileset.effects().id;
 
+    // find reachable pos from any exit
+    const uf = new UnionFind<Pos>();
+    for (const pos of this.allPos()) {
+      if (seamlessPos.has(pos)) continue;
+      const scr = this._screens[pos];
+      const below = pos + 16;
+      const right = pos + 1;
+      if (!seamlessPos.has(below) && (scr.data.edges?.[2] ?? ' ') !== ' ') {
+        uf.union([pos, below]);
+      }
+      if (!seamlessPos.has(right) && (scr.data.edges?.[3] ?? ' ') !== ' ') {
+        uf.union([pos, right]);
+      }
+    }
+    const reachableMap = uf.map();
+    const reachable = new Set<Pos>();
+    for (const [srcPos] of this._exits) {
+      for (const pos of reachableMap.get(srcPos) ?? []) {
+        reachable.add(pos);
+      }
+    }
+
     // write flags
     srcLoc.flags = [];
     const freeFlags = [...this.freeFlags];
     for (const screen of this.allPos()) {
       const scr = this._screens[screen];
       let flag: number|undefined;
-      if (scr.data.wall != null && !seamlessPartner) {
+      if (scr.data.wall != null && reachable.has(screen)) {
+        // !seamlessPartner) {
         flag = freeFlags.pop()?.id ?? this.rom.flags.alloc(0x200);
       } else if (scr.flag === 'always') {
         flag = this.rom.flags.AlwaysTrue.id;

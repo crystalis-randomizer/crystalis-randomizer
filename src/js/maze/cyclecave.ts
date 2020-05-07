@@ -5,6 +5,8 @@ import { Result } from './maze.js';
 type A = CaveShuffleAttempt;
 
 export class CycleCaveShuffle extends CaveShuffle {
+  maxAttempts = 400;
+
   // Do nothing
   refineEdges() { return true; }
 

@@ -31,8 +31,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // shuffleGoa1(rom, random);
   const $ = rom.locations;
 
-  addSwampDoors(rom);
-  fixLabyrinthScreens(rom, random);
+  prepareScreens(rom, random);
 
   const shuffles: Shuffle[] = [
     // new TownShuffle($.Leaf),
@@ -160,6 +159,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   }
 }
 
-export function prepareScreens(rom: Rom) {
-  // extendGoaScreens(rom);
+export function prepareScreens(rom: Rom, random = new Random(1)) {
+  addSwampDoors(rom);
+  fixLabyrinthScreens(rom, random);
 }

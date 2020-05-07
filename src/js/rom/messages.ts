@@ -175,7 +175,9 @@ class Message {
     }
     function newline() {
       lineLen = 1 + word.reduce((a, b) => a + b.length, 0);
-      if (++lineNum > 3) {
+      if (++lineNum > 2) {
+        // NOTE: we can sometimes handle 3, but need to know the
+        // context: is it either the _last_ line or a _short_ line?
         parts.push('#\n ');
         lineNum = 0;
       } else {
@@ -220,18 +222,21 @@ class Message {
     for (const [full, abbr] of expansions) {
       if (text.includes(full)) text = text.split(full).join(abbr);
     }
+    //console.log(`REFLOW ${this.mid}\n${this.text.replace(/^|$/mg, '|')
+    //             }\n  (with)\n${text.replace(/^|$/mg, '|')}`);
     this.text = text;
   }
 
   checkText(): boolean {
     let lineNum = 0;
     let lineLen = 0;
-    for (let i = 0; i < this.text.length; i++) {
-      const c = this.text[i];
-      const next = this.text[i + 1];
+    const text = this.text.replace(/\s+$/mg, '');
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      const next = text[i + 1];
       if (c === '\n') {
         lineNum++;
-        lineLen = 1;
+        lineLen = 0;
         if (lineNum > 3) return false;
       } else if (c === '#') {
         if (next === '\n') i++; // eat newline
@@ -247,17 +252,18 @@ class Message {
           }
           if (lineLen > 28) return false;
         } else {
-          const colon = this.text.indexOf(':', i);
-          const id = Number.parseInt(this.text.substring(i + 1, colon), 16);
+          const colon = text.indexOf(':', i);
+          const id = Number.parseInt(text.substring(i + 1, colon), 16);
           lineLen += (c === '{' ?
-                          this.messages.extraWords[6][id] :
-                          this.messages.rom.items[id].messageName).length;
+                          this.messages.personNames[id] :
+                          this.messages.itemNames[id]).length;
         }
-        i = this.text.indexOf(CLOSERS[c], i);
+        i = text.indexOf(CLOSERS[c], i);
       } else {
         lineLen++;
       }
-      if (lineLen > 29 && c !== ' ') return false;
+      if (lineLen > 28) return false;
+      if (lineLen > 14 && lineNum > 2 && text.includes('#', i)) return false;
     }
     return true;
   }

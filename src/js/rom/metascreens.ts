@@ -2126,7 +2126,7 @@ export class Metascreens {
       |│&│|
       |└┬┘|`,
     //acement: 'manual',
-    tile: [' n | a | c ', ' c | a | c ', ' c | a | w '],
+    tile: [' n | a | c ', ' n | a | w ', ' c | a | c ', ' c | a | w '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
     edges: 'c c ', // 'n' for 'narrow' on top???
@@ -2153,8 +2153,9 @@ export class Metascreens {
       |│&│|
       |└┬┘|`,
     placement: 'manual',
-    tile: [' n | a | c ', ' c | a | c '],
-    tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
+    tile: [' n | a | c '], // , ' c | a | c '],
+    // NOTE: iron wall doesn't work here
+    tilesets: {cave: {}, iceCave: {}},
     feature: ['arena', 'wall'],
     edges: 'n c ',
     connect: '2x=apx',

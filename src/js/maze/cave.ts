@@ -1335,10 +1335,13 @@ export class KarmineBasementShuffle extends CaveShuffle {
     //    edges.
     if (a.grid.height !== 5 || a.grid.width !== 8) throw new Error('bad size');
     Grid.writeGrid2d(a.grid, 0 as GridCoord, KarmineBasementShuffle.PATTERN);
+    a.count = 36;
     return OK;
   }
 
   addSpikes(a: A): boolean {
+    // Change one column of spikes into normal cave,
+    // mark the rest as fixed.
     const dropped = this.random.nextInt(4);
     for (let y = 1; y < 10; y++) {
       for (let x = 0; x < 4; x++) {
@@ -1375,7 +1378,10 @@ export class KarmineBasementShuffle extends CaveShuffle {
         stairs++;
       }
     }
-    return true;
+
+    // Make sure everything is still accessible.
+    const partitions = new Set(a.grid.partition().values());
+    return partitions.size === 1;
   }
 
   addStairs() { return OK; }

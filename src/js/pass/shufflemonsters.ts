@@ -118,10 +118,11 @@ class MonsterPool {
       }
       for (const spawn of location.spawns) {
         if (spawn.isChest() && !spawn.isInvisible()) {
-          if (spawn.id < 0x70) {
+          if (location.rom.slots[spawn.id] < 0x70) {
             constraint = constraint.meet(Constraint.TREASURE_CHEST, true);
           } else {
             constraint = constraint.meet(Constraint.MIMIC, true);
+            spawn.patternBank = 1;
           }
         } else if (spawn.isNpc() || spawn.isBoss()) {
           const c = graphics.getNpcConstraint(location.id, spawn.id);

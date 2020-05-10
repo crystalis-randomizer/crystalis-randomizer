@@ -15,6 +15,7 @@ import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
 import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
 import { PyramidShuffle } from '../maze/pyramid.js';
+import { wideArenaExits } from '../rom/screenfix.js';
 
 interface Shuffle {
   shuffle(random: Random): void;
@@ -160,6 +161,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
 }
 
 export function prepareScreens(rom: Rom, random = new Random(1)) {
+  wideArenaExits(rom);
   addSwampDoors(rom);
   fixLabyrinthScreens(rom, random);
 }

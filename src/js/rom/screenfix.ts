@@ -1,6 +1,7 @@
 import {Rom} from '../rom.js';
 import { Spawn } from './locationtables.js';
 import { Metascreen } from './metascreen.js';
+import { iters } from '../util.js';
 
 // Simple tileset-only fixes that unlock some screen-tileset combinations
 export enum ScreenFix {
@@ -62,6 +63,9 @@ export enum ScreenFix {
   ExtraSpikes, // TODO
   // Make caves closeable.
   CloseCaves,
+  // Makes the top exits of arenas full-size rather than narrow, giving
+  // more flexibility with what can go there.
+  WideArenaExits,
 }
 
 type Reqs = Record<any, {requires?: ScreenFix[]}>
@@ -331,3 +335,71 @@ export function fixTilesets(rom: Rom) {
 //     this.m = new Metascreens(r);
 //   }
 // }
+
+// Applies the WideArenaExits screen fix.
+export function wideArenaExits(rom: Rom) {
+  function widen(exits: number[]) {
+    exits.splice(0, exits.length,
+                 ...new Set(iters.concat(
+                     ...exits.map(e => [e, e + 1, e - 1]))));
+  }
+
+  // Widen the top exits of the simple arenas
+  const {
+    fortressArena_through, fortressTrap,
+    hallNS, hallNS_arena, hallNS_arenaWall, hallNS_entrance,
+  } = rom.metascreens;
+  hallNS_arena.screen.set2d(0x04, [
+    [0x97, 0x76, 0x22, 0x23, 0x23, 0x23, 0x4b, 0x95],
+    [0x42, 0x48, 0x22, 0x21, 0x23, 0x23, 0x45, 0x42],
+    [0x43, 0x49, 0x2e, 0x23, 0x23, 0x21, 0x46, 0x43],
+    [0x44, 0x4a, 0x2e, 0x23, 0x21, 0x21, 0x47, 0x44],
+  ]);
+  hallNS_arena.setGridTile(' c | a | c ', ' c | a | w ');
+  widen(hallNS_arena.findExitByType('edge:top').exits as number[]);
+
+  hallNS_arenaWall.screen.set2d(0x04, [
+    [0x94, 0x4c, 0x22, 0x21, 0x21, 0x21, 0x4b, 0x93],
+    [0x97, 0x4f, 0x00, 0x01, 0x01, 0x02, 0x50, 0x95],
+  ]);
+  hallNS_arenaWall.setGridTile(' c | a | c ');
+  widen(hallNS_arenaWall.findExitByType('edge:top').exits as number[]);
+
+  // Move the abduction trigger down 3 tiles so you can't walk around it
+  const abductionTrigger =
+      rom.locations.ZebuCave.spawns.find(s => s.isTrigger() && s.id === 0x8c);
+  if (abductionTrigger) abductionTrigger.yt += 4;
+
+  // Widen the top exits of the fortress/pyramid arenas
+  fortressArena_through.screen.set2d(0x05, [
+    [0x5f, 0x22, 0x21, 0x21, 0x21, 0x5f],
+    [0xb7, 0x22, 0x21, 0x21, 0x21, 0xb5],
+    [0xbf, 0x22, 0x21, 0x21, 0x21, 0xa8],
+  ]);
+  fortressArena_through.setGridTile(' c | a | w ');
+  widen(fortressArena_through.findExitByType('edge:top').exits as number[]);
+
+  // Widen the bottom entrance of sabera's trap
+  fortressTrap.screen.set2d(0xc4, [
+    [0x3c, 0x3d, 0x21, 0x21, 0x21, 0x21, 0x3b, 0x3c],
+    [0x92, 0x4c, 0x22, 0x21, 0x21, 0x21, 0x4b, 0x90],
+    [0x94, 0x4c, 0x22, 0x21, 0x21, 0x21, 0x4b, 0x93],
+  ]);
+  fortressTrap.setGridTile('   | x | c ');
+  widen(fortressTrap.findExitByType('edge:bottom').exits as number[]);
+
+  // Find cases where a narrow hallway was used on top
+  // of an arena and replace with a normal hallway
+  for (const location of rom.locations) {
+    const meta = location.meta;
+    for (const pos of meta.allPos()) {
+      const scr = meta.get(pos);
+      if (scr === hallNS_entrance && meta.get(pos + 16)?.hasFeature('arena')) {
+        meta.set(pos, hallNS);
+        // also set the non-meta version, mainly for map viewer
+        const row = location.screens[pos >>> 4];
+        if (row) row[pos & 0xf] = hallNS.sid;
+      }
+    }
+  }
+}

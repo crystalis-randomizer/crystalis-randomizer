@@ -2125,8 +2125,8 @@ export class Metascreens {
       |┌┸┐|
       |│&│|
       |└┬┘|`,
-    //acement: 'manual',
-    tile: [' n | a | c ', ' n | a | w ', ' c | a | c ', ' c | a | w '],
+    //placement: 'manual',
+    tile: [' n | a | c ', ' n | a | w '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
     edges: 'c c ', // 'n' for 'narrow' on top???
@@ -4143,7 +4143,7 @@ export class Metascreens {
       |└─┘|
       | ╳ |
       |╶┬╴|`,
-    tile: '   | x | c ', // TODO - same as statues...?
+    tile: '   | x | n ', // TODO - same as statues...?
     tilesets: {fortress: {}, pyramid: {}},
     feature: ['pit'],
     edges: '  n ',

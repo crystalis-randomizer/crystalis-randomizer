@@ -166,10 +166,24 @@ export class Metascreen {
     // Remove self from all metatilesets.  Used by labyrinthVariant to
     // ensure impossible variants aren't added (note: with a dedicated
     // page we could make more available).
-    for (const key in this.data.tilesets) {
-      const tileset =
-          this.rom.metatilesets[key as keyof Metatilesets] as Metatileset;
+    for (const tileset of this.tilesets()) {
       tileset.deleteScreen(this);
+    }
+  }
+
+  tilesets(): Metatileset[] {
+    const tilesets: Metatileset[] = [];
+    for (const key in this.data.tilesets) {
+      tilesets.push(
+          this.rom.metatilesets[key as keyof Metatilesets] as Metatileset);
+    }
+    return tilesets;
+  }
+
+  setGridTile(...tile: string[]) {
+    this.data.tile = tile;
+    for (const tileset of this.tilesets()) {
+      tileset.invalidate();
     }
   }
 
@@ -235,6 +249,12 @@ export class Metascreen {
       }
     }
     return undefined;
+  }
+
+  findExitByType(type: ConnectionType): Connection {
+    const exit = this.data.exits!.find(e => e.type === type);
+    if (!exit) throw new Error(`no exit ${type}`);
+    return exit;
   }
 
   findEntranceType(coord: number, single: boolean): ConnectionType|undefined {

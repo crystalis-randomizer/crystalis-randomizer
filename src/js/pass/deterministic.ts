@@ -105,6 +105,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   addMezameTrigger(rom);
   normalizeSwords(rom, flags);
 
+  fixCrystalis(rom);
   fixOpelStatue(rom);
   fixCoinSprites(rom);
   fixChests(rom);
@@ -1011,6 +1012,11 @@ function noBowMode(rom: Rom): void {
       exit.entrance = 0;
     }
   }
+}
+
+// For now this just fixes the shot to be all elements instead of none.
+function fixCrystalis(rom: Rom) {
+  rom.objects[0x33].elements = 0xf;
 }
 
 function replace<T>(array: T[], old: T, replacement: T) {

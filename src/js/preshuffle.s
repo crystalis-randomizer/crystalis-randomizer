@@ -774,6 +774,22 @@ MaybeSetCheckpointActual:
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
 
+;;; Crystalis should have all elements, rather than none
+;;; Since we now invert the handling for enemy immunity,
+;;; this aligns enemies and walls nicely, Crystalis will
+;;; also be able to break all walls now, too (if we get
+;;; it working outside the tower, that is).
+.org $9c6b
+  .byte $0f
+
+;;; Invert how walls work: their elemental defense byte stores
+;;; a single bit, and the sword must have that bit as well: this
+;;; makes Crystalis able to break all walls.
+.org $9097
+  eor #$0f
+  and ObjectElementalDefense,x
+  .byte $f0  ; change 'bne' to 'beq'.
+
 ;;; ADJUSTED DAMAGE CALCULATIONS (in the middle of sword-enemy collision jump)
 ;;; This does several things: (1) tinks do 1 damage, (2) handles the extra HP
 ;;; bit that we store in the defense byte.

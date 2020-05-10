@@ -78,7 +78,7 @@ export abstract class MazeShuffle {
     newMeta.transferFlags(this.loc.meta, this.random);
     newMeta.transferExits(this.loc.meta, this.random);
     newMeta.transferSpawns(this.loc.meta, this.random);
-    newMeta.transferPits(this.loc.meta, this.random);
+    newMeta.transferPits(this.loc.meta);
     //newMeta.replaceMonsters(this.random);
     this.loc.meta = newMeta;
   }

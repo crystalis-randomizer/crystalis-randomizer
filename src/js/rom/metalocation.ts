@@ -733,14 +733,25 @@ export class Metalocation {
     }
   }
 
-  /** Read pits from the original.  The destination must be shuffled already. */
-  transferPits(orig: Metalocation, random: Random) {
+  /**
+   * Copy pit destinations from the original.  NOTE: there is NO safety
+   * check here for the pits being reasonable.  That must be done elsewhere.
+   * We don't want pit safety to be contingent on successful shuffling of
+   * the upstairs map.
+   */
+  transferPits(orig: Metalocation) {
+    this._pits = orig._pits;
+  }
+
+  /** Ensure all pits go to valid locations. */
+  shufflePits(random: Random) {
+    if (!this._pits.size) return;
     // Find all pit destinations.
-    this._pits.clear();
     const dests = new Set<number>();
-    for (const [, dest] of orig._pits) {
+    for (const [, dest] of this._pits) {
       dests.add(this.rom.locations[dest >>> 8].id);
     }
+    this._pits.clear();
 
     // Look for existing pits.  Sort by location, [pit pos, dest pos]
     const pits = new DefaultMap<Metalocation, Array<[Pos, Pos]>>(() => []);
@@ -757,8 +768,13 @@ export class Metalocation {
           closest = [addDelta(pos, dpos, exitPos, dloc), dloc, dist];
         }
       }
-      if (closest[0] < 0) throw new Error(`no exit found`);
-      pits.get(closest[1]).push([pos, closest[0]]);
+      if (closest[0] >= 0) pits.get(closest[1]).push([pos, closest[0]]);
+    }
+    for (const dest of dests) {
+      const list = pits.get(this.rom.locations[dest].meta);
+      // If there's ever not a direct exit to any destination, just push
+      // a large delta toward the bottom of the map.
+      if (!list.length) list.push([0, 0xf0]);
     }
 
     // For each destination location, look for spikes, these will override
@@ -788,7 +804,7 @@ export class Metalocation {
       for (const [upstairs, downstairs] of list) {
         const scr = this.get(upstairs);
         const edges = scr.data.edges || '';
-        const dir = edges[0] === 'c' && edges[2] === 'c' ? 0 : 1
+        const dir = edges[1] === 'c' && edges[3] === 'c' ? 1 : 0;
         // eligible dest tile, distance
         let closest: [Pos, number, number] = [-1, Infinity, 0];
         const target = addDelta(downstairs, delta[0], delta[1], dest);

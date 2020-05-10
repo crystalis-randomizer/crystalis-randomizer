@@ -158,6 +158,10 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   for (const shuffle of shuffles) {
     shuffle.shuffle(random);
   }
+  // Shuffle all the pits afterwards
+  for (const loc of $) {
+    loc.meta.shufflePits(random);
+  }
 }
 
 export function prepareScreens(rom: Rom, random = new Random(1)) {

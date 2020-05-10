@@ -713,7 +713,14 @@ export class Assembler {
     expr = this.resolve(expr);
     const val = this.evaluate(expr);
     if (val != null) {
-      if (!val) this.fail(`Assertion failed`, expr);
+      if (!val) {
+        let pc = '';
+        const chunk = this.chunk;
+        if (chunk.org != null) {
+          pc = ` (PC=$${(chunk.org + chunk.data.length).toString(16)})`;
+        }
+        this.fail(`Assertion failed${pc}`, expr);
+      }
     } else {
       const {chunk} = this;
       (chunk.asserts || (chunk.asserts = [])).push(expr);

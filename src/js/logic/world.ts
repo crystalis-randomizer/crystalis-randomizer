@@ -21,6 +21,7 @@ import {Terrain, Terrains} from './terrain.js';
 import {TileId} from './tileid.js';
 import {TilePair} from './tilepair.js';
 import {WallType} from './walltype.js';
+import { Monster } from '../rom/monster.js';
 
 const [] = [hex];
 
@@ -237,7 +238,7 @@ export class World {
     this.addCheck([start], breakIron, [BreakIron.id]);
     this.addCheck([start],
                   or(SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder),
-                  [Sword.id, Money.id]);
+                  [Sword.id]);
     this.addCheck([start], Flight.r, [ClimbWaterfall.id]);
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope8.id]);
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope9.id]);
@@ -1193,11 +1194,29 @@ export class World {
                       slot, {lossy: false, unique});
   }
 
-  processMonster(_location: Location, _spawn: Spawn) {
-        // TODO - compute money-dropping monster vulnerabilities and add a trigger
-        // for the MONEY capability dependent on any of the swords.
-    // const monster = rom.objects[spawn.monsterId];
-    // if (monster.goldDrop) monsters.set(TileId.from(location, spawn), monster.elements);
+  processMonster(location: Location, spawn: Spawn) {
+
+    // TODO - currently don't handle flyers well - could instead add flyers
+    //        to all entrances?
+
+    // Check monster's vulnerabilities and add a check for Money given swords.
+    const monster = this.rom.objects[spawn.monsterId];
+    if (!(monster instanceof Monster)) return;
+    if (!(monster.goldDrop)) return;
+    const {
+      Money,
+      Sword, SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder,
+    } = this.rom.flags;
+    const hitbox = [TileId.from(location, spawn)];
+    if (!this.flagset.guaranteeMatchingSword()) {
+      this.addCheck(hitbox, Sword.r, [Money.id]);
+      return;
+    }
+    const swords =
+        [SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder]
+            .filter((_, i) => monster.elements & (1 << i));
+    // TODO - consider collecting all the elements in one place first
+    this.addCheck(hitbox, or(...swords), [Money.id]);
   }
 
   processItemUse(hitbox: Hitbox, req1: Requirement, item: Item, use: ItemUse) {

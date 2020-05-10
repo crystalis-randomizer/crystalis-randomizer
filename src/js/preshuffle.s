@@ -770,35 +770,37 @@ MaybeSetCheckpointActual:
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
 
-
-;; ADJUSTED DAMAGE CALCULATIONS (in the middle of sword-enemy collision jump)
-;; $61 is extra HP bit(s)
-;; $62 is DEF
-;; $63 is damage
+;;; ADJUSTED DAMAGE CALCULATIONS (in the middle of sword-enemy collision jump)
+;;; This does several things: (1) tinks do 1 damage, (2) handles the extra HP
+;;; bit that we store in the defense byte.
+;;; $61 is extra HP bit(s)
+;;; $62 is DEF
+;;; $63 is damage
 .org $90fa
+    ;; Initialize
     lda #$00
     sta $61
-    sta $63 ; damage we're actually going to do
+    ;; Subtract enemy defense from player attack
+    lda ObjectDef,y
+    lsr     ; Just pull one extra bit for HP, could do one more if needed
+    rol $61 ; Roll HP bit into $61, to be used later
+    sta $62 ; Store actual shifted DEF in $62
+    lda PlayerAtk
+    adc ObjectAtk,x
+    sbc $62 ; A <- atk - def - 1 (carry is always clear)
+    bcs +
+     lda #$00 ; If we overflowed, just set it to zero
++   sta $63 ; Damage we're actually going to do
+    inc $63 ; Always add one since we added one to defense
     ;; Check elemental immunity
     lda ObjectElementalDefense,y
+    eor #$ff ; invert monster defense so that 0=immune
     and ObjectElementalDefense,x
     and #$0f
-    php
-     lda ObjectDef,y
-     lsr     ; Just pull one extra bit for HP, could do one more if needed
-     rol $61
-     sta $62 ; Store actual shifted DEF in $62
-     lda PlayerAtk
-     adc ObjectAtk,x
-     sec
-     sbc $62 ; A <- atk - def
-     bcc +
-    plp
-    bne ++
-     sta $63 ; will do damage
-     pha ; to prevent pla from screwing up
-+   pla  ; to compensate for skipping the plp above
-++  stx $10
+    bne +
+     sta $63
+    ;; Check damage and subtract
++   stx $10
     sty $11
     lda $63
     bne ++
@@ -807,7 +809,9 @@ MaybeSetCheckpointActual:
       bmi +
        jsr KnockbackObject
 +     lda #SFX_ATTACK_IMMUNE
+.ifdef _TINK_MODE
       inc $63
+.endif
       bne +++
 ++   jsr KnockbackObject
      lda #SFX_MONSTER_HIT
@@ -821,7 +825,6 @@ MaybeSetCheckpointActual:
     rts
 ;;; NOTE: must finish before 35152
 FREE_UNTIL $9152
-
 
 ;;; Change sacred shield to block curse instead of paralysis
 .org $92ce

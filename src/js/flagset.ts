@@ -532,9 +532,10 @@ class NoGuarantees extends FlagSection {
   });
 
   static readonly MatchingSword = NoGuarantees.flag('Ns', {
-    name: 'Matching sword not guaranteed',
-    text: `Player may be required to fight bosses with the wrong sword, which
-           may require using "tink strats" dealing 1 damage per hit.`,
+    name: 'Matching sword not guaranteed ("Tink Mode")',
+    text: `Enables "tink strats", where wrong-element swords will still do a
+           single damage per hit.  Player may be required to fight monsters
+           (including bosses) with tinks.`,
     hard: true,
   });
 

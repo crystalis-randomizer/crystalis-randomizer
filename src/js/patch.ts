@@ -189,6 +189,7 @@ function defines(flags: FlagSet,
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _SOFT_RESET_SHORTCUT: true,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
+    _TINK_MODE: !flags.guaranteeMatchingSword(),
     _TRAINER: flags.trainer(),
     _TWELVTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
@@ -268,7 +269,7 @@ export async function shuffle(rom: Uint8Array,
   writeLocationsFromMeta(parsed);
   shuffleMonsterPositions(parsed, random);
 
-  // NOTE: Shuffle mimics and monsters *after* shuffling maps.
+  // NOTE: Shuffle mimics and monsters *after* shuffling maps, but before logic.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
 

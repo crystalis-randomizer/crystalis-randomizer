@@ -8,11 +8,10 @@ import {Rom} from '../rom.js';
 import {Random} from '../random.js';
 import {ImageBuffer} from './imagebuffer.js';
 
-import {World} from '../graph/world.js';
-import {shuffleCave} from '../maze/cave.js';
-import {shuffleSwamp} from '../maze/swamp.js';
-import {shuffleGoa1} from '../maze/goa.js';
-import {shuffleGoa} from '../pass/shufflegoa.js';
+//import {shuffleCave} from '../maze/cave.js';
+//import {shuffleSwamp} from '../maze/swamp.js';
+//import {shuffleGoa1} from '../maze/goa.js';
+//import {shuffleGoa} from '../pass/shufflegoa.js';
 import {prepareScreens} from '../pass/shufflemazes.js';
 import {fixTilesets} from '../rom/screenfix.js';
 
@@ -42,9 +41,9 @@ class MapsView extends View {
       prepareScreens(rom);
       fixTilesets(rom);
     }
-    if (/goa/.test(window.location.hash)) {
-      shuffleGoa(rom, new Random(1));
-    }
+    // if (/goa/.test(window.location.hash)) {
+    //   shuffleGoa(rom, new Random(1));
+    // }
 
     this.location = -1;
     this.readHash();
@@ -87,7 +86,7 @@ class MapsView extends View {
     const mapWd = loc.width;
     const mapHt = loc.height;
     const anim = loc.animation;
-    const ext = loc.extended;
+    const plane = loc.mapPlane()
     const pal = loc.tilePalettes;
     const ts = [loc.tileset, loc.tileEffects];
     const pat = loc.tilePatterns;
@@ -111,7 +110,7 @@ class MapsView extends View {
       `\nLayout:`,
       `  Size: [wd:${wd}] x [ht:${ht}]`,
       `  Animation: [anim:$${hex(anim)}]`,
-      `  Extended: [ext:$${hex(ext)}]`,
+      `  Plane: [plane:$${hex(plane)}]`,
       `  Screens:`);
     for (let y = 0; y < ht; y++) {
       const scr = !invalid && loc.screens[y] || new Array(wd).fill(0);
@@ -214,7 +213,7 @@ class MapsView extends View {
         for (let y = 0; y < opts.ht; y++) {
           const screenId = (opts.screens[y] || [])[x];
           if (screen != null) {
-            const screen = this.rom.screens[screenId + (opts.ext ? 0x100 : 0)];
+            const screen = this.rom.screens[screenId + (opts.plane << 8)];
             this.drawScreen(buf, x << 8, 240 * y,
                             screen, tileset, tilePal, tilePat, (opts.flags[y] || [])[x]);
           }
@@ -351,7 +350,7 @@ class MapsView extends View {
     }, this.options);
     const scrId = opts.screens[scrY][scrX];
     if (!scrId) return;
-    const metatileId = this.rom.screens[(opts.ext ? 0x100 : 0) | scrId]
+    const metatileId = this.rom.screens[(opts.plane << 8) | scrId]
           .tiles[tileY << 4 | tileX];
     const flagged =
           metatileId < 0x20 && (opts.flags[scrY] || [])[scrX] ?
@@ -386,12 +385,12 @@ const run = async () => {
     patch = p && p.apply ? (rom) => p.apply(rom, hash) : undefined;
   }
   const rom = await Rom.load(patch);
-  window.shuffleGoa1 = (s) => shuffleGoa1(rom, new Random(s || 1));
-  window.shuffleSwamp = (s) => shuffleSwamp(rom, new Random(s || 1));
-  window.shuffleCave = (l, s) => shuffleCave(rom.locations[l], new Random(s || 1));
+  // window.shuffleGoa1 = (s) => shuffleGoa1(rom, new Random(s || 1));
+  // window.shuffleSwamp = (s) => shuffleSwamp(rom, new Random(s || 1));
+  // window.shuffleCave = (l, s) => shuffleCave(rom.locations[l], new Random(s || 1));
   window.rom = rom;
-  window.World = World;
-  window.world = new World(rom);
+  // window.World = World;
+  // window.world = new World(rom);
 
   const view = new MapsView(rom);
   document.body.appendChild(view.element);

@@ -68,29 +68,33 @@ PatchTradeInItem:
 
 
 ;; Prevent soft-lock when encountering sabera and mado from reverse
-;; Double-returns if the boss's sprite is not in the top quarter of
-;; the screen. This is unused space after triggers.
+;; Returns N if player is not on same screen as boss and is at row 9,
+;; which causes the caller to return.  We skip the vanilla "on-screen"
+;; check in favor of our own version that is not skippable.
 .reloc
 CheckBelowBoss:
-   lda $0380,x
-    bmi ++
-   ; skip the check for sabera 1 and mado 1
-   lda $04a0,x
-   and #$fe
-   cmp #$e6  ; sabera and mado
-   bne +
-    lda #$dc
-    cmp $04c0,x  ; first version has #$cf, second has #$dc
-    bne ++
-+  sec
-   lda $d0
-   sbc $d0,x
-    bmi ++
-   lda $b0
-   sbc $b0,x
-    bmi ++
-   sbc #$40
-++ rts
+    ; skip the check for sabera 1 and mado 1
+    lda $04a0,x
+    and #$fe
+    cmp #$e6  ; sabera and mado
+    bne +
+     lda #$dc
+     cmp $04c0,x  ; first version has #$cf, second has #$dc
+     bne +++
++   lda $d0
+    cmp $d0,x
+     bne ++
+    lda $90
+    cmp $90,x
+     bne ++
+    lda $b0
+    and #$f0
+    cmp #$90
+     bne ++
+    lda #$00
+    rts
+++  lda #$ff
++++ rts
 
 .ifdef _NERF_MADO
 ;;; Mado's cannonball time is a function of his HP: framecount = HP + #$20.

@@ -237,10 +237,10 @@ export function fixTilesets(rom: Rom) {
   }
   {
     const {locations: {CordelPlainEast, CordelPlainWest, WaterfallValleyNorth},
-           flags: {OpenedSealedCave}} = rom;
+           flags: {OpenedSealedCave, OpenedPrison}} = rom;
     CordelPlainEast.meta.customFlags.set(0x30, OpenedSealedCave);
     CordelPlainWest.meta.customFlags.set(0x30, OpenedSealedCave);
-    WaterfallValleyNorth.meta.customFlags.set(0x30, OpenedSealedCave);
+    WaterfallValleyNorth.meta.customFlags.set(0x00, OpenedPrison);
     const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
     const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
     WaterfallValleyNorth.spawns.splice(1, 0, explosion);

@@ -1,7 +1,7 @@
 import { Grid, GridCoord, GridIndex } from './grid.js';
 import { Random } from '../random.js';
 import { hex } from '../rom/util.js';
-import { Metalocation } from '../rom/metalocation.js';
+import { Metalocation, Pos } from '../rom/metalocation.js';
 import { Location } from '../rom/location.js';
 
 const [] = [hex];
@@ -98,6 +98,50 @@ export abstract class MazeShuffle {
     return this.params.size + (this.random.nextInt(5) < 2 ? 1 : 0);
   }
 
+  insertTile(a: Attempt, pos: Pos, tile: string): boolean {
+    const s = this.posToGrid(pos);
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const g = s + r * 0x800 + c * 8 as GridCoord;
+        if (a.fixed.has(g)) return false;
+        const v = a.grid.get(g);
+        if (v && v !== tile[r * 3 + c]) return false;
+      }
+    }
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 3; c++) {
+        const g = s + r * 0x800 + c * 8 as GridCoord;
+        a.grid.set(g, tile[r * 3 + c]);
+      }
+    }
+    return true;
+  }
+
+  posToGrid(pos: Pos, offset: number = 0): GridCoord {
+    const y = pos >>> 4;
+    const x = pos & 0xf;
+    return (y << 12 | x << 4) + offset as GridCoord;
+  }
+
+  insertPattern(a: Attempt, pattern: readonly string[],
+                {top = 0, bottom = 0, left = 0, right = 0} = {}): Result<void> {
+    const ph = (pattern.length - 1) >>> 1;
+    const pw = (pattern[0].length - 1) >>> 1;
+    const dh = top + bottom;
+    const dw = left + right;
+    if (a.h < ph + dh) return {ok: false, fail: `too short`};
+    if (a.w < pw + dw) return {ok: false, fail: `too narrow`};
+    const y0 = this.random.nextInt(a.h - ph - 1 - dh) + top;
+    const x0 = this.random.nextInt(a.w - pw - 1 - dh) + left;
+    const c0 = (y0 + 1) << 12 | (x0 + 1) << 4;
+    Grid.writeGrid2d(a.grid, c0 as GridCoord, pattern);
+    for (let y = 0x3000; y <= 0x5000; y += 0x800) {
+      for (let x = 0x30; x <= 0x40; x += 0x8) {
+        a.fixed.add(c0 + (y | x) as GridCoord);
+      }
+    }
+    return {ok: true, value: undefined};
+  }
 
   /** Extract a 3x3 section into a (h×w)-character string. */
   extract(g: Grid<any>, c: GridCoord,

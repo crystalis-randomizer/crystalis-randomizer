@@ -817,7 +817,7 @@ export class Metascreens {
     tile: ' t |ttt|   ',
     tilesets: {tower: {}},
     edges: 'st t',
-    exits: [seamlessDown(0x08, 2), topEdge({left: 8})],
+    exits: [topEdge({left: 8})],
     // TODO - annotate possible stairway w/ flag?
   });
   readonly towerRobotDoor_downStair = this.metascreen({
@@ -829,7 +829,7 @@ export class Metascreens {
     tile: '   |ttt| t ',
     tilesets: {tower: {}},
     edges: ' tst',
-    exits: [seamlessUp(0xe8, 2)],
+    exits: [seamlessUp(0xe8, 2), seamlessDown(0xf8, 2)],
   });
   readonly towerDynaDoor = this.metascreen({
     id: 0x3a,
@@ -2009,7 +2009,6 @@ export class Metascreens {
     edges: 'cc c',
     connect: '26e',
     poi: [[3]],
-    exits: [seamlessDown(0x06, 4)], // kensu
   });
   readonly branchNWE_unreachable = this.metascreen({
     id: 0x8b,
@@ -2134,7 +2133,7 @@ export class Metascreens {
     poi: [[1, 0x60, 0x78]],
     exits: [topEdge(), // vampire 1 room
             bottomEdge({left: 6, width: 4, manual: true}), // goa sages
-            seamlessUp(0xe6, 4)], // kensu
+            seamlessUp(0xe6, 4), seamlessDown(0xf6, 4)], // kensu
     arena: 1,
   });
   readonly hallNS_arena_unreachable = this.metascreen({

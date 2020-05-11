@@ -975,6 +975,7 @@ export class CaveShuffle extends MazeShuffle {
           const i = TILEDIR[dir];
           const rep = tile.substring(0, i) + char + tile.substring(i + 1);
           if (tileset.getMetascreensFromTileString(rep).length) {
+            a.count++;
             a.grid.set(n1, char);
             a.grid.set(n2, char);
             // if (length > 1) {
@@ -988,6 +989,7 @@ export class CaveShuffle extends MazeShuffle {
             // }
             a.grid.set(n2, o2);
             a.grid.set(n1, o1);
+            a.count--;
           }
         }
       }
@@ -1160,7 +1162,7 @@ if (a.grid.show().length > 100000) debugger;
     }
     if (a.walls !== walls) {
       return {ok: false,
-              fail: `refineMeta walls want ${walls} got ${a.walls}`};
+              fail: `refineMeta walls want ${walls} got ${a.walls}\n${meta.show()}`};
     }
     return OK;
   }
@@ -1320,85 +1322,6 @@ export class CryptEntranceShuffle extends CaveShuffle {
   isEligibleArena(a: A, c: GridCoord): boolean {
     return !a.grid.get(c - 0x800 as GridCoord) && super.isEligibleArena(a, c);
   }
-}
-
-export class KarmineBasementShuffle extends CaveShuffle {
-  looseRefine = true;
-
-  pickWidth() { return 8; }
-  pickHeight() { return 5; }
-
-  initialFill(a: A): Result<void> {
-    // Set up the basic framework:
-    //  * a single row of cross-cutting corridor, with three of the
-    //    four columns as spikes, and full connections around the
-    //    edges.
-    if (a.grid.height !== 5 || a.grid.width !== 8) throw new Error('bad size');
-    Grid.writeGrid2d(a.grid, 0 as GridCoord, KarmineBasementShuffle.PATTERN);
-    a.count = 36;
-    return OK;
-  }
-
-  addSpikes(a: A): boolean {
-    // Change one column of spikes into normal cave,
-    // mark the rest as fixed.
-    const dropped = this.random.nextInt(4);
-    for (let y = 1; y < 10; y++) {
-      for (let x = 0; x < 4; x++) {
-        const i = 2 * x + 5 + y * 17;
-        if (x === dropped) {
-          a.grid.data[i] = 'c';
-        } else {
-          const c = a.grid.coord(i as GridIndex);
-          a.fixed.add(c);
-          if (y === 5) {
-            a.fixed.add(c + 8 as GridCoord);
-            a.fixed.add(c + 16 as GridCoord);
-            a.fixed.add(c - 8 as GridCoord);
-            a.fixed.add(c - 16 as GridCoord);
-          }
-        }
-      }
-    }
-
-    // Now pick random places for the stairs.
-    let stairs = 0;
-    for (const c of this.random.ishuffle(a.grid.screens())) {
-      if (stairs === 3) break;
-      const mid = (c | 0x808) as GridCoord;
-      const up = (mid - 0x800) as GridCoord;
-      const down = (mid + 0x800) as GridCoord;
-      if (a.grid.get(mid) === 'c' &&
-          a.grid.get(up) !== 's' &&
-          a.grid.get(down) !== 's') {
-        a.grid.set(mid, '<');
-        a.fixed.add(mid);
-        a.grid.set(up, '');
-        a.grid.set(down, '');
-        stairs++;
-      }
-    }
-
-    // Make sure everything is still accessible.
-    const partitions = new Set(a.grid.partition().values());
-    return partitions.size === 1;
-  }
-
-  addStairs() { return OK; }
-
-  static readonly PATTERN = [
-    '                 ',
-    '   ccccccccccc   ',
-    '   c c c c c c   ',
-    ' ccc s s s s ccc ',
-    ' c c s s s s c c ',
-    ' ccccscscscscccc ',
-    ' c c s s s s c c ',
-    ' ccc s s s s ccc ',
-    '   c c c c c c   ',
-    '   ccccccccccc   ',
-    '                 ',
-  ];
 }
 
 const TILEDIR = [1, 3, 7, 5];

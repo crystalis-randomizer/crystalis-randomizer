@@ -135,10 +135,18 @@ export class Metalocation {
     // the screens under them (e.g. boat and shop entrances).  Also make sure
     // to handle the seamless tower exits.
     for (const entrance of location.entrances) {
-      reachableScreens.add(entrance.screen);
+      if (entrance.used) reachableScreens.add(entrance.screen);
     }
     for (const exit of location.exits) {
       reachableScreens.add(exit.screen);
+      if (exit.isSeamless()) {
+        // Handle seamless exits on screen edges: mark _just_ the neighbor
+        // screen as reachable (including dead center tile for match).
+        const y = exit.tile >>> 4;
+        if (y === 0 || y === 0xe) {
+          reachable.set(exit.screen << 8 | 0x88, 1);
+        }
+      }
     }
     //const exit = tileset.exit;
     const screens = new Array<Metascreen>(height << 4).fill(tileset.empty);
@@ -205,7 +213,10 @@ export class Metalocation {
     // Figure out exits
     const exits = new Table<Pos, ConnectionType, ExitSpec>();
     for (const exit of location.exits) {
-      const srcPos = exit.screen;
+      if (exit.dest === 0xff) continue;
+      let srcPos = exit.screen;
+      // Kensu arena exit is declared at y=f
+      if (exit.isSeamless() && !(exit.yt & 0x0f)) srcPos--;
       if (!reachableScreens.has(srcPos)) continue;
       const srcScreen = screens[srcPos];
       const srcExit = srcScreen.findExitType(exit.tile, height === 1,
@@ -226,7 +237,9 @@ export class Metalocation {
         const down = srcType === 'seamless:down';
         // NOTE: this seems wrong - the down exit is BELOW the up exit...?
         const tile = srcExit!.exits[0] + (down ? -16 : 16);
-        const destPos = srcPos + (tile < 0 ? -16 : tile >= 0xf0 ? 16 : -0);
+        //const destPos = srcPos + (tile < 0 ? -16 : tile >= 0xf0 ? 16 : -0);
+        // NOTE: bottom-edge seamless is treated as destination f0
+        const destPos = srcPos + (tile < 0 ? -16 : 0);
         const destType = down ? 'seamless:up' : 'seamless:down';
         //console.log(`${srcType} ${hex(location.id)} ${down} ${hex(tile)} ${hex(destPos)} ${destType} ${hex(dest.id)}`);
         exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
@@ -1115,8 +1128,13 @@ export class Metalocation {
         entrance = destLoc.findOrAddEntrance(destPos, destCoord);
       }
       for (let tile of srcExit.exits) {
+        let screen = srcPos;
+        if ((tile & 0xf0) === 0xf0) {
+          screen += 0x10;
+          tile &= 0xf;
+        }
         //if (srcExit.type === 'edge:bottom' && this.height === 1) tile -= 0x20;
-        srcLoc.exits.push(Exit.of({screen: srcPos, tile, dest, entrance}));
+        srcLoc.exits.push(Exit.of({screen, tile, dest, entrance}));
       }
     }
     srcLoc.width = this._width;

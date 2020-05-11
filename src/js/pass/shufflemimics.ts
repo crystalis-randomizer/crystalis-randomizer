@@ -9,6 +9,7 @@ export function shuffleMimics(rom: Rom, flags: FlagSet, random: Random) {
   const chests: number[] = [];
   const mimics: number[] = [];
   for (const location of rom.locations) {
+    if (INELIGIBLE_LOCATIONS.has(location.id)) continue;
     for (const spawn of location.spawns) {
       if (spawn.isChest()) {
         // Is this an eligible chest?
@@ -31,3 +32,7 @@ export function shuffleMimics(rom: Rom, flags: FlagSet, random: Random) {
   // NOTE: spread the result since otherwise zip is lazy.
   [...iters.zip(mimics, chests, (i, j) => rom.slots.swap(i, j))];
 }
+
+const INELIGIBLE_LOCATIONS = new Set([
+  0xb6, // Chest behind Karmine - graphics are incompatible.
+]);

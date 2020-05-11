@@ -18,8 +18,16 @@ export class BridgeCaveShuffle {
   under: UnderpassShuffle;
   constructor(readonly overpass: Location, readonly underpass: Location,
               reverse = false) {
-    this.under = new UnderpassShuffle(underpass, overpass, reverse);
-    this.over = new OverpassShuffle(overpass, this.under, reverse);
+    this.under = this.makeUnder(underpass, overpass, reverse);
+    this.over = this.makeOver(overpass, this.under, reverse);
+  }
+
+  makeUnder(underpass: Location, overpass: Location, reverse: boolean) {
+    return new UnderpassShuffle(underpass, overpass, reverse);
+  }
+
+  makeOver(overpass: Location, under: UnderpassShuffle, reverse: boolean) {
+    return new OverpassShuffle(overpass, under, reverse);
   }
 
   shuffle(random: Random) {

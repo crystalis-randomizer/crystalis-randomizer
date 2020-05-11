@@ -1,5 +1,5 @@
 import { FlagSet } from '../flagset.js';
-import { CaveShuffle, CryptEntranceShuffle, KarmineBasementShuffle,
+import { CaveShuffle, CryptEntranceShuffle,
          WideCaveShuffle } from '../maze/cave.js';
 // import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
@@ -8,14 +8,15 @@ import { Random } from '../random.js';
 import { Rom } from '../rom.js';
 import { BridgeCaveShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
-import { RiverCaveShuffle, StyxRiverCaveShuffle,
-  WaterfallRiverCaveShuffle,
-  OasisCaveShuffle} from '../maze/rivercave.js';
+import { RiverCaveShuffle, StyxRiverCaveShuffle, WaterfallRiverCaveShuffle,
+         OasisCaveShuffle} from '../maze/rivercave.js';
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
 import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
 import { PyramidShuffle } from '../maze/pyramid.js';
 import { wideArenaExits } from '../rom/screenfix.js';
+import { KarmineBasementShuffle, KarmineKensuShuffle, KarmineMainShuffle,
+         KarmineUpstairsShuffle } from '../maze/karmine.js';
 
 interface Shuffle {
   shuffle(random: Random): void;
@@ -151,6 +152,10 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new CaveShuffle($.GoaFortress_Karmine2),
     new CaveShuffle($.GoaFortress_Karmine4),
     new KarmineBasementShuffle($.GoaFortress_Karmine6),
+    new KarmineUpstairsShuffle($.GoaFortress_Karmine3),
+    new KarmineMainShuffle($.GoaFortress_Karmine5),
+    new KarmineKensuShuffle($.GoaFortress_Kensu),
+    //new KarmineUpstairsShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5),
     // new GoaKarmineShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5,
     //                       $.GoaFortress_Kensu, $.GoaFortress_Karmine6),
     // new SplitRiverCaveShuffle($.OasisCave_Entrance),

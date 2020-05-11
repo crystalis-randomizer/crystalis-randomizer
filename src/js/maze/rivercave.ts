@@ -1,5 +1,5 @@
-import { CaveShuffleAttempt, CaveShuffle } from './cave.js';
-import { GridCoord, GridIndex, N, S, Grid } from './grid.js';
+import { CaveShuffleAttempt } from './cave.js';
+import { GridCoord, GridIndex, N, S } from './grid.js';
 import { Monogrid, Cursor } from './monogrid.js';
 import { Result, OK } from './maze.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
@@ -197,153 +197,6 @@ export class WaterfallRiverCaveShuffle extends RiverCaveShuffle {
   }
 }
 
-export class StyxRiverCaveShuffle2 extends RiverCaveShuffle {
-  //maxPartitions = 1;
-  //addBlocks = false;
-
-
-  // TODO - come back to the version where it's split
-  //      - use the extruding variant to ensure something reasonable?
-
-  // It should be relatively easy to actually extrude one tile at a time...?
-  //   - this seems to make overall less interesting structures, but
-  //     for totally-separate maps, it works better.
-  //   - might be more viable for cases where we want to have a nonempty nucleus
-
-
-
-  maxAttempts = 250; // NOTE: this is a very hard shuffle.
-
-  refineMetascreens(a: A, meta: Metalocation): Result<void> {
-    let result = super.refineMetascreens(a, meta);
-    if (!result.ok) return result;
-    // Last step: try to split the river with a pair of dead ends and
-    // ensure that it creates 3 separate partitions!
-    for (const pos of meta.allPos()) {
-      const scr = meta.get(pos);
-      const edge = scr.edgeIndex('r');
-      let deadEnd: Metascreen|undefined;
-      if (edge === 5) {
-        deadEnd = meta.rom.metascreens.riverCave_deadEndsNS;
-      } else if (edge === 10) {
-        deadEnd = meta.rom.metascreens.riverCave_deadEndsWE;
-      }
-      if (!deadEnd) continue;
-      const repl = new Map([[pos, deadEnd]]);
-
-      // Check that there's two separately-reachable screens
-      const fly = meta.traverse({with: repl, flight: true});
-      const flySets = new Set(fly.values());
-      if (flySets.size !== 2) continue;
-      const edges =
-          [...meta.exits()].filter(e => e[1] === 'edge:bottom').map(e => e[0]);
-      if (edges.length !== 2) throw new Error(`bad edges`);
-      if (fly.get(edges[0]) === fly.get(edges[1])) continue;
-
-      // Check that there's an area only accessible with flight
-      const nofly = meta.traverse({with: repl, flight: false});
-      const noflySets = new Set(nofly.values());
-      if (noflySets.size < 3) continue;
-
-      meta.set(pos, deadEnd);
-      return OK;
-    }
-    return {ok: false, fail: `could not split map into two\n${meta.show()}`};
-  }
-}
-
-
-export class StyxRiverCaveShuffle3 extends CaveShuffle {
-  maxPartitions = 3;
-  //addBlocks = false;
-
-  fillGrid(a: A): Result<void> {
-    // make 2 bottom edge exits
-    const edges: number[] = [];
-    let size = 0;
-    for (const x of this.random.ishuffle(seq(a.w - 2, x => x + 1))) {
-      if (edges.length === 1 && (x - edges[0]) ** 2 === 1) continue;
-      const c = ((a.h - 1) << 12 | x << 4 | 0x808) as GridCoord;
-      a.grid.set(c, 'c');
-      a.grid.set(N(c), 'c');
-      a.grid.set(S(c), 'n');
-      a.fixed.add(c);
-      a.fixed.add(N(c));
-      a.fixed.add(S(c));
-      edges.push(x);
-      size++;
-      if (edges.length === 2) break;
-    }
-    // make a river across the bottom.
-    let rivers = a.w;
-    for (let i = 1; i < 2 * a.w; i++) {
-      a.grid.set(((a.h - 2) << 12 | i << 3 | 0x800) as GridCoord, 'r');
-    }
-
-    // cut the river between the exits
-    const cut =
-        this.random.nextInt(Math.abs(edges[0] - edges[1]) - 1) +
-        Math.min(edges[0], edges[1]) + 1;
-    a.grid.set(((a.h - 1) << 12 | cut << 4 | 0x808) as GridCoord, '');
-    // TODO - use 'fixed' more?
-
-    // extend river.
-    const riversTarget = this.params.features!.river!;
-    while (rivers < riversTarget) {
-      const added = this.tryExtrude(a, 'r', riversTarget - rivers, 1);
-      if (!added) return {ok: false, fail: `failed to extrude river\n${a.grid.show()}`};
-      rivers += added;
-      size += added;
-    }
-    // extrude cave.
-    const sizeTarget = this.params.size;
-    while (size < sizeTarget) {
-      const added = this.tryExtrude(a, 'c', sizeTarget - size, 10);
-      if (!added) return {ok: false, fail: `failed to extrude cave`};
-      size += added;
-    }
-
-    return this.addStairs(a, ...(this.params.stairs ?? []));
-  }
-
-  refineMetascreens(a: A, meta: Metalocation): Result<void> {
-    let result = super.refineMetascreens(a, meta);
-    if (!result.ok) return result;
-    // Last step: try to split the river with a pair of dead ends and
-    // ensure that it creates 3 separate partitions!
-    for (const pos of meta.allPos()) {
-      const scr = meta.get(pos);
-      const edge = scr.edgeIndex('r');
-      let deadEnd: Metascreen|undefined;
-      if (edge === 5) {
-        deadEnd = meta.rom.metascreens.riverCave_deadEndsNS;
-      } else if (edge === 10) {
-        deadEnd = meta.rom.metascreens.riverCave_deadEndsWE;
-      }
-      if (!deadEnd) continue;
-      const repl = new Map([[pos, deadEnd]]);
-
-      // Check that there's two separately-reachable screens
-      const fly = meta.traverse({with: repl, flight: true});
-      const flySets = new Set(fly.values());
-      if (flySets.size !== 2) continue;
-      const edges =
-          [...meta.exits()].filter(e => e[1] === 'edge:bottom').map(e => e[0]);
-      if (edges.length !== 2) throw new Error(`bad edges`);
-      if (fly.get(edges[0]) === fly.get(edges[1])) continue;
-
-      // Check that there's an area only accessible with flight
-      const nofly = meta.traverse({with: repl, flight: false});
-      const noflySets = new Set(nofly.values());
-      if (noflySets.size < 3) continue;
-
-      meta.set(pos, deadEnd);
-      return OK;
-    }
-    return {ok: false, fail: `could not split map into two\n${meta.show()}`};
-  }
-}
-
 export class StyxRiverCaveShuffle extends RiverCaveShuffle {
   addBlocks = false;
 
@@ -449,20 +302,7 @@ export class OasisCaveShuffle extends RiverCaveShuffle {
 
   initialFill(a: A): Result<void> {
     // Initial fill: make sure there's enough room and then copy the pattern.
-    const ph = (this.pattern.length - 1) >>> 1;
-    const pw = (this.pattern[0].length - 1) >>> 1;
-    if (a.h < ph) return {ok: false, fail: `too short`};
-    if (a.w < pw) return {ok: false, fail: `too narrow`};
-    const y0 = this.random.nextInt(a.h - ph - 1);
-    const x0 = this.random.nextInt(a.w - pw - 1);
-    const c0 = (y0 + 1) << 12 | (x0 + 1) << 4;
-    Grid.writeGrid2d(a.grid, c0 as GridCoord, this.pattern);
-    for (let y = 0x3000; y <= 0x5000; y += 0x800) {
-      for (let x = 0x30; x <= 0x40; x += 0x8) {
-        a.fixed.add(c0 + (y | x) as GridCoord);
-      }
-    }
-    return OK;
+    return this.insertPattern(a, this.pattern);
   }
 
   addEdges(a: A): Result<void> {

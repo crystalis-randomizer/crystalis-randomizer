@@ -1,4 +1,4 @@
-import { CaveShuffleAttempt } from './cave.js';
+import { CaveShuffleAttempt, CaveShuffle } from './cave.js';
 import { GridCoord, GridIndex, N, S } from './grid.js';
 import { Monogrid, Cursor } from './monogrid.js';
 import { Result, OK } from './maze.js';
@@ -6,6 +6,7 @@ import { Metalocation, Pos } from '../rom/metalocation.js';
 import { Metascreen } from '../rom/metascreen.js';
 import { TwoStageCaveShuffle } from './twostage.js';
 import { seq } from '../rom/util.js';
+import { DefaultMap } from '../util.js';
 
 type A = CaveShuffleAttempt;
 
@@ -85,7 +86,7 @@ export class RiverCaveShuffle extends TwoStageCaveShuffle {
     }
     if (new Set(stairParts).size < stairParts.length) {
       //console.error(a.grid.show());
-      return {ok: false, fail: `river didn't matter`};
+      return {ok: false, fail: `river didn't matter\n${a.grid.show()}`};
     }
     return super.preinfer(a);
   }
@@ -196,6 +197,136 @@ export class WaterfallRiverCaveShuffle extends RiverCaveShuffle {
     return new Set(parts.values()).size === this.maxPartitions;
   }
 }
+
+export class OasisEntranceCaveShuffle extends CaveShuffle {
+
+  addBlocks = false;
+
+  // new plan: index valid spike screens, accrete a line/curve of them
+  // somewhere random (consider adding spike curves?), with random caves
+  // sticking out.  Cap the end of the spike and accrete a random river
+  // somewhere (may need to increase width).  Then accrete caves, fill
+  // in stairs, etc.
+
+  pickWidth() {
+    return super.pickWidth() + this.random.nextInt(2);
+  }
+
+  initialFill(a: A): Result<void> {
+    // multimap of direction masks to tile strings.
+    const spikes = new DefaultMap<number, string[]>(() => []);
+    for (const scr of this.orig.tileset) {
+      if (!scr.hasFeature('spikes') || !scr.data.edges) continue;
+      let mask = 0;
+      for (let dir = 0; dir < 4; dir++) {
+        if (scr.data.edges[dir] === 's') mask |= (1 << dir);
+      }
+      spikes.get(mask).push(...scr.gridTiles());
+    }
+    // start accreting.
+    const x = 1 + this.random.nextInt(a.w - 2);
+    const y = 1 + this.random.nextInt(a.h - 2);
+    let pos = y << 4 | x;
+    let c = this.posToGrid(pos, 0x808);
+    let dir = y < a.h / 2 ? 2 : 0;
+    this.insertTile(a, pos, this.random.pick(spikes.get(1 << dir)));
+    for (let i = 4; i >= 0; i--) {
+      // advance the position.
+      pos += DPOS[dir];
+      c = c + DGRID[dir] as GridCoord;
+      const opp = dir ^ 2;
+      const masks: number[] = [];
+      for (const [d, ts] of spikes) {
+        if (!(d & (1 << opp))) continue;
+        const rem = d & ~(1 << opp);
+        if (i ? !rem : rem) continue;
+        for (const _ of ts) masks.push(d);
+      }
+      let nextDir: number|undefined;
+      for (const d of this.random.ishuffle(masks)) {
+        if (a.grid.isBorder(c + DGRID[d] as GridCoord)) continue;
+        if (this.insertTile(a, pos, this.random.pick(spikes.get(d)))) {
+          nextDir = 31 - Math.clz32(d & ~(1 << opp));
+          break;
+        }
+      }
+      if (nextDir == null) return {ok: false, fail: `spikes`};
+      dir = nextDir;
+    }
+
+    // Now add some river tiles.
+    const riverStart: GridCoord[] = [];
+    for (let y = 3; y < a.h - 3; y++) {
+      for (let x = 1; x < a.w - 1; x++) {
+        riverStart.push((y << 12 | x << 4 | 0x808) as GridCoord);
+      }
+    }
+    
+    let found = false;
+    for (const c of this.random.ishuffle(riverStart)) {
+      if (a.grid.get(c)) continue;
+      for (const d of DGRID) {
+        if (a.grid.get(c + d as GridCoord) !== 'c') continue;
+        a.grid.set(c, 'r');
+        const orthogonal = 0x808 & ~Math.abs(d);
+        a.grid.set(c + orthogonal as GridCoord, 'r');
+        a.grid.set(c - orthogonal as GridCoord, 'r');
+        const o = this.random.pick([-orthogonal, orthogonal]);
+        a.grid.set(c + 2 * o as GridCoord, 'r');
+        a.grid.set(c + 3 * o as GridCoord, 'r');
+        a.grid.set(c + 2 * o - d as GridCoord, 'c');
+        found = true;
+        break;
+      }
+      if (found) break;
+    }
+    if (!found) return {ok: false, fail: `nucleate river`};
+
+    // let attempts = 10;
+    // for (let i = 2 + this.random.nextInt(2); i > 0 && attempts; i--) {
+    //   if (!this.tryAdd(a, {char: 'r'})) (attempts--, i++);
+    // }
+    // if (!attempts) return {ok: false, fail: `accrete river`};
+
+    // Finally add some cave tiles.
+    for (let i = 5 + this.random.nextInt(3); i > 0; i--) {
+      if (!this.tryAdd(a, {char: 'c'})) return {ok: false, fail: `fill cave`};
+    }
+
+    // Make sure there's nothing on the border.
+    for (let i = 0; i < a.grid.data.length; i++) {
+      if (a.grid.data[i] && a.grid.isBorder(a.grid.coord(i as GridIndex))) {
+        return {ok: false, fail: `border`};
+      }
+    }
+
+    return OK;
+  }
+
+  checkMeta(meta: Metalocation, repl?: Map<Pos, Metascreen>): boolean {
+    // TODO - relevance requirement?
+    const opts = repl ? {flight: true, with: repl} : {flight: true};
+    const parts = meta.traverse(opts);
+    return new Set(parts.values()).size === this.maxPartitions;
+  }
+
+  refine() { return OK; }
+  refineEdges() { return true; }
+
+  addSpikes(a: A, spikes: number) {
+    return true;
+    // for (const s of this.random.ishuffle(a.grid.screens())) {
+    //   const c = s + 0x808 as GridCoord;
+    //   if (a.grid.get(c) !== 'r') continue;
+    //   for (const dir of [0x800, -0x800]) {
+    //     if (a.grid.get(c + dir as GridCoord) !== 'c') continue;
+    //     let 
+    // }
+  }
+}
+
+const DGRID = [-0x800, -8, 0x800, 8];
+const DPOS = [-16, -1, 16, 1];
 
 export class StyxRiverCaveShuffle extends RiverCaveShuffle {
   addBlocks = false;

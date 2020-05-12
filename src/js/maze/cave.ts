@@ -355,7 +355,7 @@ export class CaveShuffle extends MazeShuffle {
 
   addEarlyFeatures(a: A): Result<void> {
     if (!this.addSpikes(a, this.params.features?.spike ?? 0)) {
-      return {ok: false, fail: 'add spikes'};
+      return {ok: false, fail: `add spikes\n${a.grid.show()}`};
     }
     if (!this.addOverpasses(a, this.params.features?.over ?? 0)) {
       return {ok: false, fail: 'add overpasses'};

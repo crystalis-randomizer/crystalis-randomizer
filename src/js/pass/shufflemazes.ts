@@ -9,7 +9,7 @@ import { Rom } from '../rom.js';
 import { BridgeCaveShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
 import { RiverCaveShuffle, StyxRiverCaveShuffle, WaterfallRiverCaveShuffle,
-         OasisCaveShuffle} from '../maze/rivercave.js';
+         OasisCaveShuffle, OasisEntranceCaveShuffle } from '../maze/rivercave.js';
 import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
 import { SaberaPalaceShuffle } from '../maze/twostage.js';
 import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
@@ -155,10 +155,10 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new KarmineUpstairsShuffle($.GoaFortress_Karmine3),
     new KarmineMainShuffle($.GoaFortress_Karmine5),
     new KarmineKensuShuffle($.GoaFortress_Kensu),
+    new OasisEntranceCaveShuffle($.OasisCave_Entrance),
     //new KarmineUpstairsShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5),
     // new GoaKarmineShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5,
     //                       $.GoaFortress_Kensu, $.GoaFortress_Karmine6),
-    // new SplitRiverCaveShuffle($.OasisCave_Entrance),
   ];
   for (const shuffle of shuffles) {
     shuffle.shuffle(random);

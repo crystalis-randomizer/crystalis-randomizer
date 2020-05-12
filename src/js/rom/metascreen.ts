@@ -187,6 +187,12 @@ export class Metascreen {
     }
   }
 
+  gridTiles(): string[] {
+    let t = this.data.tile ?? [];
+    if (!Array.isArray(t)) t = [t];
+    return t.map(s => s.replace(/\|/g, ''));
+  }
+
   get sid(): number {
     return this.data.id;
   }

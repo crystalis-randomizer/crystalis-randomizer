@@ -17,6 +17,7 @@
 }
 
 /* Basic flow control */
+.if-failure,
 .if-versioned,
 .if-release-candidate,
 .if-rom-uploaded,
@@ -28,6 +29,7 @@
   display: none;
 }
 
+body.failure .if-failure,
 body.versioned .if-versioned,
 body.release-candidate .if-release-candidate,
 body.rom-uploaded .if-rom-uploaded,
@@ -93,6 +95,7 @@ nav {
   background: var(--nav-bg);
   opacity: 1;
   color: var(--nav-fg);
+  z-index: 1;
 }
 nav > * {
   font-size: 112%;
@@ -288,6 +291,7 @@ p + .flag-list {
   font-weight: bold;
   text-align: center;
   height: 1.5em;
+  width: 3.2em;
   color: #aaa;
 }
 
@@ -380,4 +384,9 @@ progress {
   border-radius: var(--radius);
   color: var(--dark);
   text-align: center;
+}
+
+#error-text {
+  font-family: monospace;
+  white-space: pre;
 }

@@ -13,7 +13,9 @@ let seed;
 let rom;
 let romName;
 let race = false;
+let debug = false;
 
+window.global = window;
 const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
 
 function ga(cmd, ...args) {
@@ -70,12 +72,23 @@ const main = () => {
   // Handle URL edits directly
   window.addEventListener('popstate', (e) => {
     if (e.state) {
-      flags.flags = e.state.flags;
+      flags = new FlagSet(e.state.flags);
       seed = e.state.seed;
     } else {
       initializeStateFromHash(true);
     }
   });
+  if (debug) {
+    const debugSection = document.createElement('section');
+    debugSection.classList.add('expandable');
+    const header = document.createElement('h1');
+    header.textContent = 'Debug';
+    debugSection.appendChild(header);
+    const div = document.createElement('div');
+    div.id = 'debug';
+    debugSection.appendChild(div);
+    document.querySelector('main').appendChild(debugSection);
+  }
 
   // Confirm that JS works.
   initVersion();
@@ -84,8 +97,10 @@ const main = () => {
 const initVersion = () => {
   if (version.HASH !== 'latest') {
     const prefix = permalink ? '' : 'Current version: ';
-    document.getElementById('version').textContent =
-        `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
+    for (const span of document.getElementsByClassName('version')) {
+      span.textContent =
+          `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
+    }
   }
   document.body.classList.add('js-works');
   document.body.classList.remove('js-broken');
@@ -115,6 +130,7 @@ const initializeStateFromHash = (initPresets) => {
     if (key === 'flags') flags = new FlagSet(value);
     if (key === 'seed') seed = decodeURIComponent(value);
     if (key === 'race') document.body.classList.add('race');
+    if (key === 'debug') debug = true;
     for (const preset of document.querySelectorAll('[data-flags]')) {
       preset.addEventListener('click', () => {
         flags = new FlagSet(preset.dataset['flags']);
@@ -125,7 +141,7 @@ const initializeStateFromHash = (initPresets) => {
   }
 };
 
-const click = async (e) => {
+async function click(e) {
   let t = e.target;
   const label = `${version.LABEL}: ${flags}`;
   const start = new Date().getTime();
@@ -166,7 +182,7 @@ const click = async (e) => {
     }
     t = t.parentElement;
   }
-};
+}
 
 const read = (arr, index, len) => {
   const chars = [];
@@ -177,6 +193,9 @@ const read = (arr, index, len) => {
 };
 
 const shuffleRom = async (seed) => {
+  for (const span of document.getElementsByClassName('seed-out')) {
+    span.textContent = seed.toString(16).padStart(8, '0');
+  }
   const progressEl = document.getElementById('progress');
   const progressTracker = new ProgressTracker();
   const orig = rom.slice();
@@ -190,9 +209,20 @@ const shuffleRom = async (seed) => {
     setTimeout(showWork, 120);
   }
   showWork();
-  const [shuffled, crc] =
-      await patch.shuffle(
-          orig, seed, flagsClone, new FetchReader(), log, progressTracker);
+  let shuffled;
+  let crc;
+  try {
+    [shuffled, crc] =
+        await patch.shuffle(
+            orig, seed, flagsClone, new FetchReader(), log, progressTracker);
+  } catch (err) {
+    document.body.classList.add('failure');
+    const errorText = document.getElementById('error-text');
+    errorText.textContent = err.stack;
+    errorText.parentElement.parentElement.scrollIntoViewIfNeeded();
+    document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
+    throw err;
+  }
   if (crc < 0) {
     document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
     return [null, null];
@@ -201,6 +231,7 @@ const shuffleRom = async (seed) => {
   document.body.classList.remove('shuffling');
   if (log && log.spoiler) {
     const s = log.spoiler;
+    if (s.flags) replaceSpoiler('spoiler-flags', [s.flags]);
     replaceSpoiler('spoiler-items', sortBy(s.slots.filter(x => x), x => x.item));
     replaceSpoiler('spoiler-route', s.route);
     replaceSpoiler('spoiler-mazes',
@@ -257,6 +288,7 @@ const makeCheckbox = (el) => {
   cb.type = 'checkbox';
   cb.id = `flag-${flag}`;
   cb.dataset['flag'] = flag;
+  cb.dataset['mode'] = 'false';
   el.parentElement.insertBefore(cb, el);
 
   const labelBox = document.createElement('label');
@@ -282,21 +314,39 @@ const makeCheckbox = (el) => {
 
   cb.addEventListener('change', () => {
     window.FLAGS = flags;
-    flags.set(flag, cb.checked);
+    const mode = flags.toggle(flag);
+    if (!mode) {
+      cb.checked = false;
+      labelBox.textContent = flag;
+    } else if (mode === true) {
+      cb.checked = true;
+      labelBox.textContent = flag;
+    } else {
+      cb.checked = true;
+      labelBox.textContent = `${flag[0]}${mode}${flag.substring(1)}`;
+    }
     updateDom();
   });
 };
 
 const updateDom = () => {
+  document.body.classList.remove('failure');
   for (const cb of document.querySelectorAll('input[data-flag]')) {
     const flag = cb.dataset['flag'];
-    cb.checked = flags.check(flag);
+    const mode = flags.get(flag);
+    cb.checked = mode !== false;
+    const insert = typeof mode === 'boolean' ? '' : mode;
+    cb.nextElementSibling.textContent =
+        `${flag[0]}${insert}${flag.substring(1)}`;
   }
   const flagString = String(flags).replace(/ /g, '');
   document.getElementById('seed').value = seed || '';
   const hash = ['#flags=', flagString];
-  if (seed) hash.push('&seed=', encodeURIComponent(seed));
-  history.replaceState({flags: flags.flags, seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
+  if (seed) {
+    hash.push('&seed=', encodeURIComponent(seed));
+  }
+  if (debug) hash.push('&debug');
+  history.replaceState({flags: String(flags), seed}, '', String(window.location).replace(/#.*/, '') + hash.join(''));
   if (version.STATUS == 'stable' || version.STATUS == 'rc') {
     const s = seed || Math.floor(Math.random() * 0x100000000).toString(16);
     const v = version.VERSION;
@@ -310,7 +360,9 @@ const updateRaceDom = () => {
   const flagString = String(flags)
   document.body.classList.toggle('spoiled', flags.check('Ds'));
   document.body.classList.toggle('debug-mode', /D/.test(flagString));
-  document.getElementById('flagstring-out').textContent = flagString;
+  for (const span of document.getElementsByClassName('flagstring-out')) {
+    span.textContent = flagString;
+  }
   document.getElementById('track-url').href =
       `track#flags=${flagString.replace(/ /g, '')}`;
 }

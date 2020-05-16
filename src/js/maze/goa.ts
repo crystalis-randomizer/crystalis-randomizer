@@ -190,7 +190,13 @@ export function fixLabyrinthScreens(rom: Rom, random: Random) {
   // change the 88 users of e1,e2 (hydra) to tileset a8 with pat1=2a to avoid
   // conflict?  the cost is one wall that doesn't fit in quite as well.
   // This frees up 19,1b to absorb c6/c4 with alts of c5
-  const {metatilesets: {cave, pyramid, labyrinth, iceCave}} = rom;
+  // PROBLEM:
+  // Ice cave moves its flaggable 19/1b to 17/18 to free up space for the
+  // removable wall, but 17/18 is used in river cave for vertical bridge.
+  // This is the only situation where 17/18 and 19/1b conflict.  So we
+  // indirect an extra time, copy 17/18 into 19/1b on tilesets 88,8c,a4
+  // and then we can put the new wall tiles in 17/18 everywhere.
+  const {metatilesets: {cave, fortress, iceCave, labyrinth, pyramid}} = rom;
   rom.metascreens.registerFix(ScreenFix.LabyrinthParapets, 1);
   // Fix the tiles
   {
@@ -204,17 +210,22 @@ export function fixLabyrinthScreens(rom: Rom, random: Random) {
       ts.getTile(0x2b).copyFrom(0x19).replaceIn(...ts);
       ts.getTile(0xba).copyFrom(0x1b).replaceIn(...ts);
     }
-    iceCave.getTile(0x17).copyFrom(0x19).replaceIn(...iceCave);
-    iceCave.getTile(0x18).copyFrom(0x1b).replaceIn(...iceCave);
+
+    // Free up 17/18 by copying to 19/1b that we just freed.
+    for (const ts of [fortress, labyrinth, pyramid, cave]) {
+      ts.getTile(0x19).copyFrom(0x17).replaceIn(...ts);
+      ts.getTile(0x1b).copyFrom(0x18).replaceIn(...ts);
+    }
+
     // Fill in c5's graphics for ordinary caves to clean up graphical glitches
     for (const ts of [iceCave, cave, pyramid]) {
-      ts.getTile(0x19).copyFrom(0xc5);
-      ts.getTile(0x1b).copyFrom(0xc5);
+      ts.getTile(0x17).copyFrom(0xc5);
+      ts.getTile(0x18).copyFrom(0xc5);
     }
 
     // Now that space has been allocated, fill it.
-    labyrinth.getTile(0x19).copyFrom(0xc6).setAlternative(0xc5);
-    labyrinth.getTile(0x1b).copyFrom(0xc4).setAlternative(0xc5);
+    labyrinth.getTile(0x17).copyFrom(0xc6).setAlternative(0xc5);
+    labyrinth.getTile(0x18).copyFrom(0xc4).setAlternative(0xc5);
   }
   // Fix the screens
   const bySid = new DefaultMap<number, Metascreen[]>(() => []);
@@ -248,7 +259,7 @@ export function fixLabyrinthScreens(rom: Rom, random: Random) {
       const add = s.data.tilesets.labyrinth?.addWall;
       if (add != null) {
         s.data.mod = 'block';
-        for (const w of add) screen.set2d(w, [[0x19, 0x19], [0x1b, 0x1b]]);
+        for (const w of add) screen.set2d(w, [[0x17, 0x17], [0x18, 0x18]]);
       } else {
         s.flag = 'always';
       }

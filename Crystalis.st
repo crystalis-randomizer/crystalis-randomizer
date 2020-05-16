@@ -57653,7 +57653,7 @@ DialogFollowupActionJump_14
         $3d193  xx xx xx:   xxx DialogFollowupActionJump_17_HealPlayerAndDisappear
 ;;; --------------------------------
 ;;; UNUSED?!? - repurpose for WriteObjectCoordinatesAndLoadObjectData
-        $3d196  xx xx xx:   xxx $3d88b
+        $3d196  xx xx xx:   xxx WaitForAudio
         $3d199  xx xx xx:   xxx $3e148
 ;;; --------------------------------
 DialogFollowupActionJump_01
@@ -58386,19 +58386,20 @@ ItemOrTriggerActionJump_0f
 ItemOrTriggerActionJump_13      ; destroy statue of moon (in slot 0d)
         $3d718  xx xx:      xxx #$xx
         $3d71a  xx xx xx:   xxx $xxxx
-        $3d71d  xx xx:      xxx $xx ; uncond
+        $3d71d  xx xx:      xxx + ; $3d724 ; uncond
 ;;; --------------------------------
 ItemOrTriggerActionJump_14      ; destroy statue of sun (in slot 0e)
-        $3d71f  xx xx:      xxx #$xx
-        $3d721  xx xx xx:   xxx $xxxx
-        $3d724  xx xx:      xxx #$xx
+        $3d71f  xx xx:       xxx #$xx
+        $3d721  xx xx xx:    xxx $xxxx
++       $3d724  xx xx:      xxx #$xx
         $3d726  xx xx xx:   xxx StartAudioTrack
-        $3d729  xx xx xx:   xxx $3d88b
-        $3d72c  xx xx xx:   xxx $xxxx
+        $3d729  xx xx xx:   xxx WaitForAudio
+        $3d72c  xx xx xx:   xxx $xxxx ; action scripts
         $3d72f  xx xx xx:   xxx $xxxx
-        $3d732  xx xx:      xxx $xx
+        $3d732  xx xx:       xxx >rts ; $3d745
+        ;; Both statues destroyed
         $3d734  xx xx:      xxx #$xx
-        $3d736  xx xx xx:   xxx $xxxx
+        $3d736  xx xx xx:   xxx $xxxx ; explosion timer
         $3d739  xx xx xx:   xxx $xxxx
         $3d73c  xx xx:      xxx $xx
         $3d73e  xx xx:      xxx #$xx
@@ -58413,7 +58414,7 @@ ItemOrTriggerActionJump_15
         $3d748  xx xx xx:   xxx StartAudioTrack
         $3d74b  xx xx:      xxx #$xx ; nothing?
         $3d74d  xx xx xx:   xxx StartAudioTrack
-        $3d750  xx xx xx:   xxx $3d88b
+        $3d750  xx xx xx:   xxx WaitForAudio
         $3d753  xx xx:      xxx #$xx
         $3d755  xx xx:      xxx $xx
         $3d757  xx xx:      xxx #$xx
@@ -58597,11 +58598,12 @@ JumpTable_3d885
         $3d887              .word ($1c31e) ; ItemUse
         $3d889              .word ($1c0e3) ; TriggerSquare
 ;;; --------------------------------
-        $3d88b  xx xx xx:   xxx WaitForOAMDMA
+WaitForAudio:
+-       $3d88b  xx xx xx:    xxx WaitForOAMDMA
         ;; Wait for an audio cue to finish???
-        $3d88e  xx xx xx:   xxx $xxxx
-        $3d891  xx xx:      xxx #$xx
-        $3d893  xx xx:      xxx $xx
+        $3d88e  xx xx xx:    xxx $xxxx
+        $3d891  xx xx:       xxx #$xx
+        $3d893  xx xx:      xxx - ; $3d88b
         $3d895  xx:         xxx
 ;;; --------------------------------
         $3d896  xx xx:      xxx #$xx

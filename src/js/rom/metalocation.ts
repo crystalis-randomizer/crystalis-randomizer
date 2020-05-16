@@ -1023,7 +1023,8 @@ export class Metalocation {
         spawn.yt = y;
         spawn.xt = x;
         continue;
-      } else if (spawn.isNpc() || spawn.isBoss() || spawn.isTrigger()) {
+      } else if (spawn.isNpc() || spawn.isBoss() || spawn.isTrigger() ||
+                 spawn.isGeneric()) {
         //let j = 0;
         let best = [-1, -1, Infinity];
         for (const [y0, x0, y1, x1, dmax] of map) {

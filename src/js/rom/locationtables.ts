@@ -198,6 +198,8 @@ export class Spawn extends DataTuple {
   isBoss(): boolean { return this.type === 1 && this.id >= 0xc0; }
   /** Whether this spawn is a monster (type 0). */
   isMonster(): boolean { return this.type === 0; }
+  /** Spawn type 4 is just a generic spawn. */
+  isGeneric(): boolean { return this.type === 4; }
   /** Whether this spawn is a wall hitbox (type 3, mostly). */
   isWall(): boolean {
     return Boolean(this.type === 3 && (this.id < 4 || (this.data[2] & 0x20)));

@@ -232,3 +232,29 @@ export class Spawn extends DataTuple {
 interface Location {
   readonly id: number;
 }
+
+/** 240px-aware subtraction */
+export function ytDiff(yt1: number, yt0: number): number {
+  let dy = yt1 - yt0;
+  dy -= (yt1 >>> 4) - (yt0 >>> 4);
+  return dy;
+}
+
+/** 240px-aware addition */
+export function ytAdd(yt: number, ...dys: number[]): number {
+  for (const dy of dys) {
+    const subscreen = dy % 15;
+    const screens = (dy - subscreen) / 15;
+    let ys1 = (yt >> 4) + screens;
+    let yt1 = (yt & 0xf) + subscreen;
+    if (yt1 < 0) {
+      ys1--;
+      yt1 = 0xf + yt1;
+    } else if (yt1 >= 0xf) {
+      ys1++;
+      yt1 = yt1 - 0xf;
+    }
+    yt = ys1 << 4 | yt1;
+  }
+  return yt;
+}

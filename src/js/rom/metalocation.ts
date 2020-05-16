@@ -1,5 +1,5 @@
 import { Location } from './location.js'; // import type
-import { Exit, Flag as LocationFlag, Pit } from './locationtables.js';
+import { Exit, Flag as LocationFlag, Pit, ytDiff, ytAdd } from './locationtables.js';
 import { Flag } from './flags.js';
 import { Metascreen, Uid } from './metascreen.js';
 import { Metatileset } from './metatileset.js';
@@ -1038,9 +1038,9 @@ export class Metalocation {
         //let j = 0;
         let best = [-1, -1, Infinity];
         for (const [y0, x0, y1, x1, dmax] of map) {
-          const d = (spawn.yt - y0) ** 2 + (spawn.xt - x0) ** 2;
+          const d = (ytDiff(spawn.yt, y0)) ** 2 + (spawn.xt - x0) ** 2;
           if (d <= dmax && d < best[2]) {
-            best = [spawn.yt + y1 - y0, spawn.xt + x1 - x0, d];
+            best = [ytAdd(spawn.yt, ytDiff(y1, y0)), spawn.xt + x1 - x0, d];
           }
         }
         if (Number.isFinite(best[2])) {

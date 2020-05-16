@@ -150,7 +150,7 @@ class Message {
       //   newline();
       //   return;
       // }
-      if (lineLen + len > 29) newline();
+      if (lineLen + len > 28) newline();
       if (str === ' ') {
         parts.push(...word, ' ');
         word = [];

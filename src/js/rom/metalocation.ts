@@ -623,14 +623,19 @@ export class Metalocation {
     // through and attach any redundant exits.
 
     const destTile = dest.id << 8 | destPos;
-    const prevDest = this._exits.get(srcPos, srcType)!;
-    if (prevDest) {
+    const srcTile = this.id << 8 | srcPos;
+    const prevDest = this._exits.get(srcPos, srcType);
+    const prevSrc = dest._exits.get(destPos, destType);
+    if (prevDest && prevSrc) {
       const [prevDestTile, prevDestType] = prevDest;
-      if (prevDestTile === destTile && prevDestType === destType) return;
+      const [prevSrcTile, prevSrcType] = prevSrc;
+      if (prevDestTile === destTile && prevDestType === destType &&
+          prevSrcTile === srcTile && prevSrcType === srcType) {
+        return;
+      }
     }
-    const prevSrc = dest._exits.get(destPos, destType)!;
     this._exits.set(srcPos, srcType, [destTile, destType]);
-    dest._exits.set(destPos, destType, [this.id << 8 | srcPos, srcType]);
+    dest._exits.set(destPos, destType, [srcTile, srcType]);
     // also hook up previous pair
     if (prevSrc && prevDest) {
       const [prevDestTile, prevDestType] = prevDest;
@@ -640,9 +645,14 @@ export class Metalocation {
       prevSrcMeta._exits.set(prevSrcTile & 0xff, prevSrcType, prevDest);
       prevDestMeta._exits.set(prevDestTile & 0xff, prevDestType, prevSrc);
     } else if (prevSrc || prevDest) {
-      const [prevTile, prevType] = prevSrc || prevDest;
-      const prevMeta = this.rom.locations[prevTile >> 8].meta!;
-      prevMeta._exits.delete(prevTile & 0xff, prevType);      
+      const [prevTile, prevType] = (prevSrc || prevDest)!;
+      // NOTE: if we used attach to hook up the reverse of a one-way exit
+      // (i.e. tower exit patch) then we need to *not* remove the other side.
+      if ((prevTile !== srcTile || prevType !== srcType) &&
+          (prevTile !== destTile || prevType !== destType)) {
+        const prevMeta = this.rom.locations[prevTile >> 8].meta!;
+        prevMeta._exits.delete(prevTile & 0xff, prevType);
+      }
     }
   }
 

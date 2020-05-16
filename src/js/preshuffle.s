@@ -1062,6 +1062,25 @@ FREE_UNTIL $ba2c
 .endif
   
 
+;;; Make white robots appear immediately outside tower.
+.org $b5f3                 ; $375f3 is action script for waiting white robots
+  jsr ReleaseWhiteRobots
+
+.reloc
+ReleaseWhiteRobots:
+  lda $6c
+  and #$f8
+  cmp #$58
+  bne +
+   txa
+   asl
+   asl
+   rts
++ pla
+  pla
+  jmp $b61b
+
+
 ;;; Beef up dyna
 
 .ifdef _BUFF_DYNA

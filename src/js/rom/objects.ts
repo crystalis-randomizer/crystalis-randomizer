@@ -15,6 +15,12 @@ import {Adjustments, Monster, MonsterData} from './monster.js';
 
 export class ObjectsClass extends Array<ObjectData> {
 
+  // wraith1 = new Monster({
+  //   id: 0x3f,
+  //   scaling: 24,
+  //   class: 'wraith',
+  // };
+
   static get [Symbol.species]() { return Array; }
 
   constructor(readonly rom: Rom) {

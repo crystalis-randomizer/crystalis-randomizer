@@ -115,9 +115,10 @@ export class Graphics {
 
   configure(location: Location, spawn: Spawn) {
     if (!spawn.used) return;
+    const itemId = this.rom.slots[spawn.id];
     const c = spawn.isMonster() ? this.monsterConstraints.get(spawn.monsterId) :
         spawn.isNpc() ? this.npcConstraints.get(spawn.id) :
-        spawn.isChest() ? (spawn.id < 0x70 ? Constraint.TREASURE_CHEST :
+        spawn.isChest() ? (itemId < 0x70 ? Constraint.TREASURE_CHEST :
                            Constraint.MIMIC) :
         undefined;
     if (!c) return;

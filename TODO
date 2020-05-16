@@ -35,3 +35,29 @@ windmill guard not moved w/ random level - in general, NPCs should be on a POI
  - make it an error to _not_ move a trigger or NPC?
 waterfall n -> s gets stray mountains b/c seamless pair not mirrored
 
+====
+
+TODO:
+
+1. tomatoes on water -> skip
+2. corrupted chest graphics (east cave) -> fixed
+3. stair-deadend (sealed cave), wall-DE
+   stair-stair, pit-deadend, ramp-stair
+4. robot spawns
+5. queen throne item (but also 2nd item)
+6. tracker
+7. can't fly over riverDeadEndS_bridge
+   (oasis cave top) in cave tileset
+8. oasis cave entrance river relevance?
+9. statue explosion didn't open crypt
+   - flag not set
+10. crypt hall 1 not shuffled
+11. dolphin boost
+12. monster in wall sabera upstairs
+13. kensu dialog garbled (love pendant)
+   - end quote. (don't wrap Kensu:)
+14. shuffle prison hall
+15. sabre n overworld enemies
+16. tower exit
+
+flags=AmDsGfMetRosWgms&seed=fd24dbde

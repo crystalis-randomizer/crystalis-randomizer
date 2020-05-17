@@ -1226,7 +1226,6 @@ export class Metalocation {
       if (!spawn.isMonster()) continue;
       const monster = loc.rom.objects[spawn.monsterId];
       if (!(monster instanceof Monster)) continue;
-      if (monster.isUntouchedMonster()) continue;
       const pos = placer(monster);
       if (pos == null) {
         console.error(`no valid location for ${hex(monster.id)} in ${loc}`);

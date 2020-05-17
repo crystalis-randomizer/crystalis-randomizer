@@ -1,8 +1,9 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {Location} from './location.js';
-import {readLittleEndian} from './util.js';
+import { Module } from '../asm/module.js';
+import { Entity } from './entity.js';
+import { Location } from './location.js';
+import { readLittleEndian } from './util.js';
+import { Constraint } from './constraint.js';
+import type { Objects } from './objects.js';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {
@@ -15,20 +16,23 @@ export class ObjectData extends Entity {
   sfx: number;
   data: number[];
 
-  constructor(rom: Rom, id: number) {
-    super(rom, id);
+  constraint: Constraint = Constraint.ALL;
+
+  constructor(parent: Objects, id: number) {
+    super(parent.rom, id);
+    parent[id] = this;
     this.used = true;
     this.name = '';
-    this.base = readLittleEndian(rom.prg, this.pointer) + 0x10000;
-    this.sfx = rom.prg[this.base];
+    this.base = readLittleEndian(this.rom.prg, this.pointer) + 0x10000;
+    this.sfx = this.rom.prg[this.base];
     this.data = [];
     let a = this.base + 1;
     let m = 0;
     for (let i = 0; i < 32; i++) {
       if (!(i & 7)) {
-        m = rom.prg[a++];
+        m = this.rom.prg[a++];
       }
-      this.data.push(m & 0x80 ? rom.prg[a++] : 0);
+      this.data.push(m & 0x80 ? this.rom.prg[a++] : 0);
       m <<= 1;
     }
   }
@@ -76,6 +80,20 @@ export class ObjectData extends Entity {
     // return this.rom.monsters.filter(
     //     (m: ObjectData) => m.child &&
     //                        this.rom.adHocSpawns[m.child].objectId === this.id);
+  }
+
+  spawnedChild(): ObjectData|undefined {
+    const hasChild = this.rom.objectActions[this.action]?.data.hasChild;
+    if (!hasChild) return undefined;
+    const spawn = this.rom.adHocSpawns[this.child];
+    const spawnId = spawn && spawn.objectId;
+    if (spawnId == null) return undefined;
+    return this.rom.objects[spawnId];
+  }
+
+  spawnedReplacement(): ObjectData|undefined {
+    if (!this.replacement) return undefined;
+    return this.rom.objects[this.replacement];
   }
 
   locations(): Location[] {
@@ -176,6 +194,10 @@ export class ObjectData extends Entity {
 
   get statusEffect(): number { return STATUS_EFFECT.get(this.data); }
   set statusEffect(x: number) { STATUS_EFFECT.set(this.data, x); }
+
+  toString() {
+    return super.toString() + (this.name ? ' ' + this.name : '');
+  }
 }
 
 function prop(...spec: [number, number?, number?][]) {

@@ -6,6 +6,10 @@ export function upperCamelToSpaces(upperCamel: string): string {
       .replace(/_/g, ' - ');
 }
 
+export function lowerCamelToSpaces(lowerCamel: string): string {
+  return upperCamelToSpaces(lowerCamel).replace(/^./, (x) => x.toUpperCase());
+}
+
 /** Removes readonly from fields. */
 export type Mutable<T> = {-readonly [K in keyof(T)]: T[K]};
 

@@ -1,12 +1,14 @@
-import {Constraint} from './constraint.js';
-import {ObjectData} from './objectdata.js';
-import {Rom} from '../rom.js';
+import { ObjectData } from './objectdata.js';
+import { Placement } from './objectaction.js';
+import { hex } from './util.js';
+import type { Objects } from './objects.js';
 
-export type MonsterData = [string, number, number, Adjustments?];
-
-export interface Adjustments {
+export interface MonsterData {
+  id: number,
+  scaling: number,
   difficulty?: number;
-  monsterClass?: string
+  class?: string;
+  type?: 'object' | 'boss' | 'projectile';
 }
 
 type DifficultyFactor = number & {__difficulty__: never};
@@ -31,16 +33,14 @@ export class Monster extends ObjectData {
   /** Extra difficulty factor. */
   extraDifficulty: number;
 
-  constraint: Constraint = Constraint.ALL;
   shiftPatterns?: Set<number>;
   usedPalettes?: readonly number[];
   usedPatterns?: readonly number[];
 
   monsterClass?: string;
 
-  constructor(rom: Rom, [name, id, scaling, adjustments = {}]: MonsterData) {
-    super(rom, id);
-    this.name = name;
+  constructor(parent: Objects, data: MonsterData) {
+    super(parent, data.id);
 
     // Make the scaling calculations here
     // First derive values corresponding to vanilla.
@@ -49,15 +49,18 @@ export class Monster extends ObjectData {
     // level from the manually-specified (equivalent) scaling level with
     // (2) the minimum level to damage (from the object data).  This may be
     // fractional.
+    const scaling = data.scaling;
     const expectedLevel = (level(scaling) + this.level) / 2;
     const expectedAttack = expectedLevel + playerSword(scaling, this.elements);
     this.hits = (this.hp + 1) / (expectedAttack - this.def);
     this.sdef = this.def / expectedAttack;
 
     const expectedPlayerHP = Math.min(255, Math.max(16, 32 + expectedLevel * 16));
-    this.satk = (this.atk - expectedPlayerDefense(scaling, this.attackType)) / expectedPlayerHP;
-    this.extraDifficulty = adjustments.difficulty || 0;
-    this.monsterClass = adjustments.monsterClass;
+    this.satk =
+        (this.atk - expectedPlayerDefense(scaling, this.attackType)) /
+        expectedPlayerHP;
+    this.extraDifficulty = data.difficulty || 0;
+    this.monsterClass = data.class;
 
     // Compute vanilla scaled exp and gold.
     const vsExp = processExpReward(this.expReward) / baselineExp(scaling);
@@ -66,18 +69,12 @@ export class Monster extends ObjectData {
     this.wealth = vsGld && vsGld / (vsExp + vsGld);
   }
 
-  isUntouchedMonster(): boolean {
-    return !!UNTOUCHED_MONSTERS[this.id];
-  }
-
   placement(): Placement {
-    const action = ACTION_SCRIPTS.get(this.action);
-    return action && action.placement || 'normal';
+    return this.rom.objectActions[this.action]?.data.placement ?? 'normal';
   }
 
   clearance(): number {
-    const action = ACTION_SCRIPTS.get(this.action);
-    return action && action.large ? 6 : 3;
+    return this.rom.objectActions[this.action]?.data.large ? 6 : 3;
   }
 
   totalDifficulty(): number {
@@ -89,9 +86,13 @@ export class Monster extends ObjectData {
                     r: (a: number, b: number) => number): DifficultyFactor {
     let result = f(this);
     const child = this.spawnedChild();
-    if (child) result = r(result, child.collectDifficulty(f, r));
+    if (child instanceof Monster) {
+      result = r(result, child.collectDifficulty(f, r));
+    }
     const death = this.spawnedReplacement();
-    if (death) result = r(result, death.collectDifficulty(f, r));
+    if (death instanceof Monster) {
+      result = r(result, death.collectDifficulty(f, r));
+    }
     return result as DifficultyFactor;
   }
 
@@ -121,9 +122,9 @@ export class Monster extends ObjectData {
       set.add(0);
     }
     const replacement = this.spawnedReplacement();
-    if (replacement) replacement.addStatusEffects(set);
+    if (replacement instanceof Monster) replacement.addStatusEffects(set);
     const child = this.spawnedChild();
-    if (child) child.addStatusEffects(set);
+    if (child instanceof Monster) child.addStatusEffects(set);
   }
 
   statusDifficulty(): DifficultyFactor {
@@ -149,14 +150,16 @@ export class Monster extends ObjectData {
   movement(): DifficultyFactor {
     return this.collectDifficulty(
         m => {
-          const actionData = ACTION_SCRIPTS.get(m.action);
+          const actionData = this.rom.objectActions[m.action];
           const child = m.spawnedChild();
           let result = m.extraDifficulty;
           if (actionData) {
-            result += (actionData.movement || 0);
-            if (actionData.large) result++;
+            result += (actionData.data.movement || 0);
+            if (actionData.data.large) result++;
             // NOTE: MothResidueSource has statusDifficulty but not statusEffect.
-            if (child && !child.statusEffect) result += (actionData.projectile || 0);
+            if (child && !child.statusEffect) {
+              result += (actionData.data.projectile || 0);
+            }
           }
 
           // Shadows get +2, action $26 triggers this on metasprite $a7
@@ -164,22 +167,6 @@ export class Monster extends ObjectData {
 
           return result;
         }, (a, b) => a + b);
-  }
-
-  spawnedChild(): Monster | undefined {
-    const data = ACTION_SCRIPTS.get(this.action);
-    if (!data || !data.child) return undefined;
-    const spawn = this.rom.adHocSpawns[this.child];
-    const spawnId = spawn && spawn.objectId;
-    if (spawnId == null) return undefined;
-    const obj = this.rom.objects[spawnId];
-    return obj instanceof Monster ? obj : undefined;
-  }
-
-  spawnedReplacement(): Monster | undefined {
-    if (!this.replacement) return undefined;
-    const obj = this.rom.objects[this.replacement];
-    return obj instanceof Monster ? obj : undefined;
   }
 
   // Returns a number 0..6 or so
@@ -214,6 +201,10 @@ export class Monster extends ObjectData {
   //   if (this.shiftPatterns.has(location.spritePalettes[0])) spawn.patternBank = 0;
   //   if (this.shiftPatterns.has(location.spritePalettes[1])) spawn.patternBank = 1;
   // }
+
+  toString() {
+    return `Monster $${hex(this.id)} ${this.name}`;
+  }
 }
 
 function processExpReward(raw: number): number {
@@ -259,205 +250,6 @@ function baselineGold(scaling: number): number {
 // DEATH REPLACEMENTS...?
 
 
-interface ActionScriptData {
-  child?: boolean;
-  large?: boolean;
-  bird?: boolean;
-  moth?: boolean;
-  stationary?: boolean;
-  boss?: boolean;
-  projectile?: number;
-  movement?: number;
-  metasprites?: (o: ObjectData) => readonly number[];
-  placement?: Placement;
-  // This is on top of any effect from satk, status, etc.
-  // difficulty?: (o: Monster, c?: Monster) => DifficultyFactor;
-  // flyer? stationary? large? required space?
-}
-
-type Placement = 'normal' | 'moth' | 'bird' | 'plant';
-
-// Set of action script IDs.
-// We could possibly do better with a quick coverage analysis of the actual code.
-// See what addresses are hit (and routines called) before the rts.
-export const ACTION_SCRIPTS = new Map<number, ActionScriptData>([
-  [0x10, { // straight shot (optional bounce)
-  }],
-  [0x11, { // straight shot
-  }],
-  [0x16, { // mado shuriken
-  }],
-  [0x17, { // demon wall fire
-  }],
-  [0x1b, { // draygon2 / karmine balls
-  }],
-  [0x1d, { // brown robot harpoon source (object $be)
-    child: true,
-  }],
-  [0x1e, { // draygon2 lasers
-  }],
-  [0x1f, { // paralysis powder
-  }],
-  [0x20, { // blue slime, etc (random)
-    movement: 1, // slow random
-  }],
-  [0x21, { // medusa, etc (random large stoners)
-    child: true,
-    large: true,
-    movement: 2, // fast random
-  }],
-  [0x22, { // wraith, zombie (optional)
-    child: true,
-    movement: 3, // slow homing
-  }],
-  [0x24, { // weretiger, non-shooting wyverns (small homing)
-    movement: 3, // slow homing
-  }],
-  [0x25, { // mushroom, anemones
-    movement: 3, // slow homing
-  }],
-  [0x26, { // orc/wyvern/shadow  -> e9/10 =2  |  e3/11 =0 (status)
-    child: true,
-    projectile: 1, // only for non-status orc
-    movement: 3, // slow homing
-  }],
-  [0x27, { // troll/spider/fishman/salamander/tarantula/mummy  ->
-    child: true,
-    projectile: 1,
-    movement: 3, // slow homing
-  }],
-  [0x28, { // golem   -> e5/10 =3
-    child: true,
-    projectile: 2, // diagonal
-    movement: 3, // slow homing
-    metasprites: () => [0x65, 0x91],
-  }],
-  [0x29, { // lavaman
-    child: true,
-    // projectile does no damage
-    movement: 5, // puddle
-    metasprites: () => [0x6b, 0x68],
-  }],
-  [0x2a, { // soldier/archer/knight/brown robot
-    child: true,
-    projectile: 1,
-    movement: 4, // fast homing
-    metasprites: (o) => [0, 1, 2, 3].map(x => x + o.data[31]), // directional walker
-  }],
-  [0x2b, { // mimic
-    movement: 4, // fast homing
-  }],
-  [0x2c, { // moth residue source (from 4d object replacement)
-    child: true,
-  }],
-  [0x2e, { // flail guys
-    child: true,
-    large: true,
-    projectile: 2,
-    movement: 3, // slow homing
-  }],
-  [0x2f, { // dyna laser
-  }],
-  [0x34, { // guardian statue
-    child: true,
-  }],
-  [0x38, { // moving platform
-  }],
-  [0x3c, { // crumbling moving platform
-    // TODO - will need to copy the horizotal version's graphics?
-  }],
-  [0x40, { // bat, moth
-    child: true,
-    moth: true,
-    // projectile: 2,
-    movement: 4, // slow flyer
-    placement: 'moth',
-  }],
-  [0x41, { // skeleton (mp drain web)
-    child: true,
-    movement: 3, // slow homing
-  }],
-  [0x44, { // swamp tomato
-    movement: 3, // slow homing
-  }],
-  [0x45, { // insects (paralysis or shooting), bomber bird (optional shot)
-    child: true,
-    bird: true,
-    projectile: 2,
-    movement: 5, // fast flyer
-    placement: 'bird',
-  }],
-  [0x4c, { // swamp plant -> ea/10 =5
-    child: true,
-    stationary: true,
-    projectile: 3,
-    placement: 'plant',
-  }],
-  [0x4d, { // kraken
-    child: true,
-    stationary: true,
-    projectile: 3,
-  }],
-  [0x4e, { // burt
-    child: true,
-    stationary: true,
-  }],
-  [0x57, { // dyna shots
-  }],
-  [0x58, { // sabera2 fire
-  }],
-  [0x5c, { // tower sentinel
-    child: true,
-    projectile: 3,
-    movement: 1,
-  }],
-  [0x5d, { // helicopter
-    bird: true,
-    movement: 6,
-    placement: 'bird',
-  }],
-  [0x5e, { // white robot
-    child: true,
-    projectile: 1,
-    movement: 4, // fast homing
-    metasprites: (o) => [0, 1, 2, 3].map(x => x + o.data[31]), // directional walker
-  }],
-  [0x60, { // vampire
-    boss: true,
-  }],
-  [0x61, { // vampire bat
-  }],
-  [0x63, { // kelbesque
-    boss: true,
-  }],
-  [0x64, { // kelbesque1 rock
-    boss: true,
-  }],
-  [0x66, { // sabera
-    boss: true,
-  }],
-  [0x67, { // mado
-    boss: true,
-  }],
-  [0x68, { // karmine
-    boss: true,
-  }],
-  [0x6a, { // draygon1
-    boss: true,
-  }],
-  [0x6b, { // draygon2
-    boss: true,
-  }],
-  [0x70, { // dyna, flail
-    boss: true,
-  }],
-  [0x7f, { // insect
-    boss: true,
-  }],
-  // TODO - just hardcode boss difficulties?  fix them at max?
-]);
-
-
 
 // Scaling formulas
 function level(scaling: number): number {
@@ -501,15 +293,3 @@ function lookup<K extends Comparable, V>(x: K,
 }
 
 type Comparable = number | string;
-
-const UNTOUCHED_MONSTERS: {[id: number]: boolean} = { // not yet +0x50 in these keys
-  [0x7e]: true, // vertical platform
-  [0x7f]: true, // horizontal platform
-  [0x83]: true, // glitch in $7c (hydra)
-  [0x8d]: true, // glitch in location $ab (sabera 2) - crumbling horizontal platform
-  [0x8e]: true, // broken?, but sits on top of iron wall
-  [0x8f]: true, // shooting statue
-  [0x9f]: true, // crumbling vertical platform
-  // [0xa1]: true, // white tower robots
-  [0xa6]: true, // glitch in location $af (mado 2)
-};

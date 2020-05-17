@@ -18,6 +18,7 @@ import {Metasprite} from './rom/metasprite.js';
 import {Metatileset, Metatilesets} from './rom/metatileset.js';
 import {Monster} from './rom/monster.js';
 import {Npcs} from './rom/npc.js';
+import {ObjectActions} from './rom/objectaction.js';
 import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
@@ -84,6 +85,7 @@ export class Rom {
   readonly locations: Locations;
   readonly tileAnimations: TileAnimation[];
   readonly hitboxes: Hitbox[];
+  readonly objectActions: ObjectActions;
   readonly objects: Objects;
   readonly adHocSpawns: AdHocSpawn[];
   readonly metascreens: Metascreens;
@@ -183,6 +185,7 @@ export class Rom {
     this.locations = new Locations(this);
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));
     this.hitboxes = seq(24, i => new Hitbox(this, i));
+    this.objectActions = new ObjectActions(this);
     this.objects = new Objects(this);
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = seq(0x100, i => new Metasprite(this, i));

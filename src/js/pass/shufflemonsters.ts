@@ -76,7 +76,6 @@ class MonsterPool {
           SCALED_MONSTERS.get(id)!.type !== 'm') continue;
       const object = location.rom.objects[id];
       if (!(object instanceof Monster)) continue;
-      if (object.isUntouchedMonster()) continue;
       const patBank = spawn.patternBank;
       const pat = location.spritePatterns[patBank];
       const pal = object.palettes(true);
@@ -93,6 +92,7 @@ class MonsterPool {
   }
 
   shuffle(random: Random, graphics: Graphics) {
+    const rom = graphics.rom;
     this.report['pre-shuffle locations'] = this.locations.map(l => l.location.id);
     this.report['pre-shuffle monsters'] = this.monsters.map(m => m.id);
     random.shuffle(this.locations);
@@ -118,7 +118,7 @@ class MonsterPool {
       }
       for (const spawn of location.spawns) {
         if (spawn.isChest() && !spawn.isInvisible()) {
-          if (location.rom.slots[spawn.id] < 0x70) {
+          if (rom.slots[spawn.id] < 0x70) {
             constraint = constraint.meet(Constraint.TREASURE_CHEST, true);
           } else {
             constraint = constraint.meet(Constraint.MIMIC, true);
@@ -131,7 +131,7 @@ class MonsterPool {
             constraint = constraint.meet(Constraint.KENSU_CHEST, true);
           }
         } else if (spawn.isMonster() &&
-                   isUntouchedMonster(location.rom, spawn.monsterId)) {
+                   !(rom.objects[spawn.monsterId] instanceof Monster)) {
           const c = graphics.getMonsterConstraint(location.id, spawn.monsterId);
           constraint = constraint.meet(c, true);
         } else if (spawn.isShootingWall(location)) {
@@ -143,7 +143,7 @@ class MonsterPool {
 
       const classes = new Map<string, number>();
       const tryAddMonster = (m: MonsterConstraint) => {
-        const monster = location.rom.objects[m.id] as Monster;
+        const monster = rom.objects[m.id] as Monster;
         if (monster.monsterClass) {
           const representative = classes.get(monster.monsterClass);
           if (representative != null && representative !== m.id) return false;
@@ -168,7 +168,7 @@ class MonsterPool {
         // Figure out early if the monster is placeable.
         let pos: number | undefined;
         if (monsterPlacer) {
-          const monster = location.rom.objects[m.id];
+          const monster = rom.objects[m.id];
           if (!(monster instanceof Monster)) {
             throw new Error(`non-monster: ${monster}`);
           }
@@ -285,11 +285,6 @@ class MonsterPool {
       }
     }
   }
-}
-
-function isUntouchedMonster(rom: Rom, id: number): boolean {
-  const obj = rom.objects[id];
-  return obj instanceof Monster && obj.isUntouchedMonster();
 }
 
 const FLYERS: Set<number> = new Set([0x59, 0x5c, 0x6e, 0x6f, 0x81, 0x8a, 0xa3, 0xc4]);

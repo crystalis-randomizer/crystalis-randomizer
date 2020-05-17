@@ -1,9 +1,9 @@
-import {Rom} from '../rom.js';
-import {DefaultMap} from '../util.js';
-import {Location, Spawn} from './location.js';
-import {ACTION_SCRIPTS, Monster} from './monster.js';
-import {Constraint} from './constraint.js';
-import {Random} from '../random.js';
+import { Rom } from '../rom.js';
+import { DefaultMap } from '../util.js';
+import { Location, Spawn } from './location.js';
+import { Constraint } from './constraint.js';
+import { Random } from '../random.js';
+import { ObjectData } from './objectdata.js';
 
 ////////////////////////////////////////////////////////////////
 
@@ -21,7 +21,8 @@ export class Graphics {
     // Iterate over locations/spawns to build multimap of where monsters appear.
     // Postive keys are monsters, negative keys are NPCs.
     const allSpawns =
-        new DefaultMap<number, Array<readonly [Location, number, Spawn]>>(() => []);
+        new DefaultMap<number, Array<readonly [Location, number, Spawn]>>(
+            () => []);
 
     for (const l of rom.locations) {
       if (!l.used) continue;
@@ -56,13 +57,10 @@ export class Graphics {
       } else { // monster
         let constraint = Constraint.ALL;
         const parent = this.rom.objects[m];
-        if (!(parent instanceof Monster)) {
-          throw new Error(`expected monster: ${parent} from ${spawns}`);
-        }
         for (const obj of allObjects(rom, parent)) {
-          const action = ACTION_SCRIPTS.get(obj.action);
-          const metaspriteFn: (m: Monster) => readonly number[] =
-              action && action.metasprites || (() => [obj.metasprite]);
+          const action = rom.objectActions[obj.action];
+          const metaspriteFn: (m: ObjectData) => readonly number[] =
+              action?.data.metasprites || (() => [obj.metasprite]);
           const child = this.computeConstraint(metaspriteFn(obj), spawns,
                                                obj.id === m, obj.data[1]);
           const meet = constraint.meet(child);
@@ -194,7 +192,7 @@ export class Graphics {
   }
 }
 
-function* allObjects(rom: Rom, parent: Monster): Iterable<Monster> {
+function* allObjects(rom: Rom, parent: ObjectData): Iterable<ObjectData> {
   yield parent;
   const repl = parent.spawnedReplacement();
   if (repl) yield* allObjects(rom, repl);
@@ -205,8 +203,8 @@ function* allObjects(rom: Rom, parent: Monster): Iterable<Monster> {
   // difficulty, since most folks will never have to deal with that.
   // But we do need to make sure that they get "un-floated" since the
   // replacement spawn will not share the same 380:20 (for now).
-  if (parent.id === 0x50) yield rom.objects[0x5f] as Monster; // blue slime
-  if (parent.id === 0x53) yield rom.objects[0x69] as Monster; // red slime
+  if (parent.id === 0x50) yield rom.objects.largeBlueSlime;
+  if (parent.id === 0x53) yield rom.objects.largeRedSlime;
 }
 
 type Spawns = ReadonlyArray<readonly [Location, number, Spawn]>;

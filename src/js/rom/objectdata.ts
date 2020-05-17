@@ -122,7 +122,8 @@ export class ObjectData extends Entity {
                 this.rom.objects[
                     this.rom.adHocSpawns[this.child].objectId].data[0]] :
             null;
-    const s = new Set([...ms.palettes(), ...(childMs ? childMs.palettes() : [])]);
+    const s = new Set([...(ms?.palettes() ?? []),
+                       ...(childMs?.palettes() ?? [])]);
     return [...s];
   }
 

@@ -8,7 +8,7 @@ export interface MonsterData {
   scaling: number,
   difficulty?: number;
   class?: string;
-  type?: 'object' | 'boss' | 'projectile';
+  type?: 'boss' | 'projectile'; // or default: monster
 }
 
 type DifficultyFactor = number & {__difficulty__: never};
@@ -37,6 +37,7 @@ export class Monster extends ObjectData {
   usedPalettes?: readonly number[];
   usedPatterns?: readonly number[];
 
+  type: 'monster' | 'boss' | 'projectile';
   monsterClass?: string;
 
   constructor(parent: Objects, data: MonsterData) {
@@ -66,7 +67,21 @@ export class Monster extends ObjectData {
     const vsExp = processExpReward(this.expReward) / baselineExp(scaling);
     const vsGld = VANILLA_GOLD_DROPS[this.goldDrop] / baselineGold(scaling);
 
+    this.type = data.type || 'monster';
     this.wealth = vsGld && vsGld / (vsExp + vsGld);
+  }
+
+  isBoss(): boolean {
+    return this.type === 'boss';
+  }
+
+  isProjectile(): boolean {
+    return this.type === 'projectile';
+  }
+
+  isFlyer(): boolean {
+    const a = this.rom.objectActions[this.action];
+    return a?.data.bird || a?.data.moth || false;
   }
 
   placement(): Placement {

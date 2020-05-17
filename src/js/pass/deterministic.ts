@@ -9,6 +9,7 @@ import {ShopType} from '../rom/shop.js';
 import {Trigger} from '../rom/trigger.js';
 import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
+import { Monster } from '../rom/monster.js';
 
 const [] = [hex]; // generally useful
 
@@ -105,6 +106,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   addMezameTrigger(rom);
   normalizeSwords(rom, flags);
 
+  fixMonsterTerrain(rom);
   fixCrystalis(rom);
   fixOpelStatue(rom);
   fixCoinSprites(rom);
@@ -1017,6 +1019,16 @@ function noBowMode(rom: Rom): void {
 // For now this just fixes the shot to be all elements instead of none.
 function fixCrystalis(rom: Rom) {
   rom.objects[0x33].elements = 0xf;
+}
+
+// Tomatos (and others) shouldn't be able to cross water or roll up ramps.
+function fixMonsterTerrain(rom: Rom) {
+  for (const obj of rom.objects) {
+    if (!(obj instanceof Monster)) continue;
+    if (obj.isProjectile() || obj.isBoss() || obj.isFlyer()) continue;
+    if (obj === rom.objects.mimic) continue;
+    obj.terrainSusceptibility |= 0x3;
+  }
 }
 
 function replace<T>(array: T[], old: T, replacement: T) {

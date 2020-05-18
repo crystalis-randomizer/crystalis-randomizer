@@ -109,12 +109,6 @@ export abstract class TwoStageCaveShuffle extends CaveShuffle {
     return OK;
   }
 
-  addAllFixed(a: A) {
-    for (let i = 0; i < a.grid.data.length; i++) {
-      if (a.grid.data[i]) a.fixed.add(a.grid.coord(i as GridIndex));
-    }
-  }
-
   getValidEarlyScreens(): Set<number> {
     if (!this.validEarlyScreens) {
       const valid = new Set<number>();

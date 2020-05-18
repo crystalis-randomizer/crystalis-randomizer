@@ -182,7 +182,11 @@ export class Metatileset implements Iterable<Metascreen> {
   }
 
   isBannedVertical(above: Metascreen, below: Metascreen): boolean {
-    return this.cache.bannedVertical.has(above.uid << 16 | below.uid);
+    return this.cache.bannedNeighbors[0].has(above.uid << 16 | below.uid);
+  }
+
+  isBannedHorizontal(left: Metascreen, right: Metascreen): boolean {
+    return this.cache.bannedNeighbors[1].has(left.uid << 16 | right.uid);
   }
 
   /**
@@ -231,7 +235,8 @@ class NeighborCache {
   readonly exits = new DefaultMap<ConnectionType, Metascreen[]>(() => []);
   readonly empty: Metascreen;
   readonly tiles = new DefaultMap<string, Metascreen[]>(() => []);
-  readonly bannedVertical = new Set<number>(); // above << 16 | below
+  // above << 16 | below, left << 16 | right
+  readonly bannedNeighbors = [new Set<number>(), new Set<number>()];
   // private readonly toggles = new DefaultMap<UidDir, Set<Uid>>(() => new Set);
 
   constructor(readonly tileset: Metatileset) {
@@ -258,34 +263,37 @@ class NeighborCache {
       }
       // Check for banned verticals
       if (s.hasFeature('spikes') || s.hasFeature('ramp') ||
-          s.hasFeature('overpass') || s.isEmpty()) {
-        this.banVerticalDeadEnd(s);
+          s.hasFeature('overpass') || s.hasFeature('pit') ||
+          s.isEmpty()) {
+        this.banDeadEndNeighbor(s);
       }
       // Add a bunch of fixed bans
       const ms = tileset.rom.metascreens;
-      this.banVerticalDeadEnd(ms.branchNWE_wall);
-      this.banVertical(ms.deadEndS_stairs, ms.deadEndN_stairs);
-      this.banVertical(ms.deadEndNS_stairs, ms.deadEndN_stairs);
-      this.banVertical(ms.deadEndS_stairs, ms.deadEndNS_stairs);
-      this.banVertical(ms.deadEndNS_stairs, ms.deadEndNS_stairs);
+      this.banDeadEndNeighbor(ms.branchNWE_wall, 1);
+      this.banNeighbor(ms.deadEndS_stairs, ms.deadEndN_stairs, 2);
+      this.banNeighbor(ms.deadEndNS_stairs, ms.deadEndN_stairs, 2);
+      this.banNeighbor(ms.deadEndS_stairs, ms.deadEndNS_stairs, 2);
+      this.banNeighbor(ms.deadEndNS_stairs, ms.deadEndNS_stairs, 2);
     }
     this.empty = empty ?? tileset.rom.metascreens.caveEmpty;
   }
 
-  banVerticalDeadEnd(s: Metascreen) {
+  banDeadEndNeighbor(s: Metascreen, dirs = 15) {
     for (const t of this.tileset) {
       if (!t.hasFeature('deadend')) continue;
-      if (s.data.edges?.[2] !== ' ' && t.data.edges?.[0] !== ' ') {
-        this.banVertical(s, t);
-      }
-      if (t.data.edges?.[2] !== ' ' && s.data.edges?.[0] !== ' ') {
-        this.banVertical(t, s);
+      for (let dir = 0; dir < 4; dir++) {
+        const mask = 1 << dir;
+        if (!(dirs & mask)) continue;
+        if (s.data.edges?.[dir] !== ' ' && t.data.edges?.[dir ^ 2] !== ' ') {
+          this.banNeighbor(s, t, dir);
+        }
       }
     }
   }
 
-  banVertical(above: Metascreen, below: Metascreen) {
-    this.bannedVertical.add(above.uid << 16 | below.uid);
+  banNeighbor(s: Metascreen, t: Metascreen, dir: number) {
+    this.bannedNeighbors[dir & 1]
+        .add((dir & 2 ? s : t).uid << 16 | (dir & 2 ? t : s).uid);
   }
 
   // TODO - what to do with borders?!? Can we treat them like a screen?

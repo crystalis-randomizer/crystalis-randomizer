@@ -191,4 +191,10 @@ export abstract class MazeShuffle {
     }
     return true;
   }
+
+  addAllFixed(a: Attempt) {
+    for (let i = 0; i < a.grid.data.length; i++) {
+      if (a.grid.data[i]) a.fixed.add(a.grid.coord(i as GridIndex));
+    }
+  }
 }

@@ -1121,6 +1121,12 @@ if (a.grid.show().length > 100000) debugger;
             return {ok: false, fail: `bad vertical neighbor: ${above} ${scr}`};
           }
         }
+        if (x) {
+          const left = meta.get(y << 4 | (x - 1));
+          if (this.orig.tileset.isBannedHorizontal(left, scr)) {
+            return {ok: false, fail: `bad horizontal neighbor: ${left} ${scr}`};
+          }
+        }
       }
     }
     if (allEmpty) return {ok: false, fail: `all screens empty`};

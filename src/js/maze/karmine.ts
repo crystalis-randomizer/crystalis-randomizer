@@ -41,9 +41,7 @@ export class KarmineUpstairsShuffle extends CaveShuffle {
     a.count = 3;
     const result = this.insertPattern(a, pattern, {top: 1, bottom: 1});
     if (!result.ok) return result;
-    for (let i = 0; i < a.grid.data.length; i++) {
-      if (a.grid.data[i]) a.fixed.add(a.grid.coord(i as GridIndex));
-    }
+    this.addAllFixed(a);
     return OK;
   }
 
@@ -126,7 +124,6 @@ export class KarmineMainShuffle extends CaveShuffle {
     const delta = (outY << 4 | outX) - origin;
     const stairRight = (stair & 0xf) - left < width / 2;
     stair += delta;
-    STAIRS.set(this.orig.rom.locations.GoaFortress_Karmine5, stair);
     for (let i = 0; i < bridges.length; i++) {
       bridges[i] += delta;
     }
@@ -152,9 +149,11 @@ export class KarmineMainShuffle extends CaveShuffle {
       }
       if (!found) throw new Error(`Could not insert stair`);
     }
-    a.fixed.add(this.posToGrid(stair, 0x808));
-    a.fixed.add(this.posToGrid(bridges[0], 0x808));
-    a.fixed.add(this.posToGrid(bridges[1], 0x808));
+    STAIRS.set(this.orig.rom.locations.GoaFortress_Karmine5, stair);
+    // a.fixed.add(this.posToGrid(stair, 0x808));
+    // a.fixed.add(this.posToGrid(bridges[0], 0x808));
+    // a.fixed.add(this.posToGrid(bridges[1], 0x808));
+    this.addAllFixed(a);
     a.count = 3;
 
     const dx = stairRight ? 1 : -1;

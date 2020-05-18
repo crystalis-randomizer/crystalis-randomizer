@@ -1108,12 +1108,22 @@ if (a.grid.show().length > 100000) debugger;
 
     }
 
+    let allEmpty = true;
     const meta = new Metalocation(this.params.id, this.orig.tileset, a.h, a.w);
     for (let y = 0; y < a.h; y++) {
       for (let x = 0; x < a.w; x++) {
-        meta.set(y << 4 | x, screens[y * a.w + x]);
+        const scr = screens[y * a.w + x];
+        meta.set(y << 4 | x, scr);
+        if (!scr.isEmpty()) allEmpty = false;
+        if (y) {
+          const above = meta.get((y - 1) << 4 | x);
+          if (this.orig.tileset.isBannedVertical(above, scr)) {
+            return {ok: false, fail: `bad vertical neighbor: ${above} ${scr}`};
+          }
+        }
       }
     }
+    if (allEmpty) return {ok: false, fail: `all screens empty`};
 
     return {ok: true, value: meta};
   }

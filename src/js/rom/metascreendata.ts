@@ -207,6 +207,7 @@ export const featureMask = {
   'overpass': 0x200,
   'underpass': 0x400,
   'whirlpool': 0x800,
+  'deadend': 0x1000,
 
   // Not actually listed as features, but added separately - we could add others
   // (total of 8 available...?)

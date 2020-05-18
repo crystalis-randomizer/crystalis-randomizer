@@ -181,6 +181,10 @@ export class Metatileset implements Iterable<Metascreen> {
     return out;
   }
 
+  isBannedVertical(above: Metascreen, below: Metascreen): boolean {
+    return this.cache.bannedVertical.has(above.uid << 16 | below.uid);
+  }
+
   /**
    * Invalidate the neighbor cache.  This is necessary any time the
    * screens change.
@@ -227,6 +231,7 @@ class NeighborCache {
   readonly exits = new DefaultMap<ConnectionType, Metascreen[]>(() => []);
   readonly empty: Metascreen;
   readonly tiles = new DefaultMap<string, Metascreen[]>(() => []);
+  readonly bannedVertical = new Set<number>(); // above << 16 | below
   // private readonly toggles = new DefaultMap<UidDir, Set<Uid>>(() => new Set);
 
   constructor(readonly tileset: Metatileset) {
@@ -251,8 +256,36 @@ class NeighborCache {
       for (const tile of tiles ?? []) {
         this.tiles.get(tile.replace(/\|/g, '')).push(s);
       }
+      // Check for banned verticals
+      if (s.hasFeature('spikes') || s.hasFeature('ramp') ||
+          s.hasFeature('overpass') || s.isEmpty()) {
+        this.banVerticalDeadEnd(s);
+      }
+      // Add a bunch of fixed bans
+      const ms = tileset.rom.metascreens;
+      this.banVerticalDeadEnd(ms.branchNWE_wall);
+      this.banVertical(ms.deadEndS_stairs, ms.deadEndN_stairs);
+      this.banVertical(ms.deadEndNS_stairs, ms.deadEndN_stairs);
+      this.banVertical(ms.deadEndS_stairs, ms.deadEndNS_stairs);
+      this.banVertical(ms.deadEndNS_stairs, ms.deadEndNS_stairs);
     }
     this.empty = empty ?? tileset.rom.metascreens.caveEmpty;
+  }
+
+  banVerticalDeadEnd(s: Metascreen) {
+    for (const t of this.tileset) {
+      if (!t.hasFeature('deadend')) continue;
+      if (s.data.edges?.[2] !== ' ' && t.data.edges?.[0] !== ' ') {
+        this.banVertical(s, t);
+      }
+      if (t.data.edges?.[2] !== ' ' && s.data.edges?.[0] !== ' ') {
+        this.banVertical(t, s);
+      }
+    }
+  }
+
+  banVertical(above: Metascreen, below: Metascreen) {
+    this.bannedVertical.add(above.uid << 16 | below.uid);
   }
 
   // TODO - what to do with borders?!? Can we treat them like a screen?

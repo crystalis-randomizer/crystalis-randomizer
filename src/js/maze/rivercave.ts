@@ -323,6 +323,26 @@ export class OasisEntranceCaveShuffle extends CaveShuffle {
     //     let 
     // }
   }
+
+  refineMetascreens(a: A, meta: Metalocation): Result<void> {
+    const result = super.refineMetascreens(a, meta);
+    if (!result.ok) return result;
+    // Require that flight blocks at least one stair.
+    function accessible(map: Map<number, Set<number>>): number {
+      const stairParts =
+          [...new Set(map.values())].filter(set => {
+            for (const stair of set) {
+              if (meta.exitType(stair)?.startsWith('stair')) return true;
+            }
+            return false;
+          });
+      return stairParts.length;
+    }
+    const parts1 = accessible(meta.traverse());
+    const parts2 = accessible(meta.traverse({flight: true}));
+    if (parts1 === parts2) return {ok: false, fail: `flight not required`};
+    return OK;
+  }
 }
 
 const DGRID = [-0x800, -8, 0x800, 8];

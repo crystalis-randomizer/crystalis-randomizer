@@ -132,10 +132,25 @@ export class KarmineMainShuffle extends CaveShuffle {
     }
     const stairTile =
         stairDown ? '    <  c ' : stairRight ? '    <c   ' : '   c<    ';
-    if (!this.insertTile(a, stair, stairTile) ||
-        !this.insertTile(a, bridges[0], '   cbc   ') ||
+    if (!this.insertTile(a, bridges[0], '   cbc   ') ||
         !this.insertTile(a, bridges[1], '   cbc   ')) {
-      throw new Error('Could not insert tile');
+      throw new Error(`Could not insert bridge tile`);
+    }
+    // Problem: it's possible the stair doesn't fit.  If that's the case,
+    // give up and try just moving it somewhere else.  Ideally we'd instead
+    // just initiate a retry on the dependent level, but that structure
+    // is not yet in place...
+    if (!this.insertTile(a, stair, stairTile)) {
+      const deltas = [-1, 1, 16, -16, 15, 17, -15, -17];
+      let found = false;
+      for (const ds of this.random.ishuffle(deltas)) {
+        if (this.insertTile(a, stair + ds, stairTile)) {
+          stair += ds;
+          found = true;
+          break;
+        }
+      }
+      if (!found) throw new Error(`Could not insert stair`);
     }
     a.fixed.add(this.posToGrid(stair, 0x808));
     a.fixed.add(this.posToGrid(bridges[0], 0x808));

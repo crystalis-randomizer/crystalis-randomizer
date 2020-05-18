@@ -417,6 +417,18 @@ export class Messages {
     }
   }
 
+  alloc(): Message {
+    const used = this.uses();
+    for (const part of this.parts) {
+      for (const message of part) {
+        if (!used.has(message.mid)) {
+          return message;
+        }
+      }
+    }
+    throw new Error(`could not find an unused message id`);
+  }
+
   // Returns a map from message id (mid) to known usages.
   uses(): Map<string, Set<string>> {
     const out = new Map<string, Set<string>>();

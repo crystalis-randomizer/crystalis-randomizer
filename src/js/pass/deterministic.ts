@@ -661,7 +661,8 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
       Crypt_Draygon2,
       Joel_Shed,
       MtSabreNorth_SummitCave, MtSabreWest_Upper,
-      PortoaPalace_ThroneRoom, Portoa_AsinaRoom, Portoa_FortuneTeller,
+      PortoaPalace_ThroneRoom, Portoa_PalaceEntrance,
+      Portoa_AsinaRoom, Portoa_FortuneTeller,
       Shyron_Temple, StomHouse, Swan_DanceHall, Swan_Tavern,
       WindmillCave, WaterfallCave4, WaterfallValleyNorth,
       ZebuCave, ZombieTown_HouseBasement,
@@ -829,12 +830,32 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // Stom ($60): don't despawn on getting barrier
   Stom.spawnConditions.delete(StomHouse.id); // remove 051 NOT learned barrier
 
-  // Asina ($62) in back room ($e1) gives flute of lime
-  Asina.data[1] = rom.items.FluteOfLime.id;
-  Asina.dialog(Portoa_AsinaRoom)[0].message.action = 0x11;
-  Asina.dialog(Portoa_AsinaRoom)[2].message.action = 0x11;
   // Prevent despawn from back room after calming sea (~08f or ~283)
   remove(Asina.spawns(Portoa_AsinaRoom), ~flags.CalmedAngrySea.id);
+
+  // Add an extra NPC in Portoa throne room to give Flute of Lime if
+  // the queen is not there.
+  // I wanted to make this be the queen's lady-in-waiting, but it doesn't
+  // really work with the patterns as they are.  We could switch the 4a to
+  // instead be 49 and then the guard becomes the lady (we'd want to switch
+  // to the pink palette as well).  But that doesn't really buy us much.
+  const guard2 = rom.npcs[0x34];
+  guard2.spawnConditions.set(PortoaPalace_ThroneRoom.id,
+                             [flags.MesiaRecording.id,
+                              ~flags.PortoaQueen.id]);
+  guard2.localDialogs.set(Portoa_PalaceEntrance.id,
+                          guard2.localDialogs.get(-1)!);
+  guard2.data[0] = rom.items.FluteOfLime.id;
+  const guard2Message = rom.messages.alloc();
+  guard2Message.text = "The queen left this for you.";
+  guard2.localDialogs.set(PortoaPalace_ThroneRoom.id, [
+    LocalDialog.of(~flags.PortoaQueen.id, [guard2Message.part,
+                                           guard2Message.id, 0x03]),
+    LocalDialog.of(~0, [0x0a, 0x0e]), // "Be careful" (or 14:04 "Good luck.")
+  ]);
+  PortoaPalace_ThroneRoom.spawns.push(Spawn.of({yt: 3, xt: 12, type: 1,
+                                                patternBank: 1,
+                                                id: guard2.id}));
 
   // Kensu in cabin ($68 @ $61) needs to be available even after visiting Joel.
   // Change him to just disappear after setting the rideable dolphin flag (09b),

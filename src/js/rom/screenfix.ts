@@ -171,31 +171,20 @@ export function fixTilesets(rom: Rom) {
   //sea.getTile(0x0a).setTiles([0x91, 0x91, 0x7d, 0x7d]).setAttrs(2);
   $.boundaryN_cave.screen.set2d(0x38, [[null, 0x00, 0x00, null],
                                        [null, 0x0a, 0x0a, null],
-                                       [null, 0x90, 0x90, null],
+                                       [null, 0xf7, 0xf7, null],
                                        [0xf8, 0xf8, 0xf8, 0xf8]]);
   $.cornerSE_cave.screen.set2d(0x49, [[null, 0x00, 0x00],
                                       [null, 0x0a, 0x0a],
-                                      [null, 0x90, 0x90],
+                                      [null, 0xf7, 0xf7],
                                       [0xf8, 0xf7, 0xf7],
                                       [null, 0xfd, 0xf7]]);
   $.cornerSE_cave.screen.set2d(0x4a, [[0x00, 0x00],
                                       [0x0a, 0x0a],
-                                      [0x90, 0x90],
+                                      [0xf7, 0xf7],
                                       [0xf8, 0xf7],
                                       [0x80, 0xfd],
                                       [0x80, 0xff],
                                       [0xfa, null]]);
-
-  // TODO - this adds a little foam to the bottom of the cave, at the cost of
-  // one metatile.  To revert, just change the 0x90's above back to 0xf7's.
-  // NOTE: we can change the row beneath 0x0a to 0x90 and set its graphics
-  // to something nicer.
-  sea.getTile(0x90).setTiles([0x91, 0x91,
-                              0x7d, 0x7d]).setAttrs(2).setEffects(2);
-  river.getTile(0x90).copyFrom(0xf7);
-  grass.getTile(0x90).copyFrom(0xf7);
-  desert.getTile(0x90).copyFrom(0xf7);
-
 
      // , [0xf8, 0xf8], [null, 0xfd]]);
   // sea.screens.add($.boundaryW_cave);

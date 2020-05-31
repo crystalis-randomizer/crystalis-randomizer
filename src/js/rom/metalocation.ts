@@ -143,7 +143,9 @@ export class Metalocation {
         // Handle seamless exits on screen edges: mark _just_ the neighbor
         // screen as reachable (including dead center tile for match).
         const y = exit.tile >>> 4;
-        if (y === 0 || y === 0xe) {
+        if (y === 0) {
+          reachable.set((exit.screen - 16) << 8 | 0x88, 1);
+        } else if (y === 0xe) {
           reachable.set(exit.screen << 8 | 0x88, 1);
         }
       }
@@ -215,11 +217,15 @@ export class Metalocation {
     for (const exit of location.exits) {
       if (exit.dest === 0xff) continue;
       let srcPos = exit.screen;
+      let tile = exit.tile;
       // Kensu arena exit is declared at y=f
-      if (exit.isSeamless() && !(exit.yt & 0x0f)) srcPos--;
+      if (exit.isSeamless() && !(exit.yt & 0xf)) {
+        srcPos -= 16;
+        tile |= 0xf0;
+      }
       if (!reachableScreens.has(srcPos)) continue;
       const srcScreen = screens[srcPos];
-      const srcExit = srcScreen.findExitType(exit.tile, height === 1,
+      const srcExit = srcScreen.findExitType(tile, height === 1,
                                              !!(exit.entrance & 0x20));
       const srcType = srcExit?.type;
       if (!srcType) {

@@ -339,7 +339,7 @@ class Routing extends FlagSection {
            to work: instead, the Shell Flute will always work, and Kensu will
            spawn after the Fog Lamp is turned in and will give a key item
            check.  This flag restores the vanilla interaction where healing
-           and shell flute are required.`,
+           and shell flute are required, and Kensu no longer drops an item.`,
   });
 }
 

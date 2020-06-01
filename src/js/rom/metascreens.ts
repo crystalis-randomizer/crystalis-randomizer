@@ -2482,7 +2482,7 @@ export class Metascreens {
       | ║ |`,
     tilesets: {dolphinCave: {}},
     feature: ['river'],
-    //edges: '  rr',
+    edges: '  rr', // TODO - this is not specific enough to randomize with
     //connect: '9d:bf',  // : means water - flight needed
     exits: [bottomEdge({left: 5})],
   });
@@ -2494,7 +2494,7 @@ export class Metascreens {
       |█║ |`,
     tilesets: {dolphinCave: {}},
     feature: ['river'],
-    //edges: ' rr ',
+    edges: ' rr ', // TODO - this is not specific enough to randomize with
   });
   readonly channelHallNS = this.metascreen({
     id: 0xa1,
@@ -2505,6 +2505,7 @@ export class Metascreens {
     tilesets: {dolphinCave: {}},
     feature: ['river', 'bridge'],
     wall: 0x8b,
+    edges: 'r r ', // TODO - this is not specific enough to randomize with
   });
   readonly channelEntranceSE = this.metascreen({
     id: 0xa2,
@@ -2519,6 +2520,7 @@ export class Metascreens {
     // taller at the top, so there's no match!
     exits: [bottomEdge({left: 2})],
     wall: 0x7c,
+    edges: '  rr', // TODO - this is not specific enough to randomize with
   });
   readonly channelCross = this.metascreen({
     id: 0xa3,
@@ -2530,6 +2532,7 @@ export class Metascreens {
     feature: ['river'],
     // NOTE: two bottom edges on the same screen - call one a door
     exits: [bottomEdge({left: 3}), bottomEdge({left: 0xb, type: 'door'})],
+    edges: '  rr', // TODO - this is not specific enough to randomize with
   });
   readonly channelDoor = this.metascreen({
     id: 0xa4,
@@ -2541,6 +2544,7 @@ export class Metascreens {
     feature: ['river', 'bridge'],
     exits: [door(0x38)],
     wall: 0x73,
+    edges: ' r  ', // TODO - this is not specific enough to randomize with
   });
   readonly mountainFloatingIsland = this.metascreen({
     id: 0xa5,

@@ -626,7 +626,11 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
         !l.isShop() &&
         // don't warp into tower
         (l.id & 0xf8) !== 0x58 &&
+        // don't warp to either side of Draygon 2
+        l !== rom.locations.Crypt_Draygon2 &&
+        l !== rom.locations.Crypt_Teleporter &&
         // don't warp into mesia shrine because of queen logic
+        // (and because it's annoying)
         l !== rom.locations.MesiaShrine &&
         // don't warp into rage because it's just annoying
         l !== rom.locations.LimeTreeLake) {

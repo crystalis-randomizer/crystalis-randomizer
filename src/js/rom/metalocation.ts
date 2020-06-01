@@ -1174,6 +1174,7 @@ export class Metalocation {
       if (!seamlessPos.has(right) && (scr.data.edges?.[3] ?? ' ') !== ' ') {
         uf.union([pos, right]);
       }
+      uf.union([pos]);
     }
     const reachableMap = uf.map();
     const reachable = new Set<Pos>();

@@ -272,9 +272,14 @@ export class KarmineKensuShuffle extends CaveShuffle {
     if (!result.ok) return result;
     const meta = result.value;
     const arena = this.findArena(meta);
-    // Move the neighbor
+    // Move the neighbors (including kitty corner)
     const main = this.orig.rom.locations.GoaFortress_Karmine5.meta;
-    meta.set(arena + 0x10, main.get(arena + 0x10));
+    meta.set(arena + 0x0f,
+             this.orig.tileset.unreachableVariant(main.get(arena + 0x0f)));
+    meta.set(arena + 0x10,
+             this.orig.tileset.unreachableVariant(main.get(arena + 0x10)));
+    meta.set(arena + 0x11,
+             this.orig.tileset.unreachableVariant(main.get(arena + 0x11)));
     return result;
   }
 

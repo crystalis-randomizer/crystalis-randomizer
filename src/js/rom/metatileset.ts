@@ -181,6 +181,13 @@ export class Metatileset implements Iterable<Metascreen> {
     return out;
   }
 
+  unreachableVariant(screen: Metascreen): Metascreen {
+    for (const s of this) {
+      if (s.sid === screen.sid && s.isEmpty()) return s;
+    }
+    return screen;
+  }
+
   isBannedVertical(above: Metascreen, below: Metascreen): boolean {
     return this.cache.bannedNeighbors[0].has(above.uid << 16 | below.uid);
   }

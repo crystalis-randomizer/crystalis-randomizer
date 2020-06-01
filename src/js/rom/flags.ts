@@ -311,9 +311,12 @@ export class Flags {
   WokeKensuInLighthouse = movable(0x0a4, TRACK);
   // TODO: this may not be obsolete if there's no item here?
   0x0a5 = obsolete(0x131); // check: alarm flute / zebu student
-  0x0a6 = dialogProgression('Oak elder 1');
+  // NOTE: mark the oak elder progression as assumed false because otherwise
+  // if they're ignored the logic thinks the elder's item is free (if these
+  // were tracked, we'd realize it's conditional on already having the item).
+  0x0a6 = dialogProgression('Oak elder 1', FALSE);
   0x0a7 = dialogToggle('Swan dancer');
-  0x0a8 = dialogProgression('Oak elder 2');
+  0x0a8 = dialogProgression('Oak elder 2', FALSE);
   TalkedToLeafRabbit = movable(0x0a9, TRACK);
   0x0aa = obsolete(0x11d); // chest: medical herb
   0x0ab = obsolete(0x150); // chest: medical herb

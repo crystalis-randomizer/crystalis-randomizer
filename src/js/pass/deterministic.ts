@@ -742,10 +742,10 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // Oak elder ($1d) ~ sword of fire redundant flag
   //oakElderDialog[4].flags = [];
   // Make sure that we try to give the item from *all* post-insect dialogs
-  OakElder.dialog()[0].message.action = 0x03;
-  OakElder.dialog()[1].message.action = 0x03;
-  OakElder.dialog()[2].message.action = 0x03;
-  OakElder.dialog()[3].message.action = 0x03;
+  for (let i = 0; i < 4; i++) {
+    const dlg = OakElder.dialog()[i];
+    if (dlg.condition !== rom.flags.OakElder.id) dlg.message.action = 0x03;
+  }
 
   // Oak mother ($1e) ~ insect flute redundant flag
   // TODO - rearrange these flags a bit (maybe ~045, ~0a0 ~041 - so reverse)

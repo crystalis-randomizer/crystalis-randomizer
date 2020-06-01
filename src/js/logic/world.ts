@@ -906,8 +906,9 @@ export class World {
     // Iterate over the global dialogs - do nothing if we can't pass them.
     for (const d of npc.globalDialogs) {
       const f = this.flag(~d.condition);
-      if (!f?.logic.track) continue;
-      conds.push(f.id as Condition);
+      const fc = this.flag(d.condition);
+      if (f?.logic.assumeFalse || fc?.logic.assumeTrue) return;
+      if (f?.logic.track) conds.push(f.id as Condition);
     }
 
     // Iterate over the appropriate local dialogs
@@ -917,12 +918,15 @@ export class World {
       // Compute the condition 'r' for this message.
       const r = [...conds];
       const f0 = this.flag(d.condition);
-      if (f0?.logic.track) {
-        r.push(f0.id as Condition);
-      }
-      this.processDialog(hitbox, npc, r, d);
-      // Add any new conditions to 'conds' to get beyond this message.
       const f1 = this.flag(~d.condition);
+      if (f0?.logic.track) r.push(f0.id as Condition);
+      if (!f0?.logic.assumeFalse && !f1?.logic.assumeTrue) {
+        // Only process this dialog if it's possible to pass the condition.
+        this.processDialog(hitbox, npc, r, d);
+      }
+      // Check if we can never actually get past this dialog.
+      if (f0?.logic.assumeTrue || f1?.logic.assumeFalse) break;
+      // Add any new conditions to 'conds' to get beyond this message.
       if (f1?.logic.track) {
         conds.push(f1.id as Condition);
       }

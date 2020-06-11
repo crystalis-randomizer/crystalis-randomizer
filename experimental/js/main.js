@@ -224,7 +224,7 @@ const shuffleRom = async (seed) => {
     throw err;
   }
   if (crc < 0) {
-    document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
+    document.getElementById('checksum').textContent = `SHUFFLE FAILED! ${crc}`;
     return [null, null];
   }
   done = true;

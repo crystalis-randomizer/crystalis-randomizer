@@ -1,41 +1,36 @@
-import { Grid, GridCoord, GridIndex, E, S } from './grid.js';
+import { GridCoord, GridIndex, E, S } from './grid.js';
 import { seq, hex } from '../rom/util.js';
 import { Metascreen } from '../rom/metascreen.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
-import { MazeShuffle, Attempt, Survey, Result, OK } from '../maze/maze.js';
+import { AbstractMazeShuffle, OK, Result, Survey } from '../maze/maze.js';
 import { UnionFind } from '../unionfind.js';
 import { DefaultMap } from '../util.js';
 
 const [] = [hex];
 
-type A = CaveShuffleAttempt;
+export class CaveShuffle extends AbstractMazeShuffle {
 
-export class CaveShuffleAttempt implements Attempt {
-  readonly grid: Grid<string>;
-  readonly fixed = new Set<GridCoord>();
-
-  // Current size and number of walls/bridges.
-  rivers = 0;
-  wides = 0;
-  count = 0;
-  walls = 0;
-  bridges = 0;
-
-  constructor(readonly h: number, readonly w: number,
-              readonly size: number) {
-    this.grid = new Grid(h, w);
-    this.grid.data.fill('');
-  }
-}
-
-export class CaveShuffle extends MazeShuffle {
-
+  // Shuffle configuration.
   maxPartitions = 1;
   minSpikes = 2;
   maxSpikes = 5;
   looseRefine = false;
   addBlocks = true;
   private _requirePitDestination = false;
+
+  // Extra attempt state.
+  rivers = 0;
+  wides = 0;
+  walls = 0;
+  bridges = 0;
+
+  reset() {
+    super.reset();
+    this.rivers = 0;
+    this.wides = 0;
+    this.walls = 0;
+    this.bridges = 0;
+  }
 
   requirePitDestination(): this {
     this._requirePitDestination = true;
@@ -138,46 +133,45 @@ export class CaveShuffle extends MazeShuffle {
     return survey;
   }
 
-  build(h = this.pickHeight(), w = this.pickWidth(),
-        size = this.pickSize()): Result<Metalocation> {
+  build(): Result<void> {
     this.init();
     let result: Result<void>;
     //const r = this.random;
-    const a = new CaveShuffleAttempt(h, w, size);
-    if ((result = this.fillGrid(a)), !result.ok) return result;
+    if ((result = this.fillGrid()), !result.ok) return result;
 
     // try to translate to metascreens at this point...
-    if ((result = this.preinfer(a)), !result.ok) return result;
-    const meta = this.inferScreens(a);
+    if ((result = this.preinfer()), !result.ok) return result;
+    const meta = this.inferScreens();
     if (!meta.ok) return meta;
-    if ((result = this.refineMetascreens(a, meta.value)), !result.ok) {
+    if ((result = this.refineMetascreens(meta.value)), !result.ok) {
       //console.error(meta.value.show());
       return result;
     }
-    if ((result = this.checkMetascreens(a, meta.value)), !result.ok) {
+    if ((result = this.checkMetascreens(meta.value)), !result.ok) {
       return result;
     }
     if (this._requirePitDestination &&
         !this.requireEligiblePitDestination(meta.value)) {
       return {ok: false, fail: `no eligible pit destination`};
     }
-    return meta;
+    this.meta = meta.value;
+    return OK;
   }
 
-  fillGrid(a: A): Result<void> {
+  fillGrid(): Result<void> {
     let result: Result<void>;
-    if ((result = this.initialFill(a)), !result.ok) return result;
+    if ((result = this.initialFill()), !result.ok) return result;
     //if (!this.addEarlyFeatures()) return false;
-    if ((result = this.addEdges(a)), !result.ok) return result;
-    if ((result = this.addEarlyFeatures(a)), !result.ok) return result;
+    if ((result = this.addEdges()), !result.ok) return result;
+    if ((result = this.addEarlyFeatures()), !result.ok) return result;
     //console.log(`refine:\n${this.grid.show()}`);
-    if ((result = this.refine(a)), !result.ok) return result;
+    if ((result = this.refine()), !result.ok) return result;
     //console.log(`postrefine:\n${this.grid.show()}`);
-    if (!this.refineEdges(a)) return {ok: false, fail: 'refineEdges'};
-    this.removeSpurs(a);
-    this.removeTightLoops(a);
-    if ((result = this.addLateFeatures(a)), !result.ok) return result;
-    if ((result = this.addStairs(a, ...(this.params.stairs ?? []))),
+    if (!this.refineEdges()) return {ok: false, fail: 'refineEdges'};
+    this.removeSpurs();
+    this.removeTightLoops();
+    if ((result = this.addLateFeatures()), !result.ok) return result;
+    if ((result = this.addStairs(...(this.params.stairs ?? []))),
         !result.ok) return result;
     return OK;
   }
@@ -188,46 +182,46 @@ export class CaveShuffle extends MazeShuffle {
   init() {}
 
   // Initial fill.
-  initialFill(a: A): Result<void> {
-    this.fillCave(a, 'c');
+  initialFill(): Result<void> {
+    this.fillCave('c');
     return OK;
   }
 
-  fillCave(a: A, s: string) {
+  fillCave(s: string) {
     // TODO - move to MazeShuffle.fill?
-    for (let y = 0.5; y < a.h; y++) {
-      for (let x = 0.5; x < a.w; x++) {
-        if (y > 1) a.grid.set2(y - 0.5, x, 'c');
-        if (x > 1) a.grid.set2(y, x - 0.5, 'c');
-        a.grid.set2(y, x, 'c');
+    for (let y = 0.5; y < this.h; y++) {
+      for (let x = 0.5; x < this.w; x++) {
+        if (y > 1) this.grid.set2(y - 0.5, x, s);
+        if (x > 1) this.grid.set2(y, x - 0.5, s);
+        this.grid.set2(y, x, s);
       }
     }
-    a.count = a.h * a.w;
+    this.count = this.h * this.w;
   }
 
   // Add edge and/or stair exits
-  addEdges(a: A): Result<void> {
+  addEdges(): Result<void> {
     //let attempts = 0;
     if (!this.params.edges) return OK;
     for (let dir = 0; dir < 4; dir++) {
       let count = this.params.edges[dir] || 0;
       if (!count) continue;
       const edges =
-          seq(dir & 1 ? a.h : a.w, i => a.grid.border(dir, i));
+          seq(dir & 1 ? this.h : this.w, i => this.grid.border(dir, i));
       for (const edge of this.random.ishuffle(edges)) {
         //console.log(`edge: ${edge.toString(16)} count ${count} dir ${dir}`);
-        if (a.grid.get(edge)) continue;
+        if (this.grid.get(edge)) continue;
         if (dir & 1) {
           if (dir === 1) {
-            if (this.addLeftEdge(a, edge)) count--;
+            if (this.addLeftEdge(edge)) count--;
           } else {
-            if (this.addRightEdge(a, edge)) count--;
+            if (this.addRightEdge(edge)) count--;
           }
         } else {
           if (dir === 0) {
-            if (this.addUpEdge(a, edge)) count--;
+            if (this.addUpEdge(edge)) count--;
           } else {
-            if (this.addDownEdge(a, edge)) count--;
+            if (this.addDownEdge(edge)) count--;
           }
         }
         if (!count) break;
@@ -235,13 +229,13 @@ export class CaveShuffle extends MazeShuffle {
       if (count) {
         return {ok: false, fail: `can't fit all edges shuffling ${this.loc
                                  }\nmissing ${count} ${dir}`};
-        //\n${a.grid.show()}`};
+        //\n${this.grid.show()}`};
       }
     }
     return OK;
   }
 
-  addUpEdge({grid, fixed}: A, edge: GridCoord): boolean {
+ addUpEdge(edge: GridCoord): boolean {
     // Up edges must always be arena screens, so cut off both
     // the E-W edges AND the neighboring screens as well (provided
     // there is not also an exit next to them, since that would be
@@ -254,63 +248,63 @@ export class CaveShuffle extends MazeShuffle {
     const right = below + 8 as GridCoord;
     const right2 = right + 8 as GridCoord;
     const right3 = right2 + 8 as GridCoord;
-    if (grid.isBorder(left)) {
-      if (grid.get(left)) return false;
+    if (this.grid.isBorder(left)) {
+      if (this.grid.get(left)) return false;
     } else {
-      if (grid.get(edge - 16 as GridCoord)) return false;
-      if (grid.isBorder(left3) && grid.get(left3)) return false;
+      if (this.grid.get(edge - 16 as GridCoord)) return false;
+      if (this.grid.isBorder(left3) && this.grid.get(left3)) return false;
     }
-    if (grid.isBorder(right)) {
-      if (grid.get(right)) return false;
+    if (this.grid.isBorder(right)) {
+      if (this.grid.get(right)) return false;
     } else {
-      if (grid.get(edge + 16 as GridCoord)) return false;
-      if (grid.isBorder(right3) && grid.get(right3)) return false;
+      if (this.grid.get(edge + 16 as GridCoord)) return false;
+      if (this.grid.isBorder(right3) && this.grid.get(right3)) return false;
     }
-    fixed.add(edge);
-    grid.set(edge, 'n');
-    grid.set(left, '');
-    grid.set(right, '');
+    this.fixed.add(edge);
+    this.grid.set(edge, 'n');
+    this.grid.set(left, '');
+    this.grid.set(right, '');
     return true;
   }
 
-  addDownEdge({grid, fixed}: A, edge: GridCoord): boolean {
+  addDownEdge(edge: GridCoord): boolean {
     // down edges must have straight N-S screens, so cut off
     // the E-W edges next to them.
     const above = edge - 0x800 as GridCoord;
     const left = above - 8 as GridCoord;
     const right = above + 8 as GridCoord;
-    if (!grid.get(above)) return false;
-    if (grid.isBorder(left) && grid.get(left)) return false;
-    if (grid.isBorder(right) && grid.get(right)) return false;
-    fixed.add(edge);
-    grid.set(edge, 'n');
-    grid.set(left, '');
-    grid.set(right, '');
+    if (!this.grid.get(above)) return false;
+    if (this.grid.isBorder(left) && this.grid.get(left)) return false;
+    if (this.grid.isBorder(right) && this.grid.get(right)) return false;
+    this.fixed.add(edge);
+    this.grid.set(edge, 'n');
+    this.grid.set(left, '');
+    this.grid.set(right, '');
     return true;
   }
 
-  addLeftEdge({grid, fixed}: A, edge: GridCoord): boolean {
+  addLeftEdge(edge: GridCoord): boolean {
     const right = edge + 8 as GridCoord;
     const rightUp = right - 0x800 as GridCoord;
     const rightDown = right + 0x800 as GridCoord;
 //console.log(`addLeft ${hex(edge)} right ${hex(right)}:${this.grid.get(right)} ru ${hex(rightUp)}:${this.grid.isBorder(rightUp)}:${this.grid.get(rightUp)} rd ${hex(rightDown)}:${this.grid.isBorder(rightDown)}:${this.grid.get(rightDown)}`);
-    if (!grid.get(right)) return false;
-    if (grid.isBorder(rightUp) && grid.get(rightUp)) return false;
-    if (grid.isBorder(rightDown) && grid.get(rightDown)) return false;
-    fixed.add(edge);
-    grid.set(edge, 'c');
+    if (!this.grid.get(right)) return false;
+    if (this.grid.isBorder(rightUp) && this.grid.get(rightUp)) return false;
+    if (this.grid.isBorder(rightDown) && this.grid.get(rightDown)) return false;
+    this.fixed.add(edge);
+    this.grid.set(edge, 'c');
     return true;
   }
 
-  addRightEdge({grid, fixed}: A, edge: GridCoord): boolean {
+  addRightEdge(edge: GridCoord): boolean {
     const left = edge - 8 as GridCoord;
     const leftUp = left - 0x800 as GridCoord;
     const leftDown = left + 0x800 as GridCoord;
-    if (!grid.get(left)) return false;
-    if (grid.isBorder(leftUp) && grid.get(leftUp)) return false;
-    if (grid.isBorder(leftDown) && grid.get(leftDown)) return false;
-    fixed.add(edge);
-    grid.set(edge, 'c');
+    if (!this.grid.get(left)) return false;
+    if (this.grid.isBorder(leftUp) && this.grid.get(leftUp)) return false;
+    if (this.grid.isBorder(leftDown) && this.grid.get(leftDown)) return false;
+    this.fixed.add(edge);
+    this.grid.set(edge, 'c');
     return true;
   }
 
@@ -353,43 +347,43 @@ export class CaveShuffle extends MazeShuffle {
   //   return false;
   // }
 
-  addEarlyFeatures(a: A): Result<void> {
-    if (!this.addSpikes(a, this.params.features?.spike ?? 0)) {
-      return {ok: false, fail: `add spikes\n${a.grid.show()}`};
+  addEarlyFeatures(): Result<void> {
+    if (!this.addSpikes(this.params.features?.spike ?? 0)) {
+      return {ok: false, fail: `add spikes\n${this.grid.show()}`};
     }
-    if (!this.addOverpasses(a, this.params.features?.over ?? 0)) {
+    if (!this.addOverpasses(this.params.features?.over ?? 0)) {
       return {ok: false, fail: 'add overpasses'};
     }
     return OK;
   }
 
-  addLateFeatures(a: A): Result<void> {
-    if (!this.addArenas(a, this.params.features?.arena ?? 0)) {
+  addLateFeatures(): Result<void> {
+    if (!this.addArenas(this.params.features?.arena ?? 0)) {
       return {ok: false, fail: 'addArenas'};
     }
-    if (!this.addUnderpasses(a, this.params.features?.under ?? 0)) {
+    if (!this.addUnderpasses(this.params.features?.under ?? 0)) {
       return {ok: false, fail: 'addUnderpasses'};
     }
-    if (!this.addPits(a, this.params.features?.pit ?? 0)) {
+    if (!this.addPits(this.params.features?.pit ?? 0)) {
       return {ok: false, fail: 'addPits'};
     }
-    if (!this.addRamps(a, this.params.features?.ramp ?? 0)) {
+    if (!this.addRamps(this.params.features?.ramp ?? 0)) {
       return {ok: false, fail: 'addRamps'};
     }
     return OK;
   }
 
-  addArenas(a: A, arenas: number): boolean {
+  addArenas(arenas: number): boolean {
     if (!arenas) return true;
-    const g = a.grid;
-    for (const c of this.random.ishuffle(a.grid.screens())) {
+    const g = this.grid;
+    for (const c of this.random.ishuffle(this.grid.screens())) {
       const middle = (c | 0x808) as GridCoord;
-      if (!this.isEligibleArena(a, middle)) continue;
-      const tile = this.extract(a.grid, c);
+      if (!this.isEligibleArena(middle)) continue;
+      const tile = this.extract(this.grid, c);
       const arenaTile = tile.substring(0, 4) + 'a' + tile.substring(5);
       const options = this.orig.tileset.getMetascreensFromTileString(arenaTile);
       if (!options.length) continue;
-      a.fixed.add(middle);
+      this.fixed.add(middle);
       g.set(middle, 'a');
       // g.set(left, '');
       // g.set(left2, '');
@@ -402,8 +396,8 @@ export class CaveShuffle extends MazeShuffle {
     return false;
   }
 
-  isEligibleArena(a: A, middle: GridCoord): boolean {
-    const g = a.grid;
+  isEligibleArena(middle: GridCoord): boolean {
+    const g = this.grid;
     const left = (middle - 8) as GridCoord;
     const left2 = (left - 8) as GridCoord;
     const right = (middle + 8) as GridCoord;
@@ -415,59 +409,59 @@ export class CaveShuffle extends MazeShuffle {
     return true;
   }
 
-  addUnderpasses(a: A, under: number): boolean {
+  addUnderpasses(under: number): boolean {
     // Only add horizontal '   |cbc|   ', not ' c | b | c '.  Could possibly
     // use 'b' and 'B' instead?
-    return this.addStraightScreenLate(a, under, 'b', 0x800);
+    return this.addStraightScreenLate(under, 'b', 0x800);
   }
 
-  addOverpasses(a: A, over: number): boolean {
+  addOverpasses(over: number): boolean {
     let attempts = 0;
     while (over) {
-      const y = this.random.nextInt(a.h - 2) + 1;
-      const x = this.random.nextInt(a.w - 2) + 1;
+      const y = this.random.nextInt(this.h - 2) + 1;
+      const x = this.random.nextInt(this.w - 2) + 1;
       const c = (y << 12 | x << 4 | 0x808) as GridCoord;
-      if (a.grid.get(c) !== 'c') {
+      if (this.grid.get(c) !== 'c') {
         if (++attempts > 10) throw new Error('Bad attempts');
         continue;
       }
-      a.grid.set(c, 'b');
-      a.fixed.add(c);
-      a.grid.set(c - 8 as GridCoord, '');
-      a.grid.set(c + 8 as GridCoord, '');
+      this.grid.set(c, 'b');
+      this.fixed.add(c);
+      this.grid.set(c - 8 as GridCoord, '');
+      this.grid.set(c + 8 as GridCoord, '');
       over--;
     }
     return true;
   }
 
-  addPits(a: A, pits: number): boolean {
-    return this.addStraightScreenLate(a, pits, 'p');
+  addPits(pits: number): boolean {
+    return this.addStraightScreenLate(pits, 'p');
   }
 
-  addRamps(a: A, ramps: number): boolean {
-    return this.addStraightScreenLate(a, ramps, '/', 8);
+  addRamps(ramps: number): boolean {
+    return this.addStraightScreenLate(ramps, '/', 8);
   }
 
   /** @param delta GridCoord difference for edges that need to be empty. */
-  addStraightScreenLate(a: A, count: number,
+  addStraightScreenLate(count: number,
                         char: string, delta?: number): boolean {
     if (!count) return true;
-    for (const c of this.random.ishuffle(a.grid.screens())) {
+    for (const c of this.random.ishuffle(this.grid.screens())) {
       const middle = (c | 0x808) as GridCoord;
-      if (a.grid.get(middle) !== 'c') continue;
+      if (this.grid.get(middle) !== 'c') continue;
       if (delta) {
         const side1 = (middle - delta) as GridCoord;
         const side2 = (middle + delta) as GridCoord;
-        if (a.grid.get(side1) || a.grid.get(side2)) continue;
+        if (this.grid.get(side1) || this.grid.get(side2)) continue;
       }
-      const tile = this.extract(a.grid, c);
+      const tile = this.extract(this.grid, c);
       const newTile = tile.substring(0, 4) + char + tile.substring(5);
       const options = this.orig.tileset.getMetascreensFromTileString(newTile);
       if (!options.length) continue;
       // TODO - return false if not on a critical path???
       //      - but POI aren't placed yet.
-      a.fixed.add(middle);
-      a.grid.set(middle, char);
+      this.fixed.add(middle);
+      this.grid.set(middle, char);
       count--;
       if (!count) return true;
     }
@@ -475,7 +469,7 @@ export class CaveShuffle extends MazeShuffle {
     return false;
   }
 
-  addSpikes(a: A, spikes: number): boolean {
+  addSpikes(spikes: number): boolean {
     if (!spikes) return true;
     let attempts = 0;
     while (spikes > 0) {
@@ -484,44 +478,44 @@ export class CaveShuffle extends MazeShuffle {
       // TODO - try to be smarter about spikes
       //  - if total > 2 then use min(total, h*.6, ??) as len
       //  - if len > 2 and w > 3, avoid putting spikes on edge?
-      let len = Math.min(spikes, Math.floor(a.h * 0.6), this.maxSpikes);
+      let len = Math.min(spikes, Math.floor(this.h * 0.6), this.maxSpikes);
       while (len < spikes - 1 && len > this.minSpikes) {
         if (this.random.next() < 0.2) len--;
       }
       //if (len === spikes - 1) len++;
       const x =
-          (len > 2 && a.w > 3) ? this.random.nextInt(a.w - 2) + 1 :
-          this.random.nextInt(a.w);
+          (len > 2 && this.w > 3) ? this.random.nextInt(this.w - 2) + 1 :
+          this.random.nextInt(this.w);
       // const r =
       //     this.random.nextInt(Math.min(this.h - 2, spikes) - this.minSpikes);
       // let len = this.minSpikes + r;
       if (len > spikes - this.minSpikes) {
-        if (len >= a.h - 2) { // && len > this.minSpikes) {
-          len = a.h - 2;
+        if (len >= this.h - 2) { // && len > this.minSpikes) {
+          len = this.h - 2;
         } else {
           len = spikes; // ??? is this even valid ???
         }
       }
-      const y0 = this.random.nextInt(a.h - len - 2) + 1;
+      const y0 = this.random.nextInt(this.h - len - 2) + 1;
       const t0 = y0 << 12 | x << 4 | 0x808;
       const t1 = t0 + ((len - 1) << 12);
       for (let t = t0 - 0x1000; len && t <= t1 + 0x1000; t += 0x800) {
-        if (a.grid.get(t as GridCoord) !== 'c') len = 0;
+        if (this.grid.get(t as GridCoord) !== 'c') len = 0;
       }
       if (!len) continue;
       const cleared = [t0 - 8, t0 + 8, t1 - 8, t1 + 8] as GridCoord[];
-      const orphaned = this.tryClear(a, cleared);
+      const orphaned = this.tryClear(cleared);
       if (!orphaned.length) continue;
       for (const c of orphaned) {
-        a.grid.set(c, '');
+        this.grid.set(c, '');
       }
-      a.fixed.add((t0 - 0x800) as GridCoord);
-      a.fixed.add((t0 - 0x1000) as GridCoord);
-      a.fixed.add((t1 + 0x800) as GridCoord);
-      a.fixed.add((t1 + 0x1000) as GridCoord);
+      this.fixed.add((t0 - 0x800) as GridCoord);
+      this.fixed.add((t0 - 0x1000) as GridCoord);
+      this.fixed.add((t1 + 0x800) as GridCoord);
+      this.fixed.add((t1 + 0x1000) as GridCoord);
       for (let t = t0; t <= t1; t += 0x800) {
-        a.fixed.add(t as GridCoord);
-        a.grid.set(t as GridCoord, 's');
+        this.fixed.add(t as GridCoord);
+        this.grid.set(t as GridCoord, 's');
       }
       spikes -= len;
       attempts = 0;
@@ -541,13 +535,13 @@ export class CaveShuffle extends MazeShuffle {
    * of partitions (usually 1), then returns an empty array to signify
    * that the clear is not allowed.
    */
-  tryClear(a: A, coords: GridCoord[]): GridCoord[] {
+  tryClear(coords: GridCoord[]): GridCoord[] {
     const replace = new Map<GridCoord, string>();
     for (const c of coords) {
-      if (a.fixed.has(c)) return [];
+      if (this.fixed.has(c)) return [];
       replace.set(c, '');
     }
-    const parts = a.grid.partition(replace);
+    const parts = this.grid.partition(replace);
     // Check simple case first - only one partition
     const [first] = parts.values();
     if (first.size === parts.size) { // a single partition
@@ -557,7 +551,7 @@ export class CaveShuffle extends MazeShuffle {
     // see if anything got cut off.
     const connected = new Set<Set<GridCoord>>();
     const allParts = new Set<Set<GridCoord>>(parts.values());
-    for (const fixed of a.fixed) {
+    for (const fixed of this.fixed) {
       connected.add(parts.get(fixed)!);
     }
     if (connected.size > this.maxPartitions) return []; // no good
@@ -569,34 +563,34 @@ export class CaveShuffle extends MazeShuffle {
     return orphaned;
   }
 
-  refine(a: A): Result<void> {
+  refine(): Result<void> {
     let filled = new Set<GridCoord>();
-    for (let i = 0 as GridIndex; i < a.grid.data.length; i++) {
-      if (a.grid.data[i]) filled.add(a.grid.coord(i));
+    for (let i = 0 as GridIndex; i < this.grid.data.length; i++) {
+      if (this.grid.data[i]) filled.add(this.grid.coord(i));
     }
     let attempts = 0;
-    while (a.count > a.size) {
+    while (this.count > this.size) {
       if (attempts++ > 50) throw new Error(`refine failed: attempts`);
-      //console.log(`main: ${this.count} > ${a.size}`);
+      //console.log(`main: ${this.count} > ${this.size}`);
       let removed = 0;
 //if(this.params.id===4){debugger;[...this.random.ishuffle(filled)];}
       for (const coord of this.random.ishuffle([...filled])) {
-        if (a.grid.isBorder(coord) ||
-            !this.canRemove(a.grid.get(coord)) ||
-            a.fixed.has(coord)) {
+        if (this.grid.isBorder(coord) ||
+            !this.canRemove(this.grid.get(coord)) ||
+            this.fixed.has(coord)) {
           continue;
         }
         if (removed > 3) break;
 
-        const parts = a.grid.partition(this.removalMap(a, coord));
+        const parts = this.grid.partition(this.removalMap(coord));
         //console.log(`  coord: ${coord.toString(16)} => ${parts.size}`);
         const [first] = parts.values();
         if (first.size === parts.size && parts.size > 1) { // a single partition
           // ok to remove
           removed++;
           filled.delete(coord);
-          if ((coord & 0x808) === 0x808) a.count--;
-          a.grid.set(coord, '');
+          if ((coord & 0x808) === 0x808) this.count--;
+          this.grid.set(coord, '');
         } else {
           // find the biggest partition.
           let part!: Set<GridCoord>;
@@ -604,50 +598,50 @@ export class CaveShuffle extends MazeShuffle {
             if (!part || set.size > part.size) part = set;
           }
           // make sure all the fixed screens are in it.
-          if (![...a.fixed].every(c => part.has(c))) continue;
+          if (![...this.fixed].every(c => part.has(c))) continue;
           // check that it's big enough.
           const count = [...part].filter(c => (c & 0x808) == 0x808).length;
           //console.log(`part: ${[...part].map(x=>x.toString(16)).join(',')} count=${count}`);
-          if (count < a.size) continue;
+          if (count < this.size) continue;
           // ok to remove
           removed++;
           filled = part;
-          a.count = count;
-          a.grid.set(coord, '');
+          this.count = count;
+          this.grid.set(coord, '');
           for (const [k, v] of parts) {
-            if (v !== part) a.grid.set(k, '');
+            if (v !== part) this.grid.set(k, '');
           }
         }
       }
       if (!removed) {
         if (this.looseRefine) return OK;
-        return {ok: false, fail: `refine ${a.count} > ${a.size}`};
-        //\n${a.grid.show()}`};
+        return {ok: false, fail: `refine ${this.count} > ${this.size}`};
+        //\n${this.grid.show()}`};
       }
     }
     return OK;
   }
 
-  removalMap(a: A, coord: GridCoord): Map<GridCoord, string> {
+  removalMap(coord: GridCoord): Map<GridCoord, string> {
     return new Map([[coord, '']]);
   }
 
   /** Remove only edges. Called after refine(). */
-  refineEdges(a: A): boolean {
+  refineEdges(): boolean {
     let edges: GridCoord[] = [];
-    for (let i = 0 as GridIndex; i < a.grid.data.length; i++) {
-      if (!a.grid.data[i]) continue;
-      const coord = a.grid.coord(i);
-      if (a.grid.isBorder(coord) || a.fixed.has(coord)) continue;
+    for (let i = 0 as GridIndex; i < this.grid.data.length; i++) {
+      if (!this.grid.data[i]) continue;
+      const coord = this.grid.coord(i);
+      if (this.grid.isBorder(coord) || this.fixed.has(coord)) continue;
       // Only add edges.
       if ((coord ^ (coord >> 8)) & 8) edges.push(coord);
     }
     this.random.shuffle(edges);
-    const orig = a.grid.partition(new Map());
+    const orig = this.grid.partition(new Map());
     let size = orig.size;
     const partCount = new Set(orig.values()).size;
     for (const e of edges) {
-      const parts = a.grid.partition(new Map([[e, '']]));
+      const parts = this.grid.partition(new Map([[e, '']]));
       //console.log(`  coord: ${coord.toString(16)} => ${parts.size}`);
       const [first] = parts.values();
       const ok = first.size === parts.size ?
@@ -657,7 +651,7 @@ export class CaveShuffle extends MazeShuffle {
           new Set(parts.values()).size === partCount && parts.size === size - 1;
       if (ok) {
         size--;
-        a.grid.set(e, '');
+        this.grid.set(e, '');
       }
     }
     return true;
@@ -668,23 +662,23 @@ export class CaveShuffle extends MazeShuffle {
    * other of the edges.  Leave tiles of the form ' c |   | c ' since
    * that works fine.  TODO - how to preserve ' > |   | < '?
    */
-  removeSpurs(a: A) {
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
+  removeSpurs() {
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
         const c = (y << 12 | 0x808 | x << 4) as GridCoord;
-        if (a.grid.get(c)) continue;
+        if (this.grid.get(c)) continue;
         const up = (c - 0x800) as GridCoord;
         const down = (c + 0x800) as GridCoord;
         const left = (c - 0x8) as GridCoord;
         const right = (c + 0x8) as GridCoord;
-        if ((a.grid.get(up) || a.grid.get(down)) &&
-            (a.grid.get(left) || a.grid.get(right))) {
+        if ((this.grid.get(up) || this.grid.get(down)) &&
+            (this.grid.get(left) || this.grid.get(right))) {
           if (this.random.nextInt(2)) {
-            a.grid.set(up, '');
-            a.grid.set(down, '');
+            this.grid.set(up, '');
+            this.grid.set(down, '');
           } else {
-            a.grid.set(left, '');
-            a.grid.set(right, '');
+            this.grid.set(left, '');
+            this.grid.set(right, '');
           }
           //console.log(`remove ${y} ${x}:\n${this.grid.show()}`);
         }
@@ -692,47 +686,47 @@ export class CaveShuffle extends MazeShuffle {
     }
   }
 
-  removeTightLoops(a: A) {
-    for (let y = 0; y < a.h - 1; y++) {
+  removeTightLoops() {
+    for (let y = 0; y < this.h - 1; y++) {
       const row = y << 12 | 0x800;
-      for (let x = 0; x < a.w - 1; x++) {
+      for (let x = 0; x < this.w - 1; x++) {
         const coord = (row | (x << 4) | 8) as GridCoord;
-        if (this.isTightLoop(a, coord)) this.breakTightLoop(a, coord);
+        if (this.isTightLoop(coord)) this.breakTightLoop(coord);
       }
     }
   }
 
-  isTightLoop({grid}: A, coord: GridCoord): boolean {
+  isTightLoop(coord: GridCoord): boolean {
     for (let dy = 0; dy < 0x1800; dy += 0x800) {
       for (let dx = 0; dx < 0x18; dx += 8) {
         const delta = dy | dx
         if (delta === 0x808) continue;
-        if (grid.get((coord + delta) as GridCoord) !== 'c') return false;
+        if (this.grid.get((coord + delta) as GridCoord) !== 'c') return false;
       }
     }
     return true;
   }
 
-  breakTightLoop(a: A, coord: GridCoord) {
+  breakTightLoop(coord: GridCoord) {
     // Pick a delta - either 8, 1008, 800, 810
     const r = this.random.nextInt(0x10000);
     const delta = r & 1 ? (r & 0x1000) | 8 : (r & 0x10) | 0x800;
-    a.grid.set((coord + delta) as GridCoord, '');
+    this.grid.set((coord + delta) as GridCoord, '');
   }
 
-  addStairs(a: A, up = 0, down = 0): Result<void> {
+  addStairs(up = 0, down = 0): Result<void> {
     // Find spots where we can add stairs
 //if(this.params.id===5)debugger;
     const stairs = [up, down];
     if (!stairs[0] && !stairs[1]) return OK; // no stairs
-    for (const c of this.random.ishuffle(a.grid.screens())) {
-      if (!this.tryAddStair(a, c, stairs)) continue;
+    for (const c of this.random.ishuffle(this.grid.screens())) {
+      if (!this.tryAddStair(c, stairs)) continue;
       if (!stairs[0] && !stairs[1]) return OK; // no stairs
     }
-    return {ok: false, fail: `stairs`}; //\n${a.grid.show()}`};
+    return {ok: false, fail: `stairs`}; //\n${this.grid.show()}`};
   }
 
-  addEarlyStair(a: A, c: GridCoord, stair: string): Array<[GridCoord, string]> {
+  addEarlyStair(c: GridCoord, stair: string): Array<[GridCoord, string]> {
     const mods: Array<[GridCoord, string]> = [];
     const left = c - 8 as GridCoord;
     const right = c + 8 as GridCoord;
@@ -742,7 +736,7 @@ export class CaveShuffle extends MazeShuffle {
     if (stair === '<') {
       neighbors.push(down);
       mods.push([up, '']);
-      if (a.grid.get(left) === 'c' && a.grid.get(right) === 'c' &&
+      if (this.grid.get(left) === 'c' && this.grid.get(right) === 'c' &&
           this.random.nextInt(3)) {
         mods.push([down, ''], [c, '<']);
         return mods;
@@ -755,7 +749,7 @@ export class CaveShuffle extends MazeShuffle {
     // But it would still be nice to "point" them in the easy direction?
     // if (this.delta < -16) neighbors.splice(2, 1);
     // if ((this.delta & 0xf) < 8) neighbors.splice(1, 1);
-    neighbors = neighbors.filter(c => a.grid.get(c) === 'c');
+    neighbors = neighbors.filter(c => this.grid.get(c) === 'c');
     if (!neighbors.length) return [];
     const keep = this.random.nextInt(neighbors.length);
     for (let j = 0; j < neighbors.length; j++) {
@@ -765,9 +759,9 @@ export class CaveShuffle extends MazeShuffle {
     return mods;
   }
 
-  tryAddStair(a: A, c: GridCoord, stairs: number[]): boolean {
-    if (a.fixed.has((c | 0x808) as GridCoord)) return false;
-    const tile = this.extract(a.grid, c);
+  tryAddStair(c: GridCoord, stairs: number[]): boolean {
+    if (this.fixed.has((c | 0x808) as GridCoord)) return false;
+    const tile = this.extract(this.grid, c);
     const both = stairs[0] && stairs[1];
     const total = stairs[0] + stairs[1];
     const up = this.random.nextInt(total) < stairs[0];
@@ -777,7 +771,7 @@ export class CaveShuffle extends MazeShuffle {
       const stairChar = '<>'[stair];
       const stairTile = tile.substring(0, 4) + stairChar + tile.substring(5);
       if (this.orig.tileset.getMetascreensFromTileString(stairTile).length) {
-        a.grid.set((c | 0x808) as GridCoord, stairChar);
+        this.grid.set((c | 0x808) as GridCoord, stairChar);
         stairs[stair]--;
         return true;
       }
@@ -789,7 +783,7 @@ export class CaveShuffle extends MazeShuffle {
    * Attempt to make a path connecting start to end (both centers).
    * Requires all ...?
    */
-  tryConnect(a: A, start: GridCoord, end: GridCoord,
+  tryConnect(start: GridCoord, end: GridCoord,
              char: string, attempts = 1): boolean {
     while (attempts-- > 0) {
       const replace = new Map<GridCoord, string>();
@@ -804,9 +798,9 @@ export class CaveShuffle extends MazeShuffle {
         for (const dir of [8, -8, 0x800, -0x800]) {
           const pos1 = pos + dir as GridCoord;
           const pos2 = pos + 2 * dir as GridCoord;
-          if (a.fixed.has(pos2)) continue;
-          if (replace.get(pos2) ?? a.grid.get(pos2)) continue;
-          if (a.grid.isBorder(pos1)) continue;
+          if (this.fixed.has(pos2)) continue;
+          if (replace.get(pos2) ?? this.grid.get(pos2)) continue;
+          if (this.grid.isBorder(pos1)) continue;
           dirs.push(dir);
         }
         if (!dirs.length) break;
@@ -826,35 +820,35 @@ export class CaveShuffle extends MazeShuffle {
       if (pos !== end) continue;
       // If we got there, make the changes.
       for (const [c, v] of replace) {
-        a.grid.set(c, v);
-        if ((c & 0x808) === 0x808) a.count++;
+        this.grid.set(c, v);
+        if ((c & 0x808) === 0x808) this.count++;
       }
       return true;
     }
     return false;
   }
 
-  tryAddLoop(a: A, char: string, attempts = 1): boolean {
+  tryAddLoop(char: string, attempts = 1): boolean {
     // pick a pair of coords for start and end
     const uf = new UnionFind<GridCoord>();
-    for (let i = 0; i < a.grid.data.length; i++) {
-      const c = a.grid.coord(i as GridIndex);
-      if (a.grid.get(c) || a.grid.isBorder(c)) continue;
-      if (!a.grid.get(E(c))) uf.union([c, E(c)]);
-      if (!a.grid.get(S(c))) uf.union([c, S(c)]);
+    for (let i = 0; i < this.grid.data.length; i++) {
+      const c = this.grid.coord(i as GridIndex);
+      if (this.grid.get(c) || this.grid.isBorder(c)) continue;
+      if (!this.grid.get(E(c))) uf.union([c, E(c)]);
+      if (!this.grid.get(S(c))) uf.union([c, S(c)]);
     }
     const eligible =
         new DefaultMap<unknown, [GridCoord, GridCoord][]>(() => []);
-    for (const s of a.grid.screens()) {
+    for (const s of this.grid.screens()) {
       const c = s + 0x808 as GridCoord;
-      if (!a.grid.get(c)) continue;
+      if (!this.grid.get(c)) continue;
       for (const d of [8, -8, 0x800, -0x800]) {
         const e1 = c + d as GridCoord;
-        if (a.grid.isBorder(e1) || a.grid.get(e1)) continue;
+        if (this.grid.isBorder(e1) || this.grid.get(e1)) continue;
         const e2 = c + 2 * d as GridCoord;
-        if (a.grid.get(e2)) continue;
+        if (this.grid.get(e2)) continue;
         const replace = new Map([[e1 as GridCoord, char]]);
-        const tile = this.extract(a.grid, s, {replace});
+        const tile = this.extract(this.grid, s, {replace});
         if (this.orig.tileset.getMetascreensFromTileString(tile).length) {
           eligible.get(uf.find(e2)).push([e1, e2]);
         }
@@ -872,13 +866,13 @@ export class CaveShuffle extends MazeShuffle {
     while (attempts-- > 0) {
       const partition = this.random.pick(weighted);
       const [[e0, c0], [e1, c1]] = this.random.ishuffle(partition);
-      a.grid.set(e0, char);
-      a.grid.set(e1, char);
-      if (this.tryConnect(a, c0, c1, char, 5)) {
+      this.grid.set(e0, char);
+      this.grid.set(e1, char);
+      if (this.tryConnect(c0, c1, char, 5)) {
         return true;
       }
-      a.grid.set(e0, '');
-      a.grid.set(e1, '');
+      this.grid.set(e0, '');
+      this.grid.set(e1, '');
     }
     return false;
   }
@@ -889,27 +883,27 @@ export class CaveShuffle extends MazeShuffle {
    * attempt will have a 1/length chance of stopping.  Returns number
    * of screens added.
    */
-  tryExtrude(a: A, char: string, length: number, attempts = 1): number {
+  tryExtrude(char: string, length: number, attempts = 1): number {
     // Look for a place to start.
     while (attempts--) {
-      for (const c of this.random.ishuffle(a.grid.screens())) {
+      for (const c of this.random.ishuffle(this.grid.screens())) {
         const mid = c + 0x808 as GridCoord;
-        if (!a.grid.get(mid)) continue;
-        const tile = this.extract(a.grid, c);
+        if (!this.grid.get(mid)) continue;
+        const tile = this.extract(this.grid, c);
         for (let dir of this.random.ishuffle([0, 1, 2, 3])) {
           const n1 = mid + GRIDDIR[dir] as GridCoord;
           const n2 = mid + 2 * GRIDDIR[dir] as GridCoord;
-//console.log(`mid: ${mid.toString(16)}; n1(${n1.toString(16)}): ${a.grid.get(n1)}; n2(${n2.toString(16)}): ${a.grid.get(n2)}`);
-          if (a.grid.get(n1) || a.grid.isBorder(n1) || a.grid.get(n2)) continue;
+//console.log(`mid: ${mid.toString(16)}; n1(${n1.toString(16)}): ${this.grid.get(n1)}; n2(${n2.toString(16)}): ${this.grid.get(n2)}`);
+          if (this.grid.get(n1) || this.grid.isBorder(n1) || this.grid.get(n2)) continue;
           const i = TILEDIR[dir];
           const rep = tile.substring(0, i) + char + tile.substring(i + 1);
           if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
-            a.grid.set(n1, char);
-            a.grid.set(n2, char);
-            const added = this.tryContinueExtrude(a, char, length, n2);
+            this.grid.set(n1, char);
+            this.grid.set(n2, char);
+            const added = this.tryContinueExtrude(char, length, n2);
             if (added) return added;
-            a.grid.set(n2, '');
-            a.grid.set(n1, '');
+            this.grid.set(n2, '');
+            this.grid.set(n1, '');
           }
         }
       }
@@ -918,8 +912,8 @@ export class CaveShuffle extends MazeShuffle {
   }
 
   /** Recursive attempt. */
-  tryContinueExtrude(a: A, char: string, length: number, c: GridCoord): number {
-    const tile = this.extract(a.grid, c - 0x808 as GridCoord);
+  tryContinueExtrude(char: string, length: number, c: GridCoord): number {
+    const tile = this.extract(this.grid, c - 0x808 as GridCoord);
     const ok = this.orig.tileset.getMetascreensFromTileString(tile).length > 0;
     if (length === 1) return ok ? 1 : 0;
     // maybe return early
@@ -928,16 +922,16 @@ export class CaveShuffle extends MazeShuffle {
     for (const dir of this.random.ishuffle([0, 1, 2, 3])) {
       const n1 = c + GRIDDIR[dir] as GridCoord;
       const n2 = c + 2 * GRIDDIR[dir] as GridCoord;
-      if (a.grid.get(n1) || a.grid.isBorder(n1) || a.grid.get(n2)) continue;
+      if (this.grid.get(n1) || this.grid.isBorder(n1) || this.grid.get(n2)) continue;
       const i = TILEDIR[dir];
       const rep = tile.substring(0, i) + char + tile.substring(i + 1);
       if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
-        a.grid.set(n1, char);
-        a.grid.set(n2, char);
-        const added = this.tryContinueExtrude(a, char, length - 1, n2);
+        this.grid.set(n1, char);
+        this.grid.set(n2, char);
+        const added = this.tryContinueExtrude(char, length - 1, n2);
         if (added) return added + 1;
-        a.grid.set(n2, '');
-        a.grid.set(n1, '');
+        this.grid.set(n2, '');
+        this.grid.set(n1, '');
       }
       if (ok) break;
     }
@@ -945,7 +939,7 @@ export class CaveShuffle extends MazeShuffle {
   }
 
   /** Attempt to add a grid type. */
-  tryAdd(a: A, opts: AddOpts = {}): number {
+  tryAdd(opts: AddOpts = {}): number {
     // Optionally start at the given screen only.
     const tileset = this.orig.tileset;
     const {attempts = 1, char = 'c', start, loop = false} = opts;
@@ -953,43 +947,43 @@ export class CaveShuffle extends MazeShuffle {
       const startIter =
           start != null ?
               [(start & 0xf0f0) as GridCoord] :
-              this.random.ishuffle(a.grid.screens());
+              this.random.ishuffle(this.grid.screens());
       for (const c of startIter) {
         const mid = c + 0x808 as GridCoord;
-        if (!a.grid.get(mid)) continue;
-        const tile = this.extract(a.grid, c);
+        if (!this.grid.get(mid)) continue;
+        const tile = this.extract(this.grid, c);
         for (let dir of this.random.ishuffle([0, 1, 2, 3])) {
           const n1 = mid + GRIDDIR[dir] as GridCoord;
           const n2 = mid + 2 * GRIDDIR[dir] as GridCoord;
-          if (a.fixed.has(n1) || a.fixed.has(n2)) continue;
-          const o1 = a.grid.get(n1);
-          const o2 = a.grid.get(n2);
-//console.log(`mid(${mid.toString(16)}): ${a.grid.get(mid)}; n1(${n1.toString(16)}): ${a.grid.get(n1)}; n2(${n2.toString(16)}): ${a.grid.get(n2)}`);
+          if (this.fixed.has(n1) || this.fixed.has(n2)) continue;
+          const o1 = this.grid.get(n1);
+          const o2 = this.grid.get(n2);
+//console.log(`mid(${mid.toString(16)}): ${this.grid.get(mid)}; n1(${n1.toString(16)}): ${this.grid.get(n1)}; n2(${n2.toString(16)}): ${this.grid.get(n2)}`);
           // allow making progress on top of an edge-only connection.
-          if ((o1 && (o2 || o1 !== char)) || a.grid.isBorder(n1)) continue;
+          if ((o1 && (o2 || o1 !== char)) || this.grid.isBorder(n1)) continue;
           if (!loop) {
-            const neighborTile = this.extract(a.grid, n2 - 0x808 as GridCoord,
+            const neighborTile = this.extract(this.grid, n2 - 0x808 as GridCoord,
                                               {replace: new Map([[n1, '']])});
             if (/\S/.test(neighborTile)) continue;
           }
           const i = TILEDIR[dir];
           const rep = tile.substring(0, i) + char + tile.substring(i + 1);
           if (tileset.getMetascreensFromTileString(rep).length) {
-            a.count++;
-            a.grid.set(n1, char);
-            a.grid.set(n2, char);
+            this.count++;
+            this.grid.set(n1, char);
+            this.grid.set(n2, char);
             // if (length > 1) {
-            //   const added = this.tryContinueExtrude(a, char, length, n2);
+            //   const added = this.tryContinueExtrude(char, length, n2);
             //   if (added) return added;
             // } else {
-            const neighborTile = this.extract(a.grid, n2 - 0x808 as GridCoord);
+            const neighborTile = this.extract(this.grid, n2 - 0x808 as GridCoord);
             if (tileset.getMetascreensFromTileString(neighborTile).length) {
               return 1;
             } 
             // }
-            a.grid.set(n2, o2);
-            a.grid.set(n1, o1);
-            a.count--;
+            this.grid.set(n2, o2);
+            this.grid.set(n1, o1);
+            this.count--;
           }
         }
       }
@@ -1003,20 +997,20 @@ export class CaveShuffle extends MazeShuffle {
   //  * attempt will have a 1/length chance of stopping.  Returns number
   //  * of screens added.
   //  */
-  // tryExtrude(a: A, char: string, length: number, attempts = 1): number {
+  // tryExtrude(char: string, length: number, attempts = 1): number {
   //   // Look for a place to start.
   //   while (attempts--) {
-  //     for (const c of this.random.ishuffle(a.grid.screens())) {
+  //     for (const c of this.random.ishuffle(this.grid.screens())) {
   //       const mid = c + 0x808 as GridCoord;
-  //       if (!a.grid.get(mid)) continue;
-  //       const tile = this.extract(a.grid, c);
+  //       if (!this.grid.get(mid)) continue;
+  //       const tile = this.extract(this.grid, c);
   //       for (let dir of [0, 1, 2, 3]) {
-  //         if (a.grid.get(mid + 2 * GRIDDIR[dir] as GridCoord)) continue;
+  //         if (this.grid.get(mid + 2 * GRIDDIR[dir] as GridCoord)) continue;
   //         const i = TILEDIR[dir];
   //         if (tile[i] !== ' ') continue;
   //         const rep = tile.substring(0, i) + char + tile.substring(i + 1);
   //         if (this.orig.tileset.getMetascreensFromTileString(rep).length) {
-  //           const added = this.tryContinueExtrude(a, char, length, mid, dir);
+  //           const added = this.tryContinueExtrude(char, length, mid, dir);
   //           if (added) return added;
   //         }
   //       }
@@ -1025,7 +1019,7 @@ export class CaveShuffle extends MazeShuffle {
   //   return 0;
   // }
 
-  // tryContinueExtrude(a: A, char: string, length: number,
+  // tryContinueExtrude(char: string, length: number,
   //                    mid: GridCoord, dir: number): number {
   //   const replace = new Map<GridCoord, string>([]);
   //   let works: Array<[GridCoord, string]>|undefined;
@@ -1036,7 +1030,7 @@ export class CaveShuffle extends MazeShuffle {
   //     replace.set(mid + 2 * GRIDDIR[dir] as GridCoord, char);
   //     mid = (mid + 2 * GRIDDIR[dir]) as GridCoord;
 
-  //     const tile = this.extract(a.grid, mid - 0x808 as GridCoord, {replace});
+  //     const tile = this.extract(this.grid, mid - 0x808 as GridCoord, {replace});
   //     weight++;
   //     if (this.orig.tileset.getMetascreensFromTileString(tile).length) {
   //       works = [...replace];
@@ -1051,8 +1045,8 @@ export class CaveShuffle extends MazeShuffle {
   //     for (const nextDir of this.random.ishuffle([0, 1, 2, 3])) {
   //       const delta = GRIDDIR[nextDir];
   //       const edge = mid + delta as GridCoord;
-  //       if (a.grid.isBorder(edge)) continue;
-  //       if (replace.get(...) || a.grid.get(mid + 2 * delta as GridCoord)) continue;
+  //       if (this.grid.isBorder(edge)) continue;
+  //       if (replace.get(...) || this.grid.get(mid + 2 * delta as GridCoord)) continue;
   //       const i = TILEDIR[dir];
   //       if (tile[i] !== ' ') continue;
   //       const rep = tile.substring(0, i) + char + tile.substring(i + 1);
@@ -1067,64 +1061,68 @@ export class CaveShuffle extends MazeShuffle {
   //   }
   //   if (!works) return 0;
   //   for (const [c, v] of works) {
-  //     a.grid.set(c, v);
+  //     this.grid.set(c, v);
   //   }
   //   return works.length >>> 1;
   // }
 
   /** Make arrangements to maximize the success chances of infer. */
-  preinfer(a: A): Result<void> {
+  preinfer(): Result<void> {
     let result;
     if (this.params.features?.spike) {
-      if ((result = this.preinferSpikes(a)), !result.ok) return result;
+      if ((result = this.preinferSpikes()), !result.ok) return result;
     }
     return OK;
   }
 
-  preinferSpikes(a: A): Result<void> {
+  preinferSpikes(): Result<void> {
     // make sure there's a 'c' above each 's'
     // check sides?
     return OK;
   }
 
-  inferScreens(a: A): Result<Metalocation> {
+  inferScreens(): Result<Metalocation> {
     const screens: Metascreen[] = [];
-    for (const s of a.grid.screens()) {
-      const tile = this.extract(a.grid, s);
+    for (const s of this.grid.screens()) {
+      const tile = this.extract(this.grid, s);
       const candidates =
           this.orig.tileset.getMetascreensFromTileString(tile)
               .filter(s => !s.data.mod);
       if (!candidates.length) {
-        //console.error(a.grid.show());
-if (a.grid.show().length > 100000) debugger;
-        return {ok: false, fail: `infer screen ${hex(s)}: [${tile}]\n${a.grid.show()}`};
+        //console.error(this.grid.show());
+if (this.grid.show().length > 100000) debugger;
+        return {ok: false, fail: `infer screen ${hex(s)}: [${tile}]\n${this.grid.show()}`};
       }
       const pick = this.random.pick(candidates);
       screens.push(pick);
-      if (pick.hasFeature('wall')) a.walls++;
-      if (pick.hasFeature('bridge')) a.bridges++;
+      if (pick.hasFeature('wall')) this.walls++;
+      if (pick.hasFeature('bridge')) this.bridges++;
 
       // TODO - any other features to track?
 
     }
 
     let allEmpty = true;
-    const meta = new Metalocation(this.params.id, this.orig.tileset, a.h, a.w);
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
-        const scr = screens[y * a.w + x];
+    const meta = new Metalocation(this.params.id, this.orig.tileset, this.h, this.w);
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        const scr = screens[y * this.w + x];
         meta.set(y << 4 | x, scr);
         if (!scr.isEmpty()) allEmpty = false;
         if (y) {
           const above = meta.get((y - 1) << 4 | x);
           if (this.orig.tileset.isBannedVertical(above, scr)) {
-            return {ok: false, fail: `bad vertical neighbor: ${above} ${scr}`};
+            return {ok: false,
+                    fail: `bad vertical neighbor at ${y}${x}: ${
+                           above.name} ${scr.name}`};
           }
         }
         if (x) {
           const left = meta.get(y << 4 | (x - 1));
           if (this.orig.tileset.isBannedHorizontal(left, scr)) {
-            return {ok: false, fail: `bad horizontal neighbor: ${left} ${scr}`};
+            return {ok: false,
+                    fail: `bad horizontal neighbor at ${y}${x}: ${
+                           left.name} ${scr.name}`};
           }
         }
       }
@@ -1134,51 +1132,51 @@ if (a.grid.show().length > 100000) debugger;
     return {ok: true, value: meta};
   }
 
-  refineMetascreens(a: A, meta: Metalocation): Result<void> {
+  refineMetascreens(meta: Metalocation): Result<void> {
     // make sure we have the right number of walls and bridges
-    // a.walls = a.bridges = 0; // TODO - don't bother making these instance
+    // this.walls = this.bridges = 0; // TODO - don't bother making these instance
     // for (const pos of meta.allPos()) {
     //   const scr = meta.get(pos);
-    //   if (scr.hasFeature('bridge')) {console.warn(hex(pos)); a.bridges++;}
-    //   if (scr.hasFeature('wall')) a.walls++;
+    //   if (scr.hasFeature('bridge')) {console.warn(hex(pos)); this.bridges++;}
+    //   if (scr.hasFeature('wall')) this.walls++;
     // }
     const bridges = this.params.features?.bridge || 0;
     const walls = this.params.features?.wall || 0;
     for (const pos of this.random.ishuffle(meta.allPos())) {
       const c = ((pos << 8 | pos << 4) & 0xf0f0) as GridCoord;
-      const tile = this.extract(a.grid, c)
+      const tile = this.extract(this.grid, c)
       const scr = meta.get(pos);
-      if (a.bridges <= bridges && scr.hasFeature('bridge')) continue;
+      if (this.bridges <= bridges && scr.hasFeature('bridge')) continue;
       if (this.addBlocks &&
           this.tryMeta(meta, pos, this.orig.tileset.withMod(tile, 'block'))) {
-        if (scr.hasFeature('bridge')) a.bridges--;
+        if (scr.hasFeature('bridge')) this.bridges--;
         continue;
       }
       if (scr.hasFeature('bridge')) {
         if (this.tryMeta(meta, pos,
                          this.orig.tileset.withMod(tile, 'bridge'))) {
-          a.bridges--;
+          this.bridges--;
           continue;
         }
-      // } else if (bridges < a.bridges && scr.hasFeature('bridge')) {
+      // } else if (bridges < this.bridges && scr.hasFeature('bridge')) {
       //   // can't add bridges?
       //   return false;
       }
-      if (a.walls < walls && !scr.hasFeature('wall')) {
+      if (this.walls < walls && !scr.hasFeature('wall')) {
         if (this.tryMeta(meta, pos, this.orig.tileset.withMod(tile, 'wall'))) {
-          a.walls++;
+          this.walls++;
           continue;
         }
       }
     }
-    // console.warn(`bridges ${a.bridges} ${bridges} / walls ${a.walls} ${walls}\n${a.grid.show()}\n${meta.show()}`);
-    if (a.bridges !== bridges) {
+    // console.warn(`bridges ${this.bridges} ${bridges} / walls ${this.walls} ${walls}\n${this.grid.show()}\n${meta.show()}`);
+    if (this.bridges !== bridges) {
       return {ok: false,
-              fail: `refineMeta bridges want ${bridges} got ${a.bridges}\n${meta.show()}`};
+              fail: `refineMeta bridges want ${bridges} got ${this.bridges}\n${meta.show()}`};
     }
-    if (a.walls !== walls) {
+    if (this.walls !== walls) {
       return {ok: false,
-              fail: `refineMeta walls want ${walls} got ${a.walls}\n${meta.show()}`};
+              fail: `refineMeta walls want ${walls} got ${this.walls}\n${meta.show()}`};
     }
     return OK;
   }
@@ -1220,7 +1218,7 @@ if (a.grid.show().length > 100000) debugger;
     return false;
   }
 
-  checkMetascreens(a: A, meta: Metalocation): Result<void> {
+  checkMetascreens(meta: Metalocation): Result<void> {
     if (!this.params.features?.statue) return OK;
     let statues = 0;
     for (const pos of meta.allPos()) {
@@ -1314,29 +1312,29 @@ if (a.grid.show().length > 100000) debugger;
 
 
 export class WideCaveShuffle extends CaveShuffle {
-  addLateFeatures(a: A): Result<void> {
-    let result = super.addLateFeatures(a);
+  addLateFeatures(): Result<void> {
+    let result = super.addLateFeatures();
     if (!result.ok) return result;
-    a.grid.data = a.grid.data.map(c => c === 'c' ? 'w' : c);
+    this.grid.data = this.grid.data.map(c => c === 'c' ? 'w' : c);
     return OK;
   }
 }
 
 export class CryptEntranceShuffle extends CaveShuffle {
-  refineMetascreens(a: A, meta: Metalocation): Result<void> {
+  refineMetascreens(meta: Metalocation): Result<void> {
     // change arena into crypt arena
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
-        if (a.grid.get((y << 12 | x << 4 | 0x808) as GridCoord) === 'a') {
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
+        if (this.grid.get((y << 12 | x << 4 | 0x808) as GridCoord) === 'a') {
           meta.set(y << 4 | x, meta.rom.metascreens.cryptArena_statues);
         }
       }
     }
-    return super.refineMetascreens(a, meta);
+    return super.refineMetascreens(meta);
   }
 
-  isEligibleArena(a: A, c: GridCoord): boolean {
-    return !a.grid.get(c - 0x800 as GridCoord) && super.isEligibleArena(a, c);
+  isEligibleArena(c: GridCoord): boolean {
+    return !this.grid.get(c - 0x800 as GridCoord) && super.isEligibleArena(c);
   }
 }
 

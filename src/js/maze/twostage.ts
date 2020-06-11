@@ -1,11 +1,9 @@
 import { Monogrid } from './monogrid.js';
-import { GridIndex, GridCoord } from './grid.js';
-import { CaveShuffle, CaveShuffleAttempt } from './cave.js';
-import { Result, OK } from './maze.js';
-import { hex, seq, Mutable } from '../rom/util.js';
+import { GridCoord, GridIndex } from './grid.js';
+import { CaveShuffle } from './cave.js';
+import { OK, Result } from './maze.js';
+import { Mutable, hex, seq } from '../rom/util.js';
 import { Metalocation } from '../rom/metalocation.js';
-
-type A = CaveShuffleAttempt;
 
 export abstract class TwoStageCaveShuffle extends CaveShuffle {
   maxAttempts = 250;
@@ -14,96 +12,96 @@ export abstract class TwoStageCaveShuffle extends CaveShuffle {
 
   abstract targetEarly(): number;
 
-  initialFill(a: A): Result<void> {
+  initialFill(): Result<void> {
     let result: Result<void>;
-    if ((result = this.initialFillEarly(a)), !result.ok) return result;
-    this.initialFillLate(a);
-    if ((result = this.connectEarlyToLate(a)), !result.ok) return result;
+    if ((result = this.initialFillEarly()), !result.ok) return result;
+    this.initialFillLate();
+    if ((result = this.connectEarlyToLate()), !result.ok) return result;
     // update count
-    a.count =
-        [...a.grid.screens()]
-            .filter(pos => a.grid.get(pos + 0x808 as GridCoord)).length;
+    this.count =
+        [...this.grid.screens()]
+            .filter(pos => this.grid.get(pos + 0x808 as GridCoord)).length;
     return OK;
   }
 
-  initialFillEarly(a: A): Result<void> {
-    const g = new Monogrid(a.h, a.w, this.getValidEarlyScreens());
+  initialFillEarly(): Result<void> {
+    const g = new Monogrid(this.h, this.w, this.getValidEarlyScreens());
     let attempts = 0;
     const target = this.targetEarly();
     while (attempts++ < 20 && g.size < target) {
       if (g.addPath(this.random, target)) attempts = 0;
     }
 
-    a.grid.data = g.toGrid(this.early).data;
-    this.addAllFixed(a);
+    this.grid.data = g.toGrid(this.early).data;
+    this.addAllFixed();
     return OK;
   }
 
-  initialFillLate(a: A) {
+  initialFillLate() {
     // Add cave screens where possible
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
         const c = (y << 12 | x << 4 | 0x808) as GridCoord;
-        if (!a.grid.get(c)) a.grid.set(c, 'c');
+        if (!this.grid.get(c)) this.grid.set(c, 'c');
       }
     }
 
     // Connect all the 'c' screens, don't connect to 'r'
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
         for (const d of [8, 0x800]) {
           const c = (y << 12 | x << 4 | 0x808) as GridCoord;
           const c1 = c + d as GridCoord;
           const c2 = c + 2 * d as GridCoord;
-          if (!a.grid.isBorder(c1) && !a.grid.get(c1) &&
-              a.grid.get(c) === 'c' && a.grid.get(c2) === 'c') {
-            a.grid.set(c1, 'c');
+          if (!this.grid.isBorder(c1) && !this.grid.get(c1) &&
+              this.grid.get(c) === 'c' && this.grid.get(c2) === 'c') {
+            this.grid.set(c1, 'c');
           }
         }
       }
     }
   }
 
-  connectEarlyToLate(a: A): Result<void> {
+  connectEarlyToLate(): Result<void> {
     // Add connections between land and water
-    for (const s of this.random.ishuffle(a.grid.screens())) {
+    for (const s of this.random.ishuffle(this.grid.screens())) {
       for (const d of [8, 0x800]) {
         const c = s | 0x808 as GridCoord;
         const c1 = c + d as GridCoord;
         const c2 = c + 2 * d as GridCoord;
-        if (a.grid.isBorder(c1) || a.grid.get(c1)) continue;
+        if (this.grid.isBorder(c1) || this.grid.get(c1)) continue;
         // Check if adding c1 is valid
-        a.grid.set(c1, 'c');
-        const s1 = this.extract(a.grid, c - 0x808 as GridCoord);
-        const s2 = this.extract(a.grid, c2 - 0x808 as GridCoord);
+        this.grid.set(c1, 'c');
+        const s1 = this.extract(this.grid, c - 0x808 as GridCoord);
+        const s2 = this.extract(this.grid, c2 - 0x808 as GridCoord);
         if (!this.orig.tileset.getMetascreensFromTileString(s1).length ||
             !this.orig.tileset.getMetascreensFromTileString(s2).length) {
-          a.grid.set(c1, '');
+          this.grid.set(c1, '');
         }
       }
     }
     return OK;
   }
 
-  pruneDisconnected(a: A): Result<void> {
+  pruneDisconnected(): Result<void> {
     // Prune anything not attached to river, make sure it's big enough.
-    const parts = new Set(a.grid.partition().values());
+    const parts = new Set(this.grid.partition().values());
     let size = 0;
     for (const part of parts) {
-      const early = [...part].some(c => a.grid.get(c) === this.early);
+      const early = [...part].some(c => this.grid.get(c) === this.early);
       if (early) {
         size += [...part].filter(c => (c & 0x808) === 0x808).length;
       } else {
         for (const c of part) {
-          if (a.fixed.has(c)) {
+          if (this.fixed.has(c)) {
             return {ok: false, fail: `fixed tile ${hex(c)} disconnected`};
           }
-          a.grid.set(c, '');
+          this.grid.set(c, '');
         }
       }
     }
     if (size < this.params.size) {
-      console.error(a.grid.show());
+      console.error(this.grid.show());
       return {ok: false, fail: 'too much disconnected'};
     }
     return OK;
@@ -121,13 +119,13 @@ export abstract class TwoStageCaveShuffle extends CaveShuffle {
     return this.validEarlyScreens;
   }
 
-  addEarlyFeatures(a: A): Result<void> {
-    if (!this.addArenas(a, this.params.features?.arena ?? 0)) {
+  addEarlyFeatures(): Result<void> {
+    if (!this.addArenas(this.params.features?.arena ?? 0)) {
       return {ok: false, fail: 'addArenas'};
     }
     let result: Result<void>
-    if ((result = this.pruneDisconnected(a)), !result.ok) return result;
-    return super.addEarlyFeatures(a);
+    if ((result = this.pruneDisconnected()), !result.ok) return result;
+    return super.addEarlyFeatures();
   }
 }
 
@@ -143,32 +141,32 @@ export class SaberaPalaceShuffle extends TwoStageCaveShuffle {
     return target != null ? target + 2 + this.random.nextInt(3) : 0;
   }
 
-  // initialFillEarly(a: A): Result<void> {
+  // initialFillEarly(): Result<void> {
 
   //   // TODO - random upfront loc for arenas and downstair, connect w/ paths?
   //   //      - need a more random directed path.
 
-  //   const r = super.initialFillEarly(a);
+  //   const r = super.initialFillEarly();
   //   if (!r.ok) return r;
   //   // Find somewhere for the downstairs.
-  //   for (const c of this.random.ishuffle(a.grid.screens())) {
-  //     const e = this.extract(a.grid, c);
+  //   for (const c of this.random.ishuffle(this.grid.screens())) {
+  //     const e = this.extract(this.grid, c);
   //     if (e === ' w  w    ') {
-  //       a.grid.set(c + 0x808 as GridCoord, '>');
+  //       this.grid.set(c + 0x808 as GridCoord, '>');
   //       return OK;
-  //     } else if (c >>> 12 < a.h - 1 &&
+  //     } else if (c >>> 12 < this.h - 1 &&
   //                / [w ] www   /.test(e) &&
-  //                !/\S/.test(this.extract(a.grid, c + 0x1000 as GridCoord))) {
-  //       a.grid.set(c + 0x1008 as GridCoord, 'w');
-  //       a.grid.set(c + 0x1808 as GridCoord, '>');
+  //                !/\S/.test(this.extract(this.grid, c + 0x1000 as GridCoord))) {
+  //       this.grid.set(c + 0x1008 as GridCoord, 'w');
+  //       this.grid.set(c + 0x1808 as GridCoord, '>');
   //       return OK;
   //     }
   //   }
   //   return {ok: false, fail: `could not place downstair`};
   // }
 
-  initialFillEarly(a: A): Result<void> {
-    const g = new Monogrid(a.h, a.w);
+  initialFillEarly(): Result<void> {
+    const g = new Monogrid(this.h, this.w);
     g.fill();
     const all = seq(g.data.length).slice(g.w);
     const stair = this.random.pick(all);
@@ -218,62 +216,62 @@ export class SaberaPalaceShuffle extends TwoStageCaveShuffle {
     if (!g.consolidateFixed(this.random, bad)) {
       return {ok: false, fail: `consolidate`};
     }
-    a.grid.data = g.toGrid('w').data;
-    function set(i: number, v: string) {
+    this.grid.data = g.toGrid('w').data;
+    const set = (i: number, v: string) => {
       const x = i % g.w;
       const y = (i - x) / g.w;
       const c = (y << 12 | x << 4 | 0x808) as GridCoord;
-      a.grid.set(c, v);
+      this.grid.set(c, v);
       for (const d of [-0x808, -0x800, -0x7f8, -8, 0, 8, 0x7f8, 0x800, 0x808]) {
-        a.fixed.add(c + d as GridCoord);
+        this.fixed.add(c + d as GridCoord);
       }
-    }
+    };
     set(stair, '>');
     for (const a of arenas) {
       set(a, 'a');
     }
     let size = 3;
-    for (const s of a.grid.screens()) {
-      if (a.grid.get(s + 0x808 as GridCoord)) size++;
+    for (const s of this.grid.screens()) {
+      if (this.grid.get(s + 0x808 as GridCoord)) size++;
     }
-    (a as Mutable<typeof a>).size = size;
+    (this as Mutable<this>).size = size;
     return OK;
   }
 
-  addStairs(a: A, up?: number, down?: number) {
-    return super.addStairs(a, up, down ? down - 1 : 0);
+  addStairs(up?: number, down?: number) {
+    return super.addStairs(up, down ? down - 1 : 0);
   }
 
   addArenas() { return true; }
 
-  connectEarlyToLate(a: A): Result<void> {
-    for (let y = 0; y < a.h; y++) {
+  connectEarlyToLate(): Result<void> {
+    for (let y = 0; y < this.h; y++) {
       const row = y << 12 | 0x808;
-      for (let x = 0; x < a.w; x++) {
+      for (let x = 0; x < this.w; x++) {
         const c = (row | x << 4) as GridCoord;
-        if (a.grid.get(c) === 'a') {
-          a.grid.set(c - 0x800 as GridCoord, 'c');
+        if (this.grid.get(c) === 'a') {
+          this.grid.set(c - 0x800 as GridCoord, 'c');
         }
       }
     }
     return OK;
   }
 
-  preinfer(a: A): Result<void> {
+  preinfer(): Result<void> {
     const map = new Map<GridCoord, string>();
-    for (let i = 0 as GridIndex; i < a.grid.data.length; i++) {
-      if (a.grid.data[i] === 'w') map.set(a.grid.coord(i), '');
+    for (let i = 0 as GridIndex; i < this.grid.data.length; i++) {
+      if (this.grid.data[i] === 'w') map.set(this.grid.coord(i), '');
     }
-    const parts = a.grid.partition(map);
+    const parts = this.grid.partition(map);
     const ups = new Set<Set<GridCoord>>();
     for (const [c, s] of parts) {
-      if (a.grid.get(c) === '<') ups.add(s);
+      if (this.grid.get(c) === '<') ups.add(s);
     }
     if (ups.size < 2) return {ok: false, fail: `stairs bunched`};
     return OK;
   }
 
-  refineMetascreens(a: A, meta: Metalocation): Result<void> {
+  refineMetascreens(meta: Metalocation): Result<void> {
     for (const pos of meta.allPos()) {
       const scr = meta.get(pos);
       if (scr.hasFeature('arena')) {

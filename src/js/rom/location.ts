@@ -717,6 +717,9 @@ export class Location extends Entity {
     //return this.rom.shops.findIndex(s => s.location === this.id) >= 0;
     if (this._isShop == null) {
       this._isShop = this.rom.shops.findIndex(s => s.location === this.id) >= 0;
+      // NOTE: sahara pawn shop is not actually in the table (pawn shops don't
+      // strictly need to be)!  TODO - handle this better.
+      if (this.id === 0xfb) this._isShop = true;
     }
     return this._isShop;
   }

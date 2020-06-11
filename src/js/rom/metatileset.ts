@@ -269,7 +269,7 @@ class NeighborCache {
         this.tiles.get(tile.replace(/\|/g, '')).push(s);
       }
       // Check for banned verticals
-      if (s.hasFeature('spikes') || s.hasFeature('ramp') ||
+      if (/*s.hasFeature('spikes') ||*/ s.hasFeature('ramp') ||
           s.hasFeature('overpass') || s.hasFeature('pit') ||
           s.isEmpty()) {
         this.banDeadEndNeighbor(s);

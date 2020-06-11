@@ -1,8 +1,10 @@
 import { Grid, GridCoord, GridIndex } from './grid.js';
 import { Random } from '../random.js';
 import { hex } from '../rom/util.js';
-import { Metalocation, Pos } from '../rom/metalocation.js';
+import { Metalocation, Pos, ExitSpec } from '../rom/metalocation.js';
 import { Location } from '../rom/location.js';
+import { ConnectionType } from '../rom/metascreendata.js';
+import { Rom } from '../rom.js';
 
 const [] = [hex];
 
@@ -23,64 +25,131 @@ export interface Survey {
   readonly features?: {[f in Feature]?: number}; // a, r, s, p, b, w
 }
 
-export interface Attempt {
-  readonly grid: Grid<string>;
-  readonly fixed: Set<GridCoord>;
-  readonly w: number;
-  readonly h: number;
-  readonly size: number;
-  count: number;
-}
-
-//type SurveyType<T extends MazeShuffle> = ReturnType<T['survey']>;
-//type AttemptType<T extends MazeShuffle> = ReturnType<T['attempt']>;
-
 export type Result<T> = {ok: true, value: T} | {ok: false, fail: string};
 export const OK: Result<void> = {ok: true, value: undefined};
 
-export abstract class MazeShuffle {
+export class MazeShuffles {
+  readonly shuffles: MazeShuffle[] = [];
+  constructor(readonly rom: Rom, readonly random: Random) {}
 
-  random!: Random; // set in shuffle() for better API.
-  orig: Metalocation;
-  attempts = 0;
-  maxAttempts = 100;
-  params: Survey;
+  add(...shuffles: MazeShuffle[]) {
+    this.shuffles.push(...shuffles);
+  }
 
-  constructor(readonly loc: Location, params?: Survey) {
+  // Shuffles all the mazes.
+  shuffleAll() {
+    for (const shuffle of this.shuffles) {
+      shuffle.shuffle(this.random);
+    }
+    for (const shuffle of this.shuffles) {
+      if (shuffle.meta) shuffle.finish();
+    }
+    // Shuffle the pits at the end...
+    for (const loc of this.rom.locations) {
+      loc.meta.shufflePits(this.random);
+    }
+  }
+}
+
+export interface MazeShuffle {
+  meta: Metalocation|undefined;
+  shuffle(random: Random): void;
+  finish(): void;
+}
+
+export abstract class AbstractMazeShuffle {
+  // Shuffle-level constants.
+  readonly loc: Location;
+  readonly random!: Random;
+  readonly orig: Metalocation;
+  readonly maxAttempts: number = 250;
+  readonly params: Survey;
+
+  // Shuffle state.
+  attempt = 0;
+
+  // Output.  Can be cleared to force a reshuffle.
+  meta: Metalocation|undefined = undefined;
+
+  // Attempt state variables.
+  // NOTE: These are marked as readonly, but they are cleared by reset().  The
+  // benefit of marking them readonly outweighs the ugliness of mutating them.
+  readonly grid = new Grid<string>(1, 1);
+  readonly fixed = new Set<GridCoord>();
+  readonly w: number = 0;
+  readonly h: number = 0;
+  readonly size: number = 0;
+  count = 0;
+  // Entries are [predicate for orig exit, new pos, new type] - if a matching
+  // exit is found in the original metalocation, it's moved to the new position.
+  readonly exitMap: Array<readonly [(p: Pos, t: ConnectionType) => boolean,
+                                    // TODO - add dest to predicate?
+                                    Pos, ConnectionType]> = [];
+
+  constructor(loc: Location, params?: Survey) {
+    this.loc = loc;
     this.orig = loc.meta;
     this.params = params ?? this.survey(this.orig);
   }
 
-  shuffle(random: Random) {
-    if (!this.loc.used) return;
-    this.random = random;
-    while (++this.attempts <= this.maxAttempts) {
-      const result = this.build();
-      if (result.ok) {
-        this.finish(result.value);
-        return;
-      }
-      console.log(`Shuffle failed ${this.loc}: ${result.fail}`);
-    }
-    this.reportFailure();
+  /** Resets the attempt state. */
+  reset() {
+    this.meta = undefined;
+    const h = this.pickHeight();
+    const w = this.pickWidth();
+    const size = this.pickSize();
+    const grid = new Grid(h, w);
+    grid.data.fill('');
+    // NOTE: violates readonly
+    Object.assign(this, {h, w, size, grid, fixed: new Set(),
+                         count: 0, exitMap: []});
   }
 
-  reportFailure() {
+  shuffle(random: Random) {
+    if (!this.loc.used || this.meta || this.attempt > this.maxAttempts) return;
+    Object.assign(this, {random});
+    while (++this.attempt <= this.maxAttempts) {
+      this.reset();
+      const result = this.build();
+      if (result.ok) return;
+      console.log(`Shuffle failed ${this.loc}: ${result.fail}`);
+    }
     //throw new Error(`Completely failed to map shuffle ${loc}`);
     console.error(`Completely failed to map shuffle ${this.loc}`);
   }
 
   abstract survey(meta: Metalocation): Survey;
 
-  abstract build(): Result<Metalocation>;
+  abstract build(): Result<void>;
 
-  finish(newMeta: Metalocation) {
-    newMeta.transferFlags(this.loc.meta, this.random);
-    newMeta.transferExits(this.loc.meta, this.random);
-    newMeta.transferSpawns(this.loc.meta, this.random);
-    newMeta.transferPits(this.loc.meta);
+  finish() { // final
+    if (!this.meta || this.meta === this.loc.meta) return;
+    this.finishInternal();
+  }
+
+  finishInternal() {
+    if (!this.meta) throw new Error(`impossible`);
+    this.meta.transferFlags(this.loc.meta, this.random);
+    const mappedExits: Array<[Pos, ConnectionType, ExitSpec]> = [];
+    for (const [pred, pos, type] of this.exitMap) {
+      for (const [opos, otype, spec] of mappedExits) {
+        if (pred(opos, otype)) {
+          mappedExits.push([pos, type, spec]);
+          break;
+        }
+      }
+    }
+    this.meta.transferExits(this.loc.meta, this.random);
+    for (const [srcPos, srcType, spec] of mappedExits) {
+      const dest = this.meta.rom.locations[spec[0] >>> 8].meta;
+      const destPos = spec[0] & 0xff;
+      const destType = spec[1];
+      this.meta.attach(srcPos, dest, destPos, srcType, destType);
+    }
+    this.meta.transferSpawns(this.loc.meta, this.random);
+    this.meta.transferPits(this.loc.meta);
     //newMeta.replaceMonsters(this.random);
-    this.loc.meta = newMeta;
+    this.loc.meta = this.meta;
   }
 
   pickHeight(): number {
@@ -98,20 +167,20 @@ export abstract class MazeShuffle {
     return this.params.size + (this.random.nextInt(5) < 2 ? 1 : 0);
   }
 
-  insertTile(a: Attempt, pos: Pos, tile: string): boolean {
+  insertTile(pos: Pos, tile: string): boolean {
     const s = this.posToGrid(pos);
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         const g = s + r * 0x800 + c * 8 as GridCoord;
-        if (a.fixed.has(g)) return false;
-        const v = a.grid.get(g);
+        if (this.fixed.has(g)) return false;
+        const v = this.grid.get(g);
         if (v && v !== tile[r * 3 + c]) return false;
       }
     }
     for (let r = 0; r < 3; r++) {
       for (let c = 0; c < 3; c++) {
         const g = s + r * 0x800 + c * 8 as GridCoord;
-        a.grid.set(g, tile[r * 3 + c]);
+        this.grid.set(g, tile[r * 3 + c]);
       }
     }
     return true;
@@ -123,21 +192,21 @@ export abstract class MazeShuffle {
     return (y << 12 | x << 4) + offset as GridCoord;
   }
 
-  insertPattern(a: Attempt, pattern: readonly string[],
+  insertPattern(pattern: readonly string[],
                 {top = 0, bottom = 0, left = 0, right = 0} = {}): Result<void> {
     const ph = (pattern.length - 1) >>> 1;
     const pw = (pattern[0].length - 1) >>> 1;
     const dh = top + bottom;
     const dw = left + right;
-    if (a.h < ph + dh) return {ok: false, fail: `too short`};
-    if (a.w < pw + dw) return {ok: false, fail: `too narrow`};
-    const y0 = this.random.nextInt(a.h - ph - 1 - dh) + top;
-    const x0 = this.random.nextInt(a.w - pw - 1 - dh) + left;
+    if (this.h < ph + dh) return {ok: false, fail: `too short`};
+    if (this.w < pw + dw) return {ok: false, fail: `too narrow`};
+    const y0 = this.random.nextInt(this.h - ph - 1 - dh) + top;
+    const x0 = this.random.nextInt(this.w - pw - 1 - dh) + left;
     const c0 = (y0 + 1) << 12 | (x0 + 1) << 4;
-    Grid.writeGrid2d(a.grid, c0 as GridCoord, pattern);
+    Grid.writeGrid2d(this.grid, c0 as GridCoord, pattern);
     for (let y = 0x3000; y <= 0x5000; y += 0x800) {
       for (let x = 0x30; x <= 0x40; x += 0x8) {
-        a.fixed.add(c0 + (y | x) as GridCoord);
+        this.fixed.add(c0 + (y | x) as GridCoord);
       }
     }
     return {ok: true, value: undefined};
@@ -167,24 +236,24 @@ export abstract class MazeShuffle {
     return out;
   }
 
-  canSet(a: Attempt, c: GridCoord, v: string): boolean {
-    return this.canSetAll(a, new Map([[c, v]]));
+  canSet(c: GridCoord, v: string): boolean {
+    return this.canSetAll(new Map([[c, v]]));
   }
 
-  canSetAll(a: Attempt, replace: Map<GridCoord, string>): boolean {
+  canSetAll(replace: Map<GridCoord, string>): boolean {
     const screens = new Set<GridCoord>();
     for (const c of replace.keys()) {
-      if (a.fixed.has(c)) return false;
+      if (this.fixed.has(c)) return false;
       const s = (c & ~0x808) as GridCoord;
       const y = s >>> 12;
       const x = (s >>> 4) & 0xf;
-      if (x < a.w && y < a.h) screens.add(s);
-      if (!(c & 8) && y < a.h && x) screens.add(s - 0x10 as GridCoord);
-      if (!(c & 0x800) && x < a.w && y) screens.add(s - 0x1000 as GridCoord);
+      if (x < this.w && y < this.h) screens.add(s);
+      if (!(c & 8) && y < this.h && x) screens.add(s - 0x10 as GridCoord);
+      if (!(c & 0x800) && x < this.w && y) screens.add(s - 0x1000 as GridCoord);
       if (!(c & 0x808) && x && y) screens.add(s - 0x1010 as GridCoord);
     }
     for (const s of screens) {
-      const tile = this.extract(a.grid, s, {replace});
+      const tile = this.extract(this.grid, s, {replace});
       if (!this.orig.tileset.getMetascreensFromTileString(tile).length) {
         return false;
       }
@@ -192,9 +261,9 @@ export abstract class MazeShuffle {
     return true;
   }
 
-  addAllFixed(a: Attempt) {
-    for (let i = 0; i < a.grid.data.length; i++) {
-      if (a.grid.data[i]) a.fixed.add(a.grid.coord(i as GridIndex));
+  addAllFixed() {
+    for (let i = 0; i < this.grid.data.length; i++) {
+      if (this.grid.data[i]) this.fixed.add(this.grid.coord(i as GridIndex));
     }
   }
 }

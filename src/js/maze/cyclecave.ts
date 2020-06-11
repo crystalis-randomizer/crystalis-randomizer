@@ -1,8 +1,6 @@
-import { CaveShuffle, CaveShuffleAttempt } from './cave.js';
+import { CaveShuffle } from './cave.js';
 import { GridCoord } from './grid.js';
 import { Result } from './maze.js';
-
-type A = CaveShuffleAttempt;
 
 export class CycleCaveShuffle extends CaveShuffle {
   maxAttempts = 400;
@@ -10,16 +8,15 @@ export class CycleCaveShuffle extends CaveShuffle {
   // Do nothing
   refineEdges() { return true; }
 
-  preinfer(a: A): Result<void> {
+  preinfer(): Result<void> {
     const allTiles: GridCoord[] = [];
-    for (let y = 0; y < a.h; y++) {
-      for (let x = 0; x < a.w; x++) {
+    for (let y = 0; y < this.h; y++) {
+      for (let x = 0; x < this.w; x++) {
         const c = (y << 12 | x << 4 | 0x808) as GridCoord;
-        if (a.grid.get(c)) allTiles.push(c);
+        if (this.grid.get(c)) allTiles.push(c);
       }
     }
-    const nonCritical =
-        allTiles.filter(t => this.tryClear(a, [t]).length === 1);
+    const nonCritical = allTiles.filter(t => this.tryClear([t]).length === 1);
     if (!nonCritical.length) {
       // everything is critical
       return {ok: false, fail: 'all critical?'};
@@ -27,8 +24,8 @@ export class CycleCaveShuffle extends CaveShuffle {
     // find two noncritical tiles that together *are* critical
     for (let i = 0; i < nonCritical.length; i++) {
       for (let j = 0; j < i; j++) {
-        if (this.tryClear(a, [nonCritical[i], nonCritical[j]]).length > 2) {
-          return super.preinfer(a);
+        if (this.tryClear([nonCritical[i], nonCritical[j]]).length > 2) {
+          return super.preinfer();
         }
       }
     }

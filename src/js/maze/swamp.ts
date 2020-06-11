@@ -1,7 +1,7 @@
 import { Monogrid } from './monogrid.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
 import { CaveShuffle } from './cave.js';
-import { Result } from './maze.js';
+import { OK, Result } from './maze.js';
 import { seq } from '../rom/util.js';
 import { Metascreen } from '../rom/metascreen.js';
 import { Rom } from '../rom.js';
@@ -9,7 +9,8 @@ import { ScreenFix } from '../rom/screenfix.js';
 
 export class SwampShuffle extends CaveShuffle {
 
-  build(h = this.pickHeight(), w = this.pickWidth()): Result<Metalocation> {
+  build(): Result<void> {
+    const {h, w} = this;
     const rom = this.orig.rom;
     const g = new Monogrid(h, w);
     g.fill();
@@ -138,7 +139,7 @@ export class SwampShuffle extends CaveShuffle {
       doorCount--;
     }
     if (doorCount) return {ok: false, fail: `could not place all doors`};
-    return {ok: true, value: meta};
+    return OK;
   }
 }
 

@@ -1,4 +1,4 @@
-import { CaveShuffleAttempt, CaveShuffle } from './cave.js';
+import { CaveShuffle } from './cave.js';
 import { Result, OK } from './maze.js';
 import { Rom } from '../rom.js';
 import { Random } from '../random.js';
@@ -7,8 +7,6 @@ import { ScreenFix } from '../rom/screenfix.js';
 import { DefaultMap } from '../util.js';
 import { Metascreen } from '../rom/metascreen.js';
 import { Metalocation, Pos } from '../rom/metalocation.js';
-
-type A = CaveShuffleAttempt;
 
 // TODO - needs more loops...
 
@@ -19,39 +17,40 @@ export class LabyrinthShuffle extends CaveShuffle {
   arena!: number;
   reachable?: number;
 
-  initialFill(a: A): Result<void> {
-    const target = a.size + 3; // + this.random.nextInt(4);
+  initialFill(): Result<void> {
+    const target = this.size + 3; // + this.random.nextInt(4);
     const stair =
-        (this.random.nextInt(a.w) << 4 | (a.h - 1) << 12 | 0x808) as GridCoord;
-    if (!a.grid.isBorder(W(stair))) a.fixed.add(W(stair, 2));
-    if (!a.grid.isBorder(E(stair))) a.fixed.add(E(stair, 2));
-    a.grid.set(stair, '>');
-    a.fixed.add(stair);
-    a.grid.set(N(stair), 'w');
-    a.fixed.add(N(stair));
-    a.fixed.add(W(stair));
-    a.fixed.add(E(stair));
+        (this.random.nextInt(this.w) << 4 |
+         (this.h - 1) << 12 | 0x808) as GridCoord;
+    if (!this.grid.isBorder(W(stair))) this.fixed.add(W(stair, 2));
+    if (!this.grid.isBorder(E(stair))) this.fixed.add(E(stair, 2));
+    this.grid.set(stair, '>');
+    this.fixed.add(stair);
+    this.grid.set(N(stair), 'w');
+    this.fixed.add(N(stair));
+    this.fixed.add(W(stair));
+    this.fixed.add(E(stair));
 
-    const arena = (this.random.nextInt(a.w) << 4 | 0x808) as GridCoord;
+    const arena = (this.random.nextInt(this.w) << 4 | 0x808) as GridCoord;
     const down = S(arena, 2);
-    a.grid.set(arena, '<');
-    a.fixed.add(arena);
-    a.grid.set(S(arena), 'w');
-    a.fixed.add(S(arena));
-    a.grid.set(down, 'w');
-    a.fixed.add(down);
-    a.grid.set(S(down), 'w');
-    a.fixed.add(S(down));
-    a.fixed.add(W(down));
-    a.fixed.add(E(down));
+    this.grid.set(arena, '<');
+    this.fixed.add(arena);
+    this.grid.set(S(arena), 'w');
+    this.fixed.add(S(arena));
+    this.grid.set(down, 'w');
+    this.fixed.add(down);
+    this.grid.set(S(down), 'w');
+    this.fixed.add(S(down));
+    this.fixed.add(W(down));
+    this.fixed.add(E(down));
 
     // TODO - can stair be not on bottom?  arena not on top?
 
-    if (!this.tryConnect(a, N(stair, 2), S(down, 2), 'w', 10)) {
+    if (!this.tryConnect(N(stair, 2), S(down, 2), 'w', 10)) {
       return {ok: false, fail: `initial connect`};
     }
-    while (a.count < target) {
-      if (!this.tryAddLoop(a, 'w', 10)) return {ok: false, fail: `add loops`};
+    while (this.count < target) {
+      if (!this.tryAddLoop('w', 10)) return {ok: false, fail: `add loops`};
     }
     return OK;
   }
@@ -61,7 +60,7 @@ export class LabyrinthShuffle extends CaveShuffle {
   addArenas() { return true; }
   addStairs() { return OK; }
 
-  refineMetascreens(a: A, meta: Metalocation): Result<void> {
+  refineMetascreens(meta: Metalocation): Result<void> {
 console.log(meta.show());
     // 1. replace all the (non-fixed) wideHallNS with either stairs or pairs
     //    of dead ends - no same vertical neighbors
@@ -77,7 +76,7 @@ console.log(meta.show());
           if (pos < 16 || !meta.get(pos - 16).hasFeature('arena')) {
             meta.set(pos, meta.rom.metascreens.goaWideHallNS_stairs);
             const c = ((pos << 8 | pos << 4) & 0xf0f0 | 0x808) as GridCoord;
-            a.grid.set(c, 'H');
+            this.grid.set(c, 'H');
           }
         } else if (edge === 1) {
           this.stair = pos << 8 | 2;
@@ -97,11 +96,11 @@ console.log(meta.show());
     for (let x = 0; x < meta.width; x++) {
       for (let y = 0; y < meta.height; y++) {
         // const c = ((pos << 8 | pos << 4) & 0xf0f0) as GridCoord;
-        //` let tile = this.extract(a.grid, c);
+        //` let tile = this.extract(this.grid, c);
         const c = (y << 12 | x << 4 | 0x808) as GridCoord;
         let len = 0;
         while (y + len < meta.height &&
-               a.grid.get(c + len * 0x1000 as GridCoord) === 'H') {
+               this.grid.get(c + len * 0x1000 as GridCoord) === 'H') {
           len++;
         }
         // alternate dead ends and stairs
@@ -119,7 +118,7 @@ console.log(meta.show());
           if (!this.checkMeta(meta, opt)) continue;
           for (const [pos, s] of opt) {
             meta.set(pos, s);
-            a.grid.set(c + 0x1000 * ((pos >> 4) - y) as GridCoord, '=');
+            this.grid.set(c + 0x1000 * ((pos >> 4) - y) as GridCoord, '=');
           }
           found = true;
           break;
@@ -127,11 +126,11 @@ console.log(meta.show());
         if (!found) return {ok: false, fail: `could not rectify hallway`};
         y += len;
 
-//         if (a.grid.get(c) === 'H') {
+//         if (this.grid.get(c) === 'H') {
 //           // try to set to a dead end.
 //         if (this.tryMeta(meta, pos, [deadEnd])) {
-//           a.grid.set(c, '=');
-//         } else if (a.grid.get(c - 0x1000 as GridCoord) === 'H') {
+//           this.grid.set(c, '=');
+//         } else if (this.grid.get(c - 0x1000 as GridCoord) === 'H') {
 // //debugger;
 //           return {ok: false, fail: `could not break up stair halls`};
 //         }
@@ -144,7 +143,7 @@ console.log(meta.show());
     }
 
     // TODO - convert adjacent stairs to dead ends
-    return super.refineMetascreens(a, meta);
+    return super.refineMetascreens(meta);
   }
 
   checkMeta(meta: Metalocation, repl?: Map<Pos, Metascreen>): boolean {

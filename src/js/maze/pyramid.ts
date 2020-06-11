@@ -2,16 +2,21 @@ import { Location } from '../rom/location.js';
 import { Random } from '../random.js';
 import { Rom } from '../rom.js';
 import { Metalocation } from '../rom/metalocation.js';
+import { MazeShuffle } from './maze.js';
 
 // TODO - we could do a bit more map gen: randomize which hall has the inner
 // stair (or make more of them), add some dead ends instead of stairs, add
 // extra branches on the edge/corner, etc.
 
-export class PyramidShuffle {
+export class PyramidShuffle implements MazeShuffle {
+
+  meta: Metalocation|undefined;
+
   constructor(readonly location: Location) {}
 
   // This is a different style of shuffle.  
   shuffle(random: Random) {
+    if (this.meta) throw new Error(`impossible`);
     const meta = this.location.meta;
     moveInternalStair(meta, random);
     // 50% chance of swapping the exit to a downstair.
@@ -31,12 +36,24 @@ export class PyramidShuffle {
     }
     if (up.length !== dn.length) throw new Error(`length mismatch`);
     const dn2 = random.shuffle([...dn]);
+    // make sure dn2 is actually a derangement of dn (prevent closing out the
+    // chest room as inaccessible).
+    for (let i = 0; i < dn.length; i++) {
+      if (dn[i] === dn2[i]) {
+        random.shuffle(dn2);
+        i = -1;
+      }
+    }
+    // zip the exits together
     const self = this.location.id << 8;
     for (let i = 0; i < up.length; i++) {
       meta.setExitOneWay(up[i][0], up[i][1], [self | dn[i][0], dn[i][1]]);
       meta.setExitOneWay(dn2[i][0], dn2[i][1], [self | up[i][0], up[i][1]]);
     }
+    this.meta = meta;
   }
+
+  finish() {}
 }
 
 function moveInternalStair(meta: Metalocation, random: Random) {

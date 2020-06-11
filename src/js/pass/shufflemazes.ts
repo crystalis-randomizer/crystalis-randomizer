@@ -6,7 +6,7 @@ import { CaveShuffle, CryptEntranceShuffle,
 //import {shufflePyramid} from '../maze/pyramid.js';
 import { Random } from '../random.js';
 import { Rom } from '../rom.js';
-import { BridgeCaveShuffle } from '../maze/doublecave.js';
+import { bridgeCaveShuffle } from '../maze/doublecave.js';
 import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
 import { RiverCaveShuffle, StyxRiverCaveShuffle, WaterfallRiverCaveShuffle,
          OasisCaveShuffle, OasisEntranceCaveShuffle } from '../maze/rivercave.js';
@@ -15,12 +15,8 @@ import { SaberaPalaceShuffle } from '../maze/twostage.js';
 import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
 import { PyramidShuffle } from '../maze/pyramid.js';
 import { wideArenaExits } from '../rom/screenfix.js';
-import { KarmineBasementShuffle, KarmineKensuShuffle, KarmineMainShuffle,
-         KarmineUpstairsShuffle } from '../maze/karmine.js';
-
-interface Shuffle {
-  shuffle(random: Random): void;
-}
+import { KarmineBasementShuffle, karmine } from '../maze/karmine.js';
+import { MazeShuffles } from '../maze/maze.js';
 
 export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // TODO - consolidate free flags?  Find a list of what's used...
@@ -35,13 +31,14 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
 
   prepareScreens(rom, random);
 
-  const shuffles: Shuffle[] = [
+  const shuffles = new MazeShuffles(rom, random);
+  shuffles.add(
     // new TownShuffle($.Leaf),
     // new OverworldShuffle($.ValleyOfWind),
     new CaveShuffle($.EastCave1),
     new CaveShuffle($.EastCave2),
     new CaveShuffle($.EastCave3),
-    new BridgeCaveShuffle($.SealedCave2, $.SealedCave1),
+    ...bridgeCaveShuffle($.SealedCave1, $.SealedCave2),
     new CaveShuffle($.SealedCave3),
     new CaveShuffle($.SealedCave4),
     new CaveShuffle($.SealedCave5),
@@ -85,8 +82,8 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new CaveShuffle($.FogLampCave2),
     new CaveShuffle($.FogLampCave3),
     new TightCycleCaveShuffle($.FogLampCaveDeadEnd),
-    new BridgeCaveShuffle($.FogLampCave4, $.FogLampCave5, true /*reversed*/),
-    new BridgeCaveShuffle($.FogLampCave6, $.FogLampCave7),
+    ...bridgeCaveShuffle($.FogLampCave5, $.FogLampCave4, true /*reversed*/),
+    ...bridgeCaveShuffle($.FogLampCave7, $.FogLampCave6),
     // new TownShuffle($.Portoa),
     new CycleCaveShuffle($.WaterfallCave1),
     new CaveShuffle($.WaterfallCave2),
@@ -152,21 +149,14 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new CaveShuffle($.GoaFortress_Karmine2),
     new CaveShuffle($.GoaFortress_Karmine4),
     new KarmineBasementShuffle($.GoaFortress_Karmine6),
-    new KarmineUpstairsShuffle($.GoaFortress_Karmine3),
-    new KarmineMainShuffle($.GoaFortress_Karmine5),
-    new KarmineKensuShuffle($.GoaFortress_Kensu),
+    ...karmine($.GoaFortress_Karmine3, $.GoaFortress_Karmine5,
+               $.GoaFortress_Kensu),
     new OasisEntranceCaveShuffle($.OasisCave_Entrance),
     //new KarmineUpstairsShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5),
     // new GoaKarmineShuffle($.GoaFortress_Karmine3, $.GoaFortress_Karmine5,
     //                       $.GoaFortress_Kensu, $.GoaFortress_Karmine6),
-  ];
-  for (const shuffle of shuffles) {
-    shuffle.shuffle(random);
-  }
-  // Shuffle all the pits afterwards
-  for (const loc of $) {
-    loc.meta.shufflePits(random);
-  }
+  );
+  shuffles.shuffleAll();
 }
 
 export function prepareScreens(rom: Rom, random = new Random(1)) {

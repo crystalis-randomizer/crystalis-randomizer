@@ -1,8 +1,7 @@
-import { CaveShuffleAttempt, CaveShuffle } from './cave.js';
+import { CaveShuffle } from './cave.js';
 import { GridCoord, coordToPos } from './grid.js';
-import { Random } from '../random.js';
 import { Location } from '../rom/location.js';
-import { Pos, Metalocation } from '../rom/metalocation.js';
+import { Pos } from '../rom/metalocation.js';
 import { iters } from '../util.js';
 import { Result, OK } from './maze.js';
 
@@ -11,71 +10,49 @@ import { Result, OK } from './maze.js';
 // TODO - the current setup is O(n^2) attempts; we could switch to an
 //        intersection where both attempts need to pass at the same time.
 
-type A = CaveShuffleAttempt;
-
-export class BridgeCaveShuffle {
-  over: OverpassShuffle;
-  under: UnderpassShuffle;
-  constructor(readonly overpass: Location, readonly underpass: Location,
-              reverse = false) {
-    this.under = this.makeUnder(underpass, overpass, reverse);
-    this.over = this.makeOver(overpass, this.under, reverse);
-  }
-
-  makeUnder(underpass: Location, overpass: Location, reverse: boolean) {
-    return new UnderpassShuffle(underpass, overpass, reverse);
-  }
-
-  makeOver(overpass: Location, under: UnderpassShuffle, reverse: boolean) {
-    return new OverpassShuffle(overpass, under, reverse);
-  }
-
-  shuffle(random: Random) {
-    while (this.under.attempts < this.under.maxAttempts) {
-      this.under.finished = undefined;
-      this.under.shuffle(random);
-      if (!this.under.finished) return; // no dice
-      this.over.maxAttempts = this.under.attempts;
-      this.over.shuffle(random);
-      if (this.over.finished) {
-        this.over.actuallyFinish();
-        this.under.actuallyFinish();
-        return; // success
-      }
-    }
-  }
+export function bridgeCaveShuffle(underpass: Location,
+                              overpass: Location,
+                              reverse = false): CaveShuffle[] {
+  const under = new UnderpassShuffle(underpass, overpass, reverse);
+  const over = new OverpassShuffle(overpass, under, reverse);
+  return [under, over];
 }
 
-class DoubleShuffle extends CaveShuffle {
-  finished?: Metalocation;
-  finish(meta: Metalocation) {
-    this.finished = meta;
-  }
-  actuallyFinish() {
-    super.finish(this.finished!);
-  }
-}
 
-class OverpassShuffle extends DoubleShuffle {
+class OverpassShuffle extends CaveShuffle {
+
+  downStairs: Pos[] = [];
 
   constructor(readonly location: Location, readonly under: UnderpassShuffle,
               readonly reverse: boolean) { super(location); }
 
   init() {
     // start fresh
-    this.under.downStairs = [];
+    this.downStairs = [];
   }
 
-  actualFinish() {
+  build(): Result<void> {
+    if (this.under.attempt < this.attempt) {
+      this.under.meta = undefined;
+      this.under.shuffle(this.random);
+      if (!this.under.meta) return {ok: false, fail: `dependent failed`};
+    }
+    return super.build();
+  }
+
+  finishInternal() {
+    if (!this.meta || !this.under.meta) throw new Error(`impossible`);
+    this.under.finish();
+    super.finishInternal();
     // Attach the stairs.  newMeta is the overpass.
     for (const [up, down] of iters.zip(this.under.upStairs,
-                                       this.under.downStairs)) {
-      this.finished!.attach(down, this.under.finished!, up);
+                                       this.downStairs)) {
+      this.meta.attach(down, this.under.meta, up);
     }
   }
 
-  addEarlyFeatures(a: A): Result<void> {
-    const result = super.addEarlyFeatures(a);
+  addEarlyFeatures(): Result<void> {
+    const result = super.addEarlyFeatures();
     if (!result.ok) return result;
 //if(this.params.id===5)debugger;
     // Find the bridge that was added.
@@ -104,15 +81,15 @@ class OverpassShuffle extends DoubleShuffle {
     OUTER:
     for (let attempt = 0; attempt < 10; attempt++) {
       const mods: Array<[GridCoord, string]> = [];
-      const x = this.random.nextInt(a.w - (xMax - xMin)) + xMin;
-      const y = this.random.nextInt(a.h - (yMax - yMin)) + yMin;
+      const x = this.random.nextInt(this.w - (xMax - xMin)) + xMin;
+      const y = this.random.nextInt(this.h - (yMax - yMin)) + yMin;
       const delta = (y - yMin) << 4 + (x - xMin);
       for (const bridge of this.under.underBridges) {
         const pos = bridge + delta;
         const sy = pos >>> 4;
         const sx = pos & 0xf;
         const c = (sy << 12 | sx << 4 | 0x808) as GridCoord;
-        if (a.grid.get(c) !== 'c') continue OUTER; // out of bounds.
+        if (this.grid.get(c) !== 'c') continue OUTER; // out of bounds.
         mods.push([c, 'b']);
         mods.push([c - 8 as GridCoord, '']);
         mods.push([c + 8 as GridCoord, '']);
@@ -122,7 +99,7 @@ class OverpassShuffle extends DoubleShuffle {
         const sy = pos >>> 4;
         const sx = pos & 0xf;
         const c = (sy << 12 | sx << 4 | 0x808) as GridCoord;
-        if (a.grid.get(c) !== 'c') continue OUTER;
+        if (this.grid.get(c) !== 'c') continue OUTER;
         mods.push([c, this.reverse ? '<' : '>']);
         mods.push([c + (this.reverse ? -0x800 : 0x800) as GridCoord, '']);
         // Pick a single direction for the stair.
@@ -130,28 +107,28 @@ class OverpassShuffle extends DoubleShuffle {
         // But it would still be nice to "point" them in the easy direction?
         // if (this.delta < -16) neighbors.splice(2, 1);
         // if ((this.delta & 0xf) < 8) neighbors.splice(1, 1);
-        const stairMods = this.addEarlyStair(a, c, this.reverse ? '<' : '>');
+        const stairMods = this.addEarlyStair(c, this.reverse ? '<' : '>');
         if (!stairMods.length) continue OUTER;
         mods.push(...stairMods);
       }
 
       for (const [c, v] of mods) {
-        if (v) a.fixed.add(c);
+        if (v) this.fixed.add(c);
         if (v === '<' || v === '>') {
-          this.under.downStairs.push(coordToPos(c));
+          this.downStairs.push(coordToPos(c));
         }
-        a.grid.set(c, v);
+        this.grid.set(c, v);
       }
       return OK;
     }
     return {ok: false, fail: 'add fixed stairs with early features'};
   }
 
-  addStairs(a: A, up = 0, down = 0): Result<void> {
+  addStairs(up = 0, down = 0): Result<void> {
     if (this.reverse) {
-      return super.addStairs(a, up - this.under.upStairs.length, down);
+      return super.addStairs(up - this.under.upStairs.length, down);
     }
-    return super.addStairs(a, up, down - this.under.upStairs.length);
+    return super.addStairs(up, down - this.under.upStairs.length);
   }
 
   addOverpasses() {
@@ -159,17 +136,15 @@ class OverpassShuffle extends DoubleShuffle {
   }
 
   // Expected to have several failures
-  reportFailure() {}
+  //reportFailure() {}
 }
 
-class UnderpassShuffle extends DoubleShuffle {
+class UnderpassShuffle extends CaveShuffle {
 
   // These are filled in by this.finish
   underBridges: Pos[] = [];
   upStairs: Pos[] = [];
   upStairsEffective: Pos[] = []; // for matching purposes, shift some stairs.
-  // These are filled in by OverpassShuffleAttempt
-  downStairs: Pos[] = [];
 
   constructor(readonly loc: Location, readonly overpass: Location,
               readonly reverse: boolean) { super(loc); }
@@ -180,10 +155,15 @@ class UnderpassShuffle extends DoubleShuffle {
     this.upStairsEffective = [];
   }
 
-  finish(newMeta: Metalocation) {
+  build(): Result<void> {
+    const result = super.build();
+    if (!result.ok) return result;
+    if (!this.meta) throw new Error('impossible');
+
+    // Record the positions of the relevant stairs and bridges
     const upStair = this.reverse ? 'stair:down' : 'stair:up';
-    for (const pos of newMeta.allPos()) {
-      const scr = newMeta.get(pos);
+    for (const pos of this.meta.allPos()) {
+      const scr = this.meta.get(pos);
       if (scr.hasFeature('underpass')) this.underBridges.push(pos);
       if (scr.hasFeature(upStair)) {
         let delta = 0;
@@ -200,10 +180,10 @@ class UnderpassShuffle extends DoubleShuffle {
     }
     // http://localhost:8082/#flags=DsErsGtRostWm&seed=b63c4b02&debug
     if (!this.underBridges.length) {
-      throw new Error(`Expected bridge in ${this.loc}\n${newMeta.show()}`);
+      throw new Error(`Expected bridge in ${this.loc}\n${this.meta.show()}`);
     }
     if (!this.upStairs.length) {
-      throw new Error(`Expected stair in ${this.loc}\n${newMeta.show()}`);
+      throw new Error(`Expected stair in ${this.loc}\n${this.meta.show()}`);
     }
 
     let stairsLen = 0;
@@ -212,7 +192,7 @@ class UnderpassShuffle extends DoubleShuffle {
     }
     this.upStairs = this.random.shuffle(this.upStairs).slice(0, stairsLen);
 
-    super.finish(newMeta);
+    return OK;
   }
 
   // TODO - consider instead pickExitForPos(pos: Pos, oldLoc: Metalocation)

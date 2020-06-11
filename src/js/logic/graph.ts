@@ -174,12 +174,12 @@ export class Graph {
 
   async shuffle(flagset: FlagSet,
                 random: Random,
-                attempts = 20, // 00
+                attempts = 200, // 0
                 progress?: ProgressTracker,
                 spoiler?: Spoiler): Promise<Map<SlotId, ItemId>|null> {
-    if (progress) progress.addTasks(Math.floor(attempts / 100));
+    if (progress) progress.addTasks(Math.floor(attempts / 10));
     for (let attempt = 0; attempt < attempts; attempt++) {
-      if (progress && (attempt % 100 === 99)) {
+      if (progress && (attempt % 10 === 9)) {
         progress.addCompleted(1);
         await new Promise(requestAnimationFrame);
       }

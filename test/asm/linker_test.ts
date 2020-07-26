@@ -279,6 +279,33 @@ describe('Linker', function() {
     expect([...patch.chunks()]).to.eql([[150, [5, 7, 9, 1, 1, 3, 3]]]);
   });
 
+  it('should .move existing data from an absolute offset', function() {
+    const base = Uint8Array.of(
+      // starts at 10
+      0, 2, 4, 6, 8, 0, 2, 4, 6, 8,
+      1, 3, 5, 7, 9, 1, 1, 3, 3, 5,
+      5, 7, 7, 9, 9, 0, 0, 0, 2, 2,
+      2, 4, 4, 4, 6, 6, 6, 8, 8, 8);
+    const m = {
+      chunks: [{
+        segments: ['b'],
+        data: Uint8Array.of(),
+      }, {
+        segments: ['a'],
+        data: Uint8Array.of(0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff),
+        subs: [{offset: 0, size: 7, expr: {op: '.move', args: [
+          {op: 'num', num: 12, meta: {org: 10, offset: 20}},
+        ]}}],
+      }],
+      segments: [{
+        name: 'a', size: 100, offset: 100, memory: 0,
+        free: [[50, 100] as const],
+      }, {name: 'b', size: 40, offset: 0, memory: 0}],
+    };
+    const patch = new Linker().base(base, 10).read(m).link();
+    expect([...patch.chunks()]).to.eql([[150, [5, 7, 9, 1, 1, 3, 3]]]);
+  });
+
   it('should resolve bank bytes', function() {
     const m = {
       chunks: [{

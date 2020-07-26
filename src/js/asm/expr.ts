@@ -64,6 +64,7 @@ export namespace Expr {
         return expr;
       case 'num':
         if (expr.meta?.rel && expr.meta.org != null) {
+          // Remove the 'rel' tag since it's no longer relative.
           const {rel, ...meta} = expr.meta;
           // TODO - pull size from meta?
           return {op: 'num', num: expr.num! + meta.org!, meta};

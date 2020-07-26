@@ -274,7 +274,9 @@ class LinkChunk {
       if (sub.expr.args!.length !== 1) throw new Error(`bad .move`);
       const child = sub.expr.args![0];
       if (child.op === 'num' && child.meta?.offset != null) {
-        const start = child.meta!.offset! + child.num!;
+        const delta =
+            child.meta!.offset! - (child.meta!.rel ? 0 : child.meta!.org!);
+        const start = child.num! + delta;
         const slice = this.linker.orig.slice(start, start + sub.size);
         this.writeBytes(sub.offset, Uint8Array.from(slice));
         del = true;

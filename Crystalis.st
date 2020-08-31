@@ -33300,8 +33300,10 @@ MainLoop_TitleScreen
         $26032  xx xx xx:   xxx $xxxx
         $26035  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_26038
-        $26038              .byte $xx,$xx,$xx,$xx,$xx,$xx
+DataTable_26038                           ; Jump table (see above)
+        $26038              .word ($xxxx) ; 2603e
+        $2603a              .word ($xxxx) ; 24310
+        $2603c              .word ($xxxx) ; 2434a
 ;;; --------------------------------
         $2603e  xx xx xx:   xxx $xxxx
         $26041  xx:         xxx
@@ -33312,9 +33314,16 @@ DataTable_26038
         $2604c  xx xx xx:   xxx $xxxx
         $2604f  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_26052
-        $26052              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $26060              .byte $xx,$xx,$xx,$xx
+DataTable_26052                           ; Jump table (see above)
+        $26052              .word ($xxxx) ; 2679f
+        $26054              .word ($xxxx) ; 26653
+        $26056              .word ($xxxx) ; 26bea
+        $26058              .word ($xxxx) ; 260b5
+        $2605a              .word ($xxxx) ; 26176
+        $2605c              .word ($xxxx) ; 26653
+        $2605e              .word ($xxxx) ; 266df
+        $26060              .word ($xxxx)
+        $26062              .word ($xxxx)
 ;;; --------------------------------
 JumpTable_267bc_04
 JumpTable_267bc_09
@@ -34128,8 +34137,10 @@ DataTable_266dd
         $266ed  xx xx xx:   xxx $xxxx
         $266f0  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_266f3
-        $266f3              .byte $xx,$xx,$xx,$xx,$xx,$xx
+DataTable_266f3                           ; Jump table
+        $266f3              .word ($xxxx) ; 266fe
+        $266f5              .word ($xxxx) ; 26749
+        $266f7              .word ($xxxx) ; 26796
 ;;; --------------------------------
         $266f9  xx xx:      xxx #MAIN_LOOP_PREPARE_GAME_START
         $266fb  xx xx:      xxx MainLoopMode
@@ -35623,7 +35634,7 @@ InitializeStatusBarNametable
         $27ad4  xx xx:      xxx - ; $27acc
         $27ad6  xx xx xx:   xxx FlushNametableDataWrite
 ;;; --------------------------------
-DataTable_27ad9 
+DataTable_27ad9                 ; This is written to the nametable (status bar?)
         $27ad9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $27ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $27af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx

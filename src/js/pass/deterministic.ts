@@ -106,6 +106,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   addMezameTrigger(rom);
   normalizeSwords(rom, flags);
 
+  fixFlyableWalls(rom);
   fixMonsterTerrain(rom);
   fixCrystalis(rom);
   fixOpelStatue(rom);
@@ -1040,6 +1041,17 @@ function noBowMode(rom: Rom): void {
 // For now this just fixes the shot to be all elements instead of none.
 function fixCrystalis(rom: Rom) {
   rom.objects[0x33].elements = 0xf;
+}
+
+// There are a few metatiles that have incorrect behavior (one of
+// the pillar tiles in the crypt tileset and a corner tile in the
+// cave tileset), which allows flying through them.  The crypt tile
+// can cause the player to get stuck if they get hit while flying
+// near it.  The cave corner can allow sneaking past the stoned
+// NPCs in the waterfall cave using flight.
+function fixFlyableWalls(rom: Rom) {
+  rom.tileEffects[0xb5 - 0xb3].effects[0x74] = 6; // cave corner
+  rom.tileEffects[0xb6 - 0xb3].effects[0x46] = 6; // crypt pillar
 }
 
 // Tomatos (and others) shouldn't be able to cross water or roll up ramps.

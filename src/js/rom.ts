@@ -776,8 +776,6 @@ export const EXPECTED_CRC32 = 0x1bd39032;
 
 // Format: [address, broken, fixed]
 const ADJUSTMENTS = [
-  // Fix softlock in crypt due to flyable wall (effects $b6 tile $46)
-  [0x13646, 0x02, 0x06],
   // Normalize cave entrance in 01 outside start
   [0x14548, 0x56, 0x50],
   // Fix broken (fall-through) exit outside start

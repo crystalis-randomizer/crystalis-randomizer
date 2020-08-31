@@ -202,7 +202,7 @@ const shuffleRom = async (seed) => {
   let done = false;
   const flagsClone = new FlagSet(String(flags)); // prevent modifying
   document.body.classList.add('shuffling');
-  const log = flags.check('Ds') ? {} : undefined;
+  const log = flags.check('Ds') || true ? {} : undefined;
   const showWork = () => {
     if (done) return;
     progressEl.value = progressTracker.value();
@@ -358,8 +358,8 @@ const updateDom = () => {
 
 const updateRaceDom = () => {
   const flagString = String(flags)
-  document.body.classList.toggle('spoiled', flags.check('Ds'));
-  document.body.classList.toggle('debug-mode', /D/.test(flagString));
+  document.body.classList.toggle('spoiled', flags.check('Ds') || true);
+  document.body.classList.toggle('debug-mode', /D/.test(flagString) || true);
   for (const span of document.getElementsByClassName('flagstring-out')) {
     span.textContent = flagString;
   }

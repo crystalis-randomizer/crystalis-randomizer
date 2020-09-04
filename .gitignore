@@ -17,3 +17,4 @@ npm_token
 node_modules
 tsconfig.tsbuildinfo
 npm-debug.log
+.tsc.out

@@ -2,9 +2,21 @@
 
 # Link all files in src/ to dist/ so that we can serve out of there.
 
+if [ ! -d src ]; then
+  echo "Must run link.sh from repository root."
+fi
+
+rm -rf dist/
+
 copy=false
 if [ "$1" = "--copy" ]; then
   copy=true
+fi
+
+if [ -d .git/hooks ]; then
+  rm -f .git/hooks/pre-{commit,push}
+  ln -s ../../scripts/pre-commit .git/hooks/pre-commit
+  ln -s ../../scripts/pre-push .git/hooks/pre-push
 fi
 
 find src -type f | while read src; do

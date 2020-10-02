@@ -161,7 +161,7 @@ class Presets {
       ]);
 
   readonly FullStupid = new Preset(this, 'The Full Stupid', `
-      Nobody has ever completed this.  Be sure to record this because
+      Only TheAxeMan has ever completed this.  Be sure to record this because
       pics or it didn't happen.`, [ 
         NoGuarantees.Barrier,
         NoGuarantees.BattleMagic,

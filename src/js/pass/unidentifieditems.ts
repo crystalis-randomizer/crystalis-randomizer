@@ -61,6 +61,7 @@ const STATUE_NAMES = [
   'Dragondarch Statue',
   'Overswarm Statue',
   'Trueblue83 Statue',
+  'TheAxeMan Idol',
   'Flail Guy Trophy',
   'Metroid Amiibo',
 ];

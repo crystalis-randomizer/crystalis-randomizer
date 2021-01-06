@@ -817,7 +817,7 @@ export class Metascreens {
     tile: ' t |ttt|   ',
     tilesets: {tower: {}},
     edges: 'st t',
-    exits: [topEdge({left: 8})],
+    exits: [topEdge({left: 8}), seamlessDown(0x08, 2)],
     // TODO - annotate possible stairway w/ flag?
   });
   readonly towerRobotDoor_downStair = this.metascreen({

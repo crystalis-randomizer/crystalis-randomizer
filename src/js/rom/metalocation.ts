@@ -146,7 +146,8 @@ export class Metalocation {
         if (y === 0) {
           reachable.set((exit.screen - 16) << 8 | 0x88, 1);
         } else if (y === 0xe) {
-          reachable.set(exit.screen << 8 | 0x88, 1);
+          // TODO - why does +16 not work here?
+          reachable.set((exit.screen /*+ 16*/) << 8 | 0x88, 1);
         }
       }
     }
@@ -218,12 +219,16 @@ export class Metalocation {
       if (exit.dest === 0xff) continue;
       let srcPos = exit.screen;
       let tile = exit.tile;
-      // Kensu arena exit is declared at y=f
-      if (exit.isSeamless() && !(exit.yt & 0xf)) {
+      // Kensu arena exit is declared at y=f, but the exit's actual screen
+      // in the rom will be stored as the screen beneath.  Same thing goes
+      // for the tower escalators, but in those cases, we already added
+      // the corresponding exit on the paired screen, so we don't need to fix.
+      if (exit.isSeamless() && !(exit.yt & 0xf) &&
+          (location.id & 0x58) !== 0x58) {
         srcPos -= 16;
         tile |= 0xf0;
       }
-      if (!reachableScreens.has(srcPos)) continue;
+      if (!reachableScreens.has(srcPos)) throw new Error('impossible?');
       const srcScreen = screens[srcPos];
       const srcExit = srcScreen.findExitType(tile, height === 1,
                                              !!(exit.entrance & 0x20));

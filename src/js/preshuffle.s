@@ -1767,7 +1767,7 @@ AutoEquipBracelets:
    ;; deselect all
 -  lda #$80
    sta $642b
-   lda #00
+   lda #0
    sta $0718
    sta $0719
    rts
@@ -2008,6 +2008,10 @@ QuickChangeSword:
     sta $06c0 ; zero out the current charge
     lda #$4c  ; sfx: cursor select
     jsr $c125 ; StartAudioTrack
+.ifndef _AUTO_EQUIP_BRACELET
+    jsr $d9d8
+    sty $0719
+.endif
     jmp PostInventoryMenu
 CheckSelectShortcuts:
   lda $4b

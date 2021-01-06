@@ -43306,7 +43306,7 @@ DataTable_34d49
         $34d74  xx xx xx:    xxx $xxxx,x
         $34d77  xx:          xxx
         $34d78  xx xx:       xxx $xx
-        $34d7a  xx xx xx:    xxx $xxxx
+        $34d7a  xx xx xx:    xxx MaxChargeLevel
         $34d7d  xx:          xxx
         $34d7e  xx:          xxx
         $34d7f  xx:          xxx

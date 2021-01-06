@@ -151,6 +151,9 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.noBowMode()) noBowMode(rom);
 
   patchTooManyItemsMessage(rom);
+
+  if (flags.hardcoreMode()) hardcoreMode(rom);
+
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation
@@ -1058,4 +1061,10 @@ function replace<T>(array: T[], old: T, replacement: T) {
     return;
   }
   throw new Error(`Could not find ${old} in ${array.join(',')}`);      
+}
+
+function hardcoreMode(rom: Rom) {
+  for (const loc of rom.locations) {
+    loc.checkpoint = loc.saveable = false;
+  }
 }

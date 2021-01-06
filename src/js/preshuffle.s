@@ -756,13 +756,6 @@ MaybeSetCheckpoint:
 MaybeSetCheckpointActual:
 
 
-.ifdef _HARDCORE_MODE
-;;; Zero out the checkpoint table!
-.org $bf00
-  .res 256, 0
-.endif
-
-
 .segment "1a", "1b", "fe", "ff"
 ;.bank $34000 $8000:$4000
 

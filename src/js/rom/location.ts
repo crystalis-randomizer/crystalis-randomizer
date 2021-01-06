@@ -483,7 +483,7 @@ export class Locations extends Array<Location> {
   }
 
   location() {
-
+    // ??? what was this supposed to be?
   }
 }
 
@@ -491,6 +491,9 @@ export class Locations extends Array<Location> {
 export class Location extends Entity {
 
   used: boolean;
+
+  checkpoint: boolean;
+  saveable: boolean;
 
   bgm: number;
   originalBgm: number;
@@ -550,6 +553,7 @@ export class Location extends Entity {
       this.spawns = [];
       this.spritePalettes = [0, 0];
       this.spritePatterns = [0, 0];
+      this.checkpoint = this.saveable = false;
       return;
     }
 
@@ -621,6 +625,9 @@ export class Location extends Entity {
     this.spawns =
         hasSpawns ? varSlice(rom.prg, npcDataBase + 5, 4, 0xff, Infinity,
                              x => Spawn.from(x)) : [];
+
+    this.checkpoint = !!(rom.prg[0x2ff00 | id] & 0x80);
+    this.saveable = !!(rom.prg[0x2ff00 | id] & 0x01);
   }
 
   set meta(meta: Metalocation) {
@@ -786,6 +793,11 @@ export class Location extends Entity {
     a.byte(...npcData);
     a.org(0x9201 + (this.id << 1), `NpcData_${id}_Ptr`);
     a.word($npcData);
+
+    // write checkpoint/saveable
+    a.segment('17');
+    a.org(0xbf00 | this.id);
+    a.byte(+this.checkpoint << 7 | +this.saveable)
 
     // wite mapdata
     a.segment('0a', '0b');

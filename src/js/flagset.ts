@@ -383,7 +383,7 @@ class Glitches extends FlagSection {
   });
 
   static readonly StatueGauntletSkip = Glitches.flag('Gg', {
-    name: 'Statue guantlet skip',
+    name: 'Statue gauntlet skip',
     text: `The shooting statues in front of Goa and Stxy normally require
            Barrier to pass safely.  With this flag, Flight can also be used
            by flying around the edge of the statue.`,

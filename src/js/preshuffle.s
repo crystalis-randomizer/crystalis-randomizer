@@ -1506,6 +1506,40 @@ FREE_UNTIL $db28
 .ifdef _ALLOW_TELEPORT_OUT_OF_TOWER
 .org $db39
   .byte $00   ; don't jump away to prevent warp, just goto next line
+
+;; Make sure the down stair always spawns outside Mesia's room
+.pushseg "1b", "fe", "ff"
+.org $a48f
+  lda $d0  ; player y hi
+  ldy $b0  ; player y lo
+  cpy #$20 ; set carry if below 2nd tile
+  adc #0   ; add carry bit if needed
+  tay      ; y is row to start clearing flags for
+  ;; if we have crystalis then unlock from 0
+  lda $6430
+  cmp #4
+  bne +
+    ldy #0
+  ;; set all the flags from y down to the bottom
++ lda #$ff
+  bne +  ; (while ... do) instead of (do ... while)
+-  sta $62f0,y
+   iny
++  cpy #4
+  bne -
+  ;; if we're on the top screen (5c) then double-return
+  lda $6c
+  cmp #$5c
+  bne +
+   lda #0
+   sta $04a0,x
+   pla
+   pla
+   ;; TODO - do we still need to call SpawnTowerEscalator here?
++ rts
+FREE_UNTIL $a4c6 ; currently saves ~12 bytes?
+.popseg
+
 .endif
 
 

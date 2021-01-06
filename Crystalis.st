@@ -46355,23 +46355,27 @@ ObjectActionJump_7f
         $36419  xx:         xxx
 ;;; --------------------------------
 ObjectActionJump_5f
+        ;; Check if all the white robots are killed, and if so,
+        ;; unlock the escalator.  Loops over all spawn slots to
+        ;; check if all the following are true:
+        ;;  1. on the same Y
         $3641a  xx xx xx:   xxx $xxxx,x
-        $3641d  xx xx:      xxx $xx
-        $3641f  xx xx xx:   xxx $3648c
-        $36422  xx xx:      xxx #$xx
-        $36424  xx xx xx:   xxx $xxxx,y
-        $36427  xx xx:      xxx $xx
-        $36429  xx xx:      xxx $xx
-        $3642b  xx xx xx:   xxx $xxxx,y
-        $3642e  xx xx:      xxx $xx
-        $36430  xx xx xx:   xxx $xxxx,y
-        $36433  xx xx:      xxx #$xx
-        $36435  xx xx:      xxx $xx
-        $36437  xx xx:      xxx #$xx
-        $36439  xx xx:      xxx $xx
-        $3643b  xx:         xxx
-        $3643c  xx xx:      xxx #$xx
-        $3643e  xx xx:      xxx $xx
+        $3641d  xx xx:      xxx + ; $36422
+        $3641f  xx xx xx:    xxx TowerEscalatorCheckInitialSetup
++       $36422  xx xx:      xxx #$xx
+-       $36424  xx xx xx:    xxx $xxxx,y
+        $36427  xx xx:       xxx $xx
+        $36429  xx xx:       xxx + ; $3643b
+        $3642b  xx xx xx:     xxx $xxxx,y
+        $3642e  xx xx:        xxx + ; $3643b
+        $36430  xx xx xx:      xxx $xxxx,y
+        $36433  xx xx:         xxx #$xx
+        $36435  xx xx:         xxx >rts ; $3648b
+        $36437  xx xx:         xxx #$xx
+        $36439  xx xx:         xxx >rts ; $3648b
++       $3643b  xx:          xxx
+        $3643c  xx xx:       xxx #$xx
+        $3643e  xx xx:      xxx - ; $36424
         $36440  xx xx:      xxx #$xx
         $36442  xx xx xx:   xxx $xxxx
         $36445  xx xx xx:   xxx $xxxx
@@ -46381,6 +46385,7 @@ ObjectActionJump_5f
         $36451  xx xx xx:   xxx $xxxx
         $36454  xx xx:      xxx #SFX_START_DOOR_OPEN
         $36456  xx xx xx:   xxx StartAudioTrack
+SpawnTowerEscalator
         $36459  xx:         xxx
         $3645a  xx:         xxx
         $3645b  xx xx:       xxx #$xx
@@ -46408,33 +46413,50 @@ ObjectActionJump_5f
         $3648a  xx:         xxx
         $3648b  xx:         xxx
 ;;; --------------------------------
-        $3648c  xx xx xx:     xxx $xxxx,x
-        $3648f  xx xx:        xxx $xx
-        $36491  xx:           xxx
-        $36492  xx xx:        xxx #$xx
-        $36494  xx xx:        xxx #$xx
-        $36496  xx:           xxx
-        $36497  xx xx:        xxx #$xx
-        $36499  xx:           xxx
-        $3649a  xx xx:        xxx $xx
-        $3649c  xx xx:        xxx #$xx
-        $3649e  xx xx:        xxx $xx
-        $364a0  xx xx xx:     xxx $xxxx
-        $364a3  xx xx:        xxx #$xx
-        $364a5  xx xx:        xxx $xx
-        $364a7  xx xx xx:     xxx $36459
-        $364aa  xx xx:        xxx #$xx
-        $364ac  xx xx xx:     xxx $xxxx,x
-        $364af  xx:          xxx
+TowerEscalatorCheckInitialSetup
+        ;; Note: this is called by actionscript 5f, which only exists
+        ;; on the main tower floors (59, 5a, 5b) and on the final floor
+        ;; outside Mesia's room (5c).  It runs whenever $600,x is zero,
+        ;; which apparently happens only once, right after initially
+        ;; populating the room.
+        $3648c  xx xx xx:   xxx $xxxx,x
+        $3648f  xx xx:      xxx $xx
+        $36491  xx:         xxx
+        $36492  xx xx:      xxx #$xx ; 5c -> ff, ..., 59 -> fc
+        $36494  xx xx:      xxx #$xx ; 5c -> 00, ..., 59 -> 03
+        $36496  xx:         xxx
+        $36497  xx xx:      xxx #$xx ; 5c -> 01, ..., 59 -> 04
+        $36499  xx:         xxx
+        $3649a  xx xx:      xxx $xx ; NOTE: should have just cpy #$01
+        $3649c  xx xx:      xxx #$xx
+        $3649e  xx xx:      xxx ++ ; $364b2
+        ;; Special handling for 5c (outside mesia).  Check the inventory
+        ;; for Crystalis and if it's owned then spawn the escalator
+        ;; (skipping the audio cue).  Then self-destruct since there's no
+        ;; need to continue checking anymore.
+        $364a0  xx xx xx:   xxx $xxxx
+        $364a3  xx xx:      xxx #INV_CRYSTALIS
+        $364a5  xx xx:      xxx + ; $364aa
+        $364a7  xx xx xx:    xxx SpawnTowerEscalator
++       $364aa  xx xx:      xxx #$xx ; self-destruct
+        $364ac  xx xx xx:   xxx ObjectActionScript,x
+        ;; Double-return all the way out of the 5f action script.
+        $364af  xx:         xxx
         $364b0  xx:         xxx
         $364b1  xx:         xxx
 ;;; --------------------------------
-        $364b2  xx xx:      xxx $xx
+        ;; Initial setup for main tower level escalator checks
+        ;; On entry, y = 4, 3, or 2 for levels 59, 5a, and 5b, respectively.
+        ;; If the player is at the top of a screen, decrease y (so treat it
+        ;; like they're on the _next_ screen).  Then set all the flags on all
+        ;; rows _below_ the current screen's, up to (including) 3.  The DEY
+        ;; will fire right after a transition but not when exiting a door.
+++      $364b2  xx xx:      xxx $xx ; player y (pixel within screen)
         $364b4  xx xx:      xxx #$xx
-        $364b6  xx xx:      xxx $xx
-        $364b8  xx:         xxx
-        $364b9  xx xx:      xxx #$xx
-        $364bb  xx xx:      xxx $xx
+        $364b6  xx xx:      xxx + ; $364b9
+        $364b8  xx:          xxx
++       $364b9  xx xx:      xxx #$xx
+        $364bb  xx xx:       xxx >rts ; $364c5
         $364bd  xx xx:      xxx #$xx
         $364bf  xx xx xx:   xxx $xxxx,y
         $364c2  xx:         xxx
@@ -48650,30 +48672,41 @@ ObjectActionJump_4e
 ;;; --------------------------------
         $375f2  xx:         xxx
 ;;; --------------------------------
-ObjectActionJump_5e
-        ;; Tower defense mechs (waiting for release)
+ObjectActionJump_5e  ; Tower defense mechs (waiting for release)
+        ;; First look at high nibble of spawn slot (0 or 1) and mix in
+        ;; the global timer so that each slot only spawns on a
+        ;; specific out of each 64 frames.  Since the white robots
+        ;; generally occupy slots 0d..12, this effectively splits
+        ;; the work in half across two back-to-back frames.
         $375f3  xx:         xxx
         $375f4  xx:         xxx
         $375f5  xx:         xxx
         $375f6  xx:         xxx
         $375f7  xx:         xxx
         $375f8  xx:         xxx
-        $375f9  xx xx:      xxx $xx
+        $375f9  xx xx:      xxx GlobalCounter
         $375fb  xx xx:      xxx #$xx
-        $375fd  xx xx:      xxx $xx
-        $375ff  xx xx:      xxx #$xx
+        $375fd  xx xx:      xxx >rts ; $37625
+        ;; Next, loop over slots d..1f - if we find any satisfying all of
+        ;;   (1) non-null action script,
+        ;;   (2) on the same vertical screen as the player, and
+        ;;   (3) 560,y == #$50 (which is the case for brown robots, since
+        ;;       the NpcData loader populates it with the monster ID).
+        $375ff  xx xx:      xxx #$xx ; unnecessary
         $37601  xx xx:      xxx #$xx
-        $37603  xx xx xx:   xxx $xxxx,y
-        $37606  xx xx:      xxx $xx
-        $37608  xx xx xx:   xxx $xxxx,y
-        $3760b  xx xx:      xxx $xx
-        $3760d  xx xx:      xxx $xx
-        $3760f  xx xx xx:   xxx $xxxx,y
-        $37612  xx xx:      xxx #$xx
-        $37614  xx xx:      xxx $xx
-        $37616  xx:         xxx
-        $37617  xx xx:      xxx #$xx
-        $37619  xx xx:      xxx $xx
+-       $37603  xx xx xx:    xxx $xxxx,y
+        $37606  xx xx:       xxx + ; $37616
+        $37608  xx xx xx:     xxx $xxxx,y
+        $3760b  xx xx:        xxx $xx
+        $3760d  xx xx:        xxx + ; $37616
+        $3760f  xx xx xx:      xxx $xxxx,y
+        $37612  xx xx:         xxx #$xx
+        $37614  xx xx:         xxx >rts ; $37625
++       $37616  xx:          xxx
+        $37617  xx xx:       xxx #$xx
+        $37619  xx xx:      xxx - ; $37603
+        ;; If there are no brown robots left, then switch action script
+        ;; to 2a and fix the hitbox.
         $3761b  xx xx:      xxx #$xx
         $3761d  xx xx xx:   xxx $xxxx,x
         $37620  xx xx:      xxx #$xx
@@ -56517,17 +56550,17 @@ LoadMapData_A
         $3c838  xx xx:         xxx $xx
         $3c83a  xx xx:         xxx #$xx
         $3c83c  xx xx:         xxx $xx
-        $3c83e  xx xx xx:      xxx FlushNametableDataWrite
-        $3c841  xx xx:         xxx #$xx ; 8000 -> 34000
-        $3c843  xx xx xx:      xxx BankSwitch8k_8000
-        $3c846  xx xx:         xxx #$xx
-        $3c848  xx xx:         xxx $xx
-        $3c84a  xx xx:         xxx #$xx
-        $3c84c  xx xx:         xxx $xx
-        $3c84e  xx xx xx:      xxx AddDisplacementVectorLong
-        $3c851  xx xx xx:      xxx $3eb91
-        $3c854  xx xx:         xxx $xx
-        $3c856  xx xx:         xxx $xx
+-       $3c83e  xx xx xx:       xxx FlushNametableDataWrite
+        $3c841  xx xx:          xxx #$xx ; 8000 -> 34000
+        $3c843  xx xx xx:       xxx BankSwitch8k_8000
+        $3c846  xx xx:          xxx #$xx
+        $3c848  xx xx:          xxx $xx
+        $3c84a  xx xx:          xxx #$xx
+        $3c84c  xx xx:          xxx $xx
+        $3c84e  xx xx xx:       xxx AddDisplacementVectorLong
+        $3c851  xx xx xx:       xxx PrepareNametableStageForVerticalScrollInternal
+        $3c854  xx xx:          xxx $xx
+        $3c856  xx xx:         xxx - ; $3c83e
         $3c858  xx:           xxx
         $3c859  xx xx xx:     xxx BankSwitch8k_A000
         $3c85c  xx:          xxx

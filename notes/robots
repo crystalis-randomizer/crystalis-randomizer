@@ -1,0 +1,56 @@
+# Problem: White robots spawn out of nowhere outside tower.
+
+1b:b5f3 is the action script 5e, initially set on white robots.
+Once per 64 frames, it checks if all the brown robots are gone
+and if so, it spawns the white robot by changing action script
+to #$2a and hitbox/collision plane to #$10.
+
+Solution: Patch 5e action script to immediately transform to
+a white robot if we're _not_ in the tower.
+
+
+# Bug: Despawning upper levels of tower skips the fight.
+
+This is probably due to moving the seamless exits by a tile
+so that the actionscript 5e requirement of the brown robot
+being on the same level fails.  I don't know why this causes
+the escalator to appear (cf. $1b:a440) - that seems to be
+governed by a watcher (4-spawn da, actionscript 5f).
+
+Upon further inspection, we seem to have _lost_ the down
+exits, which is also breaking the door back to crypt.  When
+we go down a screen, it screws up all the y_scr-based checks.
+
+
+# Goal: Shuffle different enemies into the tower.
+
+This is difficult since the ID (50) is hardcoded into the
+check and the dormancy is hardcoded into the action script.
+To support something different, we'd likely want to change
+things around a little by repurposing action 5e to instead
+be a "watcher", which would start by "hiding" all the
+monsters in the doorway slots (back up their actionscript
+and maybe other data, then set their actionscripts to 5e in
+a way that would not break), then would subsequently check
+if the brown robot slots (non-flyer slots?) were killed;
+if so, it would restore the backed-up data for the white
+robot replacements.
+
+NOTE: the watcher actually already exists (4-spawn $da with
+actionscript 5f).  We should just use that instead.
+
+NOTE: the screen reachability calculation in metalocation.of
+is incorrect for the tower's seamless exits - it seems to mark
+a neighboring floor as also reachable, which might lead to
+bad enemy placement?
+
+
+# Goal: full tower mobility
+
+Problem: When leaving Mesia's room, the down escalator disappears.
+This is because we don't do the normal escalator setup on entering
+that room.  We need to instead move the special case (1b:a4a0) to
+_after_ the normal setup (1b:a4b2).
+
+NOTE: Simply running the normal setup after the special case is
+glitchy, since it does two OAMDMA waits.

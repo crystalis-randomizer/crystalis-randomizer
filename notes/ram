@@ -781,6 +781,7 @@ if #$ff then use shield defense, anything else uses armor
  - 209 objects have 00, 45 have ff, 2 have 01.
  - CollisionJump_01_EnemyHitsPlayer takes a totally different
    path in this case.
+NOTE: this is set to the type for non-1 NPCs as well?
 
 
 $560,x
@@ -788,6 +789,8 @@ $560,x
 ?? somethingb about terrain - cf 3ef6f checking $561:80 to skip pain land?
 for projectiles (540==ff), 560 is imputed status
  - 1 = paralyze, 2 = stone, 3 = mp drain, 4 = curse
+for objects loaded from the NpcData table, this is the 4th byte in the table,
+typically the ID.
 
 
 $580,x

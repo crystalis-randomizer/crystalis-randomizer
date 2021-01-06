@@ -2,7 +2,7 @@
 
 import {FlagSet} from '../flagset.js';
 import {Rom} from '../rom.js';
-import {Exit, Spawn} from '../rom/location.js';
+import {Spawn} from '../rom/location.js';
 import {MessageId} from '../rom/messageid.js';
 import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
@@ -1009,7 +1009,7 @@ function noBowMode(rom: Rom): void {
   // Initial trigger gives "used bow of truth".
   const {
     flags: {UsedBowOfTruth},
-    locations: {Crypt_Draygon2, Crypt_Hall2, MezameShrine},
+    locations: {Crypt_Draygon2, MezameShrine},
   } = rom;
   let trigger!: Trigger;
   for (const spawn of MezameShrine.spawns) {
@@ -1020,22 +1020,9 @@ function noBowMode(rom: Rom): void {
   if (!trigger) throw new Error(`Could not find start trigger`);
   trigger.flags.push(UsedBowOfTruth.id);
   // Add an exit straight to draygon
-  //MezameShrine.entrances[1].tile = 0x98;
   rom.tileEffects[0xb9 - 0xb3].effects[0x58] = 0;
-  MezameShrine.exits.push(
-      Exit.of({tile: 0x68, dest: Crypt_Draygon2.id, entrance: 0}));
-  for (let exit of Crypt_Draygon2.exits) {
-    if (exit.dest === Crypt_Hall2.id) {
-      exit.dest = MezameShrine.id;
-      exit.entrance = 1;
-    }
-  }
-  for (let exit of Crypt_Hall2.exits) {
-    if (exit.dest === Crypt_Draygon2.id) {
-      exit.dest = MezameShrine.id;
-      exit.entrance = 0;
-    }
-  }
+  MezameShrine.meta.setExit(
+      0, 'door', [Crypt_Draygon2.meta.id << 8 | 0x10, 'edge:bottom']);
 }
 
 // For now this just fixes the shot to be all elements instead of none.

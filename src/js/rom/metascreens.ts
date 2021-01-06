@@ -4156,7 +4156,7 @@ export class Metascreens {
   readonly shrine = this.metascreen({
     id: 0xff,
     tilesets: {shrine: {}},
-    exits: [bottomEdge({left: 6, width: 5})],
+    exits: [bottomEdge({left: 6, width: 5}), door(0x68)],
   });
   readonly inn = this.metascreen({
     id: 0x100,

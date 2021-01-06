@@ -535,6 +535,7 @@ export class Flags {
   KarmineBasementUpperMiddleMimic = tracked(0x179);
   KarmineBasementUpperRightMimic = tracked(0x17a);
   KarmineBasementLowerRightMimic = tracked(0x17b);
+  EastCaveNorthwestMimic = tracked(0x17c);
   // TODO - mimics 13..16 ?
 
   // 180 .. 1ff => fixed flags for overflow buffer.

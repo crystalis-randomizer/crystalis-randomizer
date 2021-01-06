@@ -650,6 +650,7 @@ export class Flags {
   FormBridge = pseudo(this);
   BreakIron = pseudo(this);
   TravelSwamp = pseudo(this);
+  CrossPain = pseudo(this);
   ClimbWaterfall = pseudo(this);
   BuyHealing = pseudo(this);
   BuyWarp = pseudo(this);

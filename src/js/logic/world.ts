@@ -160,7 +160,8 @@ export class World {
         Barrier, BlizzardBracelet, BowOfMoon, BowOfSun,
         BreakStone, BreakIce, BreakIron,
         BrokenStatue, BuyHealing, BuyWarp,
-        ClimbWaterfall, ClimbSlope8, ClimbSlope9, CurrentlyRidingDolphin,
+        ClimbWaterfall, ClimbSlope8, ClimbSlope9,
+        CrossPain, CurrentlyRidingDolphin,
         Flight, FlameBracelet, FormBridge,
         GasMask, GlowingLamp,
         InjuredDolphin,
@@ -244,6 +245,8 @@ export class World {
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope9.id]);
     this.addCheck([start], Barrier.r, [ShootingStatue.id]);
     this.addCheck([start], GasMask.r, [TravelSwamp.id]);
+    const pain = this.flagset.changeGasMaskToHazmatSuit() ? GasMask : LeatherBoots;
+    this.addCheck([start], or(Flight, RabbitBoots, pain), [CrossPain.id]);
 
     if (this.flagset.leatherBootsGiveSpeed()) {
       this.addCheck([start], LeatherBoots.r, [ClimbSlope8.id]);
@@ -273,7 +276,8 @@ export class World {
     }
     if (!this.flagset.guaranteeGasMask()) {
       this.addCheck([start], [[Money.c, BuyHealing.c],
-                              [Money.c, Refresh.c]], [TravelSwamp.id]);
+                              [Money.c, Refresh.c]],
+                    [TravelSwamp.id, CrossPain.id]);
     }
     if (this.flagset.assumeWildWarp()) {
       this.addCheck([start], Requirement.OPEN, [WildWarp.id]);
@@ -647,6 +651,18 @@ export class World {
           effects |= Terrain.SLOPE9;
         }
       }
+      if (effects & Terrain.PAIN) {
+        // Pain terrains are only impassible if they're all surrounded
+        // by other pain terrains.
+        type Delta = [number, number][];
+        for (const delta of [[0, 1], [1, 0], [0, -1], [-1, 0]] as Delta) {
+          if (!(getEffects(TileId.add(tile, ...delta)) &
+                (Terrain.PAIN | Terrain.FLY))) {
+            effects &= ~Terrain.PAIN;
+            break;
+          }
+        }
+      }
       return this.terrainFactory.tile(effects);
     };
 
@@ -676,8 +692,7 @@ export class World {
           if (logic.assumeTrue && tile < 0x20) {
             tile = tileset.alternates[tile];
           }
-          const effects =
-              location.isShop() ? 0 : tileEffects.effects[tile] & 0x26;
+          const effects = location.isShop() ? 0 : tileEffects.effects[tile];
           let terrain = makeTerrain(effects, tid, barrier);
           //if (!terrain) throw new Error(`bad terrain for alternate`);
           if (tile < 0x20 && tileset.alternates[tile] !== tile &&

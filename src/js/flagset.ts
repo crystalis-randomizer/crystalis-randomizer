@@ -549,8 +549,9 @@ class NoGuarantees extends FlagSection {
 
   static readonly GasMask = NoGuarantees.flag('Ng', {
     name: 'Gas mask not guaranteed',
-    text: `The logic will not guarantee gas mask before needing to enter the swamp.
-           Gas mask is still guaranteed to kill the insect.`,
+    text: `The logic will not guarantee gas mask before needing to enter the swamp,
+           nor will leather boots (or hazmat suit) be guaranteed to cross long
+           stretches of spikes.  Gas mask is still guaranteed to kill the insect.`,
     hard: true,
   });
 }

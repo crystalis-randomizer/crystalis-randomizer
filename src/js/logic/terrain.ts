@@ -80,8 +80,8 @@ export namespace Terrain {
   // 0x10 => behind
   export const SLOPE = 0x20;
   // 0x40 => slow
-  // 0x80 => pain
-  export const BITS = 0x26;
+  export const PAIN = 0x80;
+  export const BITS = 0xa6;
 
   // Custom terrain bits
   export const SWAMP = 0x100;
@@ -185,6 +185,10 @@ function makeTile(rom: Rom, effects: number): Terrain {
   if (effects & Terrain.SWAMP) { // swamp
     enter = enter.map(
         (cs: readonly Condition[]) => [rom.flags.TravelSwamp.c, ...cs]);
+  }
+  if (effects & Terrain.PAIN) { // pain tiles
+    enter = enter.map(
+        (cs: readonly Condition[]) => [rom.flags.CrossPain.c, ...cs]);
   }
   if (effects & Terrain.BARRIER) { // shooting statues
     enter = enter.map(

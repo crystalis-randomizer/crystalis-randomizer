@@ -314,7 +314,8 @@ class LinkChunk {
     const bits = (size) << 3;
     if (val != null && (val < (-1 << bits) || val >= (1 << bits))) {
       const name = ['byte', 'word', 'farword', 'dword'][size - 1];
-      throw new Error(`Not a ${name}: $${val.toString(16)}`);
+      throw new Error(`Not a ${name}: $${val.toString(16)} at $${
+          (this.org! + offset).toString(16)}`);
     }
     const bytes = new Uint8Array(size);
     for (let i = 0; i < size; i++) {

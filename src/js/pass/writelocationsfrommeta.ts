@@ -3,7 +3,8 @@ import {Rom} from '../rom.js';
 export function writeLocationsFromMeta(rom: Rom) {
   const {locations} = rom;
   const {CordelPlainEast, CordelPlainWest,
-         WaterfallValleyNorth, WaterfallValleySouth} = locations;
+         WaterfallValleyNorth, WaterfallValleySouth,
+         MtSabreWest_Cave1} = locations;
 
   // First sync up Cordel's exits.
   CordelPlainEast.meta.reconcileExits(CordelPlainWest.meta);
@@ -32,6 +33,14 @@ export function writeLocationsFromMeta(rom: Rom) {
   // Then write each one.
   for (const loc of locations) {
     if (!loc.used) continue;
+    // NOTE: the entrance order for Mt Sabre W Lower is changed because
+    // the back of Zebu Cave (Sabre W Cave 1) is written before Cordel W.
+    // To help get the entrances back in the right order, we do a quick
+    // special case to defer writing the zebu cave read until after cordel.
+    if (loc === MtSabreWest_Cave1) continue;
     loc.meta.write();
+    if (loc === CordelPlainWest && MtSabreWest_Cave1.used) {
+      MtSabreWest_Cave1.meta.write();
+    }
   }
 }

@@ -269,7 +269,7 @@ export class World {
                               [Money.c, Refresh.c]],
                     [ShootingStatue.id]);
     }
-    if (!this.flagset.assumeFlightStatueSkip()) {
+    if (this.flagset.assumeFlightStatueSkip()) {
       // NOTE: with no money, we've got 16 MP, which isn't enough
       // to get past seven statues.
       this.addCheck([start], [[Money.c, Flight.c]], [ShootingStatue.id]);

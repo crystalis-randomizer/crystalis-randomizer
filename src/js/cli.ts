@@ -57,7 +57,7 @@ const showPreset = ({description, flagString, name}: Preset) => {
 };
 
 const main = (...args: string[]) => {
-  let flags = '@FullShuffle';
+  let flags = '@Standard';
   let count = 1;
   let seed = '';
   let output = '%n_%c';

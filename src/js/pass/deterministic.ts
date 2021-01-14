@@ -142,7 +142,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   simplifyInvisibleChests(rom);
   addCordelWestTriggers(rom, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(rom);
-
+  if (flags.disableFlightStatueSkip()) fixFlightStatueSkip(rom);
   if (flags.disableRageSkip()) patchLimeTreeLake(rom);
 
   fixReverseWalls(rom);
@@ -539,6 +539,27 @@ function fixRabbitSkip(rom: Rom): void {
       }
     }
   }
+}
+
+function fixFlightStatueSkip(rom: Rom): void {
+  // Switch to a wider hitbox that prevents sneaking around the edge.
+  // Options:
+  //   $17 is ridiculously wide, but actually a little shorter.
+  //       Main downside is that the vertical alignment is different,
+  //       so it hits when player is below and doesn't hit right above.
+  //   $0e is only slightly wider, but taller.  This causes the beam
+  //       to hit several pixels away from an actual visual collision.
+  //   $06 is unused, so we can repurpose it.  We add 6 horizontal
+  //       pixels and 2 vertical pixels to each side from the original
+  //       hitbox 1, which seems to
+  //       be the minimum
+  const oldHitbox = rom.hitboxes[rom.objects.guardianStatueMissile.hitbox];
+  const newHitbox = rom.hitboxes[6];
+  rom.objects.guardianStatueMissile.hitbox = newHitbox.id;
+  newHitbox.x0 = oldHitbox.x0 - 6;
+  newHitbox.w  = oldHitbox.w  + 12;
+  newHitbox.y0 = oldHitbox.y0 - 2;
+  newHitbox.h  = oldHitbox.h  + 4;
 }
 
 function patchTooManyItemsMessage(rom: Rom) {

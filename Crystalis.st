@@ -44537,8 +44537,8 @@ Hitboxes
         $3569d              .byte $xx,$xx,$xx,$xx ; 03
         $356a1              .byte $xx,$xx,$xx,$xx ; 04
         $356a5              .byte $xx,$xx,$xx,$xx ; 05
-        $356a9              .byte $xx,$xx,$xx,$xx ; 06
-        $356ad              .byte $xx,$xx,$xx,$xx ; 07
+        $356a9              .byte $xx,$xx,$xx,$xx ; 06 UNUSED
+        $356ad              .byte $xx,$xx,$xx,$xx ; 07 UNUSED
         $356b1              .byte $xx,$xx,$xx,$xx ; 08
         $356b5              .byte $xx,$xx,$xx,$xx ; 09
         $356b9              .byte $xx,$xx,$xx,$xx ; 0a trigger
@@ -44552,7 +44552,7 @@ Hitboxes
         $356d9              .byte $xx,$xx,$xx,$xx ; 12
         $356dd              .byte $xx,$xx,$xx,$xx ; 13
         $356e1              .byte $xx,$xx,$xx,$xx ; 14
-        $356e5              .byte $xx,$xx,$xx,$xx ; 15
+        $356e5              .byte $xx,$xx,$xx,$xx ; 15 UNUSED?
         $356e9              .byte $xx,$xx,$xx,$xx ; 16
         $356ed              .byte $xx,$xx,$xx,$xx ; 17
 ;;; --------------------------------

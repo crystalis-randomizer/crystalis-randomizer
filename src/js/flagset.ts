@@ -1010,7 +1010,6 @@ export class FlagSet {
     return this.check(Glitches.RageSkip, false);
   }
   disableFlightStatueSkip() {
-    // TODO - implement
     return this.check(Glitches.StatueGauntletSkip, false);
   }
 
@@ -1033,7 +1032,7 @@ export class FlagSet {
     return this.check(Glitches.TriggerSkip); // TODO - implement
   }
   assumeFlightStatueSkip() {
-    return this.check(Glitches.StatueGauntletSkip); // TODO - implement
+    return this.check(Glitches.StatueGauntletSkip);
   }
   assumeWildWarp() {
     return this.check(Vanilla.WildWarp, true) ||

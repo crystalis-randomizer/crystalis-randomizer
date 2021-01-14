@@ -23,6 +23,7 @@ export class Terrains {
               (right: Terrain) => new MeetTerrain(left, right)));
   private readonly _seamless =
       new DefaultMap<Terrain, Terrain>((t: Terrain) => new SeamlessTerrain(t));
+  private rage: RageTerrain|undefined;
 
   constructor(readonly rom: Rom) {}
 
@@ -30,7 +31,10 @@ export class Terrains {
     return effects & 0x04 ? undefined : this.tiles.get(effects);
   }
 
-  boss(flag: number): Terrain {
+  boss(flag: number, isRage: boolean): Terrain {
+    if (isRage) {
+      return this.rage || (this.rage = new RageTerrain(flag, this.rom.flags.RageSkip.id));
+    }
     return this.bosses.get(flag);
   }
 
@@ -197,6 +201,7 @@ function makeTile(rom: Rom, effects: number): Terrain {
   return new SouthTerrain(enter, exit);
 }
 
+// Bosses can be entered for free but only exited by killing the boss.
 class BossTerrain extends SimpleTerrain {
   constructor(readonly _flag: number) {
     super(Requirement.OPEN, [[_flag as Condition]]);
@@ -211,6 +216,20 @@ class StatueTerrain extends SouthTerrain {
   }
 
   get kind() { return 'Statue'; }
+}
+
+// Rage can be always be exited south, but can also be exited north
+// if Rage skip is active.
+class RageTerrain implements Terrain {
+  readonly enter = Requirement.OPEN;
+  readonly exit: ExitRequirements;
+  constructor(readonly _rageFlag: number, readonly _rageSkipFlag: number) {
+    this.exit =
+      [[0xb, [[_rageFlag as Condition], [_rageSkipFlag as Condition]]],
+       [0x4, Requirement.OPEN]];
+  }
+
+  label() { return `Rage`; }
 }
 
 class FlagTerrain extends SimpleTerrain {

@@ -415,7 +415,8 @@ class Glitches extends FlagSection {
     name: 'Rage skip',
     text: `Rage can be skipped by damage-boosting diagonally into the Lime
            Tree Lake screen.  This provides access to the area beyond the
-           lake if flight or bridges are available.`,
+           lake if flight or bridges are available.  For simplicity, the
+           logic only assumes this is possible if there's a flyer.`,
     hard: true,
     modes: '!',
   });
@@ -1042,8 +1043,7 @@ export class FlagSet {
         this.check(World.RandomizeWildWarp);
   }
   assumeRageSkip() {
-    return false;
-    // return this.check(Glitches.RageSkip); // TODO - implement - check flyer
+    return this.check(Glitches.RageSkip);
   }
 
   nerfWildWarp() {

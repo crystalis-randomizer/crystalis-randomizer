@@ -105,6 +105,9 @@ export class World {
       new DefaultMap<Condition, Requirement.Builder>(
           (c: Condition) => new Requirement.Builder(c));
 
+  /** Location with a north exit to Lime Tree Lake (i.e. Rage). */
+  private limeTreeEntranceLocation = -1;
+
   constructor(readonly rom: Rom, readonly flagset: FlagSet,
               readonly tracker = false) {
     // Build itemUses
@@ -749,6 +752,11 @@ export class World {
         to = this.entrance(this.rom.locations[dest], entrance & 0x1f);
       }
       this.exits.set(from, to);
+      if (dest === this.rom.locations.LimeTreeLake.id &&
+          this.rom.locations.LimeTreeLake.entrances[entrance].y > 0xa0) {
+        // North exit to lime tree lake: mark location.
+        this.limeTreeEntranceLocation = location.id;
+      }
     }
   }
 
@@ -913,7 +921,8 @@ export class World {
         // TODO - check if this works?  the ~check spawn condition should
         // allow passing if gotten the check, which is the same as gotten
         // the correct sword.
-        if (this.flagset.assumeRageSkip()) antiReq = undefined;
+        // TODO - is this even required once we have the RageTerrain???
+        // if (this.flagset.assumeRageSkip()) antiReq = undefined;
       } else if (npc === this.rom.npcs.PortoaThroneRoomBackDoorGuard) {
         // Portoa back door guard spawns if (1) the mesia recording has not yet
         // been played, and (2) the player didn't sneak past the earlier guard.
@@ -1201,10 +1210,7 @@ export class World {
     const tile = TileId.from(location, spawn);
     if (!boss || !boss.flag) throw new Error(`Bad boss at ${location.name}`);
     const screen = tile & ~0xff;
-    // NOTE: Rage can be exited south... but this only matters if there's
-    // anything other than Mesia's shrine behind him, which makes a lot of
-    // logic more difficult, so likely this entrance will stay put forever.
-    const bossTerrain = this.terrainFactory.boss(boss.flag.id);
+    const bossTerrain = this.terrainFactory.boss(boss.flag.id, isRage);
     const hitbox = seq(0xf0, (t: number) => (screen | t) as TileId);
     this.addTerrain(hitbox, bossTerrain);
     this.addBossCheck(hitbox, boss);
@@ -1242,11 +1248,16 @@ export class World {
     // Check monster's vulnerabilities and add a check for Money given swords.
     const monster = this.rom.objects[spawn.monsterId];
     if (!(monster instanceof Monster)) return;
-    if (!(monster.goldDrop)) return;
     const {
-      Money,
+      Money, RageSkip,
       Sword, SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder,
     } = this.rom.flags;
+    if (location.id === this.limeTreeEntranceLocation && monster.isFlyer &&
+        this.flagset.assumeRageSkip()) {
+      this.addCheck([this.entrance(location)], Requirement.OPEN, [RageSkip.id]);
+
+    }
+    if (!(monster.goldDrop)) return;
     const hitbox = [TileId.from(location, spawn)];
     if (!this.flagset.guaranteeMatchingSword()) {
       this.addCheck(hitbox, Sword.r, [Money.id]);

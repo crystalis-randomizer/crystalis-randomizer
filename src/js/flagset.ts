@@ -404,9 +404,9 @@ class Glitches extends FlagSection {
     name: 'Trigger skip',
     text: `A wide variety of triggers and exit squares can be skipped by
            using an invalid item every frame while walking.  This allows
-           bypassing both Mt Sabre entrance triggers, the Evil Spirit Island
-           entrance trigger, triggers for guards to move, slopes, and seamless
-           map transitions.`,
+           bypassing both Mt Sabre North entrance triggers, the Evil Spirit
+           Island entrance trigger, triggers for guards to move, slopes,
+           damage tiles, and seamless map transitions.`,
     hard: true,
     modes: '!',
   });
@@ -1009,6 +1009,9 @@ export class FlagSet {
   disableRageSkip() {
     return this.check(Glitches.RageSkip, false);
   }
+  disableTriggerGlitch() {
+    return this.check(Glitches.TriggerSkip, false);
+  }
   disableFlightStatueSkip() {
     return this.check(Glitches.StatueGauntletSkip, false);
   }
@@ -1029,7 +1032,7 @@ export class FlagSet {
     return this.check(Glitches.StatueGlitch);
   }
   assumeTriggerGlitch() {
-    return this.check(Glitches.TriggerSkip); // TODO - implement
+    return this.check(Glitches.TriggerSkip);
   }
   assumeFlightStatueSkip() {
     return this.check(Glitches.StatueGauntletSkip);

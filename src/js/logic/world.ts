@@ -126,6 +126,14 @@ export class World {
       [rom.flags.ParalyzedKensuInDanceHall, rom.flags.Paralysis],
       [rom.flags.ParalyzedKensuInTavern, rom.flags.Paralysis],
     ]);
+
+    // If trigger skip is on, seamless exits can be crossed!
+    if (flagset.assumeTriggerGlitch()) {
+      // NOTE: this is a terrible hack, but it efficiently prevents
+      // adding tiles to the set, without checking the flag every time.
+      this.seamlessExits.add = () => this.seamlessExits;
+    }
+
     // Iterate over locations to build up info about tiles, terrains, checks.
     for (const location of rom.locations) {
       this.processLocation(location);
@@ -160,7 +168,7 @@ export class World {
         Barrier, BlizzardBracelet, BowOfMoon, BowOfSun,
         BreakStone, BreakIce, BreakIron,
         BrokenStatue, BuyHealing, BuyWarp,
-        ClimbWaterfall, ClimbSlope8, ClimbSlope9,
+        ClimbWaterfall, ClimbSlope8, ClimbSlope9, ClimbSlope10,
         CrossPain, CurrentlyRidingDolphin,
         Flight, FlameBracelet, FormBridge,
         GasMask, GlowingLamp,
@@ -171,7 +179,7 @@ export class World {
         RabbitBoots, Refresh, RepairedStatue, RescuedChild,
         ShellFlute, ShieldRing, ShootingStatue, StormBracelet,
         Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind,
-        TornadoBracelet, TravelSwamp,
+        TornadoBracelet, TravelSwamp, TriggerSkip,
         WildWarp,
       },
       items: {
@@ -240,7 +248,7 @@ export class World {
     this.addCheck([start],
                   or(SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder),
                   [Sword.id]);
-    this.addCheck([start], Flight.r, [ClimbWaterfall.id]);
+    this.addCheck([start], Flight.r, [ClimbWaterfall.id, ClimbSlope10.id]);
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope8.id]);
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope9.id]);
     this.addCheck([start], Barrier.r, [ShootingStatue.id]);
@@ -281,6 +289,12 @@ export class World {
     }
     if (this.flagset.assumeWildWarp()) {
       this.addCheck([start], Requirement.OPEN, [WildWarp.id]);
+    }
+    if (this.flagset.assumeTriggerGlitch()) {
+      this.addCheck([start], Requirement.OPEN, [TriggerSkip.id]);
+      this.addCheck([start], TriggerSkip.r,
+                    [CrossPain.id, ClimbSlope8.id,
+                     ClimbSlope9.id, ClimbSlope10.id]);
     }
   }
 
@@ -803,6 +817,10 @@ export class World {
                                      this.rom.locations.CordelPlainEast,
                                      this.rom.locations.CordelPlainWest);
         }
+        if (this.flagset.assumeTriggerGlitch()) {
+          // all push-down triggers can be skipped with trigger skip...
+          antiRequirements = Requirement.or(antiRequirements, this.rom.flags.TriggerSkip.r);
+        }
         this.addTerrain(hitbox, this.terrainFactory.statue(antiRequirements));
         break;
 
@@ -1028,9 +1046,12 @@ export class World {
     const extra: Condition[][] = [];
     for (const spawn of location.spawns.slice(0, 2)) {
       if (spawn.isNpc() && this.rom.npcs[spawn.id].isParalyzable()) {
-        extra.push([this.rom.flags.Paralysis.id as Condition]);
+        extra.push([this.rom.flags.Paralysis.c]);
         break;
       }
+    }
+    if (this.flagset.assumeTriggerGlitch()) {
+      extra.push([this.rom.flags.TriggerSkip.c]);
     }
     this.addTerrain(hitbox,
                     this.terrainFactory.statue([...req, ...extra].map(spread)));

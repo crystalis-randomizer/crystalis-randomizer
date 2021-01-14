@@ -657,7 +657,9 @@ export class Flags {
   ShootingStatue = pseudo(this);
   ClimbSlope8 = pseudo(this); // climb slopes height 6-8
   ClimbSlope9 = pseudo(this); // climb slopes height 9
+  ClimbSlope10 = pseudo(this); // climb all slopes
   WildWarp = pseudo(this);
+  TriggerSkip = pseudo(this);
 
   // Map of flags that are "waiting" for a previously-used ID.
   // Signified with a negative (one's complement) ID in the Flag object.

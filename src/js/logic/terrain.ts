@@ -178,7 +178,7 @@ function makeTile(rom: Rom, effects: number): Terrain {
     } else if (effects & Terrain.SLOPE8) {
       exit = rom.flags.ClimbSlope8.r;
     } else if (effects & Terrain.SLOPE) {
-      exit = rom.flags.Flight.r;
+      exit = rom.flags.ClimbSlope10.r;
     }
     if (effects & Terrain.FLY) enter = rom.flags.Flight.r;
   }

@@ -297,7 +297,7 @@ export class World {
       this.addCheck([start], Requirement.OPEN, [TriggerSkip.id]);
       this.addCheck([start], TriggerSkip.r,
                     [CrossPain.id, ClimbSlope8.id,
-                     ClimbSlope9.id, ClimbSlope10.id]);
+                     ClimbSlope9.id /*, ClimbSlope10.id */]);
     }
   }
 

@@ -344,7 +344,7 @@ export function wideArenaExits(rom: Rom) {
     [0x43, 0x49, 0x2e, 0x23, 0x23, 0x21, 0x46, 0x43],
     [0x44, 0x4a, 0x2e, 0x23, 0x21, 0x21, 0x47, 0x44],
   ]);
-  hallNS_arena.setGridTile(' c | a | c ', ' c | a | w ');
+  hallNS_arena.setGridTile(' c | a | c '); //, ' c | a | w ');
   widen(hallNS_arena.findExitByType('edge:top').exits as number[]);
 
   hallNS_arenaWall.screen.set2d(0x04, [

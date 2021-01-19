@@ -49,9 +49,14 @@ export class MazeShuffles {
       loc.meta.shufflePits(this.random);
     }
   }
+
+  toString() {
+    return [...this.shuffles].sort((a,b) => ((a.badness||0) - (b.badness||0))).join('\n');
+  }
 }
 
 export interface MazeShuffle {
+  readonly badness?: number;
   meta: Metalocation|undefined;
   shuffle(random: Random): void;
   finish(): void;
@@ -64,6 +69,14 @@ export abstract class AbstractMazeShuffle {
   readonly orig: Metalocation;
   readonly maxAttempts: number = 250;
   readonly params: Survey;
+
+  toString() {
+    return `${this.constructor.name}(${this.loc}): ${this.attempt}/${this.maxAttempts}`;
+  }
+
+  get badness(): number {
+    return this.attempt / this.maxAttempts;
+  }
 
   // Shuffle state.
   attempt = 0;

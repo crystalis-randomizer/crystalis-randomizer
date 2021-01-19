@@ -1,0 +1,11 @@
+Maze shuffle is hard
+
+Problem: Crypt hall 1 (and styx 1) are failing
+
+Mainly related (at this point) to the size and the lack of
+options in the wide tileset.  Easy fix is to simply add the
+missing screens, but without that we need to be smarter
+about how we do initial fill - i.e. avoid |- and -| style
+branches and horizontal dead ends.  It might also be possible
+to trim problematic dead ends and branches?
+

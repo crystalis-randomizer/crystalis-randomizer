@@ -2125,7 +2125,7 @@ export class Metascreens {
       |│&│|
       |└┬┘|`,
     //placement: 'manual',
-    tile: [' n | a | c ', ' n | a | w '],
+    tile: [' n | a | c '], // , ' n | a | w '],
     tilesets: {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     feature: ['arena'],
     edges: 'c c ', // 'n' for 'narrow' on top???

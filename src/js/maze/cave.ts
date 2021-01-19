@@ -16,6 +16,8 @@ export class CaveShuffle extends AbstractMazeShuffle {
   maxSpikes = 5;
   looseRefine = false;
   addBlocks = true;
+  initialFillType = 'c';
+  upEdgeType = 'c';
   private _requirePitDestination = false;
 
   // Extra attempt state.
@@ -183,7 +185,7 @@ export class CaveShuffle extends AbstractMazeShuffle {
 
   // Initial fill.
   initialFill(): Result<void> {
-    this.fillCave('c');
+    this.fillCave(this.initialFillType);
     return OK;
   }
 
@@ -261,7 +263,7 @@ export class CaveShuffle extends AbstractMazeShuffle {
       if (this.grid.isBorder(right3) && this.grid.get(right3)) return false;
     }
     this.fixed.add(edge);
-    this.grid.set(edge, 'n');
+    this.grid.set(edge, this.upEdgeType);
     this.grid.set(left, '');
     this.grid.set(right, '');
     return true;
@@ -359,7 +361,7 @@ export class CaveShuffle extends AbstractMazeShuffle {
 
   addLateFeatures(): Result<void> {
     if (!this.addArenas(this.params.features?.arena ?? 0)) {
-      return {ok: false, fail: 'addArenas'};
+      return {ok: false, fail: `addArenas\n${this.grid.show()}`};
     }
     if (!this.addUnderpasses(this.params.features?.under ?? 0)) {
       return {ok: false, fail: 'addUnderpasses'};
@@ -382,7 +384,7 @@ export class CaveShuffle extends AbstractMazeShuffle {
       const tile = this.extract(this.grid, c);
       const arenaTile = tile.substring(0, 4) + 'a' + tile.substring(5);
       const options = this.orig.tileset.getMetascreensFromTileString(arenaTile);
-      if (!options.length) continue;
+      if (!options.length) {console.log(`no tile ${arenaTile}`); continue;}
       this.fixed.add(middle);
       g.set(middle, 'a');
       // g.set(left, '');
@@ -525,7 +527,7 @@ export class CaveShuffle extends AbstractMazeShuffle {
 
   canRemove(c: string): boolean {
     // Notably, exclude stairs, narrow edges, arenas, etc.
-    return c === 'c';
+    return c === this.initialFillType;
   }
 
   /**
@@ -615,8 +617,8 @@ export class CaveShuffle extends AbstractMazeShuffle {
       }
       if (!removed) {
         if (this.looseRefine) return OK;
-        return {ok: false, fail: `refine ${this.count} > ${this.size}`};
-        //\n${this.grid.show()}`};
+        return {ok: false, fail: `refine ${this.count} > ${this.size}\n${this.grid.show()}`};
+//`};
       }
     }
     return OK;
@@ -1312,11 +1314,15 @@ if (this.grid.show().length > 100000) debugger;
 
 
 export class WideCaveShuffle extends CaveShuffle {
-  addLateFeatures(): Result<void> {
-    let result = super.addLateFeatures();
-    if (!result.ok) return result;
-    this.grid.data = this.grid.data.map(c => c === 'c' ? 'w' : c);
-    return OK;
+  initialFillType = 'w';
+  upEdgeType = 'n';
+  setUpEdgeType(t: string): this {
+    this.upEdgeType = t;
+    return this;
+  }
+  isEligibleArena(middle: GridCoord): boolean {
+    // Arenas can only be placed in the top row
+    return !(middle & 0xf000) && super.isEligibleArena(middle);
   }
 }
 

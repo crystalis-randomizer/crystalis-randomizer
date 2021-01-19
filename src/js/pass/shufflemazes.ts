@@ -32,6 +32,9 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   prepareScreens(rom, random);
 
   const shuffles = new MazeShuffles(rom, random);
+    shuffles.add(
+    //new WideCaveShuffle($.Crypt_Hall1).setUpEdgeType('c'),
+    );if(!shuffles.shuffles.length)
   shuffles.add(
     // new TownShuffle($.Leaf),
     // new OverworldShuffle($.ValleyOfWind),
@@ -117,7 +120,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new CaveShuffle($.MtHydra_Cave8),
     new CaveShuffle($.MtHydra_Cave9),
     new CaveShuffle($.MtHydra_Cave10),
-    new WideCaveShuffle($.Styx1),
+    new WideCaveShuffle($.Styx1).setUpEdgeType('c'),
     // // TODO - consider splitting this map, too!
     new StyxRiverCaveShuffle($.Styx2).requirePitDestination(),
     // //new StyxRiverCaveShuffle($.Styx2_East),
@@ -135,7 +138,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     new CaveShuffle($.Pyramid_Branch),
     new PyramidShuffle($.Pyramid_Main),
     new CryptEntranceShuffle($.Crypt_Entrance),
-    new WideCaveShuffle($.Crypt_Hall1),
+    new WideCaveShuffle($.Crypt_Hall1).setUpEdgeType('c'),
     new CaveShuffle($.Crypt_DeadEndLeft),
     new CaveShuffle($.Crypt_DeadEndRight),
     new CaveShuffle($.Crypt_Branch), // down: Crypt_DeadEndLeft and DeadEndRight
@@ -157,6 +160,7 @@ export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
     //                       $.GoaFortress_Kensu, $.GoaFortress_Karmine6),
   );
   shuffles.shuffleAll();
+  console.log(String(shuffles));
 }
 
 export function prepareScreens(rom: Rom, random = new Random(1)) {

@@ -312,10 +312,11 @@ export class CaveShuffle extends AbstractMazeShuffle {
 
   // addArenasEarly(): boolean {
   //   // Specifically, just arenas...
-  //   let arenas = this.params.features?.['a'];
+  //   let arenas = this.params.features?.arena;
   //   if (!arenas) return true;
   //   const g = this.grid;
-  //   for (const c of this.random.ishuffle(this.screens)) {
+  //   for (const c of this.random.ishuffle(g.screens())) {
+  //     if (c & 0xf000) continue;
   //     const middle = (c | 0x808) as GridCoord;
   //     const left = (middle - 8) as GridCoord;
   //     const left2 = (left - 8) as GridCoord;
@@ -1320,9 +1321,69 @@ export class WideCaveShuffle extends CaveShuffle {
     this.upEdgeType = t;
     return this;
   }
+
+  // NOTE: I don't think this is actually used?
   isEligibleArena(middle: GridCoord): boolean {
     // Arenas can only be placed in the top row
     return !(middle & 0xf000) && super.isEligibleArena(middle);
+  }
+
+  // Patch addEdges to add arenas immediately afterwards, since wide cave
+  // arenas can only go along the top edge.  We could possibly lift this
+  // requirement by adding an extra arena with a wide top edge, in which case
+  // we could remove all the arena special casing.
+  addEdges(): Result<void> {
+    const g = this.grid;
+    const result = super.addEdges();
+    if (!result.ok) return result;
+    let arenas = this.params.features?.arena;
+    if (!arenas) return OK;
+    const edges: GridCoord[] = [];
+    for (let x = 0; x < this.w; x++) {
+      const c = (x << 4 | 0x808) as GridCoord;
+      if (g.get(c - 0x800 as GridCoord)) edges.push(c);
+    }
+    if (edges.length < arenas) {
+      return {ok: false, fail: `not enough edges\n${g.show()}`};
+    }
+    for (const edge of this.random.ishuffle(edges)) {
+      if (!arenas) break;
+
+      const left = (edge - 8) as GridCoord;
+      const left2 = (left - 8) as GridCoord;
+      const left3 = (left2 - 8) as GridCoord;
+      const left2Up = (left2 - 0x800) as GridCoord;
+      const left2Down = (left2 + 0x800) as GridCoord;
+      const right = (edge + 8) as GridCoord;
+      const right2 = (right + 8) as GridCoord;
+      const right3 = (right2 + 8) as GridCoord;
+      const right2Up = (right2 - 0x800) as GridCoord;
+      const right2Down = (right2 + 0x800) as GridCoord;
+      if (!g.isBorder(left)) {
+        if (g.isBorder(left3) && g.get(left3)) continue;
+        if (g.isBorder(left2Up) && g.get(left2Up)) continue;
+        if (g.isBorder(left2Down) && g.get(left2Down)) continue;
+      }
+      if (!g.isBorder(right)) {
+        if (g.isBorder(right3) && g.get(right3)) continue;
+        if (g.isBorder(right2Up) && g.get(right2Up)) continue;
+        if (g.isBorder(right2Down) && g.get(right2Down)) continue;
+      }
+      this.fixed.add(edge);
+      g.set(edge, 'a');
+      g.set(left, '');
+      g.set(left2, '');
+      g.set(right, '');
+      g.set(right2, '');
+      this.grid.set(edge, 'a');
+      arenas--;
+    }
+    return OK;
+  }
+
+  // Added them already during addEdges.
+  addArenas(): boolean {
+    return true;
   }
 }
 

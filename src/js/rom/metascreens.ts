@@ -1798,7 +1798,8 @@ export class Metascreens {
     edges: 'c c ',
     connect: '2a',
     poi: [[4]],
-    exits: [bottomEdge({left: 6, width: 4, manual: true})],
+    exits: [bottomEdge({left: 6, width: 4, manual: true}),
+            topEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallNS_unreachable = this.metascreen({
     id: 0x81,
@@ -1883,6 +1884,7 @@ export class Metascreens {
     edges: 'c  c',
     connect: '2e',
     poi: [[2]],
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallNE_unreachable = this.metascreen({
     id: 0x85,
@@ -1904,6 +1906,7 @@ export class Metascreens {
     edges: 'cc  ',
     connect: '26',
     poi: [[2]],
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallNW_unreachable = this.metascreen({
     id: 0x86,
@@ -1925,6 +1928,7 @@ export class Metascreens {
     edges: 'c cc',
     connect: '2ae',
     poi: [[3]],
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly branchNSE_unreachable = this.metascreen({
     id: 0x87,
@@ -1946,6 +1950,7 @@ export class Metascreens {
     edges: 'cccc',
     connect: '26ae',
     poi: [[3]],
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly branchNWSE_unreachable = this.metascreen({
     id: 0x88,
@@ -1967,6 +1972,7 @@ export class Metascreens {
     edges: 'ccc ',
     connect: '26a',
     poi: [[3]],
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly branchNWS_unreachable = this.metascreen({
     id: 0x89,
@@ -2009,6 +2015,7 @@ export class Metascreens {
     edges: 'cc c',
     connect: '26e',
     poi: [[3]],
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly branchNWE_unreachable = this.metascreen({
     id: 0x8b,
@@ -2030,6 +2037,7 @@ export class Metascreens {
     feature: ['ramp'],
     edges: 'c c ',
     connect: '2a',
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallNS_ramp_unreachable = this.metascreen({
     id: 0x8c,
@@ -2051,6 +2059,7 @@ export class Metascreens {
     feature: ['overpass'],
     edges: 'cbcb', // TODO - 'b' for other side of bridge??
     connect: '2a',
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallWE_underBridge = this.metascreen({
     id: 0x8e,
@@ -2084,6 +2093,7 @@ export class Metascreens {
     connect: '2=a', // wall will always connect the first two?
     wall: 0x87, 
     mod: 'wall',
+    exits: [topEdge({left: 6, width: 4, manual: true})],
   });
   readonly hallNS_wall_unreachable = this.metascreen({
     id: 0x8f,

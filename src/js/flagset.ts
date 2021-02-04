@@ -792,15 +792,18 @@ export class FlagSet {
     const out = [];
     for (const [key, section] of sections.sortedEntries()) {
       let sec = key;
-      for (const [subkey, subsection] of section) {
-        sec += subkey + subsection.sort().join('');
+      for (const subkey of ['', '?']) {
+        const subsection = section.get(subkey);
+        if (subsection.length > 0) {
+          sec += subkey + subsection.sort().join('');
+        }
       }
       out.push(sec);
     }
     return out.join(' ');
   }
 
-  toggle(name: string): Mode {  
+  toggle(name: string): Mode {
     const flag = Flag.flags.get(name);
     if (!flag) {
       // TODO - Report something

@@ -619,6 +619,13 @@ export class Metalocation {
     throw new Error('not implemented');
   }
 
+  /** Static helper method to connect two exit specs. */
+  static connect(rom: Rom, a: ExitSpec, b: ExitSpec) {
+    const locA = rom.locations[a[0] >>> 8].meta;
+    const locB = rom.locations[b[0] >>> 8].meta;
+    locA.attach(a[0] & 0xff, locB, b[0] & 0xff, a[1], b[1]);
+  }
+
   /**
    * Attach an exit/entrance pair in two directions.
    * Also reattaches the former other ends of each to each other.

@@ -963,6 +963,10 @@ export class FlagSet {
   shuffleGoaFloors() {
     return this.check(World.ShuffleGoaFloors);
   }
+  shuffleHouses() {
+    // TODO - make a separate flag for this
+    return true; // this.check(World.RandomizeMaps);
+  }
   randomizeMaps() {
     return this.check(World.RandomizeMaps);
   }

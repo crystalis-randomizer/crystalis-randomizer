@@ -19,6 +19,7 @@ import {fixSkippableExits} from './pass/fixskippableexits.js';
 import {randomizeThunderWarp} from './pass/randomizethunderwarp.js';
 import {rescaleMonsters} from './pass/rescalemonsters.js';
 import {shuffleGoa} from './pass/shufflegoa.js';
+import {shuffleHouses} from './pass/shufflehouses.js';
 import {shuffleMazes} from './pass/shufflemazes.js';
 import {shuffleMimics} from './pass/shufflemimics.js';
 import {shuffleMonsterPositions} from './pass/shufflemonsterpositions.js';
@@ -264,6 +265,7 @@ export async function shuffle(rom: Uint8Array,
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
+  if (flags.shuffleHouses()) shuffleHouses(parsed, flags, random);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
   writeLocationsFromMeta(parsed);
   shuffleMonsterPositions(parsed, random);

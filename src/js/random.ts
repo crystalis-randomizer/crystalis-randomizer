@@ -133,6 +133,19 @@ export class Random {
     throw new Error('bad weights');
   }
 
+  pickAndRemove<T>(...arrs: T[][]): T {
+    let count = 0;
+    for (const arr of arrs) {
+      count += arr.length;
+    }
+    let i = this.nextInt(count);
+    for (const arr of arrs) {
+      if (i < arr.length) return arr.splice(i, 1)[0];
+      i -= arr.length;
+    }
+    throw new Error('impossible');
+  }
+
   bitGenerator(): () => boolean {
     let bits = 0;
     let next = 0;

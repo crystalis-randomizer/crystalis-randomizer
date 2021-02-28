@@ -201,7 +201,7 @@ function defines(flags: FlagSet,
 
 export async function shuffle(rom: Uint8Array,
                               seed: number,
-                              flags: FlagSet,
+                              originalFlags: FlagSet,
                               reader: Reader,
                               log?: {spoiler?: Spoiler},
                               progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
@@ -219,17 +219,37 @@ export async function shuffle(rom: Uint8Array,
     rom = newRom;
   }
 
-  // First reencode the seed, mixing in the flags for security.
-  if (typeof seed !== 'number') throw new Error('Bad seed');
-  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(flags.filterOptional())) >>> 0;
-  const random = new Random(newSeed);
-  const originalFlagString = String(flags);
-  flags = flags.filterRandom(random);
-  const actualFlagString = String(flags);
-
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
+  // First reencode the seed, mixing in the flags for security.
+  if (typeof seed !== 'number') throw new Error('Bad seed');
+  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(originalFlags.filterOptional())) >>> 0;
+  const random = new Random(newSeed);
+
+  const attemptErrors = [];
+  for (let i = 0; i < 5; i++) { // for now, we'll try 5 attempts
+    try {
+      return await shuffleInternal(rom, originalFlags, seed, random, reader, log, progress);
+    } catch (error) {
+      attemptErrors.push(error);
+      console.error(`Attempt ${i + 1} failed: ${error.stack}`);
+    }
+  }
+  throw new Error(`Shuffle failed: ${attemptErrors.map(e => e.stack).join('\n\n')}`);
+}
+
+async function shuffleInternal(rom: Uint8Array,
+                               originalFlags: FlagSet,
+                               originalSeed: number,
+                               random: Random,
+                               reader: Reader,
+                               log: {spoiler?: Spoiler}|undefined,
+                               progress: ProgressTracker|undefined
+                              ): Promise<readonly [Uint8Array, number]>  {
+  const originalFlagString = String(originalFlags);
+  const flags = originalFlags.filterRandom(random);
   const parsed = new Rom(rom);
+  const actualFlagString = String(flags);
 // (window as any).cave = shuffleCave;
   parsed.flags.defrag();
   compressMapData(parsed);
@@ -424,7 +444,8 @@ export async function shuffle(rom: Uint8Array,
   parsed.modules.pop();
 
   parsed.modules.push(await asm('late'));
-  const crc = stampVersionSeedAndHash(rom, seed, originalFlagString, prgCopy);
+
+  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy);
 
   // Do optional randomization now...
   if (flags.randomizeMusic('late')) {

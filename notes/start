@@ -1,0 +1,10 @@
+Initializing the game happens very differently depending on whether the game
+is started normally vs continued.
+
+When starting normally, MainLoopJump_00_PrepareGame (fe:c957) manually loads
+all the values where they need to go.
+
+When continuing from a corrupted file (such as an initialized quicksave) it
+simply copies data from a table at 2fe00.  For instance, 2fe84 has the $1e
+(decimal 30) that ends up at 706 for next-level exp, followed by the $22
+(dec 34) that ends up at 708 and 709 for cur/max MP.

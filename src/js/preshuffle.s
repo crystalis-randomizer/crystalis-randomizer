@@ -1407,8 +1407,17 @@ PatchGrantItemInRegisterA:
   inc $0703
 
 
-
 .ifdef _ZEBU_STUDENT_GIVES_ITEM
+;;; This is hairy - if there's money at the start then we really should just
+;;; switch the action directly to 11 and free the entire thing, but that
+;;; involves code outside here so we'll put it off.
+.ifdef _MONEY_AT_START
+;;; immediately jump straight to 11 at start of routine
+.org $d263
+  jmp DialogAction_11
+FREE_UNTIL $d280
+.else
+;;; if we need to give both item and money then patch the followup.
 .org $d27d
   jmp PatchZebuStudentFollowUp ; replace jmp DisplayNumberInternal
 
@@ -1419,6 +1428,14 @@ PatchZebuStudentFollowUp:
   jsr DisplayNumberInternal
   jmp DialogAction_11
 .popseg
+.endif
+
+.else  ; zebu student doesn't give an item
+.ifdef _MONEY_AT_START
+.org $d263
+  rts
+FREE_UNTIL $d280
+.endif
 .endif
 
 .org $d29d ; Just set dolphin status bit => also set the flag
@@ -2643,14 +2660,88 @@ FREE_UNTIL $f8cb
 .reloc
 SelectCHRRomBanks:
   ldx #$05
-- stx $8000
-  lda $07f0,x
-  sta $8001
-  dex
+-  stx $8000
+   lda $07f0,x
+   sta $8001
+   dex
   bpl -
   lda $50
   sta $8000
   rts
+
+;;; ================================================================
+;;; When initializing a new game, we need more space for custom
+;;; values.  Instead of a bunch of sta $07xx to zero things out,
+;;; use a table.
+
+.org $c96d
+  ldx #$00
+-- lda PrepareGameInitialDataTable,x
+    beq +
+   sta $12
+   inx
+   lda PrepareGameInitialDataTable,x
+   sta $10
+   inx
+   lda PrepareGameInitialDataTable,x
+   sta $11
+   inx
+   ldy #$00
+-   lda PrepareGameInitialDataTable,x
+    sta ($10),y
+    inx
+    iny
+    dec $12
+   bne -
+  beq --
++ jsr $c9ff ; PopulateInitialObjects
+  jmp $c008
+FREE_UNTIL $c9da
+
+.reloc
+PrepareGameInitialDataTable:
+  ;; Initial location/entrance
+  .byte 2
+  .word ($006c)
+  .byte $00,$01
+  ;; Main loop mode and game mode
+  .byte 2
+  .word ($0040)
+  .byte $01,$00
+  ;; Various values in the 700 block
+  .byte 8
+  .word ($0702)
+  .ifdef _MONEY_AT_START
+    .byte 100
+  .else
+    .byte 0
+  .endif
+  .byte $00,$00,$00,$1e,$00,$22,$22
+  ;; A few more values in 7xx
+  .byte 11
+  .word ($0710)
+  .byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+  ;; Some other one-off values
+  .byte 2
+  .word ($0743)
+  .byte $00,$00
+  .byte 1
+  .word ($07e8)
+  .byte $00
+  .byte 4
+  .word ($0002)
+  .byte $00,$00,$00,$00
+  .byte 1
+  .word ($0051)
+  .byte $00
+  .byte 0
+
+.ifdef _MONEY_AT_START
+.pushseg "17"
+.org $be80
+  .byte 100
+.popseg
+.endif
 
 ;;; NOTE: This is an alternative implementation of SelectCHRRomBanks
 ;;; that is 4 bytes shorter than the original, but way longer than

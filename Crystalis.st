@@ -17444,23 +17444,25 @@ ObjectData_Object00                                      ; Object 00
         $1ae03              .byte $xx
         $1ae04              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object06                                      ; Object 06
+ObjectData_SpawnSlot0                                    ; Object 06
         ;; 06, 04, and 0a below seem to only trigger at the very start of the
-        ;; game, while the screen is flashing before the door opens.
+        ;; game, while the screen is flashing before the door opens.  This is
+        ;; what populates spawn slots 0..3.  Note that slot 2 is zeroed out
+        ;; via objectdata 05, which is hardlinked to empty (00).
         $1ae05              .byte $xx
         $1ae06              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ae0d              .byte $xx,$xx,$xx,$xx
         $1ae11              .byte $xx
         $1ae12              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object04                                      ; Object 04
+ObjectData_SpawnSlot1                                    ; Object 04
         $1ae15              .byte $xx
         $1ae16              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $1ae1d              .byte $xx,$xx,$xx,$xx
         $1ae21              .byte $xx,$xx
         $1ae23              .byte $xx
 ;;; ----------------------------------------------------------------
-ObjectData_Object0A                                      ; Object 0a
+ObjectData_SpawnSlot3                                    ; Object 0a
         $1ae24              .byte $xx
         $1ae25              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $1ae2b              .byte $xx,$xx
@@ -29347,8 +29349,8 @@ MenuItemNameTable
         $21623  xx xx xx:   xxx ShowMenuMessage
         $21626  xx xx xx:   xxx $xxxx
         $21629  xx xx xx:   xxx $xxxx
-        $2162c  xx xx xx:   xxx $xxxx
-        $2162f  xx xx xx:   xxx $xxxx
+        $2162c  xx xx xx:   xxx PlayerMaxMP
+        $2162f  xx xx xx:   xxx PlayerMP
         $21632  xx xx xx:   xxx PlayerStatus
         $21635  xx xx:      xxx #$xx
         $21637  xx xx xx:   xxx PlayerStatus
@@ -40537,7 +40539,7 @@ InitialPrg_6400
 ;;; read, depending on who's reading it.  My guess is that the :01 bit
 ;;; indicates that the location allows saving, and the :80 bit is whether
 ;;; the location is a checkpoint.
-DataTable_2ff00 
+CheckpointLocations
         $2ff00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2ff10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2ff20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -45707,7 +45709,7 @@ ObjectActionJump_03
         $35f1f  xx xx xx:     xxx $xxxx
         $35f22  xx xx:        xxx + ; $35f37
         $35f24  xx xx xx:      xxx $xxxx
-        $35f27  xx xx xx:      xxx $xxxx
+        $35f27  xx xx xx:      xxx PlayerMP
         $35f2a  xx xx:         xxx + ; $35f37
         $35f2c  xx xx:          xxx $xx
         $35f2e  xx xx:          xxx #$xx
@@ -46487,9 +46489,9 @@ ObjectActionJump_77
         $364ed  xx xx xx:   xxx StartAudioTrack
         $364f0  xx xx:      xxx #$xx
         $364f2  xx xx xx:   xxx $xxxx
-        $364f5  xx xx xx:   xxx $xxxx
+        $364f5  xx xx xx:   xxx PlayerMP
         $364f8  xx xx:      xxx $xx
-        $364fa  xx xx xx:   xxx $xxxx
+        $364fa  xx xx xx:   xxx PlayerMP
         $364fd  xx xx:      xxx #$xx ; MP
         $364ff  xx xx xx:   xxx DisplayNumberInternal
         $36502  xx xx:      xxx #$xx
@@ -49343,8 +49345,8 @@ ObjectActionJump_70_01
         $37b58  xx xx xx:    xxx PlayerMaxHP
         $37b5b  xx xx xx:    xxx PlayerHP
         $37b5e  xx xx xx:    xxx UpdateHPDisplayInternal
-        $37b61  xx xx xx:    xxx $xxxx
-        $37b64  xx xx xx:    xxx $xxxx
+        $37b61  xx xx xx:    xxx PlayerMaxMP
+        $37b64  xx xx xx:    xxx PlayerMP
         $37b67  xx xx:       xxx #$xx ; MP
         $37b69  xx xx xx:    xxx DisplayNumberInternal
         $37b6c  xx:         xxx
@@ -56696,15 +56698,15 @@ MainLoopJump_05_EndingSequence
 MainLoopJump_00_PrepareGame
         $3c957  xx xx:      xxx #$xx
         $3c959  xx xx:      xxx #$xx
-        $3c95b  xx xx xx:   xxx $xxxx,x
-        $3c95e  xx:         xxx
-        $3c95f  xx xx:      xxx $xx
+-       $3c95b  xx xx xx:    xxx $xxxx,x
+        $3c95e  xx:          xxx
+        $3c95f  xx xx:      xxx - ; $3c95b
         $3c961  xx xx:      xxx #$xx
         $3c963  xx:         xxx
-        $3c964  xx xx xx:   xxx $xxxx,x
-        $3c967  xx xx xx:   xxx $xxxx,x
-        $3c96a  xx:         xxx
-        $3c96b  xx xx:      xxx $xx
+-       $3c964  xx xx xx:    xxx $xxxx,x
+        $3c967  xx xx xx:    xxx $xxxx,x
+        $3c96a  xx:          xxx
+        $3c96b  xx xx:      xxx - ; $3c964
         $3c96d  xx xx:      xxx #$xx
         $3c96f  xx xx:      xxx $xx
         $3c971  xx xx:      xxx #$xx
@@ -56713,9 +56715,9 @@ MainLoopJump_00_PrepareGame
         $3c977  xx xx:      xxx MainLoopMode
         $3c979  xx xx:      xxx #GAME_MODE_INITIAL_START
         $3c97b  xx xx:      xxx GameMode
-        $3c97d  xx xx xx:   xxx $3c9ff
+        $3c97d  xx xx xx:   xxx PopulateInitialObjects
         $3c980  xx xx:      xxx #$xx
-        $3c982  xx xx xx:   xxx $xxxx
+        $3c982  xx xx xx:   xxx PlayerExpToNextLevel ; Initialize Next=30
         $3c985  xx xx:      xxx #$xx
         $3c987  xx xx xx:   xxx $xxxx
         $3c98a  xx xx xx:   xxx $xxxx
@@ -56742,13 +56744,13 @@ MainLoopJump_00_PrepareGame
         $3c9c9  xx xx xx:   xxx $xxxx
         $3c9cc  xx xx:      xxx ScreenMode
         $3c9ce  xx xx:      xxx #$xx
-        $3c9d0  xx xx xx:   xxx $xxxx
-        $3c9d3  xx xx xx:   xxx $xxxx
+        $3c9d0  xx xx xx:   xxx PlayerMP
+        $3c9d3  xx xx xx:   xxx PlayerMaxMP
         $3c9d6  xx xx xx:   xxx $3c008
         $3c9d9  xx:         xxx
 ;;; --------------------------------
 MainLoopJump_08_ContinueGame
-        $3c9da  xx xx xx:   xxx $3c9ff
+        $3c9da  xx xx xx:   xxx PopulateInitialObjects
         $3c9dd  xx xx:      xxx #$xx ; A000 -> 2E000
         $3c9df  xx xx xx:   xxx BankSwitch8k_A000
         $3c9e2  xx xx xx:   xxx $2fc06
@@ -56764,27 +56766,29 @@ MainLoopJump_08_ContinueGame
         $3c9fb  xx xx xx:   xxx $xxxx
         $3c9fe  xx:         xxx
 ;;; --------------------------------
+;;; Loads objects in slots 0..3 from entries 6, 4, 5, and a, respectively.
+PopulateInitialObjects
         $3c9ff  xx xx:      xxx #$xx
         $3ca01  xx xx:      xxx #$xx
-        $3ca03  xx xx xx:   xxx ObjectActionScript,x
-        $3ca06  xx:         xxx
-        $3ca07  xx xx:      xxx $xx
+-       $3ca03  xx xx xx:    xxx ObjectActionScript,x
+        $3ca06  xx:          xxx
+        $3ca07  xx xx:      xxx - ; $3ca03
         $3ca09  xx xx:      xxx #$xx
         $3ca0b  xx xx:      xxx PpuMaskShadow
         $3ca0d  xx xx:      xxx ScreenMode
         $3ca0f  xx xx xx:   xxx WaitForOAMDMA
         $3ca12  xx xx:      xxx #$xx
-        $3ca14  xx xx xx:   xxx $3ca26,y
-        $3ca17  xx xx:      xxx $xx
-        $3ca19  xx xx xx:   xxx $3ca27,y
-        $3ca1c  xx xx:      xxx $xx
-        $3ca1e  xx xx xx:   xxx LoadOneObjectDataInternal
-        $3ca21  xx:         xxx
-        $3ca22  xx:         xxx
-        $3ca23  xx xx:      xxx $xx
+-       $3ca14  xx xx xx:    xxx InitialObjectsTable,y ; $3ca26
+        $3ca17  xx xx:       xxx $xx
+        $3ca19  xx xx xx:    xxx InitialObjectsTable+1,y ; $3ca27
+        $3ca1c  xx xx:       xxx $xx
+        $3ca1e  xx xx xx:    xxx LoadOneObjectDataInternal
+        $3ca21  xx:          xxx
+        $3ca22  xx:          xxx
+        $3ca23  xx xx:      xxx - ; $3ca14
         $3ca25  xx:         xxx
 ;;; --------------------------------
-DataTable_3ca26 
+InitialObjectsTable
         $3ca26              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 MainGameModeJump_01_LocationChange

@@ -1018,6 +1018,7 @@ export class Metascreens {
     id: 0x50,
     tilesets: {town: {}},
     exits: [door(0x4c), door(0x55, 'door2')],
+    tallHouses: [0x35],
   });
   readonly brynmaerRight_exitE = this.metascreen({
     // brynmaer
@@ -1085,6 +1086,7 @@ export class Metascreens {
     id: 0x5b,
     tilesets: {town: {type: 'square'}},
     exits: [rightEdge({top: 9}), door(0x7a), door(0x87, 'door2')],
+    tallHouses: [0x5a],
   });
   readonly dyna = this.metascreen({
     id: 0x5c,
@@ -1149,6 +1151,7 @@ export class Metascreens {
     id: 0x65,
     tilesets: {town: {type: 'square'}},
     exits: [door(0x77), door(0x8a, 'door2')],
+    tallHouses: [0x6a],
   });
   readonly leafSE_exitE = this.metascreen({
     // leaf

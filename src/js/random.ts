@@ -138,6 +138,7 @@ export class Random {
     for (const arr of arrs) {
       count += arr.length;
     }
+    if (!count) throw new Error('empty arrays');
     let i = this.nextInt(count);
     for (const arr of arrs) {
       if (i < arr.length) return arr.splice(i, 1)[0];

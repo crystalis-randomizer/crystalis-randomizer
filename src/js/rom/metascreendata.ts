@@ -189,6 +189,13 @@ export interface MetascreenData {
 
   /** Arena type.  This should be preserved when inferring screens. */
   arena?: number;
+
+  /**
+   * Screen coordinates of "tall" houses, which do not want a shadow (tile $06)
+   * immediately over the door if we remove a shop icon, but rather a solid
+   * (tile $21).
+   */
+  tallHouses?: number[];
 }
 
 export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;

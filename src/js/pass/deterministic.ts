@@ -685,6 +685,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
       BoatHouse, Brynmaer,
       Crypt_Draygon2,
       Joel_Shed,
+      Leaf_ElderHouse,
       MtSabreNorth_SummitCave, MtSabreWest_Upper,
       PortoaPalace_ThroneRoom, Portoa_PalaceEntrance,
       Portoa_AsinaRoom, Portoa_FortuneTeller,
@@ -700,7 +701,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
       AztecaInShyron /* 6e */,
       Clark /* 44 */, Draygon /* cb */, FortuneTeller /* 39 */,
       Kensu /* 7e */, KensuInCabin /* 68 */, KensuInSwan /* 74 */,
-      LeafRabbit /* 13 */,
+      LeafElder /* 0d */, LeafRabbit /* 13 */,
       OakChild /* 1f */, OakElder /* 1d */, OakMother /* 1e */,
       PortoaPalaceFrontGuard /* 34 */, PortoaQueen /* 38 */,
       PortoaThroneRoomBackDoorGuard /* 33 */, Rage /* c3 */,
@@ -735,6 +736,12 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // Leaf elder in house ($0d @ $c0) ~ sword of wind redundant flag
   // dialog(0x0d, 0xc0)[2].flags = [];
   //rom.itemGets[0x00].flags = []; // clear redundant flag
+
+  // Lead elder needs to give item even if windmill key was used.
+  // This is mostly irrelevant with vanilla placement, but if the elder is not
+  // immediately available, it can become a problem.
+  LeafElder.dialog(Leaf_ElderHouse)
+      .splice(0, 0, ...LeafElder.dialog(Leaf_ElderHouse).splice(2, 1));
 
   // Leaf rabbit ($13) normally stops setting its flag after prison door opened,
   // but that doesn't necessarily open mt sabre.  Instead (a) trigger on 047

@@ -29,6 +29,7 @@ export function writeLocationsFromMeta(rom: Rom) {
     if (!loc.used) continue;
     loc.exits = [];
     loc.entrances = [];
+    loc.meta.writeEntrance0();
   }
   // Then write each one.
   for (const loc of locations) {

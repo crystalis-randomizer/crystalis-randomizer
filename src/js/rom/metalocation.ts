@@ -1,5 +1,5 @@
 import { Location } from './location.js'; // import type
-import { Exit, Flag as LocationFlag, Pit, ytDiff, ytAdd } from './locationtables.js';
+import { Exit, Flag as LocationFlag, Pit, ytDiff, ytAdd, Entrance } from './locationtables.js';
 import { Flag } from './flags.js';
 import { Metascreen, Uid } from './metascreen.js';
 import { Metatileset } from './metatileset.js';
@@ -66,6 +66,8 @@ export class Metalocation {
   private _pos: Pos[]|undefined = undefined;
 
   private _exits = new Table<Pos, ConnectionType, ExitSpec>();
+  //private _entrances = new DefaultMap<ConnectionType, Set<number>>(() => new Set());
+  private _entrance0?: ConnectionType;
   private _pits = new Map<Pos, number>(); // Maps to loc << 8 | pos
 
   //private _monstersInvalidated = false;
@@ -215,6 +217,7 @@ export class Metalocation {
 
     // Figure out exits
     const exits = new Table<Pos, ConnectionType, ExitSpec>();
+    let entrance0: ConnectionType|undefined;
     for (const exit of location.exits) {
       if (exit.dest === 0xff) continue;
       let srcPos = exit.screen;
@@ -284,6 +287,35 @@ export class Metalocation {
         continue;
       }
       exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
+
+      if (location.entrances[0].screen === srcPos) {
+        const coord = location.entrances[0].coord;
+        const exit = srcScreen.findExitByType(srcType);
+        if (((exit.entrance & 0xff) - (coord & 0xff)) ** 2 +
+            ((exit.entrance >>> 8) - (coord >>> 8)) ** 2 < 0x400) {
+          entrance0 = srcType;
+        }
+      }
+
+      // // Find the entrance index for each exit and store it separately.
+      // // NOTE: we could probably do this O(n) with a single for loop?
+      // let closestEntrance = -1;
+      // let closestDist = Infinity;
+      // for (let i = 0; i < location.entrances.length; i++) {
+      //   if (location.entrances[i].screen !== srcPos) continue;
+      //   const tile = location.entrances[i].tile;
+      //   for (const exit of srcScreen.data.exits ?? []) {
+      //     if (exit.type.startsWith('seamless')) continue;
+      //     const dist = ((exit.entrance >>> 4 & 0xf) - (tile & 0xf)) ** 2 +
+      //       ((exit.entrance >>> 12 & 0xf) - (tile >>> 4)) ** 2;
+      //     if (dist < 4 && dist < closestDist) {
+      //       closestDist = dist;
+      //       closestEntrance = i;
+      //     }
+      //   }
+      // }
+      // if (closestEntrance >= 0) entrances.get(srcType).add(closestEntrance);
+      // if (closestEntrance === 0)
       // if (destType) exits.set(srcPos, srcType, [dest.id << 8 | destPos, destType]);
     }
 
@@ -299,6 +331,7 @@ export class Metalocation {
     // }
     metaloc._screens = screens;
     metaloc._exits = exits;
+    metaloc._entrance0 = entrance0;
     metaloc._pits = pits;
 
     // Fill in custom flags
@@ -624,6 +657,17 @@ export class Metalocation {
     const locA = rom.locations[a[0] >>> 8].meta;
     const locB = rom.locations[b[0] >>> 8].meta;
     locA.attach(a[0] & 0xff, locB, b[0] & 0xff, a[1], b[1]);
+  }
+
+  /**
+   * Finds the actual full tile coordinate (YXyx) of the
+   * given exit.
+   */
+  static findExitTiles(rom: Rom, exit: ExitSpec) {
+    const loc = rom.locations[exit[0] >>> 8];
+    const scr = loc.meta._screens[exit[0] & 0xff];
+    const con = scr.findExitByType(exit[1]);
+    return con.exits.map(tile => tile | (exit[0] & 0xff) << 8);
   }
 
   /**
@@ -1119,6 +1163,18 @@ export class Metalocation {
     }
     // this._exits = new Table(exits);
     // that._exits = new Table(exits);
+  }
+
+  /** Writes the entrance0 if possible. */
+  writeEntrance0() {
+    if (!this._entrance0) return;
+    for (const [pos, type] of this._exits) {
+      if (type !== this._entrance0) continue;
+      const exit = this._screens[pos].findExitByType(type);
+      this.rom.locations[this.id].entrances[0] =
+          Entrance.of({screen: pos, coord: exit.entrance});
+      return;
+    }
   }
 
   /**

@@ -280,7 +280,8 @@ export class Locations extends Array<Location> {
   readonly MtHydra_Cave8            = $(0x85, CAVE);
   readonly MtHydra_Cave9            = $(0x86, CAVE);
   readonly MtHydra_Cave10           = $(0x87, CAVE);
-  readonly Styx1                    = $(0x88, {area: Areas.Styx});
+  readonly Styx1                    = $(0x88, {area: Areas.Styx,
+                                               houseType: 'palace'});
   readonly Styx2                    = $(0x89);
   readonly Styx2_East               = $(-1);  // will get the east part of stxy 2
   readonly Styx3                    = $(0x8a);
@@ -403,7 +404,7 @@ export class Locations extends Array<Location> {
   // INVALID: 0xe6
   readonly Joel_Inn                 = $(0xe7, {...HOUSE, houseType: 'inn'});
   readonly ZombieTown_House         = $(0xe8, {area: Areas.ZombieTown,
-                                               ...HOUSE});
+                                               ...HOUSE, houseType: 'house'});
   readonly ZombieTown_HouseBasement = $(0xe9, HOUSE);
   // INVALID: 0xea
   readonly Swan_ToolShop            = $(0xeb, {area: Areas.Swan, ...HOUSE,

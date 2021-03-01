@@ -249,6 +249,7 @@ const shuffleRom = async (seed) => {
                       `${location}${oldElement === 3 ? ' (iron)' : ''}: ${
                        ['wind', 'fire', 'water', 'thunder'][newElement]}`));
     replaceSpoiler('spoiler-wild-warps', s.wildWarps.map(({name}) => name));
+    replaceSpoiler('spoiler-houses', s.houses.map(({house, town}) => `${house}: ${town}`.replace(/\s*-\s*/g, ' ')));
   }
   document.getElementById('checksum').textContent =
       // shifted by header

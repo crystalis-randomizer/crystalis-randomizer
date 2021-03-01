@@ -390,9 +390,9 @@ export class Locations extends Array<Location> {
   readonly Portoa_Inn               = $(0xdc, {...HOUSE, houseType: 'inn'});
   readonly Portoa_ToolShop          = $(0xdd, {...HOUSE, houseType: 'tool'});
   readonly PortoaPalace_Left        = $(0xde, {area: Areas.PortoaPalace,
-                                               ...HOUSE});
+                                               ...HOUSE, houseType: 'house'});
   readonly PortoaPalace_ThroneRoom  = $(0xdf, HOUSE);
-  readonly PortoaPalace_Right       = $(0xe0, HOUSE);
+  readonly PortoaPalace_Right       = $(0xe0, {...HOUSE, houseType: 'house'});
   readonly Portoa_AsinaRoom         = $(0xe1, {area: Areas.UndergroundChannel,
                                                ...HOUSE, music: 'asina'});
   readonly Amazones_ElderDownstairs = $(0xe2, {area: Areas.Amazones,

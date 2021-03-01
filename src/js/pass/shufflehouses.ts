@@ -55,7 +55,7 @@ const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
 export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   const {locations: {
-    /*BoatHouse, Leaf_ElderHouse, Leaf_StudentHouse, */ Nadare, /*Goa_House,*/
+    Nadare, Portoa_PalaceEntrance,
   }} = rom;
   // First order of business: collect all the connections.
   const byType = new DefaultMap<HouseType, House[]>(() => []);
@@ -101,7 +101,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   // Two passes: 1. only handle overloaded screens; 2. all the rest.
   const secondPass = new Map<number, Set<number>>();
   const firstPass = new Map<number, Set<number>>();
-  for (const [scr, locposs] of screens) {
+  for (const [scr, locposs] of random.ishuffle(screens)) {
     // NOTE: student/brokahana should be in first pass.
     if (locposs.size >= 2 || scr === 0x64) {
       firstPass.set(scr, locposs);
@@ -110,6 +110,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
     }
   }
   const hasInn = new Set<number>();
+  const inns = byType.get('inn');
   for (const [, locposs] of [...firstPass, ...secondPass]) {
     //console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
     const map = new Map<ConnectionType, HouseType>();
@@ -121,9 +122,12 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
           [byType.get(map.get(house.outside[1]) ?? house.type)];
         eligible = eligible.filter(x => x.length);
         // Avoid more than one inn per town, since that's lame.
+        // Also, place inns first so as to most evenly distribute them.
         const allowInn = [...locposs].every(lp => !hasInn.has(lp >>> 8));
         if (!allowInn && eligible.length > 1) {
-          eligible = eligible.filter(x => x !== byType.get('inn'));
+          eligible = eligible.filter(x => x !== inns);
+        } else if (allowInn && eligible.some(x => x === inns)) {
+          eligible = [inns];
         }
         // NOTE: if student is staying put then don't shuffle brokahana to a non-house
         // TODO - better condition, particularly if we _do_ shuffle student or if we split screens
@@ -145,7 +149,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
         if (!first) continue;
         if (icons.get(house.type) === icons.get(replacement.type)) continue;
         const outside = rom.locations[house.outside[0] >>> 8];
-        if (outside === Nadare) continue;
+        if (outside === Nadare || outside === Portoa_PalaceEntrance) continue;
         const exits = Metalocation.findExitTiles(rom, house.outside);
         if (exits.length > 1) continue;
         let coord = exits[0] - 0x20;

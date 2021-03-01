@@ -142,6 +142,9 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
           }
         }
         map.set(house.outside[1], replacement.type);
+        if (rom.spoiler) {
+          rom.spoiler.addHouse(replacement.inside[0] >>> 8, house.outside[0] >>> 8);
+        }
         // Make the connection
         //console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]}`);
         Metalocation.connect(rom, house.outside, replacement.inside);

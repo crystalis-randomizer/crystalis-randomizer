@@ -17,6 +17,7 @@ export class Spoiler {
   readonly walls: Wall[] = [];
   readonly unidentifiedItems: UnidentifiedItem[] = [];
   readonly wildWarps: WildWarp[] = [];
+  readonly houses: House[] = [];
   flags: string = '';
 
   // TODO - shops, boss weaknesses
@@ -50,6 +51,14 @@ export class Spoiler {
 
   addWildWarp(id: number, name: string): void {
     this.wildWarps.push({id, name});
+  }
+
+  addHouse(houseId: number, townId: number): void {
+    this.houses.push({
+      houseId, townId,
+      house: this.rom.locations[houseId].name,
+      town: this.rom.locations[townId].name,
+    });
   }
 
   formatCondition(id: number): string {
@@ -93,6 +102,13 @@ interface Wall {
 interface WildWarp {
   id: number;
   name: string;
+}
+
+interface House {
+  houseId: number;
+  house: string;
+  townId: number;
+  town: string;
 }
 
 class Check {

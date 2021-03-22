@@ -802,7 +802,7 @@ export class FlagSet {
     const out = [];
     for (const [key, section] of sections.sortedEntries()) {
       let sec = key;
-      for (const subkey of ['', '?']) {
+      for (const subkey of ['', '?', '!']) {
         const subsection = section.get(subkey);
         if (subsection.length > 0) {
           sec += subkey + subsection.sort().join('');

@@ -1,0 +1,74 @@
+# Areas
+
+* Wind (3+ cave, 1 down, windmill, possibly other edges)
+* Cordel (2 left, 2 up, 1+ right, 1+ down, 1+ cave)
+* Waterfall (2 left, 4 cave, others possible)
+* Sea (1 up, 1 cave, 1 up/town/cave, lighthouse, boat, 2 water cave - fixed)
+* Goa (1 right, 1 left, 1 down, 1 up/town/fortress?, possibly caves)
+* Desert (1 up, 2+ caves)
+
+# Connectors
+
+* Leaf [town] (right, up)
+* Windmill Cave (down/cave, down/cave)
+* Sealed Cave [4] (down/cave, down/cave)
+* ? Zebu (down/cave, down/stair)
+* Swamp (left, up/town/cave?) - possible branch right?
+* Sabre N [6] (down, down/cave)
+* Kirisa Cave [3] (down/cave, down/cave)
+* Lime Tree (right, up) - possible branch cave
+* Lake (down, cave)
+* Portoa [town] (right, left) - plus fortress
+* ? Joel [town] (down, down/cave) ?
+* ESI post-entrance [4] (down/cave, down/cave)
+* Swan [town] (down, left)
+* Swan Gate (right, left)
+* Hydra [3] (right, up/town/fortress) - plus fortress
+* Oasis Cave (down/cave, down/stair) - plus fixed goa backdoor? or any fortress?
+* ? Oasis Cave Inner [4] (up/stair, up/stair) - maybe terminal+branch?
+* Desert Cave 1 (down/cave, down/cave)
+* Sahara Meadow (cave, down)
+* Sahara [town] (up, right)
+* Sahara outside (left, cave)
+* Desert Cave 2 (down/cave, down/cave)
+
+# Terminals
+
+* Mezame (left)
+* GBC (down/cave) - optional branches: down/cave x2
+* Outside Windmill (cave)
+* ? Zebu (down/cave) - required branch: down/stair/cave
+* Sabre W (right) - required branch: up/stair
+* Outside Tornel's House (down)
+* Brynmaer (right) - optional branches: left, down
+* Oak (down/stair?) - must be far
+* Amazones (up) - optional branches: left, right, down
+* Waterfall Cave (down/cave)
+* Fog Lamp Cave (down/cave)
+* Kirisa Meadow (cave) - must be far
+* Mesia (down/cave) - must be far
+* Channel (down/cave) - attached to Queen's room??
+* Fisherman (right) - attached to boat for sea
+* Joel (down/town/cave)
+* Outside Lighthouse (cave)
+* Zombie (cave) - must be far
+* Goa (down/fortress?) - required branch: fortress
+* Shyron (down/fortress?) - must be far - required branch: fortress
+* ? Oasis Cave Inner ? - probably make it a connector...
+* Fortress Basement (down/stair) - must be far
+* Crypt (stair/up) - fixed??? maybe not...
+
+# Fortresses
+
+* Asina's Palace
+* Sabera's Palace
+* Stxy
+* Goa Fortress
+* Goa Fortress backdoor?
+* Pyramid
+
+# Extra branches (required)
+
+* Throne Room Branch (cave)
+* Joel Shed (cave)
+* ?? Oasis Cave Inner

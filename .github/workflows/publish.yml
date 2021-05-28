@@ -1,0 +1,23 @@
+name: publish
+on:
+  push:
+    branches-ignore:
+      - gh-pages
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+      - run: scripts/init_secrets.sh
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          TESTDATA: ${{ secrets.TESTDATA }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm install
+      - run: scripts/build_info.sh
+      - run: npm install -g gulp-cli
+      - run: scripts/link.sh --copy
+      - run: rm -f dist/js/*.min.js
+      - run: npm test || ( touch failed; false )
+      - run: test ! -e failed && scripts/deploy.sh

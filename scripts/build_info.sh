@@ -1,40 +1,44 @@
 #!/bin/sh
 
-# No point cloning the repo if not on a travis branch.
-if [ -z "$TRAVIS_BRANCH" ]; then
-  echo "Nothing to do" >&2
-  exit 0
-fi
+case "$GITHUB_REF" in
+  (refs/tags/*) GITHUB_TAG=${GITHUB_REF#refs/tags/} ;;
+  (refs/heads/*) GITHUB_BRANCH=${GITHUB_REF#refs/heads/} ;;
+  (*)
+    # No point cloning the repo if not on a branch or tag
+    echo "Nothing to do" >&2
+    exit 0
+    ;;
+esac
 
 # 7-char abbreviated commit
-commit="$(echo $TRAVIS_COMMIT | cut -c1-7)"
+commit="$(echo $GITHUB_SHA | cut -c1-7)"
 
 # Tags should be of the form "v1.0.0" for a stable release,
 # or "v1.0.0-rc1" for a pre-release.  For stable releases,
 # update the 'stable' symlink to point to that version.
 # For pre-releases. update 'rc' symlink to point to the
 # version, and add an indicator to the page.
-case "$TRAVIS_TAG" in
+case "$GITHUB_TAG" in
   (v*-rc*)
-    dir=${TRAVIS_TAG#v}
+    dir=${GITHUB_TAG#v}
     status=rc
     label=$dir
     ;;
   (v*)
-    dir=${TRAVIS_TAG#v}
+    dir=${GITHUB_TAG#v}
     status=stable
     label=$dir
     ;;
   ('')
-    case "$TRAVIS_BRANCH" in
+    case "$GITHUB_BRANCH" in
       (master) dir=latest ;;
-      (*)      dir=$TRAVIS_BRANCH ;;
+      (*)      dir=$GITHUB_BRANCH ;;
     esac
     status=unstable
     label="$dir $commit"
     ;;
   (*)
-    echo "Bad travis tag: $TRAVIS_TAG" >&2
+    echo "Bad tag: $GITHUB_TAG" >&2
     exit 1
     ;;
 esac
@@ -47,14 +51,21 @@ esac
   echo "  'STATUS': '$status',"
   echo "  'VERSION': '$dir',"
   echo "  'LABEL': '$label',"
-  echo "  'HASH': '$TRAVIS_COMMIT',"
+  echo "  'HASH': '$GITHUB_SHA',"
   echo "  'DATE': new Date($(date +%s000)),"
   echo "};"
   echo "if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;"
 } >| "src/js/build_info.js"
 
 # Intended use: 'eval $(build_info.sh)'
-echo "export dir='$dir';"
-echo "export status='$status';"
-echo "export label='$label';"
-echo "export commit='$commit';"
+if [ -n "$GITHUB_ENV" ]; then
+  echo "dir=$dir" >> "$GITHUB_ENV"
+  echo "status=$status" >> "$GITHUB_ENV"
+  echo "label=$label" >> "$GITHUB_ENV"
+  echo "commit=$commit" >> "$GITHUB_ENV"
+else
+  echo "export dir='$dir';"
+  echo "export status='$status';"
+  echo "export label='$label';"
+  echo "export commit='$commit';"
+fi

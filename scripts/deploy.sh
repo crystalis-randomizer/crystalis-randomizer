@@ -8,7 +8,8 @@ set -ex
 if [ -e NO_DEPLOY ]; then
   exit 0
 fi
-case "$TRAVIS_COMMIT_MESSAGE" in
+COMMIT_MESSAGE="$(git log -n 1 "$GITHUB_SHA")"
+case "$COMMIT_MESSAGE" in
   (*NO_DEPLOY*) exit 0 ;;
 esac
 
@@ -19,12 +20,12 @@ pages="index.html check.html track.html help.html"
 subdirs="js css images"
 
 # Clone the existing gh-pages repo
-git clone --depth=1 -b gh-pages "git@github.com:$TRAVIS_REPO_SLUG" deploy
+git clone --depth=1 -b gh-pages "git@github.com:$GITHUB_REPOSITORY" deploy
 
 # At this point we have $dir, $status, and $label.  Start copying to the dir.
 
 # Just pull favicon straight from master...?
-if [ "$TRAVIS_BRANCH" = master ]; then
+if [ "$GITHUB_REF" = refs/heads/master ]; then
   cp dist/favicon.ico "deploy/"
 fi
 

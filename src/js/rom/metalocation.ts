@@ -292,7 +292,9 @@ export class Metalocation {
         const coord = location.entrances[0].coord;
         const exit = srcScreen.findExitByType(srcType);
         if (((exit.entrance & 0xff) - (coord & 0xff)) ** 2 +
-            ((exit.entrance >>> 8) - (coord >>> 8)) ** 2 < 0x400) {
+            ((exit.entrance >>> 8) - (coord >>> 8)) ** 2 <= 0x400) {
+          // NOTE: for single-height maps, there may be a 2-tile offset between
+          // the expected and actual location of a bottom entrance.
           entrance0 = srcType;
         }
       }
@@ -1179,7 +1181,7 @@ export class Metalocation {
 
   /**
    * Saves the current state back into the underlying location.
-   * Currently this only deals with entrances/exits.
+   * Currently this only deals with entrances/exits (??)
    */
   write() {
     const srcLoc = this.rom.locations[this.id];

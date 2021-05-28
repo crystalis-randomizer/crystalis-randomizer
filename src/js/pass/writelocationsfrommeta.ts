@@ -4,7 +4,7 @@ export function writeLocationsFromMeta(rom: Rom) {
   const {locations} = rom;
   const {CordelPlainEast, CordelPlainWest,
          WaterfallValleyNorth, WaterfallValleySouth,
-         MtSabreWest_Cave1} = locations;
+         MezameShrine, MtSabreWest_Cave1} = locations;
 
   // First sync up Cordel's exits.
   CordelPlainEast.meta.reconcileExits(CordelPlainWest.meta);
@@ -30,6 +30,11 @@ export function writeLocationsFromMeta(rom: Rom) {
     loc.exits = [];
     loc.entrances = [];
     loc.meta.writeEntrance0();
+  }
+  // Need to make sure Mezame entrance 1 exists, since (unless no-bow mode is
+  // on) nothing actually leads to it.
+  if (!MezameShrine.meta.getExit(0, 'door')) {
+    MezameShrine.meta.attach(0, MezameShrine.meta, 0, 'door', 'door');
   }
   // Then write each one.
   for (const loc of locations) {

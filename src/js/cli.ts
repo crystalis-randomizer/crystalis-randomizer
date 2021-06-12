@@ -1,4 +1,4 @@
-#!/usr/bin/env node -r esm
+#!/usr/bin/env -S node -r esm --inspect 
 
 import './build_info.js'; // side effect global set (affects version module)
 

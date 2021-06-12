@@ -5,6 +5,7 @@ deploy
 deploy_key
 deploy_key.pub
 dist
+.vscode
 
 # testing
 cov.*

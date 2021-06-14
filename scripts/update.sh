@@ -68,7 +68,7 @@ case "$action" in
       rm -f "$tmp"
       exit 6
     fi
-    if ! diff -u "$source" "$tmp"; then
+    if ! diff --ignore-space-change -u "$source" "$tmp"; then
       echo "Differences found.  Leaving $(basename "$tmp") for comparison" >& 2
       exit 7
     fi

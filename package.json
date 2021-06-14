@@ -11,8 +11,8 @@
     "mocha": "TS_NODE_PROJECT=./tsconfig.test.json npx mocha -r ./test/ts-node",
     "test": "npm run unit && npm run build && test/test_cli.sh",
     "clean": "rm -rf dist src/js/**/flycheck_*",
-    "checkout": "scripts/update.sh out",
-    "checkin": "scripts/update.sh in"
+    "checkout": "sh scripts/update.sh out",
+    "checkin": "sh scripts/update.sh in"
   },
   "bin": {
     "cryr": "dist/js/cli.js"

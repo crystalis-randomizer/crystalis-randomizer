@@ -767,6 +767,63 @@ MaybeSetCheckpointActual:
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
 
+; Replace the ClearSpawnSlot function with a hook to remove the enemy
+; health bar after they despawn (if we didn't earn exp before then)
+.org $98c7
+  jmp ClearSpawnSlotAndLastEnemy
+  FREE_UNTIL $98cd
+
+.reloc
+; In addition to zeroing out the spawn slot for the enemy, check to see
+; if this enemy was the last one we attacked, and clear that if they are despawning
+;
+; [in] x - offset to the spawn slot for the despawning enemy
+ClearSpawnSlotAndLastEnemy:
+  ; TODO do we need to protect the carry/negative flags?
+  lda #$00
+  sta $04a0, x
+  cpx LastAttackedEnemyOffset
+  bne +
+    ; if the enemy in the last offset despawned, clear it
+    lda #$ff
+    sta LastAttackedEnemyOffset
++ rts
+
+
+; TODO(jroweboy) shift the mp over to the right by 1
+
+.reloc
+; Custom enemy health bar calculation to rescale their HP to a easy to view value
+; [in]  $LastAttackedEnemyOffset - offset from $ObjectHP to the most recent attacked enemy
+; [out] X - their current HP rescaled to a percentage of the max level
+; [out] Y - their max HP rescaled to to a percentage of the max level
+RescaleEnemyHP:
+  ; TODO(jroweboy)
+.
+
+.reloc
+DisplayCurrentExperience:
+  
+
+.reloc
+UpdateEnemyHPDisplay:
+  ; This is similar to what the UpdateHPDisplayInternal does,
+  ; but we need to write more to switch out the "name".
+  txa
+  pha
+    lda #$80
+    ;; TODO - if updating this proves to be laggy we can try to just
+    ;; clobber whats in here instead. (but only if rendering is disabled)
+    jsr WaitForNametableBufferAvailable
+    ldx #$14
+    lda #$20
+-     sta $6080,x
+      dex
+    bpl -
+
+
+
+
 ;;; Crystalis should have all elements, rather than none
 ;;; Since we now invert the handling for enemy immunity,
 ;;; this aligns enemies and walls nicely, Crystalis will
@@ -2334,6 +2391,7 @@ SubtractEnemyHP:
   lda ObjectHP,y
   sbc $63
   sta ObjectHP,y
+  sty LastAttackedEnemyOffset
 + lda $61
   sbc #$00
   rts

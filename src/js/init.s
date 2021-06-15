@@ -79,6 +79,7 @@ ObjectExp = $520
 PlayerMP = $708
 EquippedConsumableItem = $715
 EquippedPassiveItem    = $716
+LastAttackedEnemyOffset= $720
 
 
 InvSwords = $6430

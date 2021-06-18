@@ -888,20 +888,20 @@ FREE_UNTIL $91c7
 .reloc
 UpdatePlayerMaxHPAndMPAfterLevelUp:
   ldy PlayerLevel
-  lda $9b7f,y
+  lda $8b7f,y
   sta PlayerMaxHP
-  lda $9b8f,y
+  lda $8b8f,y
   sta PlayerMaxMP
         ;; Add the delta of the max HP/MP to the current
   sec
-  lda $9b7f,y
-  sbc $9b7e,y
+  lda $8b7f,y
+  sbc $8b7e,y
   clc
   adc PlayerHP
   sta PlayerHP
   sec
-  lda $9b8f,y
-  sbc $9b8e,y
+  lda $8b8f,y
+  sbc $8b8e,y
   clc
   adc PlayerMP
   sta PlayerMP

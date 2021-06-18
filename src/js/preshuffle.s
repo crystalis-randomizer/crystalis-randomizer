@@ -965,14 +965,6 @@ Do16BitSubtractionForEXP:
 
 ;;; ----------------------------------------------------
 ;; Inital EXP changes
-
-;; Change starting EXP from counting up to counting down
-.pushseg "fe", "ff"
-; initialize the player exp with #$1e
-.org $c982
-  sta PlayerExp
-.popseg
-
 ;; Change the "initial" value loaded into the Continue save
 ;; file is you select continue from a cold boot. InitialPrg_6400
 .pushseg "17", "fe", "ff"
@@ -2933,7 +2925,7 @@ PrepareGameInitialDataTable:
   .else
     .byte 0
   .endif
-  .byte $00,$00,$00,$1e,$00,$22,$22
+  .byte $00,$1e,$00,$00,$00,$22,$22
   ;; A few more values in 7xx
   .byte 11
   .word ($0710)

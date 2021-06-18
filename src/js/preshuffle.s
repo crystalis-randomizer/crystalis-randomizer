@@ -2550,10 +2550,6 @@ CheckRabbitBoots:
 SubtractEnemyHP:
   ;; NOTE: we could probably afford to move a few of these back if needed
   ;; push extra
-  
-  ; cpy LastAttackedEnemyOffset
-  ; beq + 
-  ;   jsr LoadEnemyOriginalStats
 + lda ObjectElementalDefense,y
   and #$0f
   cmp #$0f
@@ -2566,45 +2562,6 @@ SubtractEnemyHP:
   sbc #$00
   rts
 
-.org $c409
-  jmp AddMaxHPToObjectData
-FREE_UNTIL $c40d
-
-.reloc
-AddMaxHPToObjectData:
-  ; copy the objects HP into $620 since we don't know what thats for.
-  lda ObjectHP,x
-  sta ObjectMaxHP,x
-  ; we interrupted the cleanup of the routine, so pick up where it left off
-  pla
-  tay
-  pla
-  tax
-  rts
-
-; .reloc
-; LoadEnemyOriginalStats:
-;   ; bank switch out A000 in order to load the metatable
-;   sty 
-;   jsr $ff80 ; LoadOneObjectData
-;     tya
-;     pha
-;       tay
-;       ldx $300,y ; ObjectMetasprite
-;       lda $be00,x
-;       sta $12
-;       lda $be01,x
-;       sta $13
-;       ;; offset 8 into the metasprite table is max hp?
-;       ldx #$08
-;       lda ($12),y
-;       sta LastAttackedEnemyMaxHP
-;     pla
-;     tay
-;   pla
-;   tax
-;   pla
-;   jmp $c427 ; BankSwitch8K_A000
 
 ;;; Note: This is moved from $3db22, where we ran out of space.
 .reloc

@@ -858,7 +858,11 @@ PushObjOffsetToStack:
 .org $916a
   pla
   tay
-  jsr AwardExperiencePoints
+  lda PlayerLevel
+  and #$f0
+  beq +
+    jmp ExitWithoutDrawingEXP
++ jsr AwardExperiencePoints
   ; carry clear means we leveled up
   bcc LevelUp
   ; but it doesn't check if we were exactly at zero EXP so check for that now
@@ -869,11 +873,7 @@ PushObjOffsetToStack:
   jmp UpdateCurrentEXPAndExit
 LevelUp:
   ; double check here that we aren't already max level
-  lda PlayerLevel
-  and #$f0
-  beq +
-    jmp ExitWithoutDrawingEXP
-+ inc PlayerLevel
+  inc PlayerLevel
   lda PlayerLevel
   asl  ; note: clears carry
   tay
@@ -935,15 +935,6 @@ ExitWithoutDrawingEXP:
 ;; skip exp calculation if max level
 .org $924b
 AwardExperiencePoints:
-  jmp CheckIfMaxLevel
-.reloc
-CheckIfMaxLevel:
-  lda PlayerLevel
-  and #$f0
-  beq +
-    rts
-+ lda ObjectExp,y
-  jmp $924e ; return execution to AwardExperiencePoints
 
 ;; If the EXP >= $80, the code before this will load the hibyte into $11
 .org $926e

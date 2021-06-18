@@ -681,10 +681,6 @@ MaybeRevertChangeOnSwordGet:
    jsr $bb9d ; 27b9d MainGameModeJump_19_ChangeMagicRevertAnimation
 + jmp $c867  ; 3c867 ??
 
-;; Replace LIFE with FORCE
-; .org $badb
-;   .byte $84,$85,$86,$87
-
 
 ;.segment "14" ; TODO - do these _actually_ go together?
 .segment "17", "fe", "ff"
@@ -801,7 +797,7 @@ MaybeSetCheckpointActual:
 ;;; Numeric displays
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
-  .byte $56,$2b,$03,$00 ; display right of lvl
+  .byte $56,$2b,$03,$00 ; display left of exp
 .org $8f19  ; 0e - was unused, now it's LV(menu)
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
@@ -2549,7 +2545,6 @@ CheckRabbitBoots:
 .reloc
 SubtractEnemyHP:
   ;; NOTE: we could probably afford to move a few of these back if needed
-  ;; push extra
 + lda ObjectElementalDefense,y
   and #$0f
   cmp #$0f

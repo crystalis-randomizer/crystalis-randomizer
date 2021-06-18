@@ -868,7 +868,12 @@ PushObjOffsetToStack:
   beq LevelUp
   jmp UpdateCurrentEXPAndExit
 LevelUp:
-  inc PlayerLevel
+  ; double check here that we aren't already max level
+  lda PlayerLevel
+  and #$f0
+  beq +
+    jmp ExitWithoutDrawingEXP
++ inc PlayerLevel
   lda PlayerLevel
   asl  ; note: clears carry
   tay
@@ -878,9 +883,7 @@ LevelUp:
   lda PlayerExp+1
   adc $8b9f,y
   sta PlayerExp+1
-  bcs +
-  jmp LevelUp
-+ jmp UpdatePlayerMaxHPAndMPAfterLevelUp
+  jmp UpdatePlayerMaxHPAndMPAfterLevelUp
 .assert * <= $91c7
 FREE_UNTIL $91c7
 
@@ -892,7 +895,7 @@ UpdatePlayerMaxHPAndMPAfterLevelUp:
   sta PlayerMaxHP
   lda $8b8f,y
   sta PlayerMaxMP
-        ;; Add the delta of the max HP/MP to the current
+  ;; Add the delta of the max HP/MP to the current
   sec
   lda $8b7f,y
   sbc $8b7e,y
@@ -922,6 +925,9 @@ UpdateDisplayAfterLevelUp:
 
 .org $91ef
 UpdateCurrentEXPAndExit:
+
+.org $91f4
+ExitWithoutDrawingEXP:
 
 ;;; ----------------------------------------------------
 ;;; AwardExperiencePoints

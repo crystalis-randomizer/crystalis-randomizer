@@ -681,6 +681,10 @@ MaybeRevertChangeOnSwordGet:
    jsr $bb9d ; 27b9d MainGameModeJump_19_ChangeMagicRevertAnimation
 + jmp $c867  ; 3c867 ??
 
+;; Replace LIFE with FORCE
+; .org $badb
+;   .byte $84,$85,$86,$87
+
 
 ;.segment "14" ; TODO - do these _actually_ go together?
 .segment "17", "fe", "ff"
@@ -756,72 +760,307 @@ MaybeSetCheckpoint:
 MaybeSetCheckpointActual:
 
 
+
+; .segment "40"
+; .org $E000
+; .byte $70,$70,$70,$70,$70,$70,$7E,$7E,$9F,$9F,$9F,$9F,$9F,$9F,$83,$FF
+
+.segment "12", "13", "fe", "ff"
+;.bank $27000 $8000:$4000
+
+;; Overwrite the StatusBarDataTable with the new UI tile layout
+.org $badb
+  .byte $80,$20,$20,$20 ; Lf _ _ _
+.org $baee
+  .byte $83,$00,$00,$20 ; Lv 0 0 _
+.org $baf2
+  .byte $9c             ;  $
+
+.org $bafb
+  ;; on this row we shifted most everything left by three tiles
+  .byte $81,$8f,$8f,$8f ; Pw > > >
+  .byte $8f,$8f,$8f,$8f ;  > > > >
+  .byte $93,$95,$94     ; (1) lit up
+  .byte $90,$91,$92     ; (_) not lit up
+  .byte $90,$91,$92     ; (_) not lit up
+  .byte $20,$20         ;  _ _
+  .byte $84,$20,$20,$20 ; Dl _ _ _
+  .byte $86,$20,$20,$20 ; Ex _ _ _
+  .byte $20,$20,$1f     ;  _ _ |
+
+.org $bb1b
+  .byte $20             ;  _
+.org $bb1f ; clear out the experience count thats there initially
+  .byte $20,$20,$20,$20 ;  _ _ _ _
+  .byte $20,$20,$20,$20 ;  _ _ _ _
+  .byte $20,$20,$20,$20 ;  _ _ _ _
+  .byte $20,$20,$20,$20 ;  _ _ _ _
+  .byte $85,$20,$20,$20 ; Mp _ _ _
+  .byte $9d,$20,$20,$20 ;  / _ _ _
+
+
+
 .segment "1a", "1b", "fe", "ff"
 ;.bank $34000 $8000:$4000
 
 ;;; Numeric displays
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
-  .byte $3c,$2b,$03,$00 ; display right of lvl
+  .byte $56,$2b,$03,$00 ; display right of lvl
 .org $8f19  ; 0e - was unused, now it's LV(menu)
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
 
-; Replace the ClearSpawnSlot function with a hook to remove the enemy
-; health bar after they despawn (if we didn't earn exp before then)
-.org $98c7
-  jmp ClearSpawnSlotAndLastEnemy
-  FREE_UNTIL $98cd
+;; Move the position of the main UI number elements
+.org $8ec7 ; Lv
+  .byte $36,$2b
+.org $8ecd ; Money
+  .byte $3a,$2b
+.org $8ed3 ; Experience
+  .byte $5a,$2b
+; Experience to next level is now unused,
+; if you want to use it for something, make sure the drawing isn't skipped
+; .org $8ed9 ; Experience Cap
+;   .byte $5a,$2b
+
+.pushseg "13", "fe", "ff"
+;; Prevent EXP Left from being drawn
+;InitializeStatusBarNametable
+.org $bace
+  jsr DisplayNumberInternalButSkipExpToNextLevel
+.reloc
+DisplayNumberInternalButSkipExpToNextLevel:
+  cmp #$03
+  beq +
+  jmp DisplayNumberInternal
++ rts
+.popseg
+
+;;; HP / Force bar display
+.org $8d1f
+  lda #$23; Move the player HP bar left 3 places
+.org $8db2
+  lda #$43; Move the player force bar left 3 places
+
+;;; Recalculate PlayerEXP to count down from max instead of up
+
+.org $9152
+;; KillObject
+  ; Instead of calling AwardExperience immediately, just load the experience
+  ; and push it onto the stack for use later. The code needs to check for an
+  ; object replacement and we don't wanna clobber that
+  jmp PushExpToStack
+.assert * <= $9155
 
 .reloc
+PushExpToStack:
+  tya
+  pha
+  ; Return back to where we started without touching the stack
+  jmp $9155
+
+
+;; Update the level up check
+.org $916a
+  pla
+  tay
+  jsr $924b ; AwardExperiencePoints
+  bcs $91ef ; carry set means we didn't level up
+  jmp LevelUp
+FREE_UNTIL $918b
+
+.reloc
+LevelUp:
+    inc PlayerLevel
+    lda PlayerLevel
+    asl  ; note: clears carry
+    tay
+    lda PlayerExp
+    adc $8b9e,y      ; NextLevelExpByLevel
+    sta PlayerExp
+    lda PlayerExp+1
+    adc $8b9f,y
+    sta PlayerExp+1
+    bcc LevelUp
+    jmp $918b
+
+;;; We moved loading the next level exp into the level up code, so just free this
+.org $91b6
+  jmp $91c7
+FREE_UNTIL $91c7
+
+;; Remove drawing the EXP left
+.org $91cf
+  nop
+  nop
+  nop
+  nop
+  nop
+
+;;; ----------------------------------------------------
+;;; AwardExperiencePoints
+;; This is changed so that Player EXP counts down instead of up to max EXP
+;; skip exp calculation if max level
+.org $924b
+  jmp CheckIfMaxLevel
+.reloc
+CheckIfMaxLevel:
+  lda PlayerLevel
+  and #$f0
+  beq +
+    rts
++ lda ObjectExp,y
+  jmp $924e ; return execution to AwardExperiencePoints
+
+;; If the EXP >= $80, the code before this will load the hibyte into $11
+.org $926e
+  jmp Do16BitSubtractionForEXP
+
+;; If the EXP < $80, then we set 0 for the monster exp lobyte
+.org $9250
+  ldy #$00
+  sty $11      ; $11 is used to store the upper bits of monster exp temporarily
+  jmp Do16BitSubtractionForEXP
+.assert * <= $925d
+
+.reloc
+Do16BitSubtractionForEXP:
+  ; A = monsterEXPLo; y = scratch
+  ldy PlayerExp
+  sta PlayerExp
+  tya
+  ; A = playerExp; PlayerExp = monsterEXP
+  sec
+  sbc PlayerExp
+  sta PlayerExp
+  lda PlayerExp+1
+  sbc $11
+  sta PlayerExp+1
+  rts
+
+
+;;; ----------------------------------------------------
+
+;; Change starting EXP from counting up to counting down
+.pushseg "fe", "ff"
+; initialize the player exp with #$1e
+.org $c982
+  sta PlayerExp
+.popseg
+
+;; Change the "initial" value loaded into the Continue save
+;; file is you select continue from a cold boot. InitialPrg_6400
+.pushseg "17", "fe", "ff"
+.org $be82
+  .byte $1e
+.org $be84
+  .byte $00
+.popseg
+
+;; draw a full health bar over the exp spot when we attack an enemy
+; .reloc
+; UpdateEnemyHPDisplay:
+;   ; This is similar to what the UpdateHPDisplayInternal does,
+;   ; but we need to write more to switch out the "name".
+;   txa
+;   pha
+;     lda #$80
+;     ;; TODO - if updating this proves to be laggy we can try to just
+;     ;; clobber whats in here instead. (but only if rendering is disabled)
+;     jsr $c72b ; WaitForNametableBufferAvailable
+;     ldx #$14
+;     lda #$20
+; -     sta $6080,x
+;       dex
+;     bpl -
+;     ;; draw our text to the first 4 locations
+;     lda #$45
+;     sta $6080
+;     lda #$4E
+;     sta $6081
+;     lda #$4D
+;     sta $6082
+;     lda #$59
+;     sta $6083
+;     ;; draw the empty bar
+;     ldx LastAttackedEnemyOffset
+;     lda ObjectMaxHP,x
+;     asl
+;     asl
+;     asl
+;     asl
+;     tax
+;     lda #$8d ; #$8d is the terminator tile for the hp bar
+;         ;; the address is offset by one here to account for the terminator tile
+;     sta $6085,x
+;         ;; fill the space from the terminating tile to the start of the bar
+;         ;; with the empty bar tile
+;     lda #$8c ; #$8c is the empty hp bar tile
+; -     sta $6084,x
+;       dex
+;       bpl - ; $34ce7
+;     jsr $c43e ; DisableNMI
+;     ;; write the update header information to the nametable buffer
+;     ;; see the comments in WriteNametableDataToPpu for more information
+;     ldx $0b ; NametableBufferWriteOffset
+;     lda #$62
+;     sta $6201,x
+;     lda #$2b
+;     sta $6200,x
+;     lda #$15
+;     sta $6202,x
+;     lda #$80
+;     sta $6203,x
+;     ;; bump the nametable buffer write head
+;     txa
+;     clc
+;     adc #$04
+;     and #$1f
+;     sta $0b ; NametableBufferWriteOffset
+;     lda $01
+;     and #$18 ; If rendering is off, do immediate write
+;     bne + ; $34d44
+;       jsr $c8b2 ; ImmediateWriteNametableDataToPpu
+; +   pla
+;     tax
+;     jmp $c436 ; EnableNMI
+
+
+
+
+; Replace the ClearSpawnSlot function with a hook to remove the enemy
+; health bar after they despawn (if we didn't earn exp before then)
+; .org $98c7
+;   jmp ClearSpawnSlotAndLastEnemy
+;   FREE_UNTIL $98cd
+
+; .reloc
 ; In addition to zeroing out the spawn slot for the enemy, check to see
 ; if this enemy was the last one we attacked, and clear that if they are despawning
 ;
 ; [in] x - offset to the spawn slot for the despawning enemy
-ClearSpawnSlotAndLastEnemy:
-  ; TODO do we need to protect the carry/negative flags?
-  lda #$00
-  sta $04a0, x
-  cpx LastAttackedEnemyOffset
-  bne +
-    ; if the enemy in the last offset despawned, clear it
-    lda #$ff
-    sta LastAttackedEnemyOffset
-+ rts
+; ClearSpawnSlotAndLastEnemy:
+;   ; TODO do we need to protect the carry/negative flags?
+;   lda #$00
+;   sta $04a0, x
+;   cpx LastAttackedEnemyOffset
+;   bne +
+;     ; if the enemy in the last offset despawned, clear it
+;     lda #$ff
+;     sta LastAttackedEnemyOffset
+; + rts
 
 
 ; TODO(jroweboy) shift the mp over to the right by 1
-
-.reloc
+; .reloc
 ; Custom enemy health bar calculation to rescale their HP to a easy to view value
 ; [in]  $LastAttackedEnemyOffset - offset from $ObjectHP to the most recent attacked enemy
 ; [out] X - their current HP rescaled to a percentage of the max level
 ; [out] Y - their max HP rescaled to to a percentage of the max level
-RescaleEnemyHP:
-  ; TODO(jroweboy)
-.
-
-.reloc
-DisplayCurrentExperience:
+; RescaleEnemyHP:
+;   ; TODO(jroweboy)
+; .
   
-
-.reloc
-UpdateEnemyHPDisplay:
-  ; This is similar to what the UpdateHPDisplayInternal does,
-  ; but we need to write more to switch out the "name".
-  txa
-  pha
-    lda #$80
-    ;; TODO - if updating this proves to be laggy we can try to just
-    ;; clobber whats in here instead. (but only if rendering is disabled)
-    jsr WaitForNametableBufferAvailable
-    ldx #$14
-    lda #$20
--     sta $6080,x
-      dex
-    bpl -
-
-
 
 
 ;;; Crystalis should have all elements, rather than none
@@ -2383,7 +2622,12 @@ CheckRabbitBoots:
 .reloc
 SubtractEnemyHP:
   ;; NOTE: we could probably afford to move a few of these back if needed
-  lda ObjectElementalDefense,y
+  ;; push extra
+  
+  ; cpy LastAttackedEnemyOffset
+  ; beq + 
+  ;   jsr LoadEnemyOriginalStats
++ lda ObjectElementalDefense,y
   and #$0f
   cmp #$0f
   sec
@@ -2391,10 +2635,49 @@ SubtractEnemyHP:
   lda ObjectHP,y
   sbc $63
   sta ObjectHP,y
-  sty LastAttackedEnemyOffset
 + lda $61
   sbc #$00
   rts
+
+.org $c409
+  jmp AddMaxHPToObjectData
+FREE_UNTIL $c40d
+
+.reloc
+AddMaxHPToObjectData:
+  ; copy the objects HP into $620 since we don't know what thats for.
+  lda ObjectHP,x
+  sta ObjectMaxHP,x
+  ; we interrupted the cleanup of the routine, so pick up where it left off
+  pla
+  tay
+  pla
+  tax
+  rts
+
+; .reloc
+; LoadEnemyOriginalStats:
+;   ; bank switch out A000 in order to load the metatable
+;   sty 
+;   jsr $ff80 ; LoadOneObjectData
+;     tya
+;     pha
+;       tay
+;       ldx $300,y ; ObjectMetasprite
+;       lda $be00,x
+;       sta $12
+;       lda $be01,x
+;       sta $13
+;       ;; offset 8 into the metasprite table is max hp?
+;       ldx #$08
+;       lda ($12),y
+;       sta LastAttackedEnemyMaxHP
+;     pla
+;     tay
+;   pla
+;   tax
+;   pla
+;   jmp $c427 ; BankSwitch8K_A000
 
 ;;; Note: This is moved from $3db22, where we ran out of space.
 .reloc

@@ -24385,9 +24385,9 @@ BossPatternJump_08              ; Insect 0
         $1e710  xx:          xxx
         $1e711  xx xx:       xxx $xx
         $1e713  xx xx:       xxx #$xx
-        $1e715  xx xx xx:    xxx StageNametableWrite
+        $1e715  xx xx xx:    xxx StageNametableWriteFromTable
         $1e718  xx xx:       xxx #$xx
-        $1e71a  xx xx xx:    xxx StageNametableWrite
+        $1e71a  xx xx xx:    xxx StageNametableWriteFromTable
         $1e71d  xx xx:       xxx #$xx
         $1e71f  xx xx xx:    xxx $xxxx
         $1e722  xx:          xxx
@@ -25812,7 +25812,7 @@ BossPatternJump_2b              ; Draygon2 0
         $1f345  xx xx xx:   xxx $1f2f8
         $1f348  xx xx:      xxx #$xx
         $1f34a  xx:         xxx
-        $1f34b  xx xx xx:   xxx StageNametableWrite
+        $1f34b  xx xx xx:   xxx StageNametableWriteFromTable
         $1f34e  xx xx:      xxx #$xx
         $1f350  xx xx:      xxx $xx
         $1f352  xx:         xxx
@@ -25828,7 +25828,7 @@ BossPatternJump_2b              ; Draygon2 0
         $1f366  xx xx xx:   xxx $xxxx
         $1f369  xx xx xx:   xxx $xxxx
         $1f36c  xx xx:      xxx #$xx
-        $1f36e  xx xx xx:   xxx StageNametableWrite
+        $1f36e  xx xx xx:   xxx StageNametableWriteFromTable
         $1f371  xx xx:      xxx #$xx
         $1f373  xx xx:      xxx $xx
         $1f375  xx xx:      xxx $xx
@@ -26127,7 +26127,7 @@ BossPatternJump_30              ; Draygon2 5 - shoot laser
         $1f5ed  xx xx xx:   xxx $1f60f,y
         $1f5f0  xx xx xx:   xxx $xxxx
         $1f5f3  xx xx:      xxx #$xx
-        $1f5f5  xx xx xx:   xxx StageNametableWrite
+        $1f5f5  xx xx xx:   xxx StageNametableWriteFromTable
 ;;; --------------------------------
         $1f5f8  xx:         xxx
 ;;; --------------------------------
@@ -26263,7 +26263,7 @@ BossPatternJump_31              ; Draygon2 6
         $1f6fe  xx xx:      xxx $xx
         $1f700  xx:         xxx
         $1f701  xx xx:      xxx #$xx
-        $1f703  xx xx xx:   xxx StageNametableWrite
+        $1f703  xx xx xx:   xxx StageNametableWriteFromTable
         $1f706  xx xx:      xxx $xx
         $1f708  xx:         xxx
 ;;; --------------------------------
@@ -26512,7 +26512,7 @@ ObjectActionJump_6f
         $1f8d9  xx:          xxx
         $1f8da  xx xx:      xxx - ; $1f8d4
         $1f8dc  xx xx:      xxx #$xx
-        $1f8de  xx xx xx:   xxx StageNametableWrite
+        $1f8de  xx xx xx:   xxx StageNametableWriteFromTable
         $1f8e1  xx xx:      xxx #$xx
         $1f8e3  xx xx:      xxx #$xx
 -       $1f8e5  xx xx xx:    xxx $xxxx,y
@@ -26880,9 +26880,9 @@ MainGameModeJump_0c
         $1fc74  xx:          xxx
         $1fc75  xx xx:      xxx - ; $1fc66
         $1fc77  xx xx:      xxx #$xx
-        $1fc79  xx xx xx:   xxx StageNametableWrite
+        $1fc79  xx xx xx:   xxx StageNametableWriteFromTable
         $1fc7c  xx xx:      xxx #$xx
-        $1fc7e  xx xx xx:   xxx StageNametableWrite
+        $1fc7e  xx xx xx:   xxx StageNametableWriteFromTable
         $1fc81  xx xx:      xxx #$xx
 -       $1fc83  xx xx:       xxx #$xx
         $1fc85  xx xx xx:    xxx $xxxx,x
@@ -26902,16 +26902,16 @@ MainGameModeJump_0c
         $1fca6  xx xx:      xxx #$xx
         $1fca8  xx xx xx:   xxx $xxxx
         $1fcab  xx xx:      xxx #$xx
-        $1fcad  xx xx xx:   xxx StageNametableWrite
+        $1fcad  xx xx xx:   xxx StageNametableWriteFromTable
         $1fcb0  xx xx:      xxx #$xx
-        $1fcb2  xx xx xx:   xxx StageNametableWrite
+        $1fcb2  xx xx xx:   xxx StageNametableWriteFromTable
         $1fcb5  xx xx:      xxx #$xx
         $1fcb7  xx xx:      xxx #$xx
 -       $1fcb9  xx xx xx:    xxx $xxxx,x
         $1fcbc  xx:          xxx
         $1fcbd  xx xx:      xxx - ; $1fcb9
         $1fcbf  xx xx:      xxx #$xx
-        $1fcc1  xx xx xx:   xxx StageNametableWrite
+        $1fcc1  xx xx xx:   xxx StageNametableWriteFromTable
         $1fcc4  xx xx xx:   xxx WaitForOAMDMA
         $1fcc7  xx xx xx:   xxx $1febf
         $1fcca  xx xx:      xxx $xx
@@ -26938,7 +26938,7 @@ MainGameModeJump_0c
         $1fcf7  xx xx:      xxx - ; $1fcf0
         $1fcf9  xx xx xx:   xxx $1fe11
         $1fcfc  xx xx:      xxx #$xx
-        $1fcfe  xx xx xx:   xxx StageNametableWrite
+        $1fcfe  xx xx xx:   xxx StageNametableWriteFromTable
         $1fd01  xx xx:      xxx #$xx
 -       $1fd03  xx xx xx:    xxx $xxxx,x
         $1fd06  xx xx xx:    xxx $xxxx,x
@@ -26947,10 +26947,10 @@ MainGameModeJump_0c
         $1fd0f  xx:          xxx
         $1fd10  xx xx:      xxx - ; $1fd03
         $1fd12  xx xx:      xxx #$xx
-        $1fd14  xx xx xx:   xxx StageNametableWrite
+        $1fd14  xx xx xx:   xxx StageNametableWriteFromTable
         $1fd17  xx xx:      xxx #$xx
 -       $1fd19  xx:          xxx
-        $1fd1a  xx xx xx:    xxx StageNametableWrite
+        $1fd1a  xx xx xx:    xxx StageNametableWriteFromTable
         $1fd1d  xx:          xxx
         $1fd1e  xx xx:       xxx #$xx
         $1fd20  xx xx:      xxx - ; $1fd19
@@ -26988,7 +26988,7 @@ MainGameModeJump_0c
         $1fd63  xx xx:       xxx - ; $1fd5b
         $1fd65  xx xx xx:    xxx $1fe7a
         $1fd68  xx xx:       xxx $xx
-        $1fd6a  xx xx xx:    xxx StageNametableWrite
+        $1fd6a  xx xx xx:    xxx StageNametableWriteFromTable
         $1fd6d  xx xx:       xxx $xx
         $1fd6f  xx xx:       xxx $xx
         $1fd71  xx xx:       xxx $xx
@@ -27023,7 +27023,7 @@ MainGameModeJump_0d
         $1fdf4  xx:         xxx
         $1fdf5  xx xx:      xxx $xx
         $1fdf7  xx xx:      xxx #$xx
-        $1fdf9  xx xx xx:   xxx StageNametableWrite
+        $1fdf9  xx xx xx:   xxx StageNametableWriteFromTable
         $1fdfc  xx xx xx:   xxx $3c676
         $1fdff  xx xx xx:   xxx $3c008
         $1fe02  xx xx:      xxx #$xx
@@ -30301,20 +30301,20 @@ DataTable_21cde
         $21d03  xx xx:      xxx #$xx
         $21d05  xx xx:      xxx $xx
         $21d07  xx xx:      xxx #$xx
-        $21d09  xx xx:      xxx ($xx),y
+-       $21d09  xx xx:      xxx ($xx),y
         $21d0b  xx xx:      xxx ($xx),y
         $21d0d  xx xx:      xxx $xx
-        $21d0f  xx xx:      xxx $xx
+        $21d0f  xx xx:      xxx + ; $21d13
         $21d11  xx xx:      xxx $xx
-        $21d13  xx xx:      xxx $xx
-        $21d15  xx xx:      xxx $xx
++       $21d13  xx xx:      xxx $xx
+        $21d15  xx xx:      xxx + ; $21d19
         $21d17  xx xx:      xxx $xx
-        $21d19  xx xx:      xxx $xx
-        $21d1b  xx xx:      xxx $xx
++       $21d19  xx xx:      xxx $xx
+        $21d1b  xx xx:      xxx - ; $21d09
         $21d1d  xx xx:      xxx $xx
         $21d1f  xx xx:      xxx $xx
         $21d21  xx xx:      xxx #$xx
-        $21d23  xx xx:      xxx $xx
+        $21d23  xx xx:      xxx - ; $21d09
         $21d25  xx xx:      xxx #$xx
         $21d27  xx xx xx:   xxx $xxxx,x
         $21d2a  xx xx:      xxx $xx,x
@@ -35686,10 +35686,13 @@ DataTable_27a45
 InitializeStatusBarNametable
         $27a65  xx xx xx:   xxx WaitForNametableFlush
         $27a68  xx xx:      xxx #$xx
+        ;; Draw a row of top border
 -       $27a6a  xx xx:      xxx #$xx
         $27a6c  xx xx xx:   xxx $xxxx,x
+        ;; and a row of bottom border
         $27a6f  xx xx:      xxx #$xx
         $27a71  xx xx xx:   xxx $xxxx,x
+        ;; Clear out the memory in the other area (just to be safe?)
         $27a74  xx xx:      xxx #$xx
         $27a76  xx xx xx:   xxx $xxxx,x
         $27a79  xx xx:      xxx #$xx
@@ -35697,30 +35700,35 @@ InitializeStatusBarNametable
         $27a7e  xx xx xx:   xxx $xxxx,x
         $27a81  xx:         xxx
         $27a82  xx xx:      xxx - ; $27a6a
+        ;; Draw the top left corner (#$18) and the top right corner (#$1a)
         $27a84  xx xx:      xxx #$xx
         $27a86  xx xx xx:   xxx $xxxx
         $27a89  xx xx:      xxx #$xx
         $27a8b  xx xx xx:   xxx $xxxx
+        ;; Use the precomputed lookup table for writing these common segments
         $27a8e  xx xx:      xxx #$xx
-        $27a90  xx xx xx:   xxx StageNametableWrite
+        $27a90  xx xx xx:   xxx StageNametableWriteFromTable
+        ;; Draw the bottom left corner (#$1b) and the bottom right corner (#$1d)
         $27a93  xx xx:      xxx #$xx
         $27a95  xx xx xx:   xxx $xxxx
         $27a98  xx xx:      xxx #$xx
         $27a9a  xx xx xx:   xxx $xxxx
         $27a9d  xx xx:      xxx #$xx
-        $27a9f  xx xx xx:   xxx StageNametableWrite
+        $27a9f  xx xx xx:   xxx StageNametableWriteFromTable
         $27aa2  xx xx:      xxx #$xx
-        $27aa4  xx xx xx:   xxx StageNametableWrite
+        $27aa4  xx xx xx:   xxx StageNametableWriteFromTable
         $27aa7  xx xx:      xxx #$xx
-        $27aa9  xx xx xx:   xxx StageNametableWrite
+        $27aa9  xx xx xx:   xxx StageNametableWriteFromTable
         $27aac  xx xx xx:   xxx WaitForNametableFlush
+        ;; Start writing the information into the status bar based on the contents
+        ;; of the StatusBarDataTable
         $27aaf  xx xx:      xxx #$xx
-        $27ab1  xx xx xx:   xxx $27ad9,x
+-       $27ab1  xx xx xx:   xxx StatusBarDataTable,x
         $27ab4  xx xx xx:   xxx $xxxx,x
         $27ab7  xx:         xxx
-        $27ab8  xx xx:      xxx $xx
+        $27ab8  xx xx:      xxx - ; $27ab1
         $27aba  xx xx:      xxx #$xx
-        $27abc  xx xx xx:   xxx StageNametableWrite
+        $27abc  xx xx xx:   xxx StageNametableWriteFromTable
         $27abf  xx xx:      xxx #$xx ; 8000 -> 34000
         $27ac1  xx xx xx:   xxx BankSwitch8k_8000
         $27ac4  xx xx xx:   xxx UpdateHPDisplayInternal
@@ -35735,14 +35743,47 @@ InitializeStatusBarNametable
         $27ad4  xx xx:      xxx - ; $27acc
         $27ad6  xx xx xx:   xxx WaitForNametableFlush
 ;;; --------------------------------
-DataTable_27ad9                 ; This is written to the nametable (status bar?)
-        $27ad9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $27b30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+StatusBarDataTable
+        ;; These values are based on the VRAM location that it is paged into, and not
+        ;; based on the location in the original CHR ROM page. So pretty much just
+        ;; offset everything by $#80. (The references to the border/spaces/numbers are always
+        ;; in VRAM when drawing here, so its fine to do)
+        ;; $fe is not displayed due to overscan, it seems like it was chosen as a marker
+        ;; maybe for debugging purposes (as other drawing methods use different values)
+
+        ;; first line
+        $27ad9              .byte $xx,$xx             ; left border
+        $27adb              .byte $xx,$xx,$xx,$xx     ; LIFE
+        $27adf              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $27aeb              .byte $xx,$xx,$xx,$xx,$xx ; filler space for the hp bar
+        $27af0              .byte $xx,$xx             ; LV:
+        $27af2              .byte $xx,$xx             ; 01
+        $27af4              .byte $xx,$xx,$xx,$xx,$xx ; empty space and right border
+        ;; second line
+        $27af9              .byte $xx,$xx             ; left border
+        $27afb              .byte $xx,$xx,$xx,$xx     ; FORCE
+        $27aff              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx ; >>>>>>>
+        $27b06              .byte $xx,$xx,$xx         ; (1) lit up
+        $27b09              .byte $xx,$xx,$xx         ; (_) not lit up
+        $27b0c              .byte $xx,$xx,$xx         ; (_) not lit up
+        $27b0f              .byte $xx                 ; space
+        $27b10              .byte $xx                 ; $
+        $27b11              .byte $xx                 ; space
+        $27b12              .byte $xx,$xx,$xx,$xx,$xx ; 00000
+        $27b17              .byte $xx,$xx             ; right border
+        ;; third line
+        $27b19              .byte $xx,$xx             ; left bar
+        $27b1b              .byte $xx,$xx,$xx,$xx     ; space
+        $27b1f              .byte $xx,$xx             ; EX:
+        $27b21              .byte $xx,$xx,$xx,$xx,$xx ; 00000
+        $27b26              .byte $xx                 ; /
+        $27b27              .byte $xx,$xx,$xx,$xx,$xx ; 00000
+        $27b2c              .byte $xx,$xx             ; space
+        $27b2e              .byte $xx,$xx             ; MP:
+        $27b30              .byte $xx,$xx,$xx         ; 000
+        $27b33              .byte $xx                 ; /
+        $27b34              .byte $xx,$xx,$xx         ; 000
+        $27b37              .byte $xx,$xx             ; right border
 ;;; --------------------------------
 MainGameModeJump_18_RecoverMagicAnimation
         $27b39  xx xx xx:   xxx ClearBackgroundPaletteAndAttributes
@@ -36065,13 +36106,13 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e33  xx:         xxx
         $27e34  xx xx:      xxx $xx
         $27e36  xx xx:      xxx #$xx
-        $27e38  xx xx xx:   xxx StageNametableWrite
+        $27e38  xx xx xx:   xxx StageNametableWriteFromTable
         $27e3b  xx xx:      xxx #$xx
-        $27e3d  xx xx xx:   xxx StageNametableWrite
+        $27e3d  xx xx xx:   xxx StageNametableWriteFromTable
         $27e40  xx xx:      xxx #$xx
-        $27e42  xx xx xx:   xxx StageNametableWrite
+        $27e42  xx xx xx:   xxx StageNametableWriteFromTable
         $27e45  xx xx:      xxx #$xx
-        $27e47  xx xx xx:   xxx StageNametableWrite
+        $27e47  xx xx xx:   xxx StageNametableWriteFromTable
         $27e4a  xx xx:      xxx #$xx
         $27e4c  xx xx:      xxx #$xx
         $27e4e  xx xx xx:   xxx $xxxx,y
@@ -36086,7 +36127,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e64  xx:         xxx
         $27e65  xx xx:      xxx $xx
         $27e67  xx xx:      xxx #$xx
-        $27e69  xx xx xx:   xxx StageNametableWrite
+        $27e69  xx xx xx:   xxx StageNametableWriteFromTable
         $27e6c  xx xx xx:   xxx $3c676
         $27e6f  xx xx:      xxx #$xx
         $27e71  xx xx xx:   xxx $3c418
@@ -43984,7 +44025,7 @@ KillObject
         $351b6  xx xx xx:     xxx PlayerLevel
         $351b9  xx:           xxx
         $351ba  xx:           xxx
-        $351bb  xx xx xx:     xxx $34b9e,y
+        $351bb  xx xx xx:     xxx $34b9e,y               ; NextLevelExpByLevel
         $351be  xx xx xx:     xxx PlayerExpToNextLevel
         $351c1  xx xx xx:     xxx $34b9f,y
         $351c4  xx xx xx:     xxx PlayerExpToNextLevel+1
@@ -49373,7 +49414,7 @@ ObjectActionJump_70_05
         $37a87  xx:         xxx
         $37a88  xx xx xx:   xxx $37aa2
         $37a8b  xx xx:      xxx #$xx
-        $37a8d  xx xx xx:   xxx StageNametableWrite
+        $37a8d  xx xx xx:   xxx StageNametableWriteFromTable
         $37a90  xx xx:      xxx $xx
         $37a92  xx xx:      xxx $xx
         $37a94  xx xx:      xxx #$xx
@@ -49548,7 +49589,7 @@ ObjectActionJump_70_02
         $37bfc  xx:         xxx
         $37bfd  xx xx:      xxx $xx
         $37bff  xx xx:      xxx #$xx
-        $37c01  xx xx xx:   xxx StageNametableWrite
+        $37c01  xx xx xx:   xxx StageNametableWriteFromTable
         $37c04  xx xx:      xxx #GAME_MODE_DYNA_APPEARS
         $37c06  xx xx:      xxx GameMode
         $37c08  xx xx xx:   xxx $xxxx,x
@@ -49674,7 +49715,7 @@ ObjectActionJump_70_09
         $37d09  xx:         xxx
         $37d0a  xx xx:      xxx $xx
         $37d0c  xx xx:      xxx #$xx
-        $37d0e  xx xx xx:   xxx StageNametableWrite
+        $37d0e  xx xx xx:   xxx StageNametableWriteFromTable
         $37d11  xx xx xx:   xxx WaitForNametableFlush
         $37d14  xx xx:      xxx #$xx
         $37d16  xx xx xx:   xxx BankSwitch8k_8000
@@ -56235,18 +56276,18 @@ EnableSpriteRendering
         $3c47f  xx xx:      xxx $xx
         $3c481  xx:         xxx
 ;;; --------------------------------
-;;; This looks like it has something to do with queueing PPU writes.
-;;; It should probably be called during scanline rendering.
+;;; Write to the Nametable buffer with a precomputed header.
+;;;
 ;;; Inputs:
-;;;   A: stored in $10 initially, then $25
-;;;   Roll the two high bits of $25 into low bits of $26
-;;;   This is multiplying by 5...?
-StageNametableWrite
+;;;   A: Stores the offset into the table NametablePrecomputedHeaderTable
+StageNametableWriteFromTable
         $3c482  xx xx:      xxx $xx
         $3c484  xx xx xx:   xxx WaitForNametableFlush
         $3c487  xx:         xxx
         $3c488  xx:         xxx
         $3c489  xx xx:       xxx $xx
+        ;; Shift left twice (multiply by four) and then add to original value 
+        ;; aka multiply by 5. This is a 16 bit multiply (upper bits in $26)
         $3c48b  xx:          xxx
         $3c48c  xx xx:        xxx $xx
         $3c48e  xx xx:        xxx #$xx
@@ -56257,6 +56298,7 @@ StageNametableWrite
         $3c498  xx xx:        xxx $xx
         $3c49a  xx:          xxx
         $3c49b  xx xx:       xxx $xx
+        ;; If we overflowed on the addition, add one to $26
         $3c49d  xx xx:       xxx + ; $3c4a1
         $3c49f  xx xx:        xxx $xx
 +       $3c4a1  xx:          xxx
@@ -56266,7 +56308,10 @@ StageNametableWrite
         $3c4a8  xx xx:       xxx #$xx
         $3c4aa  xx xx:       xxx $xx
         ;; At this point, $25,$26 = 5*A + #$c518
-        ;; Now copy 5 bytes into $20..$24
+        ;; We needed to multiply A by 5 to get the correct offset into the table
+        ;; Now load the header information into $20...$24
+        ;; The values $20, $21, $22, $23 directly correspond to the parameters
+        ;; used in the nametablebuffer header (See WriteNametableDataToPpu)
         $3c4ac  xx xx:       xxx #$xx
 -       $3c4ae  xx xx:        xxx ($xx),y
         $3c4b0  xx xx xx:     xxx $xxxx,y
@@ -56280,7 +56325,7 @@ StageNametableWrite
         ;; Once we start mucking with $b and $6200,x, we need to ensure no NMI
 -       $3c4be  xx xx xx:     xxx DisableNMI
         ;; Write the first four bytes from the data table to $6200,x
-        $3c4c1  xx xx:        xxx $xx
+        $3c4c1  xx xx:        xxx NametableBufferWriteOffset
         $3c4c3  xx xx:        xxx $xx
         $3c4c5  xx xx xx:     xxx $xxxx,x
         $3c4c8  xx xx:        xxx $xx
@@ -56294,7 +56339,7 @@ StageNametableWrite
         $3c4d8  xx:           xxx
         $3c4d9  xx xx:        xxx #$xx
         $3c4db  xx xx:        xxx #$xx
-        $3c4dd  xx xx:        xxx $xx
+        $3c4dd  xx xx:        xxx NametableBufferWriteOffset
         ;; Check the PPUMASK - if rendering is disabled (both bg and sprites)
         ;; then do an immediate write - not sure how this happens, but it does.
         $3c4df  xx xx:        xxx $xx
@@ -56340,9 +56385,9 @@ StageNametableWrite
 ;;;   - the :80 bit indicates not to flush after the last write.
 ;;; What exactly this is about depends heavily on what's loaded into $6000.
 ;;; The game uses horizontal mirroring, so we'll be writing to nt0 and nt2
-DataTable_3c518 
-        $3c518              .byte $xx,$xx,$xx,$xx,$xx ; 00
-        $3c51d              .byte $xx,$xx,$xx,$xx,$xx ; 01
+NametablePrecomputedHeaderTable 
+        $3c518              .byte $xx,$xx,$xx,$xx,$xx ; 00 Top row of === on the status bar
+        $3c51d              .byte $xx,$xx,$xx,$xx,$xx ; 01 Bot row of === on the status bar
         $3c522              .byte $xx,$xx,$xx,$xx,$xx ; 02
         $3c527              .byte $xx,$xx,$xx,$xx,$xx ; 03 Dyna, others???
         $3c52c              .byte $xx,$xx,$xx,$xx,$xx ; 04
@@ -56740,7 +56785,7 @@ ClearBackgroundPaletteAndAttributes
         $3c893  xx:          xxx
         $3c894  xx xx:      xxx - ; $3c88e
         $3c896  xx xx:      xxx #$xx ; write #$40 bytes $6000 -> v$23c0 (attr0)
-        $3c898  xx xx xx:   xxx StageNametableWrite
+        $3c898  xx xx xx:   xxx StageNametableWriteFromTable
         $3c89b  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
         $3c89e  xx xx:      xxx $xx
@@ -57216,7 +57261,7 @@ MainGameModeJump_1f_DynaAppears
         $3cc95  xx:          xxx
         $3cc96  xx xx:      xxx - ; $3cc8f
         $3cc98  xx xx:      xxx #$xx ; 2 full rows, $6060 -> nt2 r24
-        $3cc9a  xx xx xx:   xxx StageNametableWrite
+        $3cc9a  xx xx xx:   xxx StageNametableWriteFromTable
         $3cc9d  xx xx:      xxx #$xx
         $3cc9f  xx xx xx:   xxx BankSwitch8k_8000
         $3cca2  xx xx:      xxx #$xx
@@ -57224,7 +57269,7 @@ MainGameModeJump_1f_DynaAppears
         $3cca7  xx xx xx:    xxx $xxxx,y
         $3ccaa  xx:          xxx
         $3ccab  xx xx:      xxx - ; $3cca4
-        ;; This loop makes 6 calls to StageNametableWrite:
+        ;; This loop makes 6 calls to StageNametableWriteFromTable:
         ;;   3e: 2 rows of 6, $6000 -> nt0 r6  c2  (20c2)
         ;;   3f: 2 rows of 6, $600c -> nt0 r6  c24 (20d8)
         ;;   40: 4 rows of 6, $6018 -> nt0 r10 c2  (2142)
@@ -57235,7 +57280,7 @@ MainGameModeJump_1f_DynaAppears
         $3ccad  xx xx:      xxx #$xx
         $3ccaf  xx xx:      xxx $xx
 -       $3ccb1  xx xx:       xxx $xx ; redundant?
-        $3ccb3  xx xx xx:    xxx StageNametableWrite
+        $3ccb3  xx xx xx:    xxx StageNametableWriteFromTable
         $3ccb6  xx xx:       xxx $xx
         $3ccb8  xx xx:       xxx $xx
         $3ccba  xx xx:       xxx #$xx
@@ -57452,7 +57497,7 @@ MainGameModeJump_1f_DynaAppears
         $3ce52  xx xx xx:    xxx $3ce89
         $3ce55  xx xx xx:    xxx $3ce89
         $3ce58  xx:         xxx ; 3rd byte from data table
-        $3ce59  xx xx xx:   xxx StageNametableWrite
+        $3ce59  xx xx xx:   xxx StageNametableWriteFromTable
         $3ce5c  xx xx:      xxx $xx
         $3ce5e  xx:         xxx
         $3ce5f  xx xx:      xxx + ; $3ce69
@@ -57552,7 +57597,7 @@ MainGameModeJump_1f_DynaAppears
         $3cf08  xx:         xxx
         $3cf09  xx xx:      xxx $xx
         $3cf0b  xx xx:      xxx #$xx
-        $3cf0d  xx xx xx:   xxx StageNametableWrite
+        $3cf0d  xx xx xx:   xxx StageNametableWriteFromTable
         $3cf10  xx xx xx:   xxx WaitForOAMDMA
 ;;; --------------------------------
         $3cf13  xx xx:      xxx $xx
@@ -59379,7 +59424,7 @@ BuildWarpMenu
         $3dd4b  xx xx:        xxx $xx
         $3dd4d  xx:           xxx
         $3dd4e  xx xx:        xxx #$xx
-        $3dd50  xx xx xx:     xxx StageNametableWrite
+        $3dd50  xx xx xx:     xxx StageNametableWriteFromTable
 +       $3dd53  xx xx:       xxx $xx
         $3dd55  xx xx:      xxx - ; $3dd44
         $3dd57  xx:         xxx
@@ -62885,8 +62930,8 @@ IRQCallback_02
         $3f4fd  xx xx xx:   xxx PPUSCROLL
         $3f500  xx xx xx:   xxx $3f64f
         $3f503  xx xx:      xxx #$xx
-        $3f505  xx xx xx:   xxx $xxxx
-        $3f508  xx xx xx:   xxx $xxxx
+        $3f505  xx xx xx:   xxx IRQLATCH
+        $3f508  xx xx xx:   xxx IRQRELOAD
         $3f50b  xx:         xxx
         $3f50c  xx:         xxx
         $3f50d  xx:         xxx
@@ -62894,7 +62939,7 @@ IRQCallback_02
         $3f50f  xx xx:      xxx $xx
         $3f511  xx xx:      xxx $xx
         $3f513  xx xx:      xxx #$xx
-        $3f515  xx xx xx:   xxx $3f424
+        $3f515  xx xx xx:   xxx SetIRQCallback
         $3f518  xx xx xx:   xxx $xxxx
         $3f51b  xx:         xxx
         $3f51c  xx xx:      xxx #$xx
@@ -62947,11 +62992,11 @@ IRQCallback_03
         $3f573  xx xx:      xxx $xx
         $3f575  xx:         xxx
         $3f576  xx xx:      xxx $xx
-        $3f578  xx xx xx:   xxx $xxxx
-        $3f57b  xx xx xx:   xxx $xxxx
+        $3f578  xx xx xx:   xxx IRQLATCH
+        $3f57b  xx xx xx:   xxx IRQRELOAD
         $3f57e  xx xx:      xxx $xx
         $3f580  xx xx:      xxx #$xx
-        $3f582  xx xx xx:   xxx $3f424
+        $3f582  xx xx xx:   xxx SetIRQCallback
         $3f585  xx:         xxx
         $3f586  xx:         xxx
         $3f587  xx:         xxx
@@ -62962,10 +63007,10 @@ IRQCallback_03
         $3f58b  xx xx:      xxx #$xx
         $3f58d  xx:         xxx
         $3f58e  xx xx:      xxx $xx
-        $3f590  xx xx xx:   xxx $xxxx
-        $3f593  xx xx xx:   xxx $xxxx
+        $3f590  xx xx xx:   xxx IRQLATCH
+        $3f593  xx xx xx:   xxx IRQRELOAD
         $3f596  xx xx:      xxx #$xx
-        $3f598  xx xx xx:   xxx $3f424
+        $3f598  xx xx xx:   xxx SetIRQCallback
         $3f59b  xx:         xxx
         $3f59c  xx:         xxx
         $3f59d  xx:         xxx
@@ -62983,20 +63028,20 @@ DataTable_3f5a1
 IRQCallback_04
         $3f5e1  xx xx xx:   xxx $xxxx
         $3f5e4  xx xx xx:   xxx KillSomeCycles
-        $3f5e7  xx xx xx:   xxx $xxxx
+        $3f5e7  xx xx xx:   xxx PPUSTATUS
         $3f5ea  xx xx:      xxx $xx
         $3f5ec  xx:         xxx
         $3f5ed  xx:         xxx
         $3f5ee  xx xx xx:   xxx $3f5a2,y
-        $3f5f1  xx xx xx:   xxx $xxxx
+        $3f5f1  xx xx xx:   xxx PPUADDR
         $3f5f4  xx xx xx:   xxx $3f5a1,y
-        $3f5f7  xx xx xx:   xxx $xxxx
+        $3f5f7  xx xx xx:   xxx PPUADDR
         $3f5fa  xx xx:      xxx $xx
         $3f5fc  xx xx:      xxx $xx
         $3f5fe  xx xx:      xxx $xx
         $3f600  xx xx:      xxx $xx
-        $3f602  xx xx xx:   xxx $xxxx
-        $3f605  xx xx xx:   xxx $xxxx
+        $3f602  xx xx xx:   xxx IRQLATCH
+        $3f605  xx xx xx:   xxx IRQRELOAD
         $3f608  xx:         xxx
         $3f609  xx:         xxx
         $3f60a  xx:         xxx
@@ -63005,7 +63050,7 @@ IRQCallback_04
         $3f60d  xx:         xxx
 ;;; --------------------------------
 IRQCallback_05
-        $3f60e  xx xx xx:   xxx $xxxx
+        $3f60e  xx xx xx:   xxx IRQDISABLE
         $3f611  xx xx xx:   xxx MaybeUpdateMusic
         $3f614  xx:         xxx
         $3f615  xx:         xxx
@@ -63033,7 +63078,7 @@ IRQCallback_07
         $3f63e  xx xx xx:   xxx IRQLATCH
         $3f641  xx xx xx:   xxx IRQRELOAD
         $3f644  xx xx:      xxx #$xx
-        $3f646  xx xx xx:   xxx $3f424
+        $3f646  xx xx xx:   xxx SetIRQCallback
         $3f649  xx:         xxx
         $3f64a  xx:         xxx
         $3f64b  xx:         xxx
@@ -63137,12 +63182,12 @@ ScreenModeJumpTable_07
         $3f6ee  xx xx xx:   xxx $xxxx
         $3f6f1  xx xx:      xxx #$xx
         $3f6f3  xx xx:      xxx + ; $3f705
-        $3f6f5  xx xx xx:   xxx $xxxx
+        $3f6f5  xx xx xx:   xxx IRQLATCH
         $3f6f8  xx xx:      xxx $xx
-        $3f6fa  xx xx xx:   xxx $xxxx
-        $3f6fd  xx xx xx:   xxx $xxxx
+        $3f6fa  xx xx xx:   xxx IRQRELOAD
+        $3f6fd  xx xx xx:   xxx IRQENABLE
         $3f700  xx xx:      xxx #$xx
-        $3f702  xx xx xx:   xxx $3f424
+        $3f702  xx xx xx:   xxx SetIRQCallback
         ;; --------------------------------
         ;; Set IRQ callback to 01 ($3f488) - 
 +       $3f705  xx xx:      xxx #$xx
@@ -63176,12 +63221,12 @@ ScreenModeJumpTable_09
         $3f73c  xx xx:      xxx #$xx
         $3f73e  xx:         xxx
         $3f73f  xx xx:      xxx #$xx
-        $3f741  xx xx xx:   xxx $xxxx
+        $3f741  xx xx xx:   xxx IRQLATCH
         $3f744  xx xx:      xxx $xx
-        $3f746  xx xx xx:   xxx $xxxx
-        $3f749  xx xx xx:   xxx $xxxx
+        $3f746  xx xx xx:   xxx IRQRELOAD
+        $3f749  xx xx xx:   xxx IRQENABLE
         $3f74c  xx xx:      xxx #$xx
-        $3f74e  xx xx xx:   xxx $3f424
+        $3f74e  xx xx xx:   xxx SetIRQCallback
 ;;; --------------------------------
 ScreenModeJumpTable_02
         $3f751  xx xx:      xxx $xx
@@ -63218,17 +63263,17 @@ ScreenModeJumpTable_04
         $3f793  xx xx:       xxx #$xx
         $3f795  xx xx:       xxx $xx
         $3f797  xx xx:       xxx #$xx
-        $3f799  xx xx xx:    xxx $xxxx
+        $3f799  xx xx xx:    xxx IRQLATCH
         $3f79c  xx xx xx:    xxx $xxxx
-        $3f79f  xx xx xx:    xxx $xxxx
-        $3f7a2  xx xx xx:    xxx $xxxx
+        $3f79f  xx xx xx:    xxx IRQRELOAD
+        $3f7a2  xx xx xx:    xxx IRQENABLE
         $3f7a5  xx xx:       xxx #$xx
-        $3f7a7  xx xx xx:    xxx $3f424
+        $3f7a7  xx xx xx:    xxx SetIRQCallback
         ;;                   ----------
 +       $3f7aa  xx xx:      xxx $xx
         $3f7ac  xx xx:      xxx #$xx
         $3f7ae  xx xx xx:   xxx $xxxx
-        $3f7b1  xx xx xx:   xxx $xxxx
+        $3f7b1  xx xx xx:   xxx IRQDISABLE
         $3f7b4  xx:         xxx
 ;;; --------------------------------
 DataTable_3f7b5 
@@ -63238,11 +63283,11 @@ ScreenModeJumpTable_05
         $3f7c5  xx xx xx:   xxx $3eb6d
         $3f7c8  xx xx xx:   xxx SelectCHRRomBanks
         $3f7cb  xx xx:      xxx $xx
-        $3f7cd  xx xx xx:   xxx $xxxx
-        $3f7d0  xx xx xx:   xxx $xxxx
-        $3f7d3  xx xx xx:   xxx $xxxx
+        $3f7cd  xx xx xx:   xxx IRQLATCH
+        $3f7d0  xx xx xx:   xxx IRQRELOAD
+        $3f7d3  xx xx xx:   xxx IRQLATCH
         $3f7d6  xx xx:      xxx #$xx
-        $3f7d8  xx xx xx:   xxx $3f424
+        $3f7d8  xx xx xx:   xxx SetIRQCallback
 ;;; --------------------------------
 ScreenModeJumpTable_06
         $3f7db  xx xx:      xxx $xx
@@ -63252,12 +63297,12 @@ ScreenModeJumpTable_06
         $3f7e5  xx xx xx:   xxx $xxxx
         $3f7e8  xx xx xx:   xxx $3f64f
         $3f7eb  xx xx:      xxx #$xx
-        $3f7ed  xx xx xx:   xxx $3f424
+        $3f7ed  xx xx xx:   xxx SetIRQCallback
         $3f7f0  xx xx:      xxx #$xx
         $3f7f2  xx xx:      xxx $xx
-        $3f7f4  xx xx xx:   xxx $xxxx
-        $3f7f7  xx xx xx:   xxx $xxxx
-        $3f7fa  xx xx xx:   xxx $xxxx
+        $3f7f4  xx xx xx:   xxx IRQLATCH
+        $3f7f7  xx xx xx:   xxx IRQRELOAD
+        $3f7fa  xx xx xx:   xxx IRQENABLE
         $3f7fd  xx:         xxx
 ;;; --------------------------------
 ;;; This is one of the common flow-into points for many of the

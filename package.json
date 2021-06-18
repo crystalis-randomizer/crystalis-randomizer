@@ -12,7 +12,8 @@
     "test": "npm run unit && npm run build && test/test_cli.sh",
     "clean": "rm -rf dist src/js/**/flycheck_*",
     "checkout": "sh scripts/update.sh out",
-    "checkin": "sh scripts/update.sh in"
+    "checkin": "sh scripts/update.sh in",
+    "buildchr": "sh scripts/buildchr.sh"
   },
   "bin": {
     "cryr": "dist/js/cli.js"

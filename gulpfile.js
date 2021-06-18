@@ -1,5 +1,6 @@
 const gulp = require('gulp');
 const closure = require('google-closure-compiler').gulp();
+const through2 = require('through2');
 
 const COMMON = [
   '6502.js',
@@ -34,6 +35,38 @@ const COMMON = [
 ];
 
 const srcs = (...srcs) => srcs.map(s => './dist/js/' + s);
+
+gulp.task('buildchr', function() {
+  return gulp.src('./patches/chr/*.chr')
+      .pipe(through2.obj((file, _, cb) => {
+        let out = ''
+        if (file.isBuffer()) {
+          let start = 0
+          while (start * 0x10 < file.contents.length) {
+            let data = file.contents.slice(start * 0x10, start * 0x10 + 0x10)
+            let arr = new Array(64).fill(0)
+            for (let x = 0; x < 8; ++x) {
+              for (let y = 0; y < 8; ++y) {
+                arr[x + y * 8] |= (data[y | 8] >> (7 - x) & 1) << 1 | (data[y] >> (7 - x) & 1)
+              }
+            }
+            let concatted = arr
+              .map((num) => num == 0 ? '.' : num.toString())
+              .join('')
+              // uncomment to split each 8 pixels onto their own lines
+              // .match(/.{1,8}/g)
+              // .join('\n')
+            
+            out += `const ${file.stem}_tile${start} = parse_pattern(\`${concatted}\`)\n`
+            ++start;
+          }
+        }
+        file.contents = Buffer.from(out, 'utf8')
+        file.basename = file.stem + ".ts";
+        cb(null, file);
+      }))
+      .pipe(gulp.dest('./patches/chr/'))
+});
 
 gulp.task('main', function() {
   return gulp.src(srcs(...COMMON,

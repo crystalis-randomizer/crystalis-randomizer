@@ -76,10 +76,14 @@ ObjectActionScript = $4a0
 ObjectGold = $500
 ObjectElementalDefense = $500
 ObjectExp = $520
+ObjectMaxHP = $620
+PlayerExp = $704
 PlayerMP = $708
 EquippedConsumableItem = $715
 EquippedPassiveItem    = $716
-LastAttackedEnemyOffset= $720
+; LastAttackedEnemyPrevHP= $718
+; LastAttackedEnemyMaxHP = $719
+; LastAttackedEnemyOffset= $706 ; This was originally PlayerExpToNextLevel
 
 
 InvSwords = $6430

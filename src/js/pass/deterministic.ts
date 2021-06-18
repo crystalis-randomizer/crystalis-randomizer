@@ -10,6 +10,7 @@ import {Trigger} from '../rom/trigger.js';
 import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
 import { Monster } from '../rom/monster.js';
+import * as Patterns from '../rom/pattern.js';
 
 const [] = [hex]; // generally useful
 
@@ -154,6 +155,21 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   if (flags.hardcoreMode()) hardcoreMode(rom);
 
+  useNewStatusBarGraphics(rom);
+
+}
+
+// Updates a few itemuse and trigger actions in light of consolidation
+// around item granting.
+function useNewStatusBarGraphics(rom: Rom): void {
+  const page = 0x38 << 6
+  rom.patterns[page | 0x0].pixels = Patterns.chr_page38_tile0;
+  rom.patterns[page | 0x1].pixels = Patterns.chr_page38_tile1;
+  rom.patterns[page | 0x2].pixels = Patterns.chr_page38_tile2;
+  rom.patterns[page | 0x3].pixels = Patterns.chr_page38_tile3;
+  rom.patterns[page | 0x4].pixels = Patterns.chr_page38_tile4;
+  rom.patterns[page | 0x5].pixels = Patterns.chr_page38_tile5;
+  rom.patterns[page | 0x6].pixels = Patterns.chr_page38_tile6;
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation

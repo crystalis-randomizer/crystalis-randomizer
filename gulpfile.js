@@ -51,11 +51,18 @@ gulp.task('buildchr', function() {
               }
             }
             let concatted = arr
-              .map((num) => num == 0 ? '.' : num.toString())
+              .map((num) => { switch (num) {
+                default:
+                case 0: return '.'
+                case 1: return '+'
+                case 2: return 'x'
+                case 3: return 'o'
+              }})
               .join('')
               // uncomment to split each 8 pixels onto their own lines
               // .match(/.{1,8}/g)
               // .join('\n')
+              
             
             out += `const ${file.stem}_tile${start} = parse_pattern(\`${concatted}\`)\n`
             ++start;

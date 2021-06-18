@@ -79,6 +79,7 @@ ObjectExp = $520
 ObjectMaxHP = $620
 PlayerExp = $704
 PlayerMP = $708
+PlayerMaxMP = $709
 EquippedConsumableItem = $715
 EquippedPassiveItem    = $716
 ; LastAttackedEnemyPrevHP= $718

@@ -83,22 +83,22 @@ export class Pattern extends Entity {
     |   . .  |
   `, {' ': 2, 'P': 1, 'w': 1, '.': 3});
   public static readonly HUD_EY = parsePattern(`
-    |EEE   ..|
-    |E..   .#|
-    |EE Y.Y.#|
-    |E..Y.Y.#|
-    |EEE.Y..#|
-    |... Y..#|
-    |    Y...|
+    |EEE     |
+    |E...    |
+    |EEE Y.Y.|
+    |E...Y.Y.|
+    |EEE  Y. |
+    | ... Y. |
+    |     Y. |
     |        |
   `, {' ': 2, 'E': 1, 'Y': 1, '#': 1, '.': 3});
   public static readonly HUD_LV = parsePattern(`
     |        |
     |L       |
     |L.      |
-    |L. v. v.|
-    |L. v. v.|
-    |LLL vv. |
+    |L.  v.v.|
+    |L.  v.v.|
+    |LLL  v. |
     | ... v. |
     |     .  |
   `, {' ': 2, 'L': 1, 'v': 1, '.': 3});

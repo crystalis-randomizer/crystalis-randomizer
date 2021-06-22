@@ -83,6 +83,15 @@ export class ObjectData extends Entity {
       a.byte(b);
     }
 
+    // Add the name of the object to the rom in a spare bank
+    a.segment('2c');
+    a.org(0x8000 + (this.id << 4), `${name}_Str`);
+    a.byte(...this.name.toUpperCase().substring(0,16));
+    // a.org(0x8000 + this.id, `${name}_StrPtrLo`);
+    // a.byte();
+    // a.org(0x8100 + this.id, `${name}_StrPtrHi`);
+    // a.byte();
+
     return [a.module()];
   }
 

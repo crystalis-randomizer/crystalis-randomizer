@@ -796,11 +796,15 @@ UpdateGlobalStepCounter:
   .byte $20,$20,$1f     ;  _ _ |
 
 .org $bb1b
-  .byte $20             ;  _
-.org $bb1f ; clear out the experience count thats there initially
-.repeat 16
+  .byte $82             ; Ey
+; clear out the experience count thats there initially
+; and make room for something like enemy name
+.repeat 11
   .byte $20 ;  _
 .endrep
+  ; hold spots here for the enemy hp amount and name
+  .byte $20,$20,$20,$20 ; _ _ _ _
+  .byte $20,$20,$20,$20 ; _ _ _ _
   .byte $85,$20,$20,$20 ; Mp _ _ _
   .byte $9d,$20,$20,$20 ;  / _ _ _
 
@@ -826,13 +830,13 @@ UpdateGlobalStepCounter:
   .byte $5a,$2b
 .endif ; _UPDATE_HUD
 
-;;; Numeric displays
+;;; NumericDisplays
 .org $8ed7  ; 03 - was Exp Left, now its Max MP
   .word (PlayerMaxMP)
   .byte $7b,$2b,$02,$00 ; copied from $34ee3
-
-.org $8ee3  ; 05 - was Max MP, now its unused
-
+.org $8ee3  ; 05 - was Max MP, now its Enemy Curr HP
+  .word (RecentEnemyCurrHP)
+  .byte $6e,$2b,$02,$40
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
 .ifdef _UPDATE_HUD
@@ -865,7 +869,7 @@ FREE_UNTIL $bad9
 ;; 2 - Exp
 ;; 3 - Max MP
 ;; 4 - MP
-;; 5 - (currently unused)
+;; 5 - Enemy HP
 ;; 6 - Difficulty
 .reloc
 UpdateStatusBarDisplays:
@@ -917,35 +921,67 @@ StoreObjectExp:
     jmp ExitWithoutDrawingEXP
 + jsr AwardExperiencePoints
   ; carry clear means we leveled up
-  bcc LevelUp
+  bcc @LevelUp
   ; but it doesn't check if we were exactly at zero EXP so check for that now
   lda PlayerExp
   ora PlayerExp+1
-  cmp #$00
-  beq LevelUp
-  jmp UpdateCurrentEXPAndExit
-LevelUp:
-  ; double check here that we aren't already max level
+  beq @LevelUp
+    jmp UpdateCurrentEXPAndExit
+@LevelUp:
   inc PlayerLevel
   lda PlayerLevel
-  asl  ; note: clears carry
+  asl ; note: clears carry
   tay
   lda PlayerExp
-  adc $8b9e,y      ; NextLevelExpByLevel
+  adc NextLevelExpByLevel,y
   sta PlayerExp
   lda PlayerExp+1
-  adc $8b9f,y
+  adc NextLevelExpByLevel+1,y
   sta PlayerExp+1
-  jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+  ; Now that we leveled, its possible that we have enough exp to level again
+  ; first double check here that we aren't already max level
+  lda PlayerLevel
+  and #$f0
+  beq +
+    bne ++ ; unconditional (since A != 0 checked above)
+  ; If u16 PlayerExp > u16 NextLevelExpByLevel,y+2 (+2 since 16 bit)
+  ; then we need to loop again since its a double level
+  ; a = playerexp hi; y = current level slot (after the first level up)
++ lda NextLevelExpByLevel+2,y
+  cmp PlayerExp
+  lda NextLevelExpByLevel+3,y
+  sbc PlayerExp+1
+  bcc @LevelUp; if unsigned NextLevel < PlayerExp
+++jsr UpdatePlayerMaxHPAndMPAfterLevelUp
   jsr UpdateDisplayAfterLevelUp
   jmp UpdateCurrentEXPAndExit
 FREE_UNTIL $91ef
 
 .org $91ef
 UpdateCurrentEXPAndExit:
-
-.org $91f4
+  lda #DISPLAY_NUMBER_EXP
+  jsr DisplayNumberInternal
 ExitWithoutDrawingEXP:
+  jsr RemoveEnemyAndPlaySFX 
+  rts
+.assert * <= $91fa ; StartMonsterDeathAnimation
+
+.reloc
+RemoveEnemyAndPlaySFX:
+
+  ; the last attacked enemy is getting cleared out so we want to update the HP display
+  jsr RemoveEnemyHpDisplay
+  lda #SFX_MONSTER_HIT
+  jsr StartAudioTrack
+  rts
+
+.reloc
+RemoveEnemyHpDisplay:
+  ; zero out the enemy HP so that it draws correctly
+  lda #$00
+  sta ObjectHP,y
+  sta ObjectDef,y
+  jmp UpdateEnemyHPDisplay
 
 .org $8cc0
 UpdateHPDisplayInternal:
@@ -1042,6 +1078,36 @@ Do16BitSubtractionForEXP:
   .byte $00
 .popseg
 
+;;; ----------------------------------------------------
+; [in] y - Offset for the current enemy we are displaying health for
+.reloc
+UpdateEnemyHPDisplay:
+  ; We scratch x so save it before running
+  txa
+  pha
+    lda ObjectHP, y
+    tax
+    lda ObjectDef, y
+    ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
+    and #$01
+    cpx RecentEnemyCurrHPLo
+    bne +
+    cmp RecentEnemyCurrHPHi
+    beq @Exit ; unconditional
++   ; A = enemy curr hp hi, x = enemy curr hp lo
+    sta RecentEnemyCurrHPHi
+    stx RecentEnemyCurrHPLo
+    tya
+    pha
+      lda #DISPLAY_NUMBER_ENEMYHP
+      jsr DisplayNumberInternal
+    pla
+    tay
+@Exit:
+  pla
+  tax
+  jmp EnableNMI
+  ; implict rts
 
 ;;; Crystalis should have all elements, rather than none
 ;;; Since we now invert the handling for enemy immunity,
@@ -1108,12 +1174,19 @@ Do16BitSubtractionForEXP:
     jsr SubtractEnemyHP
      bcc KillObject
     lsr
+    jmp UpdateEnemyHP
+    ;implicit rts
+;;; NOTE: must finish before 35152
+FREE_UNTIL $9152
+
+.reloc
+UpdateEnemyHP:
     lda $62
     rol
     sta ObjectDef,y
-    rts
-;;; NOTE: must finish before 35152
-FREE_UNTIL $9152
+    sty LastAttackedEnemyOffset
+    jmp UpdateEnemyHPDisplay
+    ;implicit rts
 
 ;;; Change sacred shield to block curse instead of paralysis
 .org $92ce

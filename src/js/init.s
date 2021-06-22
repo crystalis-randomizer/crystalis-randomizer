@@ -160,6 +160,7 @@ ObjectExp = $520
 ; starting at zero and counting up to ExpToNextLevel, it will start at ExpToNextLevel
 ; and count down.
 PlayerExp = $704
+LastAttackedEnemyOffset = $706 ; replaces PlayerMaxExp
 PlayerMP = $708
 PlayerMaxMP = $709
 EquippedConsumableItem = $715
@@ -179,6 +180,33 @@ ShouldRedisplayDifficulty = $61ff
         
 SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
+
+ObjectNameId        = $6a10 ; 32 bytes from $10 - $2f used to look up this object's name.
+RecentEnemyFullName = $6a30 ; 10 bytes from $30 - $39
+RecentEnemyNameId   = $6a3a ; 1 byte. Used to determine if the name has changed since the previous enemy.
+RecentEnemyCurrHP   = $6a3b ; 2 bytes $3b and $3c
+RecentEnemyCurrHPLo = RecentEnemyCurrHP
+RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
+
+; Constants used in DisplayNumberInternal for the NumericDisplays LUT
+; These are including the overrides done in the randomizer
+DISPLAY_NUMBER_LEVEL1   = $00 ; Level in Status Bar
+DISPLAY_NUMBER_MONEY    = $01
+DISPLAY_NUMBER_EXP      = $02
+DISPLAY_NUMBER_MAXMP    = $03 ; Replaces ExpLeft
+DISPLAY_NUMBER_MP       = $04
+DISPLAY_NUMBER_ENEMYHP  = $05 ; Replaces MaxMP
+DISPLAY_NUMBER_SCALING  = $06 ; Replaces Level (Menu)
+DISPLAY_NUMBER_HP       = $07
+DISPLAY_NUMBER_MAXHP    = $08
+DISPLAY_NUMBER_ATTACK   = $09
+DISPLAY_NUMBER_DEF1     = $0a
+DISPLAY_NUMBER_BUYCOST  = $0b
+DISPLAY_NUMBER_INNCOST  = $0c
+DISPLAY_NUMBER_PAWNVAL  = $0d
+DISPLAY_NUMBER_LEVEL2   = $0e ; Level in Menu replaces Unused
+DISPLAY_NUMBER_UNUSED   = $0f ; Unused
+DISPLAY_NUMBER_DEF2     = $10
 
 .ifdef _EXTRA_PITY_MP
 PITY_MP_AMOUNT    = 34
@@ -227,11 +255,13 @@ ActivateOpelStatue = $b9b0
 
 
 .segment "1a"         ; 34000
+
 ArmorDefense          = $8bc0
 ShieldDefense         = $8bc9
 DisplayNumberInternal = $8e46
 KillObject            = $9152
 KnockbackObject       = $95c0
+NextLevelExpByLevel   = $8b9e
 
 .segment "fe"              ; 3c000
 PowersOfTwo                = $c000
@@ -249,6 +279,8 @@ LoadAndShowDialog          = $d347
 WaitForDialogToBeDismissed = $d354
 SpawnMimic                 = $d3da
 MainLoopItemGet            = $d3ff
+WaitForNametableBufferAvailable = $c72b
+EnableNMI                  = $c436
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756

@@ -72,9 +72,10 @@ gulp.task('buildchr', function() {
               .join('')
               .match(/.{1,8}/g)
               .join('\n  ');
-
-
-            out += `public static readonly ${file.stem}_tile${start} = parsePattern(\`\n  ${concatted}\n\`);\n`;
+              
+            
+            const tile_as_hex = Number(start).toString(16).padStart(2, '0')
+            out += `public static readonly ${file.stem}_tile${tile_as_hex} = parsePattern(\`\n  ${concatted}\n\`);\n`;
             ++start;
           }
         }

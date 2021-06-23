@@ -49,15 +49,15 @@ const srcs = (...srcs) => srcs.map(s => './dist/js/' + s);
 gulp.task('buildchr', function() {
   return gulp.src('./patches/chr/*.chr')
       .pipe(through2.obj((file, _, cb) => {
-        let out = ''
+        let out = '';
         if (file.isBuffer()) {
-          let start = 0
+          let start = 0;
           while (start * 0x10 < file.contents.length) {
-            let data = file.contents.slice(start * 0x10, start * 0x10 + 0x10)
-            let arr = new Array(64).fill(0)
+            let data = file.contents.slice(start * 0x10, start * 0x10 + 0x10);
+            let arr = new Array(64).fill(0);
             for (let x = 0; x < 8; ++x) {
               for (let y = 0; y < 8; ++y) {
-                arr[x + y * 8] |= (data[y | 8] >> (7 - x) & 1) << 1 | (data[y] >> (7 - x) & 1)
+                arr[x + y * 8] |= (data[y | 8] >> (~x & 7) & 1) << 1 | (data[y] >> (~x & 7) & 1);
               }
             }
             let concatted = arr
@@ -68,21 +68,21 @@ gulp.task('buildchr', function() {
                 case 2: return 'x'
                 case 3: return 'o'
               }})
-              .join('')
+              .join('');
               // uncomment to split each 8 pixels onto their own lines
               // .match(/.{1,8}/g)
               // .join('\n')
               
             
-            out += `const ${file.stem}_tile${start} = parse_pattern(\`${concatted}\`)\n`
+            out += `public static readonly ${file.stem}_tile${start} = parsePattern(\`${concatted}\`)\n`;
             ++start;
           }
         }
-        file.contents = Buffer.from(out, 'utf8')
+        file.contents = Buffer.from(out, 'utf8');
         file.basename = file.stem + ".ts";
         cb(null, file);
       }))
-      .pipe(gulp.dest('./patches/chr/'))
+      .pipe(gulp.dest('./patches/chr/'));
 });
 
 gulp.task('main', function() {

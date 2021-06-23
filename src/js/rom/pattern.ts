@@ -43,24 +43,24 @@ export class Pattern extends Entity {
 export class Patterns implements Iterable<Pattern> {
   private _all: Pattern[] = [];
 
-  public static readonly HUD_LF = parse_pattern(`+xxxxxoo+oxxxxo++oxx++o++oxx+oo++++x++o+xooo+oo+xxxx+xooxxxxoxxx`)
-  public static readonly HUD_PW = parse_pattern(`+++xxxxx+oo+oxxx+++oxxxx+ooxxxxx+o+o+o+xxo+o+o+xxxo+o+oxxxxoxoxx`)
-  public static readonly HUD_EY = parse_pattern(`+++xxxoo+ooxxxo+++x+o+o++oo+o+o++++o+oo+ooox+oo+xxxx+oooxxxxxxxx`)
-  public static readonly HUD_LV = parse_pattern(`xxxxxxxx+xxxxxxx+oxxxxxx+ox+ox+o+ox+ox+o+++x++oxxooox+oxxxxxxoxx`)
-  public static readonly HUD_DL = parse_pattern(`xxxxxxxx++xxxxxx+o+o+xxx+o+o+oxx+o+o+oxx++ox+oxxxoxx+++xxxxxxooo`)
-  public static readonly HUD_MP = parse_pattern(`+oxx+xxx++o++oxx+o+o+oxx+oxo+++x+oxo+oo+xxxx+++oxxxx+ooxxxxx+oxx`)
-  public static readonly HUD_EX = parse_pattern(`+++xxxxx+oooxxxx+++xxxxx+oooxxxx+++x+o+oxooox+oxxxxx+o+oxxxxxoxo`)
+  public static readonly HUD_LF = parsePattern(`+xxxxxoo+oxxxxo++oxx++o++oxx+oo++++x++o+xooo+oo+xxxx+xooxxxxoxxx`)
+  public static readonly HUD_PW = parsePattern(`+++xxxxx+oo+oxxx+++oxxxx+ooxxxxx+o+o+o+xxo+o+o+xxxo+o+oxxxxoxoxx`)
+  public static readonly HUD_EY = parsePattern(`+++xxxoo+ooxxxo+++x+o+o++oo+o+o++++o+oo+ooox+oo+xxxx+oooxxxxxxxx`)
+  public static readonly HUD_LV = parsePattern(`xxxxxxxx+xxxxxxx+oxxxxxx+ox+ox+o+ox+ox+o+++x++oxxooox+oxxxxxxoxx`)
+  public static readonly HUD_DL = parsePattern(`xxxxxxxx++xxxxxx+o+o+xxx+o+o+oxx+o+o+oxx++ox+oxxxoxx+++xxxxxxooo`)
+  public static readonly HUD_MP = parsePattern(`+oxx+xxx++o++oxx+o+o+oxx+oxo+++x+oxo+oo+xxxx+++oxxxx+ooxxxxx+oxx`)
+  public static readonly HUD_EX = parsePattern(`+++xxxxx+oooxxxx+++xxxxx+oooxxxx+++x+o+oxooox+oxxxxx+o+oxxxxxoxo`)
 
   get(page: number, tile_idx: number): Pattern {
-    return this._all[page | tile_idx]
+    return this._all[page | tile_idx];
   }
 
   set(page: number, tile_idx: number, pixels: number[]) {
-    this._all[page | tile_idx].pixels = pixels
+    this._all[page | tile_idx].pixels = pixels;
   }
 
   constructor(rom: Rom) {
-    this._all = seq(rom.chr.length >> 4, i => new Pattern(rom, i))
+    this._all = seq(rom.chr.length >> 4, i => new Pattern(rom, i));
   }
 
   [Symbol.iterator]() {
@@ -68,33 +68,33 @@ export class Patterns implements Iterable<Pattern> {
   }
 }
 
-function parse_pattern(data: String) : number[] {
-  let arr : number[] = new Array(16).fill(0)
-  const text = data.replace(/\s/g, "")
+function parsePattern(data: String) : number[] {
+  if (data.length !== 64) throw new Error(`Bad CHR tile: ${data}`);
+  let arr: number[] = new Array(16).fill(0);
+  const text = data.replace(/\s/g, '');
   for (let i = 0, c=''; c = text.charAt(i); ++i) {
-    let off = ~~(i / 8)
-    let lo = off
-    let hi = off | 8
-    let col = (7 - (i % 8))
+    let off = i >>> 3;
+    let lo = off;
+    let hi = off | 8;
+    let col = ~i & 7;
     switch (c) {
       case '.': // 0
         break
       case '+': // 1
-        arr[lo] |= 1 << col
+        arr[lo] |= 1 << col;
         break
       case 'x': // 2
-        arr[hi] |= 1 << col
+        arr[hi] |= 1 << col;
         break
       case 'o': // 3
-        arr[lo] |= 1 << col
-        arr[hi] |= 1 << col
+        arr[lo] |= 1 << col;
+        arr[hi] |= 1 << col;
         break
       default:
-        console.error("Couldn't parse pattern for tile")
-        return []
+        throw new Error(`Unknown character in CHR tile: ${c}`);
     }
   }
-  return arr
+  return arr;
 }
 
 export enum Flip {

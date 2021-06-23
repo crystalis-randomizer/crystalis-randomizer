@@ -824,10 +824,8 @@ MaybeSetCheckpointActual:
 FREE_UNTIL $bad9
 .popseg
 
-.pushseg "fe", "ff"
-;;; Calls DisplayNumberInternal, expects the 1a bank that DisplayNumberInternal
-;;; to be in place before hand
-;;
+.pushseg "1a", "fe", "ff"
+;;; Calls DisplayNumberInternal for each of the bits in A as follows:
 ;; [in] A - bit mask for the different displays to update
 ;; [scratch] X - could push X if needed later
 ;; The following values are used in the randomizer for this

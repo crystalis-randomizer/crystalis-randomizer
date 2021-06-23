@@ -40,6 +40,34 @@ export class Pattern extends Entity {
   }
 }
 
+export class Patterns implements Iterable<Pattern> {
+  private _all: Pattern[] = [];
+
+  public static readonly HUD_LF = parse_pattern(`+xxxxxoo+oxxxxo++oxx++o++oxx+oo++++x++o+xooo+oo+xxxx+xooxxxxoxxx`)
+  public static readonly HUD_PW = parse_pattern(`+++xxxxx+oo+oxxx+++oxxxx+ooxxxxx+o+o+o+xxo+o+o+xxxo+o+oxxxxoxoxx`)
+  public static readonly HUD_EY = parse_pattern(`+++xxxoo+ooxxxo+++x+o+o++oo+o+o++++o+oo+ooox+oo+xxxx+oooxxxxxxxx`)
+  public static readonly HUD_LV = parse_pattern(`xxxxxxxx+xxxxxxx+oxxxxxx+ox+ox+o+ox+ox+o+++x++oxxooox+oxxxxxxoxx`)
+  public static readonly HUD_DL = parse_pattern(`xxxxxxxx++xxxxxx+o+o+xxx+o+o+oxx+o+o+oxx++ox+oxxxoxx+++xxxxxxooo`)
+  public static readonly HUD_MP = parse_pattern(`+oxx+xxx++o++oxx+o+o+oxx+oxo+++x+oxo+oo+xxxx+++oxxxx+ooxxxxx+oxx`)
+  public static readonly HUD_EX = parse_pattern(`+++xxxxx+oooxxxx+++xxxxx+oooxxxx+++x+o+oxooox+oxxxxx+o+oxxxxxoxo`)
+
+  get(page: number, tile_idx: number): Pattern {
+    return this._all[page | tile_idx]
+  }
+
+  set(page: number, tile_idx: number, pixels: number[]) {
+    this._all[page | tile_idx].pixels = pixels
+  }
+
+  constructor(rom: Rom) {
+    this._all = seq(rom.chr.length >> 4, i => new Pattern(rom, i))
+  }
+
+  [Symbol.iterator]() {
+    return this._all[Symbol.iterator]();
+  }
+}
+
 function parse_pattern(data: String) : number[] {
   let arr : number[] = new Array(16).fill(0)
   const text = data.replace(/\s/g, "")
@@ -68,18 +96,6 @@ function parse_pattern(data: String) : number[] {
   }
   return arr
 }
-
-const chr_page38_tile0 = parse_pattern(`+xxxxxoo+oxxxxo++oxx++o++oxx+oo++++x++o+xooo+oo+xxxx+xooxxxxoxxx`)
-const chr_page38_tile1 = parse_pattern(`+++xxxxx+oo+oxxx+++oxxxx+ooxxxxx+o+o+o+xxo+o+o+xxxo+o+oxxxxoxoxx`)
-const chr_page38_tile2 = parse_pattern(`+++xxxoo+ooxxxo+++x+o+o++oo+o+o++++o+oo+ooox+oo+xxxx+oooxxxxxxxx`)
-const chr_page38_tile3 = parse_pattern(`xxxxxxxx+xxxxxxx+oxxxxxx+ox+ox+o+ox+ox+o+++x++oxxooox+oxxxxxxoxx`)
-const chr_page38_tile4 = parse_pattern(`xxxxxxxx++xxxxxx+o+o+xxx+o+o+oxx+o+o+oxx++ox+oxxxoxx+++xxxxxxooo`)
-const chr_page38_tile5 = parse_pattern(`+oxx+xxx++o++oxx+o+o+oxx+oxo+++x+oxo+oo+xxxx+++oxxxx+ooxxxxx+oxx`)
-const chr_page38_tile6 = parse_pattern(`+++xxxxx+oooxxxx+++xxxxx+oooxxxx+++x+o+oxooox+oxxxxx+o+oxxxxxoxo`)
-
-
-export {chr_page38_tile0, chr_page38_tile1, chr_page38_tile2, chr_page38_tile3,
-  chr_page38_tile4, chr_page38_tile5, chr_page38_tile6}
 
 export enum Flip {
   HORIZONTAL = 0x40,

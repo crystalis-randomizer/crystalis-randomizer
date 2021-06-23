@@ -131,9 +131,9 @@ export class Patterns implements Iterable<Pattern> {
 }
 
 function parsePattern(data: String) : number[] {
-  if (data.length !== 64) throw new Error(`Bad CHR tile: ${data}`);
-  let arr: number[] = new Array(16).fill(0);
   const text = data.replace(/\s/g, '');
+  if (text.length !== 64) throw new Error(`Bad CHR tile: ${text}`);
+  let arr: number[] = new Array(16).fill(0);
   for (let i = 0, c=''; c = text.charAt(i); ++i) {
     let off = i >>> 3;
     let lo = off;

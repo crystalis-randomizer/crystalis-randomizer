@@ -68,13 +68,12 @@ gulp.task('buildchr', function() {
                 case 2: return 'x'
                 case 3: return 'o'
               }})
-              .join('');
-              // uncomment to split each 8 pixels onto their own lines
-              // .match(/.{1,8}/g)
-              // .join('\n')
+              .join('')
+              .match(/.{1,8}/g)
+              .join('\n  ');
               
             
-            out += `public static readonly ${file.stem}_tile${start} = parsePattern(\`${concatted}\`)\n`;
+            out += `public static readonly ${file.stem}_tile${start} = parsePattern(\`\n  ${concatted}\n\`);\n`;
             ++start;
           }
         }

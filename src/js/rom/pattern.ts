@@ -42,15 +42,6 @@ export class Pattern extends Entity {
 
 export class Patterns implements Iterable<Pattern> {
   private _all: Pattern[] = [];
-
-  public static readonly HUD_LF = parsePattern(`+xxxxxoo+oxxxxo++oxx++o++oxx+oo++++x++o+xooo+oo+xxxx+xooxxxxoxxx`)
-  public static readonly HUD_PW = parsePattern(`+++xxxxx+oo+oxxx+++oxxxx+ooxxxxx+o+o+o+xxo+o+o+xxxo+o+oxxxxoxoxx`)
-  public static readonly HUD_EY = parsePattern(`+++xxxoo+ooxxxo+++x+o+o++oo+o+o++++o+oo+ooox+oo+xxxx+oooxxxxxxxx`)
-  public static readonly HUD_LV = parsePattern(`xxxxxxxx+xxxxxxx+oxxxxxx+ox+ox+o+ox+ox+o+++x++oxxooox+oxxxxxxoxx`)
-  public static readonly HUD_DL = parsePattern(`xxxxxxxx++xxxxxx+o+o+xxx+o+o+oxx+o+o+oxx++ox+oxxxoxx+++xxxxxxooo`)
-  public static readonly HUD_MP = parsePattern(`+oxx+xxx++o++oxx+o+o+oxx+oxo+++x+oxo+oo+xxxx+++oxxxx+ooxxxxx+oxx`)
-  public static readonly HUD_EX = parsePattern(`+++xxxxx+oooxxxx+++xxxxx+oooxxxx+++x+o+oxooox+oxxxxx+o+oxxxxxoxo`)
-
   get(page: number, tile_idx: number): Pattern {
     return this._all[page | tile_idx];
   }
@@ -66,6 +57,77 @@ export class Patterns implements Iterable<Pattern> {
   [Symbol.iterator]() {
     return this._all[Symbol.iterator]();
   }
+
+  public static readonly HUD_LF = parsePattern(`
+    +xxxxxoo
+    +oxxxxo+
+    +oxx++o+
+    +oxx+oo+
+    +++x++o+
+    xooo+oo+
+    xxxx+xoo
+    xxxxoxxx
+  `);
+  public static readonly HUD_PW = parsePattern(`
+    +++xxxxx
+    +oo+oxxx
+    +++oxxxx
+    +ooxxxxx
+    +o+o+o+x
+    xo+o+o+x
+    xxo+o+ox
+    xxxoxoxx
+  `);
+  public static readonly HUD_EY = parsePattern(`
+    +++xxxoo
+    +ooxxxo+
+    ++x+o+o+
+    +oo+o+o+
+    +++o+oo+
+    ooox+oo+
+    xxxx+ooo
+    xxxxxxxx
+  `);
+  public static readonly HUD_LV = parsePattern(`
+    xxxxxxxx
+    +xxxxxxx
+    +oxxxxxx
+    +ox+ox+o
+    +ox+ox+o
+    +++x++ox
+    xooox+ox
+    xxxxxoxx
+  `);
+  public static readonly HUD_DL = parsePattern(`
+    xxxxxxxx
+    ++xxxxxx
+    +o+o+xxx
+    +o+o+oxx
+    +o+o+oxx
+    ++ox+oxx
+    xoxx+++x
+    xxxxxooo
+  `);
+  public static readonly HUD_MP = parsePattern(`
+    +oxx+xxx
+    ++o++oxx
+    +o+o+oxx
+    +oxo+++x
+    +oxo+oo+
+    xxxx+++o
+    xxxx+oox
+    xxxx+oxx
+  `);
+  public static readonly HUD_EX = parsePattern(`
+    +++xxxxx
+    +oooxxxx
+    +++xxxxx
+    +oooxxxx
+    +++x+o+o
+    xooox+ox
+    xxxx+o+o
+    xxxxxoxo
+  `);
 }
 
 function parsePattern(data: String) : number[] {

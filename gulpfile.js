@@ -36,6 +36,16 @@ const COMMON = [
 
 const srcs = (...srcs) => srcs.map(s => './dist/js/' + s);
 
+/**
+ * `buildchr` will convert the files in `./patches/chr/*.chr` and
+ * output a single `.ts` file for each `.chr` file. This ts file
+ * contains a declaration for an ASCII representation of the tiles,
+ * which can be used in the randomizer code to update a tile.
+ * 
+ * This task is not part of any other pipeline, it is intended to be
+ * used as a one-off task, and the output is intended to be copy-pasted
+ * into the other source files as needed.
+ */
 gulp.task('buildchr', function() {
   return gulp.src('./patches/chr/*.chr')
       .pipe(through2.obj((file, _, cb) => {

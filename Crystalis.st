@@ -28659,11 +28659,11 @@ PlayAudioBlip
 WriteHeaderToNametableQueue
         ;; General function used to write data to the nametable queue
         ;; See WriteNametableDataToPpu for more information about what each input means
-        ;; [in] $01 - If this equals #$18 then do not re-enable NMI before returning
         ;; [in] $20 - Data for $6201
         ;; [in] $21 - Data for $6200
         ;; [in] $24 - Data for $6202
         ;; [in] $25 - Data for $6203
+        ;; Checks $01 PPUCTRL shadow to see if rendering is enabled or not
         $20ab0  xx xx xx:   xxx DisableNMI_20ae5
         $20ab3  xx xx:      xxx $xx
         $20ab5  xx xx:      xxx $xx
@@ -35747,7 +35747,7 @@ StatusBarDataTable
         ;; These values are based on the VRAM location that it is paged into, and not
         ;; based on the location in the original CHR ROM page. So pretty much just
         ;; offset everything by $#80. (The references to the border/spaces/numbers are always
-        ;; in VRAM when drawing here, so its fine to do)
+        ;; in VRAM when drawing here, so it's fine to do)
         ;; $fe is not displayed due to overscan, it seems like it was chosen as a marker
         ;; maybe for debugging purposes (as other drawing methods use different values)
 
@@ -43406,7 +43406,7 @@ UpdateHPDisplayInternal
         $34cfb  xx:          xxx
         $34cfc  xx:          xxx
         ;; if we have "no health" (ie: our health is too low to display full tiles)
-        ;; the skip drawing any of the full bars
+        ;; then skip drawing any of the full bars
         $34cfd  xx xx:       xxx + ; $34d07
         $34cff  xx xx:        xxx #$xx ; #$88 is the full hp bar tile
 -       $34d01  xx xx xx:      xxx $xxxx,x

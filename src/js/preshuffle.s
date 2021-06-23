@@ -757,18 +757,19 @@ MaybeSetCheckpointActual:
 
 
 .segment "12", "13", "fe", "ff"
-;.bank $27000 $8000:$4000
+;.bank $24000 $8000:$4000
 
 ;; Overwrite the StatusBarDataTable with the new UI tile layout
 .org $badb
   .byte $80,$20,$20,$20 ; Lf _ _ _
 .org $baee
   .byte $83,$00,$00,$20 ; Lv 0 0 _
-.org $baf2
   .byte $9c             ;  $
 
 .org $bafb
   ;; on this row we shifted most everything left by three tiles
+  ;; It should be possible to use .move to shift everything over,
+  ;; but it didn't really work when tested
   .byte $81,$8f,$8f,$8f ; Pw > > >
   .byte $8f,$8f,$8f,$8f ;  > > > >
   .byte $93,$95,$94     ; (1) lit up
@@ -782,10 +783,9 @@ MaybeSetCheckpointActual:
 .org $bb1b
   .byte $20             ;  _
 .org $bb1f ; clear out the experience count thats there initially
-  .byte $20,$20,$20,$20 ;  _ _ _ _
-  .byte $20,$20,$20,$20 ;  _ _ _ _
-  .byte $20,$20,$20,$20 ;  _ _ _ _
-  .byte $20,$20,$20,$20 ;  _ _ _ _
+.repeat 16
+  .byte $20 ;  _
+.endrep
   .byte $85,$20,$20,$20 ; Mp _ _ _
   .byte $9d,$20,$20,$20 ;  / _ _ _
 
@@ -794,13 +794,6 @@ MaybeSetCheckpointActual:
 .segment "1a", "1b", "fe", "ff"
 ;.bank $34000 $8000:$4000
 
-;;; Numeric displays
-.org $8ee9  ; 06 - was LV(menu) but now it's difficulty
-  .word (Difficulty)
-  .byte $56,$2b,$03,$00 ; display left of exp
-.org $8f19  ; 0e - was unused, now it's LV(menu)
-  .word (PlayerLevel)
-  .byte $29,$29,$03,$00 ; copied from $34ee9
 
 ;; Move the position of the main UI number elements
 .org $8ec7 ; Lv
@@ -809,55 +802,83 @@ MaybeSetCheckpointActual:
   .byte $3a,$2b
 .org $8ed3 ; Experience
   .byte $5a,$2b
-; Experience to next level is now unused,
-; if you want to use it for something, make sure the drawing isn't skipped
-; .org $8ed9 ; Experience Cap
-;   .byte $5a,$2b
+
+;;; Numeric displays
+.org $8ed7  ; 03 - was Exp Left, now its Max MP
+  .word (PlayerMaxMP)
+  .byte $7b,$2b,$02,$00 ; copied from $34ee3
+.org $8ee3  ; 05 - was Max MP, now its unused
+.org $8ee9  ; 06 - was LV(menu) but now it's difficulty
+  .word (Difficulty)
+  .byte $56,$2b,$03,$00 ; display left of exp
+.org $8f19  ; 0e - was unused, now it's LV(menu)
+  .word (PlayerLevel)
+  .byte $29,$29,$03,$00 ; copied from $34ee9
 
 .pushseg "13", "fe", "ff"
-;; Prevent EXP Left from being drawn
 ;InitializeStatusBarNametable
-.org $bace
-  jsr DisplayNumberInternalButSkipExpToNextLevel
+.org $baca
+  lda #$5f ; 0b0101'1111 - update all 5 status display (including difficulty)
+  jsr UpdateStatusBarDisplays
+  jmp $c676 ; WaitForNametableFlush
+FREE_UNTIL $bad9
+.popseg
+
+.pushseg "fe", "ff"
+;;; Calls DisplayNumberInternal, expects the 1a bank that DisplayNumberInternal
+;;; to be in place before hand
+;;
+;; [in] A - bit mask for the different displays to update
+;; [scratch] X - could push X if needed later
+;; The following values are used in the randomizer for this
+;; 0 - Level
+;; 1 - Money
+;; 2 - Exp
+;; 3 - Max MP
+;; 4 - MP
+;; 5 - (currently unused)
+;; 6 - Difficulty
 .reloc
-DisplayNumberInternalButSkipExpToNextLevel:
-  cmp #$03
-  beq +
-  jmp DisplayNumberInternal
-+ rts
+UpdateStatusBarDisplays:
+  ldx #$07
+- rol
+  bcc +
+    pha
+      txa
+      jsr DisplayNumberInternal
+    pla
++ dex
+  bpl -
+  rts
 .popseg
 
 ;;; HP / Force bar display
+;; Overwrites the tile position used by the nametable update buffer to move the tiles
 .org $8d1f
-  lda #$23; Move the player HP bar left 3 places
+  lda #$23 ; Subtracted 3 from the original value to move the player HP bar to the left
 .org $8db2
-  lda #$43; Move the player force bar left 3 places
+  lda #$43 ; Subtracted 3 from the original to move the force bar to the left
 
 ;;; ----------------------------------------------------
 ;;; KillObject
 ;;; Recalculate PlayerEXP to count down from max instead of up
 
+
 .org $9152
   ; Instead of calling AwardExperience immediately, just store the obj offset
   ; and push it onto the stack for use later. The code needs to check for an
   ; object replacement and we don't wanna clobber that
-  jmp PushObjOffsetToStack
+  jsr StoreObjectExp
 .assert * <= $9155
 
-.org $9155
-CheckForObjectReplacementOrDeathAnimation:
-
 .reloc
-PushObjOffsetToStack:
-  tya
-  pha
-  ; Return back to where we started without touching the stack
-  jmp CheckForObjectReplacementOrDeathAnimation
+StoreObjectExp:
+  lda ObjectExp,y
+  sta $61
+  rts
 
 ;; Update the level up check
 .org $916a
-  pla
-  tay
   lda PlayerLevel
   and #$f0
   beq +
@@ -883,10 +904,20 @@ LevelUp:
   lda PlayerExp+1
   adc $8b9f,y
   sta PlayerExp+1
-  jmp UpdatePlayerMaxHPAndMPAfterLevelUp
-.assert * <= $91c7
-FREE_UNTIL $91c7
+  jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+  jsr UpdateDisplayAfterLevelUp
+  jmp UpdateCurrentEXPAndExit
+.assert * <= $91ef
+FREE_UNTIL $91ef
 
+.org $91ef
+UpdateCurrentEXPAndExit:
+
+.org $91f4
+ExitWithoutDrawingEXP:
+
+.org $8cc0
+UpdateHPDisplayInternal:
 
 .reloc
 UpdatePlayerMaxHPAndMPAfterLevelUp:
@@ -908,26 +939,21 @@ UpdatePlayerMaxHPAndMPAfterLevelUp:
   clc
   adc PlayerMP
   sta PlayerMP
-  jmp UpdateDisplayAfterLevelUp
+  rts
 
-.org $91c7
+.reloc
 UpdateDisplayAfterLevelUp:
+  jsr UpdateHPDisplayInternal
+  lda #$19 ; 0b0001'1001 ie: 0, 3, 4
+  jsr UpdateStatusBarDisplays
+  lda #GAME_MODE_STATUS_MSG
+  sta GameMode
+  lda #$0d
+  sta $06c3
+  lda #$20
+  sta $06e3
+  jmp UpdateEquipmentAndStatus
 
-;; Remove drawing the EXP left
-.org $91cf
-  nop
-  nop
-  nop
-  nop
-  nop
-
-
-
-.org $91ef
-UpdateCurrentEXPAndExit:
-
-.org $91f4
-ExitWithoutDrawingEXP:
 
 ;;; ----------------------------------------------------
 ;;; AwardExperiencePoints
@@ -935,10 +961,9 @@ ExitWithoutDrawingEXP:
 ;; skip exp calculation if max level
 .org $924b
 AwardExperiencePoints:
-
-;; If the EXP >= $80, the code before this will load the hibyte into $11
-.org $926e
-  jmp Do16BitSubtractionForEXP
+  ;; instead of loading from ObjExp, we store the Exp value in $61
+  lda $61
+  nop
 
 ;; If the EXP < $80, then we set 0 for the monster exp lobyte
 .org $9250
@@ -946,6 +971,16 @@ AwardExperiencePoints:
   sty $11      ; $11 is used to store the upper bits of monster exp temporarily
   jmp Do16BitSubtractionForEXP
 .assert * <= $925d
+
+.org $9261
+  ;; instead of loading from ObjExp, we store the Exp value in $61
+  lda $61
+  nop
+
+;; If the EXP >= $80, the code before this will load the hibyte into $11
+.org $926e
+  jmp Do16BitSubtractionForEXP
+
 
 .reloc
 Do16BitSubtractionForEXP:
@@ -2534,7 +2569,7 @@ CheckRabbitBoots:
 .reloc
 SubtractEnemyHP:
   ;; NOTE: we could probably afford to move a few of these back if needed
-+ lda ObjectElementalDefense,y
+  lda ObjectElementalDefense,y
   and #$0f
   cmp #$0f
   sec
@@ -2545,7 +2580,6 @@ SubtractEnemyHP:
 + lda $61
   sbc #$00
   rts
-
 
 ;;; Note: This is moved from $3db22, where we ran out of space.
 .reloc

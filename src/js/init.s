@@ -64,6 +64,7 @@
 
 
 ;;; Various global definitions.
+GameMode = $41
 ObjectRecoil = $340
 ObjectHP = $3c0
 PlayerHP = $3c1
@@ -76,6 +77,9 @@ ObjectActionScript = $4a0
 ObjectGold = $500
 ObjectElementalDefense = $500
 ObjectExp = $520
+; PlayerExp - 16bit number (includes $705). This value was changed so that instead of
+; starting at zero and counting up to ExpToNextLevel, it will start at ExpToNextLevel
+; and count down.
 PlayerExp = $704
 PlayerMP = $708
 PlayerMaxMP = $709
@@ -115,6 +119,7 @@ SORT_START_ROW    = 2
 .endif
 
 ;;; Constants
+GAME_MODE_STATUS_MSG = $10
 ITEM_RABBIT_BOOTS    = $12
 ITEM_OPEL_STATUE     = $26
 SFX_MONSTER_HIT      = $21

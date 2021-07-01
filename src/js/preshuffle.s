@@ -818,7 +818,7 @@ MaybeSetCheckpointActual:
 .pushseg "13", "fe", "ff"
 ;InitializeStatusBarNametable
 .org $baca
-  lda #$5f ; 0b0101'1111 - update all 5 status display (including difficulty)
+  lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
 FREE_UNTIL $bad9
@@ -839,13 +839,13 @@ FREE_UNTIL $bad9
 .reloc
 UpdateStatusBarDisplays:
   ldx #$07
-- rol
-  bcc +
-    pha
-      txa
-      jsr DisplayNumberInternal
-    pla
-+ dex
+-   rol
+    bcc +
+      pha
+        txa
+        jsr DisplayNumberInternal
+      pla
++   dex
   bpl -
   rts
 .popseg
@@ -942,10 +942,12 @@ UpdatePlayerMaxHPAndMPAfterLevelUp:
 .reloc
 UpdateDisplayAfterLevelUp:
   jsr UpdateHPDisplayInternal
-  lda #$19 ; 0b0001'1001 ie: 0, 3, 4
+  lda #%00011001 ; update displays 0, 3, 4
   jsr UpdateStatusBarDisplays
   lda #GAME_MODE_STATUS_MSG
   sta GameMode
+  ; Update player metasprite information? This was copied from the
+  ; actual game code
   lda #$0d
   sta $06c3
   lda #$20
@@ -963,8 +965,8 @@ AwardExperiencePoints:
   lda $61
   nop
 
-;; If the EXP < $80, then we set 0 for the monster exp lobyte
 .org $9250
+  ;; If the EXP < $80, then we set 0 for the monster exp lobyte
   ldy #$00
   sty $11      ; $11 is used to store the upper bits of monster exp temporarily
   jmp Do16BitSubtractionForEXP
@@ -975,8 +977,8 @@ AwardExperiencePoints:
   lda $61
   nop
 
-;; If the EXP >= $80, the code before this will load the hibyte into $11
 .org $926e
+  ;; If the EXP >= $80, the code before this will load the hibyte into $11
   jmp Do16BitSubtractionForEXP
 
 

@@ -16,7 +16,7 @@ export class Graphics {
       const id = key >>> 8;
 
       // Plot on canvas
-      const pat = this.rom.patterns[id];
+      const pat = this.rom.patterns.get(id);
       for (let r = 0; r < 8; r++) {
         let hi = pat.pixels[8 | r] << 1;
         let lo = pat.pixels[r];

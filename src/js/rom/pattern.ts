@@ -42,7 +42,11 @@ export class Pattern extends Entity {
 
 export class Patterns implements Iterable<Pattern> {
   private _all: Pattern[] = [];
-  get(page: number, tile_idx: number): Pattern {
+
+  get(page: number, tile_idx?: number): Pattern {
+    if (!tile_idx) {
+      return this._all[page];
+    }
     return this._all[page | tile_idx];
   }
 
@@ -139,21 +143,11 @@ function parsePattern(data: String) : number[] {
     let lo = off;
     let hi = off | 8;
     let col = ~i & 7;
-    switch (c) {
-      case '.': // 0
-        break
-      case '+': // 1
-        arr[lo] |= 1 << col;
-        break
-      case 'x': // 2
-        arr[hi] |= 1 << col;
-        break
-      case 'o': // 3
-        arr[lo] |= 1 << col;
-        arr[hi] |= 1 << col;
-        break
-      default:
-        throw new Error(`Unknown character in CHR tile: ${c}`);
+    if (c === '+' || c === 'o') {
+      arr[lo] |= 1 << col;
+    }
+    if (c === 'x' || c === 'o') {
+      arr[hi] |= 1 << col;
     }
   }
   return arr;

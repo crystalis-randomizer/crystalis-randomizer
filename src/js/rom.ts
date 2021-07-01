@@ -23,7 +23,7 @@ import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
-import {Pattern, Patterns} from './rom/pattern.js';
+import {Patterns} from './rom/pattern.js';
 import {RandomNumbers} from './rom/randomnumbers.js';
 import {Scaling} from './rom/scaling.js';
 import {Screen, Screens} from './rom/screen.js';

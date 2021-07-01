@@ -7,6 +7,7 @@ starts at address $27ad9 and contains a list of bytes that populates the initial
 
 Each line is #$20 bytes and the tiles that are important are as follows.
 NOTE: the address here is the VRAM address and not the address in CHR ROM, so for the menu tiles, they will all be offset by #$80 compared to their CHR ROM tile number
+The bank configuration when drawing the menu is to map $E000 to $0800, and $F000 to $0000
 
 General Tiles:
 $fe - drawn into the CRT overscan, so not visible
@@ -30,8 +31,9 @@ $90,$91,$92 - Force indicator (not lit up)
 $93,$95,$94 - (1) lit up
 
 In the randomizer changes, we removed several of these tiles and drew custom graphics to consolidate several of the words.
-Each of these new graphics takes only one tile.
+Each of these new graphics takes only one tile. The tiles are stored in CHR ROM bank $E000.
 
+PPU Addr | Icon | Notes
 $80 - LF - Replaces 4 tiles LIFE (Frees 3 tiles)
 $81 - PW - Replaces 4 tiles FORCE (Frees 3 tiles)
 $82 - EY - New, used for displaying the enemy health bar
@@ -58,6 +60,7 @@ If the player levels up, the game will load the next level EXP, unless you are a
 
 The new calculation is instead of counting up from zero to next level, we will count down from next level to zero.
 This way the total EXP needed to next level is always visible, while also saving 6 tiles of room on the UI.
+This also frees up two bytes of RAM $0706 and $0707 where the ExpToNextLevel was stored (low and high bytes)
 
 The original call path for exp goes:
 

@@ -46,7 +46,7 @@ export class Tokenizer implements TokenSource {
     // skip whitespace
     while (this.buffer.space() ||
            this.buffer.token(/^;.*/) ||
-           (this.opts.lineContinuations && this.buffer.token(/^\\\n/))) {}
+           (this.opts.lineContinuations && this.buffer.token(/^\\(\r\n|\n|\r)/))) {}
     if (this.buffer.eof()) return Token.EOF;
 
     // remember position of non-whitespace

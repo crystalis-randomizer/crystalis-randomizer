@@ -756,16 +756,259 @@ MaybeSetCheckpoint:
 MaybeSetCheckpointActual:
 
 
+.segment "12", "13", "fe", "ff"
+;.bank $24000 $8000:$4000
+
+;; Overwrite the StatusBarDataTable with the new UI tile layout
+.org $badb
+  .byte $80,$20,$20,$20 ; Lf _ _ _
+.org $baee
+  .byte $83,$00,$00,$20 ; Lv 0 0 _
+  .byte $9c             ;  $
+
+.org $bafb
+  ;; on this row we shifted most everything left by three tiles
+  ;; It should be possible to use .move to shift everything over,
+  ;; but it didn't really work when tested
+  .byte $81,$8f,$8f,$8f ; Pw > > >
+  .byte $8f,$8f,$8f,$8f ;  > > > >
+  .byte $93,$95,$94     ; (1) lit up
+  .byte $90,$91,$92     ; (_) not lit up
+  .byte $90,$91,$92     ; (_) not lit up
+  .byte $20,$20         ;  _ _
+  .byte $84,$20,$20,$20 ; Dl _ _ _
+  .byte $86,$20,$20,$20 ; Ex _ _ _
+  .byte $20,$20,$1f     ;  _ _ |
+
+.org $bb1b
+  .byte $20             ;  _
+.org $bb1f ; clear out the experience count thats there initially
+.repeat 16
+  .byte $20 ;  _
+.endrep
+  .byte $85,$20,$20,$20 ; Mp _ _ _
+  .byte $9d,$20,$20,$20 ;  / _ _ _
+
+
+
 .segment "1a", "1b", "fe", "ff"
 ;.bank $34000 $8000:$4000
 
+
+;; Move the position of the main UI number elements
+.org $8ec7 ; Lv
+  .byte $36,$2b
+.org $8ecd ; Money
+  .byte $3a,$2b
+.org $8ed3 ; Experience
+  .byte $5a,$2b
+
 ;;; Numeric displays
+.org $8ed7  ; 03 - was Exp Left, now its Max MP
+  .word (PlayerMaxMP)
+  .byte $7b,$2b,$02,$00 ; copied from $34ee3
+.org $8ee3  ; 05 - was Max MP, now its unused
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
-  .byte $3c,$2b,$03,$00 ; display right of lvl
+  .byte $56,$2b,$03,$00 ; display left of exp
 .org $8f19  ; 0e - was unused, now it's LV(menu)
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
+
+.pushseg "13", "fe", "ff"
+;InitializeStatusBarNametable
+.org $baca
+  lda #%01011111 ; update all 5 status display (including difficulty)
+  jsr UpdateStatusBarDisplays
+  jmp $c676 ; WaitForNametableFlush
+FREE_UNTIL $bad9
+.popseg
+
+.pushseg "1a", "fe", "ff"
+;;; Calls DisplayNumberInternal for each of the bits in A as follows:
+;; [in] A - bit mask for the different displays to update
+;; [scratch] X - could push X if needed later
+;; The following values are used in the randomizer for this
+;; 0 - Level
+;; 1 - Money
+;; 2 - Exp
+;; 3 - Max MP
+;; 4 - MP
+;; 5 - (currently unused)
+;; 6 - Difficulty
+.reloc
+UpdateStatusBarDisplays:
+  ldx #$07
+-   rol
+    bcc +
+      pha
+        txa
+        jsr DisplayNumberInternal
+      pla
++   dex
+  bpl -
+  rts
+.popseg
+
+;;; HP / Force bar display
+;; Overwrites the tile position used by the nametable update buffer to move the tiles
+.org $8d1f
+  lda #$23 ; Subtracted 3 from the original value to move the player HP bar to the left
+.org $8db2
+  lda #$43 ; Subtracted 3 from the original to move the force bar to the left
+
+;;; ----------------------------------------------------
+;;; KillObject
+;;; Recalculate PlayerEXP to count down from max instead of up
+
+
+.org $9152
+  ; Instead of calling AwardExperience immediately, just store the obj offset
+  ; and push it onto the stack for use later. The code needs to check for an
+  ; object replacement and we don't wanna clobber that
+  jsr StoreObjectExp
+.assert * <= $9155
+
+.reloc
+StoreObjectExp:
+  lda ObjectExp,y
+  sta $61
+  rts
+
+;; Update the level up check
+.org $916a
+  lda PlayerLevel
+  and #$f0
+  beq +
+    jmp ExitWithoutDrawingEXP
++ jsr AwardExperiencePoints
+  ; carry clear means we leveled up
+  bcc LevelUp
+  ; but it doesn't check if we were exactly at zero EXP so check for that now
+  lda PlayerExp
+  ora PlayerExp+1
+  cmp #$00
+  beq LevelUp
+  jmp UpdateCurrentEXPAndExit
+LevelUp:
+  ; double check here that we aren't already max level
+  inc PlayerLevel
+  lda PlayerLevel
+  asl  ; note: clears carry
+  tay
+  lda PlayerExp
+  adc $8b9e,y      ; NextLevelExpByLevel
+  sta PlayerExp
+  lda PlayerExp+1
+  adc $8b9f,y
+  sta PlayerExp+1
+  jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+  jsr UpdateDisplayAfterLevelUp
+  jmp UpdateCurrentEXPAndExit
+.assert * <= $91ef
+FREE_UNTIL $91ef
+
+.org $91ef
+UpdateCurrentEXPAndExit:
+
+.org $91f4
+ExitWithoutDrawingEXP:
+
+.org $8cc0
+UpdateHPDisplayInternal:
+
+.reloc
+UpdatePlayerMaxHPAndMPAfterLevelUp:
+  ldy PlayerLevel
+  lda $8b7f,y
+  sta PlayerMaxHP
+  lda $8b8f,y
+  sta PlayerMaxMP
+  ;; Add the delta of the max HP/MP to the current
+  sec
+  lda $8b7f,y
+  sbc $8b7e,y
+  clc
+  adc PlayerHP
+  sta PlayerHP
+  sec
+  lda $8b8f,y
+  sbc $8b8e,y
+  clc
+  adc PlayerMP
+  sta PlayerMP
+  rts
+
+.reloc
+UpdateDisplayAfterLevelUp:
+  jsr UpdateHPDisplayInternal
+  lda #%00011001 ; update displays 0, 3, 4
+  jsr UpdateStatusBarDisplays
+  lda #GAME_MODE_STATUS_MSG
+  sta GameMode
+  ; Update player metasprite information? This was copied from the
+  ; actual game code
+  lda #$0d
+  sta $06c3
+  lda #$20
+  sta $06e3
+  jmp UpdateEquipmentAndStatus
+
+
+;;; ----------------------------------------------------
+;;; AwardExperiencePoints
+;; This is changed so that Player EXP counts down instead of up to max EXP
+;; skip exp calculation if max level
+.org $924b
+AwardExperiencePoints:
+  ;; instead of loading from ObjExp, we store the Exp value in $61
+  lda $61
+  nop
+
+.org $9250
+  ;; If the EXP < $80, then we set 0 for the monster exp lobyte
+  ldy #$00
+  sty $11      ; $11 is used to store the upper bits of monster exp temporarily
+  jmp Do16BitSubtractionForEXP
+.assert * <= $925d
+
+.org $9261
+  ;; instead of loading from ObjExp, we store the Exp value in $61
+  lda $61
+  nop
+
+.org $926e
+  ;; If the EXP >= $80, the code before this will load the hibyte into $11
+  jmp Do16BitSubtractionForEXP
+
+
+.reloc
+Do16BitSubtractionForEXP:
+  ; A = monsterEXPLo; y = scratch
+  ldy PlayerExp
+  sta PlayerExp
+  tya
+  ; A = playerExp; PlayerExp = monsterEXP
+  sec
+  sbc PlayerExp
+  sta PlayerExp
+  lda PlayerExp+1
+  sbc $11
+  sta PlayerExp+1
+  rts
+
+
+;;; ----------------------------------------------------
+;; Inital EXP changes
+;; Change the "initial" value loaded into the Continue save
+;; file is you select continue from a cold boot. InitialPrg_6400
+.pushseg "17", "fe", "ff"
+.org $be82
+  .byte $1e
+.org $be84
+  .byte $00
+.popseg
+
 
 ;;; Crystalis should have all elements, rather than none
 ;;; Since we now invert the handling for enemy immunity,
@@ -2716,7 +2959,7 @@ PrepareGameInitialDataTable:
   .else
     .byte 0
   .endif
-  .byte $00,$00,$00,$1e,$00,$22,$22
+  .byte $00,$1e,$00,$00,$00,$22,$22
   ;; A few more values in 7xx
   .byte 11
   .word ($0710)

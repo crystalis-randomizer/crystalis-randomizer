@@ -1,0 +1,86 @@
+The Crystalis Randomizer UI changes involve the following updates:
+
+---------------------------------
+StatusBarDataTable 
+
+starts at address $27ad9 and contains a list of bytes that populates the initial status bar
+
+Each line is #$20 bytes and the tiles that are important are as follows.
+NOTE: the address here is the VRAM address and not the address in CHR ROM, so for the menu tiles, they will all be offset by #$80 compared to their CHR ROM tile number
+The bank configuration when drawing the menu is to map $E000 to $0800, and $F000 to $0000
+
+General Tiles:
+$fe - drawn into the CRT overscan, so not visible
+$20 - blank space (filled with blue not background)
+$00,$01...$09 - numbers
+$9c - $
+$9d - /
+
+Border Tiles:
+$1e - Left
+$1f - Right
+
+Custom Tiles:
+$80,$81,$82,$83 - LIFE
+$84,$85,$86,$87 - FORCE
+$f1,$f2 - LV:
+$9a,$9b - EX:
+$f4,$fd - MP:
+$8f - >
+$90,$91,$92 - Force indicator (not lit up)
+$93,$95,$94 - (1) lit up
+
+In the randomizer changes, we removed several of these tiles and drew custom graphics to consolidate several of the words.
+Each of these new graphics takes only one tile. The tiles are stored in CHR ROM bank $E000.
+
+PPU Addr | Icon | Notes
+$80 - LF - Replaces 4 tiles LIFE (Frees 3 tiles)
+$81 - PW - Replaces 4 tiles FORCE (Frees 3 tiles)
+$82 - EY - New, used for displaying the enemy health bar
+$83 - LV - Replaces 2 tiles LV: (Frees 1 tile)
+$84 - DL - New, previously there was no indicator for the current difficulty level
+$85 - MP - Replaces 2 tiles MP: (Frees 1 tile)
+$86 - EX - Replaces 2 tiles EX: (Frees 1 tile)
+
+This means theres a total of 7 extra tiles that can be used for other purposes (such as an enemy hp bar for instance)
+
+The changes to this table also reorganized the locations of all of the elements of the UI, so a few other code changes needed to be made.
+
+
+---------------------------------
+Status Bar Code changes
+
+Redoing EXP calculations
+
+The most significant change was updating how the game calculates EXP.
+On level up, the game will load from the EXP table a 16bit value ExpToNextLevel and reset EXP to 0.
+After this, the status bar will update with the new values.
+When an enemy is killed, the EXP value is updated with a new value, and then the game checks if EXP - EXPToNextLevel < 0.
+If the player levels up, the game will load the next level EXP, unless you are already max level.
+
+The new calculation is instead of counting up from zero to next level, we will count down from next level to zero.
+This way the total EXP needed to next level is always visible, while also saving 6 tiles of room on the UI.
+This also frees up two bytes of RAM $0706 and $0707 where the ExpToNextLevel was stored (low and high bytes)
+
+The original call path for exp goes:
+
+KillObject:
+    jsr AwardExperiencePoints
+    ; Check for Obj Replacements
+    ; subtract EXP - EXPToNextLevel
+    bcc SkipLevelUp
+    ; Do level up
+SkipLevelUp:
+    ; ...
+
+The new changes are a bit different since we do the subtraction directly in AwardExperiencePoints now
+
+KillObject:
+    jsr StoreObjectExp
+    ; Check for Obj Replacements
+    jsr AwardExperiencePoints ; this now does EXP - StoredObjectExp
+    bcc SkipLevelUp
+    ; Do level up
+SkipLevelUp:
+    ; ...
+

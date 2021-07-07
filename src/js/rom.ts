@@ -23,7 +23,7 @@ import {ObjectData} from './rom/objectdata.js';
 import {Objects} from './rom/objects.js';
 import {RomOption} from './rom/option.js';
 import {Palette} from './rom/palette.js';
-import {Pattern} from './rom/pattern.js';
+import {Patterns} from './rom/pattern.js';
 import {RandomNumbers} from './rom/randomnumbers.js';
 import {Scaling} from './rom/scaling.js';
 import {Screen, Screens} from './rom/screen.js';
@@ -80,7 +80,7 @@ export class Rom {
   readonly tilesets: Tilesets;
   readonly tileEffects: TileEffects[];
   readonly triggers: Trigger[];
-  readonly patterns: Pattern[];
+  readonly patterns: Patterns;
   readonly palettes: Palette[];
   readonly locations: Locations;
   readonly tileAnimations: TileAnimation[];
@@ -180,7 +180,7 @@ export class Rom {
     this.metatilesets = new Metatilesets(this);
     this.metascreens = new Metascreens(this);
     this.triggers = seq(0x43, i => new Trigger(this, 0x80 | i));
-    this.patterns = seq(this.chr.length >> 4, i => new Pattern(this, i));
+    this.patterns = new Patterns(this);
     this.palettes = seq(0x100, i => new Palette(this, i));
     this.locations = new Locations(this);
     this.tileAnimations = seq(4, i => new TileAnimation(this, i));

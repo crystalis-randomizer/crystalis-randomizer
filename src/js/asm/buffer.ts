@@ -23,7 +23,7 @@ export class Buffer {
     if (s !== s1) throw new Error(`Non-rooted token: '${s}' vs '${s1}'`);
     this.prefix += s;
     this.remainder = this.remainder.substring(s.length);
-    const lines = s.split(/\n/g);
+    const lines = s.split(/(\r\n|\n|\r)/g);
     if (lines.length > 1) {
       this.line += lines.length - 1;
       this.column = 0;
@@ -52,7 +52,7 @@ export class Buffer {
     return true;
   }
   space(): boolean { return this.skip(/^[ \t]+/); }
-  newline(): boolean { return this.skip(/^\n/); }
+  newline(): boolean { return this.skip(/^(\r\n|\n|\r)/); }
 
   lookingAt(re: RegExp|string): boolean {
     if (typeof re === 'string') return this.remainder.startsWith(re);

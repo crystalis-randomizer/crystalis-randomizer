@@ -144,7 +144,7 @@ export class Canvas {
   // attr = palette << 2 | vflip << 1 | hflip
   tile(y: number, x: number, id: number, attr: number) {
     if (x < 0 || y < 0 || x + 8 >= this._width || y + 8 >= this._height) return;
-    const pat = this.rom.patterns[id].flip(attr << 6);
+    const pat = this.rom.patterns.get(id).flip(attr << 6);
     for (let r = 0; r < 8; r++) {
       let hi = pat.pixels[8 | r] << 1;
       let lo = pat.pixels[r];

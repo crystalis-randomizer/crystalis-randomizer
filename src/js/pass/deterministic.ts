@@ -10,6 +10,7 @@ import {Trigger} from '../rom/trigger.js';
 import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
 import { Monster } from '../rom/monster.js';
+import {Patterns} from '../rom/pattern.js';
 
 const [] = [hex]; // generally useful
 
@@ -154,6 +155,21 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   if (flags.hardcoreMode()) hardcoreMode(rom);
 
+  useNewStatusBarGraphics(rom);
+
+}
+
+// Updates a few itemuse and trigger actions in light of consolidation
+// around item granting.
+function useNewStatusBarGraphics(rom: Rom): void {
+  const page = 0x38 << 6
+  rom.patterns.set(page, 0x0, Patterns.HUD_LF);
+  rom.patterns.set(page, 0x1, Patterns.HUD_PW);
+  rom.patterns.set(page, 0x2, Patterns.HUD_EY);
+  rom.patterns.set(page, 0x3, Patterns.HUD_LV);
+  rom.patterns.set(page, 0x4, Patterns.HUD_DL);
+  rom.patterns.set(page, 0x5, Patterns.HUD_MP);
+  rom.patterns.set(page, 0x6, Patterns.HUD_EX);
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation
@@ -244,7 +260,7 @@ function fixCoinSprites(rom: Rom): void {
   for (const page of [0x60, 0x64, 0x65, 0x66, 0x67, 0x68,
                       0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6f]) {
     for (const pat of [0, 1, 2]) {
-      rom.patterns[page << 6 | pat].pixels = rom.patterns[0x5e << 6 | pat].pixels;
+      rom.patterns.set(page << 6, pat, rom.patterns.get(0x5e << 6, pat).pixels);
     }
   }
   rom.objects[0x0c].metasprite = 0xa9;

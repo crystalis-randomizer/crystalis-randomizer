@@ -43229,6 +43229,8 @@ LoadPalettesForLocation
         ;; Prepares a write of palettes indexed by $7e0..$7e7.
         $34c0e  xx xx:      xxx #$xx
         $34c10  xx xx:      xxx $xx
+LoadPalettesForCustomLocation
+        ;; When changing screens, some will set $11 before jmping straight to this location
         $34c12  xx xx:      xxx $xx
         $34c14  xx:         xxx
         $34c15  xx:          xxx
@@ -43271,8 +43273,8 @@ LoadPalettesForLocation
         $34c55  xx xx:      xxx $xx
 -       $34c57  xx xx:      xxx $xx
         $34c59  xx:         xxx
-        $34c5a  xx xx xx:   xxx $3c176
-        $34c5d  xx xx xx:   xxx $34c12
+        $34c5a  xx xx xx:   xxx WaitForMultipleOAMDMA
+        $34c5d  xx xx xx:   xxx LoadPalettesForCustomLocation
         $34c60  xx xx:      xxx $xx
         $34c62  xx:         xxx
         $34c63  xx xx:      xxx $xx
@@ -46388,7 +46390,7 @@ DataTable_362ac
 ;;; This is called by $3cd28 using $4a0,x:7f as the index.
 ;;; Note that entries $60..$6f are on a different page.
 ;;; STRIP: word=$2c000
-ObjectActionJumpTable
+ Table
         $36314              .word ($xxxx)
         $36316              .word ($35b45) ; 01
         $36318              .word ($35d81) ; 02
@@ -60654,13 +60656,16 @@ FallIntoPit
         $3e60c  xx xx:      xxx #$xx
         $3e60e  xx xx xx:   xxx $34c49
 ;;; --------------------------------
+ClearAllObjectsOnLocationChange
         $3e611  xx xx:      xxx #$xx ; 34000 -> 8000
         $3e613  xx xx xx:   xxx BankSwitch8k_8000
+        ;; This seems to load a specific palette?
         $3e616  xx xx:      xxx #$xx
         $3e618  xx xx xx:   xxx $34c3d
+        ;; Loops through all the objects and writes 0 to the ObjectActionScript
         $3e61b  xx xx:      xxx #$xx
         $3e61d  xx xx:      xxx #$xx
--       $3e61f  xx xx xx:   xxx $xxxx,x
+-       $3e61f  xx xx xx:   xxx ObjectActionScript,x
         $3e622  xx:         xxx
         $3e623  xx xx:      xxx #$xx
         $3e625  xx xx:      xxx - ; $3e61f
@@ -62809,17 +62814,17 @@ SetIRQCallback
         $3f424  xx xx:      xxx $xx
         $3f426  xx:         xxx
         $3f427  xx:         xxx
-        $3f428  xx xx xx:   xxx $3f433,x
+        $3f428  xx xx xx:   xxx IRQCallbackTable,x
         $3f42b  xx xx:      xxx $xx
-        $3f42d  xx xx xx:   xxx $3f434,x
+        $3f42d  xx xx xx:   xxx IRQCallbackTable+1,x
         $3f430  xx xx:      xxx $xx
         $3f432  xx:         xxx
 ;;; --------------------------------
 IRQCallbackTable
-        $3f433              .word ($xxxx)
-        $3f435              .word ($xxxx)
-        $3f437              .word ($xxxx)
-        $3f439              .word ($xxxx)
+        $3f433              .word (VerticalScreenWrapHandler)
+        $3f435              .word (HandleStatusBarAndNextFrame)
+        $3f437              .word (MessageBoxTopHandler)
+        $3f439              .word (MessageBoxBottomHandler)
         $3f43b              .word ($xxxx)
         $3f43d              .word ($xxxx)
         $3f43f              .word ($xxxx)
@@ -62842,12 +62847,34 @@ KillSomeCycles
         $3f452  xx xx:      xxx - ; $3f451
         $3f454  xx:         xxx
         ;; --------------------------------
-IRQCallback_00
+VerticalScreenWrapHandler
+;;; Crystalis hides the vertical scrolling seam by setting an IRQ
+;;; to trigger in the middle of the screen during normal gameplay.
+;;;
+;;; The timing for when this IRQ is fired is based on $57 which appears
+;;; to be the value for the vertical screen position. The range of this
+;;; value goes from #$00 to #$BE where #$BE seems to indicate that the scroll
+;;; seam is behind the status bar (or otherwise doesn't need to scroll)
+;;; 
+;;; The goal for this IRQ is to set the scroll such that the "bottom" half
+;;; of the current playing field gets drawn correctly based on the chars
+;;; location.
+;;;
+;;; After the new scroll value is set, the handler will set the
+;;; IRQ callback value to #$01 for drawing the status bar and executing the
+;;; next ScreenMode action.
         $3f455  xx xx xx:      xxx $xxxx          ; X = 9 always?
         $3f458  xx xx xx:      xxx KillSomeCycles ; $3f451
         $3f45b  xx xx xx:      xxx PPUSTATUS ; reset address latch
+        ;; The split in the middle of the screen will scroll to the top of the nametable
+        ;; Y=0 in order to draw the lower half of the screen, this first write sets
+        ;; the nametable number, which is always going to be zero since the top
+        ;; half of the nametable contains the bottom half of the screen.
         $3f45e  xx xx:         xxx #$xx
         $3f460  xx xx xx:      xxx PPUADDR
+        ;; $07d8 seems to contain X scroll value for the split. The formula for converting
+        ;; x,y scroll to nametable addr lowbyte is ((Y & $F8) << 2) | (X >> 3) and Y=0
+        ;; we just need to lsr X 3 times and store it into PPUADDR
         $3f463  xx xx xx:      xxx $xxxx
         $3f466  xx:            xxx
         $3f467  xx:            xxx
@@ -62869,7 +62896,9 @@ IRQCallback_00
         $3f486  xx:         xxx
         $3f487  xx:         xxx
 ;;; --------------------------------
-IRQCallback_01
+HandleStatusBarAndNextFrame
+;;; After drawing the screen, this IRQ will be triggered to bank switch to the
+;;; correct CHR ROM bank for the status bar.
         $3f488  xx xx xx:   xxx IRQDISABLE
         $3f48b  xx xx xx:   xxx PPUSTATUS
         $3f48e  xx xx xx:   xxx $xxxx ; X = 9 always
@@ -62882,12 +62911,19 @@ IRQCallback_01
         $3f49b  xx xx:      xxx #$xx
         $3f49d  xx xx xx:   xxx PPUMASK
         $3f4a0  xx xx xx:   xxx PPUSTATUS ; reset address latch
+        ;; %00101011 to PPUADDR will set the following
+        ;;  ^^       - ignored
+        ;;    ^^     - fine y scroll (2 pixels into the statusbar)
+        ;;      ^^   - nametable select (nametable 2)
+        ;;        ^^ - coarse y scroll (upper 2 bits ie 11000 or 24)
+        ;; This sets the Y scroll to nametable 2 tile 24 pixel 2
         $3f4a3  xx xx:      xxx #$xx
         $3f4a5  xx xx xx:   xxx PPUADDR
         $3f4a8  xx xx:      xxx #$xx
         $3f4aa  xx xx xx:   xxx PPUADDR
         $3f4ad  xx xx:      xxx #$xx
         $3f4af  xx xx xx:   xxx PPUSCROLL
+        ;; Bank switch to update the VRAM with the correct CHRROM for the statusbar
         $3f4b2  xx xx:      xxx #$xx
         $3f4b4  xx xx xx:   xxx BANKSELECT
         $3f4b7  xx xx:      xxx #$xx
@@ -62904,6 +62940,7 @@ IRQCallback_01
         $3f4d2  xx xx:      xxx $xx
         $3f4d4  xx xx:      xxx $xx
         $3f4d6  xx xx:      xxx $xx
+        ;; Updates the current game mode to decide what will be happening next frame
         $3f4d8  xx xx xx:   xxx ExecuteScreenMode
         $3f4db  xx xx:      xxx #$xx
         $3f4dd  xx xx:      xxx $xx
@@ -62914,7 +62951,8 @@ IRQCallback_01
         $3f4e3  xx:         xxx
         $3f4e4  xx:         xxx
 ;;; --------------------------------
-IRQCallback_02
+MessageBoxTopHandler
+;;; Sets up the CHR ROM banks and hardcodes the 
         $3f4e5  xx xx xx:   xxx $xxxx
         $3f4e8  xx xx xx:   xxx KillSomeCycles
         $3f4eb  xx:         xxx
@@ -62945,11 +62983,11 @@ IRQCallback_02
         $3f51c  xx xx:      xxx #$xx
         $3f51e  xx:         xxx
         $3f51f  xx xx:      xxx $xx
-        $3f521  xx xx:      xxx $xx
+        $3f521  xx xx:      xxx +
         $3f523  xx xx:      xxx #$xx
-        $3f525  xx xx:      xxx $xx
-        $3f527  xx xx:      xxx #$xx
-        $3f529  xx xx:      xxx #$xx
+        $3f525  xx xx:      xxx ++
++       $3f527  xx xx:      xxx #$xx
+++      $3f529  xx xx:      xxx #$xx
         $3f52b  xx:         xxx
         $3f52c  xx:         xxx
         $3f52d  xx:         xxx
@@ -62972,24 +63010,30 @@ IRQCallback_02
         $3f549  xx:         xxx
         $3f54a  xx:         xxx
 ;;; --------------------------------
-IRQCallback_03
+MessageBoxBottomHandler
+;;; Fires when its time to switch back to the previously setup CHR ROM banks
+;;; and resets the scroll to draw the normal playfield.
+;;;
+;;; If there is a vertical screen scroll in $57, then we need to setup the
+;;; next IRQ callback to VerticalScreenWrapHandler otherwise we just use
+;;; HandleStatusBarAndNextFrame
         $3f54b  xx xx xx:   xxx $xxxx
         $3f54e  xx xx xx:   xxx KillSomeCycles
-        $3f551  xx xx xx:   xxx $xxxx
+        $3f551  xx xx xx:   xxx PPUSTATUS
         $3f554  xx xx:      xxx $xx
-        $3f556  xx xx xx:   xxx $xxxx
+        $3f556  xx xx xx:   xxx PPUADDR
         $3f559  xx xx:      xxx $xx
-        $3f55b  xx xx xx:   xxx $xxxx
+        $3f55b  xx xx xx:   xxx PPUADDR
         $3f55e  xx xx xx:   xxx $xxxx
-        $3f561  xx xx xx:   xxx $xxxx
+        $3f561  xx xx xx:   xxx PPUSCROLL
         $3f564  xx xx xx:   xxx SelectCHRRomBanks
         $3f567  xx xx:      xxx #$xx
         $3f569  xx:         xxx
         $3f56a  xx xx xx:   xxx $xxxx
         $3f56d  xx xx:      xxx #$xx
-        $3f56f  xx xx:      xxx $xx
+        $3f56f  xx xx:      xxx NoScreenScroll
         $3f571  xx xx:      xxx $xx
-        $3f573  xx xx:      xxx $xx
+        $3f573  xx xx:      xxx NoScreenScroll
         $3f575  xx:         xxx
         $3f576  xx xx:      xxx $xx
         $3f578  xx xx xx:   xxx IRQLATCH
@@ -63004,6 +63048,9 @@ IRQCallback_03
         $3f589  xx:         xxx
         $3f58a  xx:         xxx
 ;;; --------------------------------
+NoScreenScroll
+;;; No vertical screen scroll is used at this point, so we will just set the
+;;; next IRQ to the scroll bar handler
         $3f58b  xx xx:      xxx #$xx
         $3f58d  xx:         xxx
         $3f58e  xx xx:      xxx $xx
@@ -63018,12 +63065,14 @@ IRQCallback_03
         $3f59f  xx:         xxx
         $3f5a0  xx:         xxx
 ;;; --------------------------------
-DataTable_3f5a1 
-        $3f5a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3f5b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3f5c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3f5d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $3f5e0              .byte $xx
+PPUAddressLookupTable
+;;; Each of these is a single word representing the lobyte, hibyte of the PPUADDR
+;;; that will be configured during IRQ. The two IRQ callbacks that use this are
+;;; drawing shop/item/message boxes and callback 04
+        $3f5a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3f5b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3f5c1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3f5d1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 IRQCallback_04
         $3f5e1  xx xx xx:   xxx $xxxx
@@ -63234,8 +63283,8 @@ ScreenModeJumpTable_02
         $3f755  xx xx:      xxx #$xx
         $3f757  xx xx xx:   xxx $xxxx
         $3f75a  xx xx:      xxx #$xx
-        $3f75c  xx xx xx:   xxx $xxxx
-        $3f75f  xx xx xx:   xxx $xxxx
+        $3f75c  xx xx xx:   xxx PPUSCROLL
+        $3f75f  xx xx xx:   xxx PPUSCROLL
         $3f762  xx xx xx:   xxx $3f64f
         $3f765  xx xx:      xxx $xx
         $3f767  xx xx:      xxx #$xx
@@ -63247,13 +63296,13 @@ ScreenModeJumpTable_02
 ScreenModeJumpTable_03
         $3f771  xx xx:      xxx $xx
         $3f773  xx xx xx:   xxx $xxxx
-        $3f776  xx xx xx:   xxx $3eb6d
+        $3f776  xx xx xx:   xxx UpdatePpuScroll
         $3f779  xx xx xx:   xxx SelectCHRRomBanks
-        $3f77c  xx xx xx:   xxx $xxxx
+        $3f77c  xx xx xx:   xxx IRQDISABLE
         $3f77f  xx xx xx:   xxx MaybeUpdateMusic
 ;;; --------------------------------
 ScreenModeJumpTable_04
-        $3f782  xx xx xx:   xxx $3eb6d
+        $3f782  xx xx xx:   xxx UpdatePpuScroll
         $3f785  xx xx xx:   xxx SelectCHRRomBanks
         $3f788  xx xx:      xxx $xx
         $3f78a  xx xx:      xxx + ; $3f7aa
@@ -63280,7 +63329,7 @@ DataTable_3f7b5
         $3f7b5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ScreenModeJumpTable_05
-        $3f7c5  xx xx xx:   xxx $3eb6d
+        $3f7c5  xx xx xx:   xxx UpdatePpuScroll
         $3f7c8  xx xx xx:   xxx SelectCHRRomBanks
         $3f7cb  xx xx:      xxx $xx
         $3f7cd  xx xx xx:   xxx IRQLATCH
@@ -63291,10 +63340,10 @@ ScreenModeJumpTable_05
 ;;; --------------------------------
 ScreenModeJumpTable_06
         $3f7db  xx xx:      xxx $xx
-        $3f7dd  xx xx xx:   xxx $xxxx
+        $3f7dd  xx xx xx:   xxx PPUCTRL
         $3f7e0  xx xx:      xxx #$xx
-        $3f7e2  xx xx xx:   xxx $xxxx
-        $3f7e5  xx xx xx:   xxx $xxxx
+        $3f7e2  xx xx xx:   xxx PPUSCROLL
+        $3f7e5  xx xx xx:   xxx PPUSCROLL
         $3f7e8  xx xx xx:   xxx $3f64f
         $3f7eb  xx xx:      xxx #$xx
         $3f7ed  xx xx xx:   xxx SetIRQCallback

@@ -2057,7 +2057,7 @@ JustSetVerticalScreenScroll:
 
   ;; We use method as a jump point in JustSetVerticalScreenScroll, which we
   ;; can detect with this jmp.
-  lda $07fd
+  lda $07fe
   beq +
   rts
 + 
@@ -2075,8 +2075,11 @@ FREE_UNTIL $f488
 
 .reloc
 HandleEarlyStatusBar:
-  ;; The IRQ will be fired early when $07da == #$31
-  ;; if this is the case, then we do a custom
+  ;; The IRQ will be fired early when $07da == #$31 || $07da == #$32
+  ;; $07da appears to be the viewport coords (excluding statusbar which starts at #$30)
+  ;; if this is the case, then we do a custom handler that takes into account the extra
+  ;; scanlines and sets the scroll for 1 or 2 scanlines before setting it back in time for
+  ;; the status bar.
   ldy #$00
   ldx #$00
   lda $07da
@@ -2090,7 +2093,7 @@ HandleEarlyStatusBar:
   lda #$7c   ; $07f9
   jmp DelayA25Clocks ; Delay will return from this method
 
-  ;; If the status bar IRQ is early, there will be 1 line where we need to
+  ;; If the status bar IRQ is early, there will be 1 or 2 lines where we need to
   ;; set the scroll.
 @Early:
   pha
@@ -2106,9 +2109,9 @@ HandleEarlyStatusBar:
     bmi @3
     bne @3
 @3:
-    inc $07fd
+    inc $07fe
     jsr JustSetVerticalScreenScroll
-    dec $07fd
+    dec $07fe
   pla
   ;; if we are drawing two full scanlines, then we need to
   ;; delay some cycles before to skip the next scanline before returning
@@ -2137,7 +2140,6 @@ HandleEarlyStatusBar:
   ;; these two writes should land in hblank
   stx PPUADDR
   stx PPUSCROLL ; set fine x scroll
-  
   
   ;; the top bar of the status bar comes from one bank, and the text from the other,
   ;; so we need to get the top bar switched ASAP, but we have extra time to switch the
@@ -2178,61 +2180,172 @@ AdjustStatusBarPosition:
       dey
 @NotEarly:
   tya
+  ;; $57 appears to be the "current" scanline. This is tracked by
+  ;; updating the value whenever an IRQ is triggered.
   ;; $57 counts up to #$bc in vanilla and #$bd in rando
   sec
   sbc $57
   rts
 
-;;; Fire the status bar IRQ one scanline earlier
-.org $f58b
-  jsr AdjustStatusBarPosition
-  nop
-  nop
 .org $f70a
   jsr AdjustStatusBarPosition
   nop
   nop
 
-;;; update the max value for $57 to let one more scanline run as part of the vertical
-;;; scroll handler. we can't squeeze in another due to MMC3 quirks it seems.
-.org $f56d
-  cmp #$bd
+;;; update the scanline position for the status bar to run one scanline later for the
+;;; scroll handler.
+;; $f56d was rewritten entirely see MessageBoxBottomSetNextIRQ
+; .org $f56d
+;   cmp #$bd
 .org $f6f1
   cmp #$bd
 
-; .org $f4e5 ; MessageBoxTopHandler
-;   lda $07fa
-;   ; lda #$1c
-;   ; nop
-;   jsr DelayA25Clocks
+.reloc
+MessageBoxTopSetNextIRQ:
+  ldy #$48
+  sty IRQLATCH
+  sty IRQRELOAD
+  dey
+  dey
+  ;; we have to take off one extra scanline from $57 because we are starting the
+  ;; top message box one scanline sooner.
+  dey
+  tya
+  clc
+  adc $57
+  sta $57
+  lda #$03
+  jmp SetIRQCallback
+
+.org $f4e5 ; MessageBoxTopHandler
+  jsr MessageBoxTopSetNextIRQ
+
+  lda PPUSTATUS ; release the ~~kraken~~ addr latch
+  ldx #$00 ; zero is used a lot in critically timed code, so just keep it handy
+  ;; Preload the bank for the top of the message box
+  ldy $58
+
+  ;; Change the fine Y pixel offset by one pixel (#$28 -> #$38)
+  ;; This slides the message box up one pixel, which gets rid of the extra border
+  lda #$38 ; select nametable 2, tile 0, pixel 3
+  sta PPUADDR
+
+  ;; these two writes should land in hblank
+  stx PPUADDR
+  stx PPUSCROLL ; set fine x scroll
+  
+  ;; the top bar of the message box comes from one bank, and the text from the other,
+  ;; so we need to get the top bar switched ASAP, but we have extra time to switch the
+  ;; text bank.
+  stx BANKSELECT
+  sty BANKDATA
+  
+  ;; Critical timing code has ended, so now we can just take our time.
+  jsr $f64f ; LoadCHRBanks
+  jmp $f518
+.assert * <= $f518
+FREE_UNTIL $f518
+
 ; .org $f503
 ;   ldy #$48 ; ~~Fire the next IRQ one scanline sooner~~
-; .org $f54b ; MessageBoxBottomHandler
 
-;   lda $07fb
-;   ; lda #$0a
-;   ; nop
-;   jsr DelayA25Clocks
-;   ;; switch the order. set the rombanks before setting the scroll.
-;   lda PPUSTATUS
-;   lda $5e
-;   sta PPUADDR
-;   lda $5f
-;   sta PPUADDR
-;   lda $07d8
-;   sta PPUSCROLL
-;   jsr SelectCHRRomBanks
-; .assert * = $f567
-; ; FREE_UNTIL $f567
-; .org $f5e1
-;   lda $07fc
-;   jsr DelayA25Clocks
-; .org $f61a
-;   lda $07fd
-;   jsr DelayA25Clocks
-; .org $f691
-;   lda $07fe
-;   jsr DelayA25Clocks
+.reloc
+MessageBoxBottomSetNextIRQ:
+  lda #$ef ; #$ef is the "bottom" of the screen
+  ;; We finish this scanline earlier than vanilla, so decrement the current scanline by one
+  dec $57
+  sec
+  sbc $07da
+  cmp #$bd ; #$bd is the scanline for the statusbar
+  bcs @NoScreenScroll
+  cmp $57
+  bcc @NoScreenScroll
+  tay
+  sbc $57
+  sta IRQLATCH
+  sta IRQRELOAD
+  sty $57
+  lda #$00
+  jmp SetIRQCallback
+@NoScreenScroll:
+  jsr AdjustStatusBarPosition
+  sta IRQLATCH
+  sta IRQRELOAD
+  sta $57
+  lda #$01
+  jmp SetIRQCallback
+
+.org $f54b ; MessageBoxBottomHandler
+  ;; In this handler, we have about 2 scanlines before we need to set the new scroll,
+  ;; so get as much done to cut out unnecessary waiting time.
+
+  ;; Custom SelectCHRRomBanks that doesn't set $07f0. We will set this as part of the
+  ;; timed code
+  ldx #$05
+-  stx $8000
+   lda $07f0,x
+   sta $8001
+   dex
+   cpx #$01
+  bpl -
+
+  lda PPUSTATUS ; release the ppuaddr latch
+  lda #$00      ; set the next bank latch
+  sta BANKSELECT
+  
+  ;; Reload the previous scroll position
+  lda $5e
+  sta PPUADDR
+
+  ;; Preload the coarse X and Y scroll value
+  ldx $5f
+  ;; Preload the bank that replaces the messsage box border
+  ldy $07f0
+  
+  lda #$25
+  jsr DelayA25Clocks
+
+  ;; Critical timing code: this should happen right during the last fetch;
+  sty BANKDATA
+  ;; and these two writes should land in hblank
+  stx PPUADDR
+  lda $07d8
+  sta PPUSCROLL ; set x scroll
+  
+  ;; Critical timing code is over, so now we can setup the bank select like SelectCHRRomBanks does
+  lda $50
+  sta BANKSELECT
+  
+  jsr MessageBoxBottomSetNextIRQ
+  
+  pla
+  tay
+  pla
+  tax
+  pla
+  rti
+
+.assert * <= $f5a1
+FREE_UNTIL $f5a1
+
+.org $f5a1 ; ScrollToPPUADDRLookupTable
+;; By a terrible twist of fate, saving all those extra scanlines means that we
+;; need to update this LUT to offset by an extra pixel. This sets the fine Y scroll
+;; back one to allow us to display an extra pixel (which is normally covered by the
+;; scroll jank).
+  .byte $00,$10,$20,$10,$40,$10,$60,$10,$80,$10,$a0,$10,$c0,$10,$e0,$10
+  .byte $00,$11,$20,$11,$40,$11,$60,$11,$80,$11,$a0,$11,$c0,$11,$e0,$11
+  .byte $00,$12,$20,$12,$40,$12,$60,$12,$80,$12,$a0,$12,$c0,$12,$e0,$12
+  .byte $00,$13,$20,$13,$40,$13,$60,$13,$80,$13,$a0,$13,$c0,$13,$e0,$13
+.assert * = $f5e1
+
+.org $f359
+  lda #$00 ; Repurpose the old delay value as a flag for early return
+
+.pushseg "17", "fe", "ff"
+.org $bed2
+  .byte $00 ; Overwrite continue save file delay value
+.popseg
 
 .endif
 
@@ -3129,8 +3242,9 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 ;;; that MaybeUpdateMusic restores $50 as well as $8000, though this takes
 ;;; an extra two bytes that we need to recover from SelectCHRRomBanks (which
 ;;; immediately follows) by using smaller instructions.
-.org $f564
-  jsr SelectCHRRomBanks
+;; This location is rewritten as part of the IRQ delay timing changes
+; .org $f564
+;   jsr SelectCHRRomBanks
 .org $f6e2
   jsr SelectCHRRomBanks
 .org $f734

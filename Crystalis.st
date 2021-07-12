@@ -62952,7 +62952,7 @@ HandleStatusBarAndNextFrame
         $3f4e4  xx:         xxx
 ;;; --------------------------------
 MessageBoxTopHandler
-;;; Sets up the CHR ROM banks and hardcodes the 
+;;; Sets up the CHR ROM banks and scrolling for drawing the top of the messagebar
         $3f4e5  xx xx xx:   xxx $xxxx
         $3f4e8  xx xx xx:   xxx KillSomeCycles
         $3f4eb  xx:         xxx
@@ -62960,6 +62960,7 @@ MessageBoxTopHandler
         $3f4ed  xx:         xxx
         $3f4ee  xx:         xxx
         $3f4ef  xx:         xxx
+        ;; #$28 refers to the top of the 2nd nametable (offset by 2 pixels)
         $3f4f0  xx xx xx:   xxx PPUSTATUS
         $3f4f3  xx xx:      xxx #$xx
         $3f4f5  xx xx xx:   xxx PPUADDR
@@ -62967,6 +62968,7 @@ MessageBoxTopHandler
         $3f4fa  xx xx xx:   xxx PPUADDR
         $3f4fd  xx xx xx:   xxx PPUSCROLL
         $3f500  xx xx xx:   xxx $3f64f
+        ;; Hardcodes to call the next IRQ #$48 scanlines later
         $3f503  xx xx:      xxx #$xx
         $3f505  xx xx xx:   xxx IRQLATCH
         $3f508  xx xx xx:   xxx IRQRELOAD
@@ -62974,10 +62976,17 @@ MessageBoxTopHandler
         $3f50c  xx:         xxx
         $3f50d  xx:         xxx
         $3f50e  xx:         xxx
+        ;; and then adds $#46 to $57, which appears to be next scanline?
         $3f50f  xx xx:      xxx $xx
         $3f511  xx xx:      xxx $xx
+        ;; set next IRQ callback to MessageBoxBottomHandler
         $3f513  xx xx:      xxx #$xx
         $3f515  xx xx xx:   xxx SetIRQCallback
+        ;; Update the next scroll value and $5e $5f, which are used as the
+        ;; PPUADDR values for the next scroll. This seems to work by doing the following:
+        ;; - Load $07da (which seems to be camera scroll but without the statusbar?)
+        ;; - ??? wizardry to convert this to an offset into the precomputed
+        ;;       camera position -> PPUADDR table.
         $3f518  xx xx xx:   xxx $xxxx
         $3f51b  xx:         xxx
         $3f51c  xx xx:      xxx #$xx
@@ -62995,13 +63004,13 @@ MessageBoxTopHandler
         $3f530  xx:         xxx
         $3f531  xx xx:      xxx #$xx
         $3f533  xx xx:      xxx $xx
-        $3f535  xx xx xx:   xxx $3f5a2,y
+        $3f535  xx xx xx:   xxx ScrollToPPUADDRLookupTable+1,y
         $3f538  xx xx:      xxx $xx
         $3f53a  xx xx xx:   xxx $xxxx
         $3f53d  xx:         xxx
         $3f53e  xx:         xxx
         $3f53f  xx:         xxx
-        $3f540  xx xx xx:   xxx $3f5a1,y
+        $3f540  xx xx xx:   xxx ScrollToPPUADDRLookupTable,y
         $3f543  xx xx:      xxx $xx
         $3f545  xx:         xxx
         $3f546  xx:         xxx
@@ -63065,10 +63074,12 @@ NoScreenScroll
         $3f59f  xx:         xxx
         $3f5a0  xx:         xxx
 ;;; --------------------------------
-PPUAddressLookupTable
+ScrollToPPUADDRLookupTable
 ;;; Each of these is a single word representing the lobyte, hibyte of the PPUADDR
 ;;; that will be configured during IRQ. The two IRQ callbacks that use this are
 ;;; drawing shop/item/message boxes and callback 04
+;;; The MessageBox code will calculate an offset into this table, and write it to the
+;;; PPUADDR to set the scroll back after the message box closes.
         $3f5a1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3f5b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3f5c1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -63081,9 +63092,9 @@ IRQCallback_04
         $3f5ea  xx xx:      xxx $xx
         $3f5ec  xx:         xxx
         $3f5ed  xx:         xxx
-        $3f5ee  xx xx xx:   xxx $3f5a2,y
+        $3f5ee  xx xx xx:   xxx ScrollToPPUADDRLookupTable+1,y
         $3f5f1  xx xx xx:   xxx PPUADDR
-        $3f5f4  xx xx xx:   xxx $3f5a1,y
+        $3f5f4  xx xx xx:   xxx ScrollToPPUADDRLookupTable,y
         $3f5f7  xx xx xx:   xxx PPUADDR
         $3f5fa  xx xx:      xxx $xx
         $3f5fc  xx xx:      xxx $xx
@@ -63265,6 +63276,7 @@ ScreenModeJumpTable_01
 ScreenModeJumpTable_09
         $3f731  xx xx xx:   xxx $3f71b
         $3f734  xx xx xx:   xxx SelectCHRRomBanks
+        ;; Calculate the IRQ scanline where the box will be displayed.
         $3f737  xx xx xx:   xxx $xxxx
         $3f73a  xx xx:      xxx #$xx
         $3f73c  xx xx:      xxx #$xx

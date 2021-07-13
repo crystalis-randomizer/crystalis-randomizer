@@ -62825,10 +62825,10 @@ IRQCallbackTable
         $3f435              .word (HandleStatusBarAndNextFrame)
         $3f437              .word (MessageBoxTopHandler)
         $3f439              .word (MessageBoxBottomHandler)
-        $3f43b              .word ($xxxx)
-        $3f43d              .word ($xxxx)
-        $3f43f              .word ($xxxx)
-        $3f441              .word ($xxxx)
+        $3f43b              .word ($xxxx) ; UNUSED
+        $3f43d              .word ($xxxx) ; UNUSED
+        $3f43f              .word (AnimateSNKLogoScroll)
+        $3f441              .word (InventoryUpdateCHRROMForMagic)
 ;;; --------------------------------
 HandleIRQ
         $3f443  xx:         xxx
@@ -63086,6 +63086,9 @@ ScrollToPPUADDRLookupTable
         $3f5d1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 IRQCallback_04
+;; This appears to be unused. It looks like it may have been setup for something
+;; that requires resetting the screen scroll midscreen. When forcing this IRQ handler
+;; to run it looks like it scrolls vertically for a bit, and then glitches out.
         $3f5e1  xx xx xx:   xxx $xxxx
         $3f5e4  xx xx xx:   xxx KillSomeCycles
         $3f5e7  xx xx xx:   xxx PPUSTATUS
@@ -63110,6 +63113,9 @@ IRQCallback_04
         $3f60d  xx:         xxx
 ;;; --------------------------------
 IRQCallback_05
+;; Very very likely UNUSED. Not set anywhere in the code and I never ran into it
+;; in a full playthrough. It only disables the IRQ anyway?
+;; This will be called from IRQ 4 which also seems to be unused.
         $3f60e  xx xx xx:   xxx IRQDISABLE
         $3f611  xx xx xx:   xxx MaybeUpdateMusic
         $3f614  xx:         xxx
@@ -63119,7 +63125,8 @@ IRQCallback_05
         $3f618  xx:         xxx
         $3f619  xx:         xxx
 ;;; --------------------------------
-IRQCallback_07
+InventoryUpdateCHRROMForMagic
+;; Midscreen inventory to load the banks for the magic
         $3f61a  xx xx xx:   xxx $xxxx
         $3f61d  xx xx xx:   xxx KillSomeCycles
         $3f620  xx xx:      xxx #$xx
@@ -63178,7 +63185,8 @@ IRQCallback_07
         $3f68d  xx xx xx:   xxx BANKSELECT
         $3f690  xx:         xxx
 ;;; --------------------------------
-IRQCallback_06
+AnimateSNKLogoScroll
+;; Used at boot up for drawing the sliding SNK logo.
         $3f691  xx xx xx:   xxx $xxxx
         $3f694  xx xx xx:   xxx KillSomeCycles
         $3f697  xx xx xx:   xxx $xxxx
@@ -63199,7 +63207,7 @@ IRQCallback_06
 ExecuteScreenMode
         $3f6ad  xx xx:      xxx #$xx
         $3f6af  xx xx:      xxx $xx
-        $3f6b1  xx xx:      xxx $xx
+        $3f6b1  xx xx:      xxx ScreenMode
         $3f6b3  xx:         xxx
         $3f6b4  xx:         xxx
         $3f6b5  xx xx xx:   xxx ScreenModeJumpTable,x
@@ -63213,7 +63221,7 @@ ScreenModeJumpTable
         $3f6c4              .word (ScreenModeJumpTable_01) ; 01 $f731
         $3f6c6              .word (ScreenModeJumpTable_02) ; 02 $f751
         $3f6c8              .word (ScreenModeJumpTable_03) ; 03 $f771
-        $3f6ca              .word (ScreenModeJumpTable_04) ; 04 $f782
+        $3f6ca              .word (ScreenModeJumpTable_04) ; 04 $f782 -- Very likely unused
         $3f6cc              .word (ScreenModeJumpTable_05) ; 05 $f7c5
         $3f6ce              .word (ScreenModeJumpTable_06) ; 06 $f7db
         $3f6d0              .word (ScreenModeJumpTable_07) ; 07 $f6d6
@@ -63314,6 +63322,7 @@ ScreenModeJumpTable_03
         $3f77f  xx xx xx:   xxx MaybeUpdateMusic
 ;;; --------------------------------
 ScreenModeJumpTable_04
+;; Very likely unused.
         $3f782  xx xx xx:   xxx UpdatePpuScroll
         $3f785  xx xx xx:   xxx SelectCHRRomBanks
         $3f788  xx xx:      xxx $xx
@@ -63620,6 +63629,8 @@ WritePaletteDataToPpu
 ;;; --------------------------------
         $3fe00  xx:         xxx
 ;;; --------------------------------
+;; Unused? Apparently sets the screen mode to the unused
+;; screen mode 4.
         $3fe01  xx xx:      xxx #$xx
         $3fe03  xx xx:      xxx ScreenMode
         $3fe05  xx xx:      xxx #$xx
@@ -63634,6 +63645,7 @@ WritePaletteDataToPpu
 ;;; --------------------------------
         $3fe17  xx:         xxx
 ;;; --------------------------------
+;; Also likely unused as screen mode 4 doesn't seem to be anywhere
         $3fe18  xx xx:      xxx #$xx
         $3fe1a  xx xx:      xxx ScreenMode
         $3fe1c  xx xx:      xxx #$xx

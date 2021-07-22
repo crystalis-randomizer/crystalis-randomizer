@@ -65,6 +65,10 @@
 
 ;;; Various global definitions.
 GameMode = $41
+CurrentLocation = $6c
+CurrentEntrance = $6d
+PrgPageShadowLo = $6e
+PrgPageShadowHi = $6f
 ObjectRecoil = $340
 ObjectHP = $3c0
 PlayerHP = $3c1
@@ -118,6 +122,51 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
+; .ifdef _CROWD_CONTROL_
+
+GAME_MODE_CHANGE_LOCATION = $01
+OP_JMP_ABS  = $4c
+
+; Short How-To-Use documentation:
+;
+; 0. Make sure that there isn't already anything waiting to be run by seeing if
+; CrowdControlFlag is zero. This gets cleared after the effects are completed.
+;
+; 1. Set one or more flags in the CrowdControlQueue field to run that operation
+; the next time the game is available.
+;
+; 2. If you need to update the status bar for an operation, set the appropriate bit
+; in CrowdControlStatusBarUpdate.
+;
+; 3. Set CrowdControlFlag to 1, and the game will run the update the next time the
+; player gets back to "normal" play state.
+;
+
+; If set, during the next main loop, run the next CC op from the queue
+; INTERNAL - bit 7 will be set when we need to early return (after wild warp)
+CrowdControlFlag              = $6220
+
+; Bit packed operations that Crowd Control can update.
+; %000000ws
+;        |+-- s = status bar update. See CrowdControlStatusBarUpdate
+;        +--- w = Wild Warp. Uses the next wild warp location for the user.
+;                 ?? Should we just always go back to mezzaine to prevent softlocks?
+CrowdControlQueue             = $6221
+
+; Bit packed list of status bar fields to update
+; %hd0mpxyl
+;  |||||||+-- l = Player Level
+;  ||||||+--- y = Money
+;  |||||+---- x = Player Experience
+;  ||||+----- p = Max MP
+;  |||+------ m = MP
+;  ||+------- UNUSED
+;  |+-------- d = Difficulty Level (ie Scaling)
+;  +--------- h = Player HP
+CrowdControlStatusBarUpdate   = $6222
+
+; .endif
+
 ;;; Constants
 GAME_MODE_STATUS_MSG = $10
 ITEM_RABBIT_BOOTS    = $12
@@ -165,6 +214,7 @@ BankSwitch8k_a000          = $c427
 FlushNametableDataWrite    = $c676
 MainLoop_01_Game           = $cab6
 CheckForPlayerDeath        = $cb84
+WildWarpLocations          = $cbec
 DialogAction_11            = $d21d
 LoadAndShowDialog          = $d347
 WaitForDialogToBeDismissed = $d354
@@ -173,8 +223,10 @@ MainLoopItemGet            = $d3ff
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
+HandleStatusConditions        = $ef55
 ReadControllersWithDirections = $fe80
 DisplayNumber                 = $ffa9
+RestoreBanks                  = $ffdb
 
 ;;; Various free sections
 

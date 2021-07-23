@@ -1,0 +1,41 @@
+# The following could free up some space:
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.segment "10" ; 20000
+
+;; Save 9 bytes (and consolidate quite a bit)
+;; The first 3 tables at $21d8d only use the first 2 of
+;; 5 allocated bytes (and each is ref'd only once).  We
+;; could also consolidate the next 4 tables to get a bigger
+;; chunk of usable rom
+MOVE_TABLE($9d8d, 2, 5, $9b17)
+MOVE_TABLE($9d92, 2, 5, $9b1c)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+.segment "1a"  ; 34000
+
+;; Save 7 bytes from HP display lookup
+.org $8d13
+  clc
+  jsr LookupHPDisplayTile
+
+FREE "1a" [$8d49, $8d58] ; 16-byte lookup table no longer used
+
+.reloc
+LookupHPDisplayTile:
+  adc #$03
+  lsr
+  lsr
+  eor #$ff
+  adc #$8c
+  rts
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+NOTE: if we're updating MOVE macros, we could also
+look into rewriting UpdatePlayerMaxHPAndMPAfterLevelUp
+as just .move $9188,46 or .move $918b,43 - rather than
+copying 20 lines of asm.

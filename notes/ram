@@ -1,6 +1,5 @@
 $00
 ---
-
 Current value of PPUCTRL, ignoring NMI and increment.
   - mainly this is nametable selection and sprite pattern table, I think
 
@@ -35,13 +34,11 @@ $07da was set from $4 in ($09 == 0) branch of NMI
 
 $01
 ---
-
 Current value of PPUMASK.
 
 
 $02 .. $05
 ----------
-
 Screen coordinates.
  - $02 is LSB of x-coordinate
  - $03 is MSB of x-coordinate
@@ -62,7 +59,6 @@ and $51 is neither 7 nor 9.
 
 $06
 ---
-
 If nonzero, then NMI handler exits after only writing $07 <- #$01.
 No other work is done.
  - set to 1 at 3f4cf
@@ -72,7 +68,6 @@ Seems to toggle basically every frame
 
 $08
 ---
-
 Global counter
  - updated in $3cac3, during vblank
  - interestingly, it gets there from $3c904, where it loads x = #$1 from $40,
@@ -83,7 +78,6 @@ Global counter
 
 $09
 ---
-
 Controls whether OAM DMA will happen at start of NMI routine
  - OAM DMA only if $09 is zero (checked in $3f3cc)
      $3f3cc: a5 09    LDA $09     
@@ -145,7 +139,6 @@ storing $ff into [$6200,$621f]
 
 $0a, $0b
 ----------
-
 These seem to be counters, incremented by 4 every couple frames or so,
 and rolling over at $1f (cycle thru 8 possible values).
 
@@ -162,25 +155,21 @@ while the $28 version copies from RAM $21,20,24,25.
 
 $0c..$0d
 --------
-
 Temporary variables for NMI
 
 
 $10..$13
 --------
-
 Temporary space for addresses and instructions
 
 
 $23..$25
 --------
-
 Looks like temp vars
 
 
 $26
 ---
-
 Direction facing: 0 = up, 2 = right, 4 = down, 6 = left (plus diags)
 But also looks temporary?
  - written at $35e91 to direction
@@ -189,28 +178,35 @@ But also looks temporary?
 
 $28..$2b
 --------
-
 Seem to be temporaries - sometimes hold new screen coordinates.
 
 
 $30, $31
 --------
-
 More temps, seem to be written in pairs:
  - $3e9af, $3e9d8, $36239, $35cf5, $35d43 ...?
 
 
+$32, $33
+--------
+Unused?
+
+
 $34..$37
 --------
-
 Seems to store coordinates for an object - $35897 transfers from
 these to $[79bd]0,x and $358a8 goes the other way.
  - these are temp variables
  $3e0a transfers 
 
+
+$38, $39
+--------
+Unused?
+
+
 $3c..$3f
 --------
-
 Coordinates of the current screen map within the location (top-left screen corner).
  - not clear how this differs from $2..$5, though it does by a little.
    it looks like x is 1 pixel less and y is 8 pixels less, so for
@@ -276,7 +272,6 @@ In normal mode (not menus):
 
 $4b, $4c
 --------
-
 Bitmask of newly-pressed buttons this frame (cf $43 for mapping).
 
 
@@ -287,7 +282,6 @@ Shadow variable for $8000 during rendering
 
 $51
 ---
-
 Seems to have something to do with screen mode
  - it's 0 in normal mode
  - select-menu => 6 ($86 while transitioning pages, incl save page)
@@ -335,7 +329,6 @@ In IRQ callback mode 7, these are written to the CHR rom banks, rather than $7f0
 
 $60
 ---
-
 If non-zero, exit NMI handler immediately.
  - happens during screen scrolls and transitions
  - set to 1 at 3c73b, 0 at 3c75b
@@ -343,9 +336,13 @@ If non-zero, exit NMI handler immediately.
 TODO - why would we do DisableNMI and EnableNMI if we have this?
 
 
+$61..$66
+--------
+Unused (co-opted for a handful of things in randomizer)
+
+
 $66..$6b
 --------
-
 $66$67: Address of tileset quadrants tables
 $68$69: Address of tileeffects table
 $6a$6b: Address of flagged tile alternatives table
@@ -413,9 +410,9 @@ Bits (hypothesis):
   40: slow
   80: inflicts pain
 
+
 $6c
 ---
-
 Current map
  - written at $3eb5d
  - start = 0, outside cave = 1, leaf = 2, valley = 3, cave to bryn = 4
@@ -436,7 +433,6 @@ Looks like this is co-written with $6d, both from data table
 
 $6d
 ---
-
 Set with map via exit - not sure what it's used for
  - seems to be read in a few places
  - might be "flavor" of map?  cave vs overworld vs town?
@@ -451,7 +447,6 @@ Set with map via exit - not sure what it's used for
 
 $6e..$6f
 --------
-
 Currently selected PRG banks.  This serves two purposes: (1) so that
 code can temporarily change them (i.e. `lda $6e; pha; lda #$1a; jsr
 SwitchBanks; <do stuff>; pla; jsr SwitchBanks`), and (2) so that
@@ -462,8 +457,7 @@ operation by writing the target page *before* making the switch.
 
 $70..$ef
 --------
-
-These look like (x, y) coordinates for various objects, in four separate
+(x, y) coordinates for various objects, in four separate
 rows of $1f coordinates.
 
   $70..$8f x-coordinate low byte
@@ -484,29 +478,10 @@ rows of $1f coordinates.
  - sword projectiles spawn in slot $74 (4-6 or 4-a for thunder
    4-b for blizzard fire 2, and flame, 4-7 for tornado)
 
- - 80..8f seem to be the enemy slots
-
- - leaf villagers: $7d..$80
- - rabbit: 7d
- - leaf elder: 7d, daughter: 7e
- - pupil: 7d
- - zebu: 7e
-
 These also correspond to enemy data that gets loaded into
 ($310..$31f) + $20 * n for n = 0..$18 or so (possibly higher?)
  e.g. $031x is the sprite (loaded from initial data but updated w/ direction, too)
       $035x is speed, ...
-
-in leaf, student's position is ($7d, $bd) - stationary
-  - elder is there, too...
-  - who initializes this coordinate, and from where?!?
-     - for student, $3e1dc write this (initialize?)
-     - townspeople. $358a3 updates it
-     - doesn't seem to include monsters...?
-  - zebu spawns at $7e
-     but not until spoken to student and elder
-  - initial man outside cave: $7e
-
 
 ($2c, $2e) stores the tile-coords of the 'x' NPC
  - read from y=$9 and y=$b positions of data table at $19567 ($9567)
@@ -514,9 +489,8 @@ in leaf, student's position is ($7d, $bd) - stationary
 
 
 
-
 $8a, $aa, $ca, $ea
---------
+------------------
 x, y coordinates for an enemy
 
 (x low, h high, y low, y high)
@@ -524,7 +498,7 @@ x, y coordinates for an enemy
 
 
 $f0..$17f
-----------
+---------
 Music registers.  Unclear where they start; one might be the current
 song number that's playing.
  - 102 seems to be the current bgm track, but changing it doesn't have the
@@ -535,6 +509,9 @@ song number that's playing.
  - 112 is ff if no sound effect is playing, or something else (possibly
    an indication of when the sound effect will be done) if one is
  - 111 is sound effect priority???
+
+Free/unused bytes in this range:
+ - $f4, $10a..$10e, $13d, $149
 
 
 $180..$1d2
@@ -936,6 +913,19 @@ Equipment - see notes at top of Crystalis.asm
 sword armor and shield written at $20339 (during inventory selection)
 charge written at $3d900 upon closing
 
+
+$720..$7d4
+----------
+
+These are written but mostly never read?
+Only the following are ever read: $743, $744, $780, $7c0
+
+
+$7d5, $7d6
+----------
+??
+
+
 $7d7
 ----
 Has to do with suppressing scrolling during explosions and before/during/after boss fights
@@ -999,8 +989,8 @@ $7ff
 Appears to be a global counter
 
 
-$6000...
---------
+$6000..$60ff
+------------
 Staging area for writing to nametable ($3c6b1)
 
 ;;; 3ebf7, 3edd2. 34d67, 3ec4b
@@ -1020,11 +1010,11 @@ map palette data
 
 $6160..$61ff
 ------------
-Unused.
+Unused in vanilla.  We co-opt these for randomizer as follows:
  - $61ff we use to track the need to redisplay the difficulty
  - $61fe - the current check
- - Use other parts of this block for multi-world.
- - 6160..61bf  => all names
+ - Plan to use other parts of this block for multi-world.
+   - 6160..61bf  => all names
 
 
 $6200..$621f
@@ -1038,6 +1028,15 @@ committed to the PPU, and thus lags $b.  The data go in quads:
   6201,x    - low byte of PPUADDR (2nd write)
   6202,x    - number of data bytes to write
   6203,x    - offset into $6000 to copy from
+
+
+$6220..$62ef
+------------
+Unused in vanilla.  We co-opt at least part of this block for
+crowd control.
+ - $6220 - flag for communicating between CC and the game
+ - $6221 - ???
+ - $6222 - bits indicating numbers that need to be updated
 
 
 $62f0..$62fb
@@ -1058,13 +1057,13 @@ Map screen IDs, stored in 6300,(yh << 3 | xh) - this obviously implies that
 the maximum width of a map is 8, and is consistent with what we've seen
 elsewhere where yh has special handling for >8 but xh does not.
 
-$6380..63ef
------------
-Never written?
+$6380..$63ff
+------------
+Unused in vanilla.
 
-$63fx
------
-8, 9, and f were read preindexed, but none ever written.
+Note: the following were read (preindexed) but never written in vanilla:
+ - $63f4, $63f8, $63f9, $63ff
+
 
 $6400..$6427
 ------------
@@ -1091,21 +1090,23 @@ Not read, but seems to maybe be copied?
 
 $6580..$667f
 ------------
-many of these are never read, seem to have been copied form 7f00,x
+many of these are never read, seem to have been copied from 7f00,x
+ - Specifically, all of $6610..$667f is unread except $6643
 
 
-$6680..$6cef
+$6680..$6cff
 ------------
-uncovered except for 6700, 6701 which are written at least once...
+Unused except for 6700, 6701 which are written at least once...
  (2853d, 28558 writes from 7df and 7de, respectively)
 
-$6cfx
------
-??
+Note: I had previously called out $6cf0..$6cff as some sort of separate
+unknown for some reason, but I don't know why.  They seem totally unused.
+
 
 $6d00..$6fff
 ------------
 may be copied from 7d00..7fff at some point
+
 
 $7000..$70ff
 ------------

@@ -143,6 +143,7 @@ UpdateStatusBar:
       jsr BankSwitch8k_a000
       lda #%01011111 ; update all 5 status display (including difficulty)
       jsr UpdateStatusBarDisplays
+      jsr UpdateHPDisplayInternal
       jmp RestoreBanks
   ;rts
 

@@ -1,9 +1,6 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
 
-.import CrowdControlRunLevelUp
-
-
 ; .ifdef _CROWD_CONTROL_
 
 .segment "fe", "ff"
@@ -146,6 +143,7 @@ UpdateStatusBar:
       jsr BankSwitch8k_a000
       lda #%01011111 ; update all 5 status display (including difficulty)
       jsr UpdateStatusBarDisplays
+      jsr UpdateHPDisplayInternal
       jmp RestoreBanks
   ;rts
 

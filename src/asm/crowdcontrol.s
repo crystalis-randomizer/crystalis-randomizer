@@ -3,7 +3,13 @@
 
 .import CrowdControlRunLevelUp
 
+
 ; .ifdef _CROWD_CONTROL_
+
+.segment "fe", "ff"
+
+; these should be set in messages.ts
+.import LevelDownMessagePart, LevelDownMessageId
 ;;; Hook into the main loop right after the other hooks
 ;;; so it shouldn't affect anything else (this is only after input is read)
 .org $cb68
@@ -21,24 +27,12 @@ HandleCrowdControl:
       dex
       bmi @finalize
       asl
-      bcs @handle_op
       bcc @loop
-@handle_op:
   pha
     ; x has the offset for the crowd control main function
     txa
     pha
-      asl
-      tay
-      ; $10,11,12 is used for jump points, it seems to be always overwritten
-      ; before use, so its fine to reuse here
-      lda #OP_JMP_ABS
-      sta $10
-      lda CrowdControlMainOpTable,y
-      sta $11
-      lda CrowdControlMainOpTable+1,y
-      sta $12
-      jsr $10
+      jsr RTSJumpSubroutine
     pla
     tax
   pla
@@ -49,7 +43,6 @@ HandleCrowdControl:
   lda #0
   sta CrowdControlFlag
   sta CrowdControlQueue
-  sta CrowdControlStatusBarUpdate
   txa
   ; if the high bit 7 is set (ie minus) then we should double return instead of continuing
   bpl @continue
@@ -59,9 +52,87 @@ HandleCrowdControl:
 @continue:
   jmp HandleStatusConditions
 
-CrowdControlMainOpTable:
-.word (UpdateStatusBar)
-.word (DoWildWarp)
+.reloc
+RTSJumpSubroutine:
+  asl
+  tay
+  lda CrowdControlMainOpRTSTable+1,y
+  pha
+  lda CrowdControlMainOpRTSTable,y
+  pha
+  rts
+
+CrowdControlMainOpRTSTable:
+  .word (UpdateStatusBar-1)
+  .word (DoWildWarpToFirstLocation-1)
+  .word (ForcePlayerLevelUp-1)
+  .word (ForcePlayerLevelDown-1)
+
+.reloc
+ForcePlayerLevelUp:
+  lda PlayerLevel
+  and #$f0
+  beq +
+    ; player is already max level so don't level up
+    rts
++
+  inc PlayerLevel
+  jmp UpdateEXPAfterForcedLevel
+
+.reloc
+ForcePlayerLevelDown:
+  lda PlayerLevel
+  cmp #1
+  bne +
+    ; player is already level 1 and can't go down
+    rts
++
+  dec PlayerLevel
+  jsr UpdateEXPAfterForcedLevel
+
+  ; cap the player HP/MP to max
+  lda PlayerMaxHP
+  cmp PlayerHP
+  bpl +
+    ; player has more HP than max so set it to max
+    sta PlayerHP
++ lda PlayerMaxMP
+  cmp PlayerMP
+  bpl +
+    ; player has more MP than max so set it to max
+    sta PlayerMP
++
+  ; The message for level down is set in misc shuffle text changes
+  ; so just load the fixed ID here.
+  lda #LevelDownMessageId
+  sta $06c3
+  lda #LevelDownMessagePart
+  sta $06e3
+  rts
+
+.reloc
+; This method forces the EXP to be the next level instead of taking
+; the current exp and adding it in.
+UpdateEXPAfterForcedLevel:
+  lda $6e
+  pha
+    lda $6f
+    pha
+      lda #$1a
+      jsr BankSwitch8k_8000
+      lda #$1b
+      jsr BankSwitch8k_a000
+      lda PlayerLevel
+      asl  ; note: clears carry
+      tay
+      lda $8b9e,y
+      sta PlayerExp
+      lda $8b9f,y
+      sta PlayerExp+1
+      jsr UpdateStatsAfterLevelChange
+  jmp RestoreBanks
+  ; 2x implicit pla
+  ; implicit rts
 
 .reloc
 UpdateStatusBar:
@@ -73,38 +144,26 @@ UpdateStatusBar:
       jsr BankSwitch8k_8000
       lda #$1b
       jsr BankSwitch8k_a000
-      lda CrowdControlStatusBarUpdate
-      bpl @update_numeric
-        ; if the high bit 7 is set, then we want to update player HP as well
-        jsr UpdateHPDisplayInternal
-@update_numeric:
-      and #%00000001
-      bne @skip_level_up
-        jsr CrowdControlRunLevelUp
-        jsr UpdateHPDisplayInternal
-        jmp RestoreBanks
-    @skip_level_up:
+      lda #%01011111 ; update all 5 status display (including difficulty)
       jsr UpdateStatusBarDisplays
       jmp RestoreBanks
   ;rts
 
 .reloc
 ; We can't reuse the original code because we need to do Crowd Control cleanup
-; before returning.
-DoWildWarp:
+; before returning, and we want to fix it to only WW to the first location.
+DoWildWarpToFirstLocation:
   lda CrowdControlFlag
   ora #%10000000
   sta CrowdControlFlag
-  lda $0780
-  and #$0f
-  tay
+  ldy #0
   lda WildWarpLocations,y
   sta CurrentLocation
   lda #$00
   sta CurrentEntrance
-  inc $0780
   lda #GAME_MODE_CHANGE_LOCATION
   sta GameMode
   rts
 
 ; .endif
+

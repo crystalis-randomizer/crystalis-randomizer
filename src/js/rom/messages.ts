@@ -746,6 +746,7 @@ export class Messages {
     free(a, $15,   0xa000, 0xc000);
     free(a, $16_a, 0xa000, 0xc000);
     free(a, $17,   0xa000, 0xbc00);
+
     // plan: analyze all the msesages, finding common suffixes.
     // eligible suffixes must be followed by either space, punctuation, or eol
     // todo - reformat/flow messages based on current substitution lengths
@@ -754,6 +755,12 @@ export class Messages {
     // const trie = new SuffixTrie<number[]>();
     // for (let i = 0, len = table.length; i < len; i++) {
     //   trie.set(table[i].str, i < 0x80 ? [i + 0x80] : [5, i - 0x80]);
+    // }
+
+    // if (CROWD_CONTROL) {
+    a.assign('LevelDownMessagePart', 0x01);
+    a.assign('LevelDownMessageId', 0x02);
+    a.export('LevelDownMessagePart', 'LevelDownMessageId');
     // }
 
     // First step: write the messages.
@@ -891,4 +898,5 @@ export const HARDCODED_MESSAGES: Set<string> = new Set([
   '03:03', // (st) start stom fight, exec 36716
   '20:0e', // (st) insufficient magic for spell, exec 3cc23
   '20:13', // (st) nothing happens item use oerr, exec 3d52a
+  '01:02', // level down message. overwrites unused text from zebu's sleeping apprentice
 ]);

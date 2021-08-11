@@ -147,23 +147,14 @@ OP_JMP_ABS  = $4c
 CrowdControlFlag              = $6220
 
 ; Bit packed operations that Crowd Control can update.
-; %000000ws
-;        |+-- s = status bar update. See CrowdControlStatusBarUpdate
-;        +--- w = Wild Warp. Uses the next wild warp location for the user.
-;                 ?? Should we just always go back to mezzaine to prevent softlocks?
+; %0000duws
+;      |||+-- s = status bar update. Updates the following fields:
+;      |||        Level, Money, Exp, Max MP, MP, Difficulty
+;      ||+--- w = Wild Warp. This will always wild warp the player to the
+;      ||         first location in the wild warp table (which could be randomized)
+;      |+---- u = Player level up. Increases the level by one
+;      +----- d = Player level down. Decreases the level by one.
 CrowdControlQueue             = $6221
-
-; Bit packed list of status bar fields to update
-; %hd0mpxyl
-;  |||||||+-- l = Player Level
-;  ||||||+--- y = Money
-;  |||||+---- x = Player Experience
-;  ||||+----- p = Max MP
-;  |||+------ m = MP
-;  ||+------- UNUSED
-;  |+-------- d = Difficulty Level (ie Scaling)
-;  +--------- h = Player HP
-CrowdControlStatusBarUpdate   = $6222
 
 ; .endif
 

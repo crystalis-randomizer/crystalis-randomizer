@@ -486,6 +486,13 @@ function misc(rom: Rom, flags: FlagSet, random: Random) {
   // message texts to prevent line overflow, etc.  We should
   // also make some hooks to easily swap out items where it
   // makes sense.
+  const levelDownMessage = rom.messages.parts[1][2];
+  levelDownMessage.text = `
+      Ah shucks.
+ Somehow you've done it
+and lost a level. So sad.
+`;
+
   rom.messages.parts[2][2].text = `
 {01:Akahana} is handed a statue.#
 Thanks for finding that.

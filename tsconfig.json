@@ -4,6 +4,7 @@
     "rootDir": "src/js",
     "outDir": "dist/js",
     "module": "es6",
+    "noEmit": false
   },
   "include": [
     "src/js/**/*.ts"

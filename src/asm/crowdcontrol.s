@@ -1,12 +1,26 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
 
+
 ; .ifdef _CROWD_CONTROL_
 
 .segment "fe", "ff"
 
 ; these should be set in messages.ts
 .import LevelDownMessagePart, LevelDownMessageId
+
+UnconditionallyResetCheckpointFile = $f1cd
+.org $f374
+  jsr ClearCrowdControlFlagsOnColdBoot
+
+.reloc
+ClearCrowdControlFlagsOnColdBoot:
+  lda #0
+  sta CrowdControlFlag
+  sta CrowdControlQueue
+  jmp UnconditionallyResetCheckpointFile
+  ; implicit rts
+
 ;;; Hook into the main loop right after the other hooks
 ;;; so it shouldn't affect anything else (this is only after input is read)
 .org $cb68
@@ -164,4 +178,3 @@ DoWildWarpToFirstLocation:
   rts
 
 ; .endif
-

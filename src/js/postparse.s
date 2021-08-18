@@ -7,6 +7,19 @@
 
 ; these should be set in messages.ts
 .import LevelDownMessagePart, LevelDownMessageId
+
+UnconditionallyResetCheckpointFile = $f1cd
+.org $f374
+  jsr ClearCrowdControlFlagsOnColdBoot
+
+.reloc
+ClearCrowdControlFlagsOnColdBoot:
+  lda #0
+  sta CrowdControlFlag
+  sta CrowdControlQueue
+  jmp UnconditionallyResetCheckpointFile
+  ; implicit rts
+
 ;;; Hook into the main loop right after the other hooks
 ;;; so it shouldn't affect anything else (this is only after input is read)
 .org $cb68

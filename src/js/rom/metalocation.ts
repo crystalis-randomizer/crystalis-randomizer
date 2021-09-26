@@ -985,8 +985,8 @@ export class Metalocation {
     const reverseExits = new Map<ExitSpec, [number, number]>(); // map to y,x
     const pits = new Map<Pos, number>(); // maps to dir (0 = vert, 1 = horiz)
     const statues: Array<[Pos, number]> = []; // array of spawn [screen, coord]
-    // Array of [old y, old x, new y, new x, max distance (squared)]
-    const map: Array<[number, number, number, number, number]> = [];
+    // Array of [old y, old x, new y, new x, max distance (squared), type]
+    const map: Array<[number, number, number, number, number, string]> = [];
     const walls: Array<[number, number]> = [];
     const bridges: Array<[number, number]> = [];
     // Pair up arenas.
@@ -1021,7 +1021,7 @@ export class Metalocation {
           arenas.push([y | 8, x | 8]);
         } else {
           const [ny, nx] = arenas.pop()!;
-          map.push([y | 8, x | 8, ny, nx, 144]); // 12 tiles
+          map.push([y | 8, x | 8, ny, nx, 144, 'arena']); // 12 tiles
         }
       }
       if (loc === this) { // TODO - this is a mess, factor out the commonality
@@ -1043,7 +1043,7 @@ export class Metalocation {
           reverseExits.set(exit, [y0 << 4 | y1, x0 << 4 | x1]);
         } else if ((exit[0] >>> 8) !== this.id) { // skip self-exits
           const [ny, nx] = reverseExits.get(exit)!;
-          map.push([y0 << 4 | y1, x0 << 4 | x1, ny, nx, 25]); // 5 tiles
+          map.push([y0 << 4 | y1, x0 << 4 | x1, ny, nx, 25, 'exit']); // 5 tiles
         }
       }
     }
@@ -1101,7 +1101,8 @@ export class Metalocation {
                  spawn.isGeneric()) {
         //let j = 0;
         let best = [-1, -1, Infinity];
-        for (const [y0, x0, y1, x1, dmax] of map) {
+        for (const [y0, x0, y1, x1, dmax, typ] of map) {
+          if (typ !== 'arena' && spawn.isBoss()) continue; // bosses need arena
           const d = (ytDiff(spawn.yt, y0)) ** 2 + (spawn.xt - x0) ** 2;
           if (d <= dmax && d < best[2]) {
             best = [ytAdd(spawn.yt, ytDiff(y1, y0)), spawn.xt + x1 - x0, d];
@@ -1127,7 +1128,10 @@ export class Metalocation {
       const next = allPoi.shift();
       if (!next) throw new Error(`Ran out of POI for ${loc}`);
       const [y, x] = next;
-      map.push([spawn.y >>> 4, spawn.x >>> 4, y >>> 4, x >>> 4, 4]);
+      // TODO - what is this about? I seem to have forgotten.
+      // Maybe this is just a fall-back in case we can't find aything else?
+      console.error(`Weird map addition: ${loc} ${spawn.hex()}`);
+      map.push([spawn.y >>> 4, spawn.x >>> 4, y >>> 4, x >>> 4, 4, '???']);
       spawn.y = y;
       spawn.x = x;
     }

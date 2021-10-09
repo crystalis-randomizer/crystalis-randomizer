@@ -156,7 +156,7 @@ export class Flags {
   0x01f = obsolete(0x109); // check: rage
 
   // 02x
-  QueenNotInThroneRoom = movable(0x020);
+  QueenNotInThroneRoom = movable(0x020, TRACK);
   ReturnedFogLamp = movable(0x021, TRACK);
   0x022 = dialogProgression('Sahara elder');
   0x023 = dialogProgression('Sahara elder daughter');

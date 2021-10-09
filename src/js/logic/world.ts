@@ -878,6 +878,8 @@ export class World {
           hitbox = Hitbox.adjust(hitbox, [-2, 0]);
           antiRequirements = this.rom.flags.TalkedToFortuneTeller.r;
         }
+        // Note: antiRequirements must be met in order to get through, since we
+        // need the guard _not_ to move.
         this.handleMovingGuard(hitbox, location, antiRequirements);
         break;
     }
@@ -928,7 +930,9 @@ export class World {
         // been played, and (2) the player didn't sneak past the earlier guard.
         // We can simulate this by hard-coding a requirement on either to get
         // past him.
-        antiReq = or(this.rom.flags.MesiaRecording, this.rom.flags.Paralysis);
+        antiReq = Requirement.or(this.rom.flags.MesiaRecording.r,
+                                 and(this.rom.flags.Paralysis,
+                                     this.rom.flags.QueenNotInThroneRoom));
       } else if (npc === this.rom.npcs.SoldierGuard) {
         antiReq = undefined; // they'll just attack if approached.
       }

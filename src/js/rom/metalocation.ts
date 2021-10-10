@@ -665,7 +665,7 @@ export class Metalocation {
    * Finds the actual full tile coordinate (YXyx) of the
    * given exit.
    */
-  static findExitTiles(rom: Rom, exit: ExitSpec) {
+  static findExitTiles(rom: Rom, exit: ExitSpec): Pos[] {
     const loc = rom.locations[exit[0] >>> 8];
     const scr = loc.meta._screens[exit[0] & 0xff];
     const con = scr.findExitByType(exit[1]);

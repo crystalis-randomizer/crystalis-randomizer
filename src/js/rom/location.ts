@@ -304,7 +304,8 @@ export class Locations extends Array<Location> {
   // INVALID: 0x99
   // INVALID: 0x9a
   // INVALID: 0x9b
-  readonly Pyramid_Entrance         = $(0x9c, {area: Areas.Pyramid});
+  readonly Pyramid_Entrance         = $(0x9c, {area: Areas.Pyramid,
+                                               houseType: 'palace'});
   readonly Pyramid_Branch           = $(0x9d);
   readonly Pyramid_Main             = $(0x9e);
   readonly Pyramid_Draygon          = $(0x9f);

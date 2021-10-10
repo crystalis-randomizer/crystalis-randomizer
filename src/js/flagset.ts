@@ -256,8 +256,10 @@ class World extends FlagSection {
   });
 
   static readonly ShuffleHouses = World.flag('Wh', {
-    name: '???',
-    text: `No spoilers here, you'll need to try it to find out what it does.`,
+    name: 'Shuffle house entrances',
+    text: `Shuffles all the house entrances, as well as a handful of other
+           things, like the palace/fortress-type entrances at the top of
+           several towns, and standalone houses.`,
     hard: true,
   });
 
@@ -971,8 +973,11 @@ export class FlagSet {
     return this.check(World.ShuffleGoaFloors);
   }
   shuffleHouses() {
-    // TODO - make a separate flag for this
     return this.check(World.ShuffleHouses);
+  }
+  shuffleAreas() {
+    // TODO: consider multiple levels of shuffle?
+    return true;
   }
   randomizeMaps() {
     return this.check(World.RandomizeMaps);

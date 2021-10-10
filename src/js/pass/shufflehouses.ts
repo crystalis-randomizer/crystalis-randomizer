@@ -26,12 +26,12 @@
 //     in any gaps.
 
 
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {ExitSpec, Metalocation} from '../rom/metalocation.js';
-import {HouseType} from '../rom/location.js';
-import {ConnectionType} from '../rom/metascreendata.js';
-import {FlagSet} from '../flagset.js';
+import { Random } from '../random.js';
+import { Rom } from '../rom.js';
+import { ExitSpec, Metalocation } from '../rom/metalocation.js';
+import { HouseType } from '../rom/location.js';
+import { ConnectionType } from '../rom/metascreendata.js';
+import { FlagSet } from '../flagset.js';
 import { DefaultMap } from '../util.js';
 
 interface House {
@@ -54,9 +54,27 @@ const shops = new Set<HouseType>(['inn', 'armor', 'tool', 'pawn']);
 const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
 export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
-  const {locations: {
-    Nadare, Portoa_PalaceEntrance,
-  }} = rom;
+  const {
+    locations: {Goa, GoaFortress_Exit, Shyron},
+    metascreens: {squareTownNE_house,
+                  fortressTownEntrance,
+                  mountainPathE_gate},
+  } = rom;
+  const palaceTowns = new Set([Goa.id, Shyron.id]);
+  const firstPassOutsides = new Set([
+    // NOTE: student/brokahana should be in first pass.
+    squareTownNE_house.data.id,
+    fortressTownEntrance.data.id,
+    mountainPathE_gate.data.id,
+  ]);
+
+  if (flags.shuffleAreas()) {
+    // Set a few additional locations as palaces
+    for (const loc of [Goa, GoaFortress_Exit, Shyron]) {
+      loc.data.houseType = 'palace';
+    }
+  }
+
   // First order of business: collect all the connections.
   const byType = new DefaultMap<HouseType, House[]>(() => []);
   const byLocPos = new DefaultMap<number, House[]>(() => []); // key: LocPos
@@ -74,10 +92,23 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
     //if (location === BoatHouse) continue;
 
     // For non-shops, find the bottom edge
+    let bottomExit!: [number, ConnectionType, ExitSpec, number];
     for (const [pos, type, spec] of location.meta.exits()) {
-      if (type === 'edge:bottom' || shops.has(location.data.houseType) ||
-         (location.meta.tileset === rom.metatilesets.fortress &&
-          type === 'stair:down')) {
+      // Find absolute Y coordinate of actual exit
+      const coord =
+          (pos & 0xf0) << 4 |
+          (location.meta.get(pos).findExitByType(type).entrance >>> 8);
+      if (!bottomExit || coord > bottomExit[3]) {
+        bottomExit = [pos, type, spec, coord];
+      }
+    }
+    for (const [pos, type, spec] of [bottomExit]) {
+      // if (type === 'edge:bottom' || shops.has(location.data.houseType) ||
+      //    (location.meta.tileset === rom.metatilesets.fortress &&
+      //     type === 'stair:down') ||
+      //    (location === GoaFortress_Exit &&
+      //     type === 'stair:down' &&
+      //     pos === 0x31)) {
         const house: House = {
           type: location.data.houseType,
           inside: [location.id << 8 | pos, type],
@@ -92,9 +123,11 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
         // }
         byLocPos.get(locpos).push(house);
         byType.get(location.data.houseType).push(house);
-        const screen = rom.locations[locpos >>> 8].screens[(locpos >>> 4) & 0xf][locpos & 0xf];
+        const screen =
+            rom.locations[locpos >>> 8]
+                .screens[(locpos >>> 4) & 0xf][locpos & 0xf];
         screens.get(screen).add(locpos);
-      }
+      // }
     }
   }
 
@@ -102,8 +135,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   const secondPass = new Map<number, Set<number>>();
   const firstPass = new Map<number, Set<number>>();
   for (const [scr, locposs] of random.ishuffle(screens)) {
-    // NOTE: student/brokahana should be in first pass.
-    if (locposs.size >= 2 || scr === 0x64) {
+    if (locposs.size >= 2 || firstPassOutsides.has(scr)) {
       firstPass.set(scr, locposs);
     } else {
       secondPass.set(scr, locposs);
@@ -121,6 +153,13 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
           [...compat].map(t => byType.get(t)) :
           [byType.get(map.get(house.outside[1]) ?? house.type)];
         eligible = eligible.filter(x => x.length);
+        // Make sure we don't connect the "palace towns" (goa and shyron) in
+        // a closed loop, either to itself (goa's entrance is inside itself)
+        // or in a figure-either (goa top => shyron, and shyron temple => goa).
+        if (house.type === 'palace' && palaceTowns.has(house.outside[0] >>> 8)) {
+          eligible = eligible.map(x => x.filter(
+              h => !palaceTowns.has(h.inside[0] >>> 8)));
+        }
         // Avoid more than one inn per town, since that's lame.
         // Also, place inns first so as to most evenly distribute them.
         const allowInn = [...locposs].every(lp => !hasInn.has(lp >>> 8));
@@ -134,7 +173,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
         // if ((house.outside[0] >>> 8) === Goa_House.id && byType.get('house').length) {
         //   eligible = [byType.get('house')];
         // }
-        // TODO - also consider preventing multiple inns in the same town?
+        // Also prevent multiple inns in the same town?
         const replacement = random.pickAndRemove(...eligible);
         if (replacement.type === 'inn') {
           for (const lp of locposs) {
@@ -148,11 +187,11 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
         // Make the connection
         //console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]}`);
         Metalocation.connect(rom, house.outside, replacement.inside);
-        // Replace the icon
+        // Replace the icon (if applicable)
         if (!first) continue;
         if (icons.get(house.type) === icons.get(replacement.type)) continue;
         const outside = rom.locations[house.outside[0] >>> 8];
-        if (outside === Nadare || outside === Portoa_PalaceEntrance) continue;
+        if (outside.meta.tileset !== rom.metatilesets.town) continue;
         const exits = Metalocation.findExitTiles(rom, house.outside);
         if (exits.length > 1) continue;
         let coord = exits[0] - 0x20;

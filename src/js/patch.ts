@@ -41,6 +41,7 @@ import { Spoiler } from './rom/spoiler.js';
 import { hex, seq, watchArray } from './rom/util.js';
 import { DefaultMap } from './util.js';
 import * as version from './version.js';
+import { shuffleAreas } from './pass/shuffleareas.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -177,7 +178,7 @@ function defines(flags: FlagSet,
     _HAZMAT_SUIT: flags.changeGasMaskToHazmatSuit(),
     _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
     _MAX_SCALING_IN_TOWER: flags.maxScalingInTower(),
-    _MONEY_AT_START: flags.shuffleHouses(),
+    _MONEY_AT_START: flags.shuffleHouses() || flags.shuffleAreas(),
     _NERF_FLIGHT: true,
     _NERF_MADO: true,
     _NEVER_DIE: flags.neverDie(),
@@ -288,6 +289,8 @@ async function shuffleInternal(rom: Uint8Array,
   unidentifiedItems(parsed, flags, random);
   shuffleTrades(parsed, flags, random);
   if (flags.shuffleHouses()) shuffleHouses(parsed, flags, random);
+  if (flags.shuffleAreas()) shuffleAreas(parsed, flags, random);
+  debugger;
   fixEntranceTriggers(parsed);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
   writeLocationsFromMeta(parsed);

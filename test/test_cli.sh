@@ -2,6 +2,9 @@
 
 set -ex
 
+# Ignore tests if the most recent commit has a message NO_SQ=1
+if git log -n 1 | grep -q NO_SQ=1; then exit 0; fi
+
 # By default, use testdata, which is a fake rom with mostly random bytes, but
 # a few tables whose structure (particularly addresses and delimiters) can be
 # parsed in a reasonable way by the rom parser.  The original rom may also be

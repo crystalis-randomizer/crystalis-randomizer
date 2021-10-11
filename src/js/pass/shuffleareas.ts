@@ -13,6 +13,7 @@ import { Location } from '../rom/location.js';
 import { ConnectionType } from '../rom/metascreendata.js';
 import { FlagSet } from '../flagset.js';
 import { DefaultMap } from '../util.js';
+import { UnionFind } from '../unionfind.js';
 
 interface Area {
   name: string;
@@ -37,6 +38,7 @@ interface Exit {
   shuffle: boolean;
   area: string;
   oneWay?: boolean; // can't go this way
+  origRev: Exit;
 }
 
 const connMap = new Map<ConnectionType, AreaConnection>([
@@ -77,7 +79,7 @@ function makeExit(loc: Location, [pos, type, [revLocPos, revType]]: ExitDescript
   const revArea = revLoc.id.toString(16);
   const reverse: Exit = {
     loc: revLoc, pos: revPos, type: revType,
-    area: revArea, key: revKey, reverse: null!,
+    area: revArea, key: revKey, reverse: null!, origRev: null!,
     get conn() { return connInverse.get(conn!); },
     set conn(c) { conn = connInverse.get(c!); },
     get shuffle() { return shuffle; },
@@ -87,7 +89,7 @@ function makeExit(loc: Location, [pos, type, [revLocPos, revType]]: ExitDescript
     },
   };
   const exit: Exit = {
-    loc, pos, type, key, reverse, area,
+    loc, pos, type, key, reverse, area, origRev: reverse,
     get conn() { return conn; },
     set conn(c) { conn = c; },
     get shuffle() { return shuffle; },
@@ -96,7 +98,7 @@ function makeExit(loc: Location, [pos, type, [revLocPos, revType]]: ExitDescript
       shuffle = s;
     },
   };
-  reverse.reverse = exit;
+  reverse.reverse = reverse.origRev = exit;
   return exit;
 }
 
@@ -116,10 +118,21 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
   const exitsByLocation = new DefaultMap<Location, Exit[]>(() => []);
   for (const location of rom.locations) {
     for (const exitSpec of location.meta.exits()) {
+      // NOTE: Cordel and Tower both break the 1:1 mapping between exits.
+      // For Cordel, use the X-coordinate to only pick the "real" exit.
+      // Skip Tower entirely, since we don't shuffle it.
+      if (location === loc.CordelPlainEast && (exitSpec[0] & 0x0f) < 5) continue;
+      if (location === loc.CordelPlainWest && (exitSpec[0] & 0x0f) > 4) continue;
+      if (location.isTower()) continue;
       const exit = makeExit(location, exitSpec);
+      // Skip the Fortune Teller entirely since it confuses the logic:
+      // she doesn't actually connect the underground cave to portoa,
+      // and it's irrelevant anyway since it's not required to go there.
+      if (exit.loc === loc.Portoa_FortuneTeller) continue;
+      if (exit.reverse.loc === loc.Portoa_FortuneTeller) continue;
       if (exits.has(exit.key)) continue;
       if (exits.has(exit.reverse.key)) {
-        throw new Error(`Inconsistent exits: ${exit.key} ${exit.reverse.key}`);
+        throw new Error(`Inconsistent exits: ${exit.key} | ${exit.reverse.key}`);
       }
       exits.set(exit.key, exit);
       exits.set(exit.reverse.key, exit.reverse);
@@ -180,8 +193,8 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
   mark(loc.AngrySea, loc.Joel);
   markOutside(loc.JoelSecretPassage); // ???
   //findExits(loc.EvilSpiritIsland1, loc.EvilSpiritIsland2)[0].conn = 'C';
-  markOutside(loc.EvilSpiritIsland1, loc.EvilSpiritIsland2);
-  mark(loc.ZombieTown, 'cave');
+  mark(loc.EvilSpiritIsland1, loc.EvilSpiritIsland2);
+  mark(loc.ZombieTown, loc.EvilSpiritIsland3);
   mark(loc.AngrySea, loc.Swan);
   markOutside(loc.SwanGate);
   mark(loc.GoaValley, loc.MtHydra);
@@ -190,17 +203,79 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
   markOutside(loc.DesertCave1);
   markOutside(loc.SaharaOutsideCave);
   markOutside(loc.DesertCave2);
-
-  // TODO - if !shuffleHouses then mark all the fortresses??
-
-  // We should make sure all the shuffled exits have the right type.
-
-  for (const exit of exits.values()) {
-    if (!exit.shuffle) continue;
-    console.log(`${exit.loc} => ${exit.reverse.loc} ${exit.conn}/${exit.reverse.conn}`);
+  if (!flags.shuffleHouses()) {
+    // Also mark the fortresses/palaces
+    const palaces: [Location, Location][] = [
+      // Normal palaces
+      [loc.ZombieTown, loc.SaberaPalace1],
+      [loc.MtHydra, loc.Styx1],
+      [loc.Desert2, loc.Pyramid_Entrance],
+      [loc.Goa, loc.GoaFortress_Entrance],
+      [loc.Portoa, loc.Portoa_PalaceEntrance],
+      [loc.Shyron, loc.Shyron_Temple],
+      // [loc.UndergroundChannel, loc.Portoa_AsinaRoom], ??
+      // Extras
+      [loc.GoaValley, loc.Goa],
+      [loc.OasisCave_Entrance, loc.GoaFortress_Exit],
+      [loc.MtHydra_OutsideShyron, loc.Shyron],
+    ];
+    for (const [outside, inside] of palaces) {
+      const [exit] = findExits(outside, inside);
+      exit.conn = 'F';
+      exit.shuffle = true;
+    }
   }
 
+  // DIAGNOSTIC: check that all the exits are correct
+  // const seen = new Set();
+  // for (const exit of exits.values()) {
+  //   if (!exit.shuffle) continue;
+  //   if (seen.has(exit)) continue;
+  //   seen.add(exit.reverse);
+  //   console.log(`(${exit.conn}) ${exit.loc.name}  <==>  ${exit.reverse.loc.name} (${exit.reverse.conn})`);
+  // }
+
   // Next find all the non-shuffled exits and UnionFind them!
+  const uf = new UnionFind<string>();
+  for (const exit of exits.values()) {
+    if (exit.shuffle) continue;
+    uf.union([exit.area, exit.reverse.area]);
+  }
+  //const areaToLocationMap = new Map();
+  const areaExits = new DefaultMap<string, Exit[]>(() => []);
+  for (const exit of exits.values()) {
+    //areaToLocationMap.set(exit.area, exit.loc.name);
+    areaExits.get(exit.area = uf.find(exit.area)).push(exit);
+  }
+
+  // DIAGNOSTIC: check that the areas are correct
+  // for (const set of uf.sets()) {
+  //   console.log(`Area: ${[...set].map(l => areaToLocationMap.get(l)).join(', ')}`);
+  // }
+
+  // Returns a partition of area keys.  If the outer array is non-singleton
+  // then we have a fatal disconnect.
+  const start = exitsByLocation.get(loc.MezameShrine)[0].area;
+  function traverse(): string[][] {
+    const partitions: string[][] = [];
+    const seen = new Set();
+    for (const area of [start, ...areaExits.keys()]) {
+      if (seen.has(area)) continue;
+      const queue = new Set([area]);
+      for (const next of queue) {
+        seen.add(next);
+        for (const exit of areaExits.get(next)) {
+          if (exit.oneWay || seen.has(exit.reverse.area)) continue;
+          queue.add(exit.reverse.area);
+        }
+      }
+      partitions.push([...queue]);
+    }
+    return partitions;
+  }
+
+  debugger;
+  console.log(traverse());
 }
 
 // function matchExit(finder: ExitFinder):

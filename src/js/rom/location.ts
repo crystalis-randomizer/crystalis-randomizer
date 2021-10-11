@@ -395,7 +395,9 @@ export class Locations extends Array<Location> {
   readonly PortoaPalace_ThroneRoom  = $(0xdf, HOUSE);
   readonly PortoaPalace_Right       = $(0xe0, {...HOUSE, houseType: 'house'});
   readonly Portoa_AsinaRoom         = $(0xe1, {area: Areas.UndergroundChannel,
-                                               ...HOUSE, music: 'asina'});
+                                               ...HOUSE, music: 'asina',
+                                               // TODO - consider palace/house?
+                                              });
   readonly Amazones_ElderDownstairs = $(0xe2, {area: Areas.Amazones,
                                                ...HOUSE});
   readonly Joel_ElderHouse          = $(0xe3, {area: Areas.Joel, ...HOUSE,
@@ -971,6 +973,10 @@ export class Location extends Entity {
 
   hasDolphin(): boolean {
     return this.id === 0x60 || this.id === 0x64 || this.id === 0x68;
+  }
+
+  isTower(): boolean {
+    return (this.id & 0xf8) === 0x58;
   }
 
   /**

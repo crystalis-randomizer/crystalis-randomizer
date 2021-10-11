@@ -69,7 +69,8 @@ export class Npcs extends EntityArray<Npc> {
   Asina = new Npc(this, 0x62);
   HurtDolphin = new Npc(this, 0x63);
   Fisherman = new Npc(this, 0x64);
-  // generic/unsed 65..67
+  StartledVillagerOutsideCave = new Npc(this, 0x65);
+  // generic/unsed 66..67
   KensuInCabin = new Npc(this, 0x68);
   Dolphin = new Dolphin(this, 0x69);
   // unused 6a

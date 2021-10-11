@@ -48,7 +48,7 @@ function fixTrigger(exitLocation: Location, exitType: ConnectionType,
   const entrance = scr.data.exits!.find(e => e.type === entranceType);
   if (!entrance) throw new Error(`Bad entrance in ${entranceLocation}`);
   const triggerCoord =
-      (entrance.entrance >>> 12 | (entrance.entrance & 0xf0) >>> 4) +
+      ((entrance.entrance & 0xf000) >>> 8 | (entrance.entrance & 0xf0) >>> 4) +
       triggerDirectionAdjustments[entrance.dir];
   if (entranceLocation.spawns.length > 17) entranceLocation.spawns.pop();
   const triggerSpawnIndex =

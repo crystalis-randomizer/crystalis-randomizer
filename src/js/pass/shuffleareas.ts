@@ -245,6 +245,7 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
   const areaExits = new DefaultMap<string, Exit[]>(() => []);
   for (const exit of exits.values()) {
     //areaToLocationMap.set(exit.area, exit.loc.name);
+    if (!exit.shuffle) continue;
     areaExits.get(exit.area = uf.find(exit.area)).push(exit);
   }
 
@@ -253,29 +254,86 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
   //   console.log(`Area: ${[...set].map(l => areaToLocationMap.get(l)).join(', ')}`);
   // }
 
-  // Returns a partition of area keys.  If the outer array is non-singleton
-  // then we have a fatal disconnect.
+  // Partitions area keys.  Returns the number of partitions (>1 means
+  // the map is disconnection), a map from exit to partition number, and
+  // the list of exits in the smallest partition, to be used as a pool
+  // of exits to swap next to have the best chance to reconnecting.
   const start = exitsByLocation.get(loc.MezameShrine)[0].area;
-  function traverse(): string[][] {
-    const partitions: string[][] = [];
+  function traverse(): [number, Map<Exit, number>, Exit[]] {
     const seen = new Set();
+    const map = new Map<Exit, number>();
+    const partitions: Exit[][] = [];
     for (const area of [start, ...areaExits.keys()]) {
       if (seen.has(area)) continue;
       const queue = new Set([area]);
+      const partition: Exit[] = [];
       for (const next of queue) {
         seen.add(next);
         for (const exit of areaExits.get(next)) {
+          map.set(exit, partitions.length);
+          partition.push(exit);
           if (exit.oneWay || seen.has(exit.reverse.area)) continue;
           queue.add(exit.reverse.area);
         }
       }
-      partitions.push([...queue]);
+      partitions.push(partition);
     }
-    return partitions;
+    let min = 0;
+    for (let i = 1; i < partitions.length; i++) {
+      if (partitions[i].length < partitions[min].length) min = i;
+    }
+    return [partitions.length, map, partitions[min]];
   }
 
-  debugger;
-  console.log(traverse());
+  const exitsByConn = new DefaultMap<AreaConnection, Exit[]>(() => []);
+  for (const exit of exits.values()) {
+    if (!exit.shuffle || !exit.conn) continue;
+    exitsByConn.get(exit.conn).push(exit);
+  }
+
+  for (const c of ('NWCF' as Iterable<AreaConnection>)) {
+    const original = exitsByConn.get(c)!;
+    const shuffled = random.shuffle([...original]).map(e => e.reverse);
+    for (let i = 0; i < shuffled.length; i++) {
+      const exit1 = original[i];
+      const exit2 = shuffled[i];
+      [exit1.reverse, exit2.reverse] = [exit2, exit1];
+    }
+  }
+
+  // Reconnect any disconnected pieces
+  let iterations = 0;
+  let [count, traversal, pool] = traverse();
+  while (iterations-- > 0 || count > 1) { // could switch order?
+    const exit1 = random.pick(pool);
+    let eligible = exitsByConn.get(exit1.conn!);
+    if (count > 1) {
+      const avoid = traversal.get(exit1);
+      eligible = eligible.filter(e => traversal.get(e) !== avoid);
+    }
+    const exit2 = random.pick(eligible);
+    const rev1 = exit1.reverse;
+    const rev2 = exit2.reverse;
+    exit1.reverse = rev2;
+    rev2.reverse = exit1;
+    exit2.reverse = rev1;
+    rev1.reverse = exit2;
+    [count, traversal, pool] = traverse();
+    if (iterations < -10) debugger;
+  }
+
+  for (const exit of exits.values()) {
+    if (exit.reverse !== exit.origRev) {
+      function showExit(e: Exit) { return `${e.loc.name} ${e.type}(${e.pos.toString(16)})`; }
+      console.log(`${showExit(exit)}  =>  ${showExit(exit.reverse)}  (was ${showExit(exit.origRev)})`);
+    }
+
+    exit.loc.meta.attach(exit.pos, exit.reverse.loc.meta, exit.reverse.pos,
+                         exit.type, exit.reverse.type);
+  }
+
+  //console.log(traverse());
+  //debugger;
 }
 
 // function matchExit(finder: ExitFinder):

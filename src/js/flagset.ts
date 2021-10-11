@@ -127,6 +127,7 @@ class Presets {
         Routing.OrbsNotRequired,
         Routing.StoryMode,
         World.RandomizeMaps,
+        World.ShuffleAreas,
         World.ShuffleHouses,
         World.RandomizeTrades,
         World.RandomizeWallElements,
@@ -156,6 +157,7 @@ class Presets {
         Routing.OrbsNotRequired,
         Routing.StoryMode,
         World.RandomizeMaps,
+        World.ShuffleAreas,
         World.ShuffleHouses,
         World.RandomizeTrades,
         World.RandomizeWallElements,
@@ -176,6 +178,7 @@ class Presets {
         Routing.OrbsNotRequired,
         Routing.StoryMode,
         World.RandomizeMaps,
+        World.ShuffleAreas,
         World.ShuffleHouses,
         World.RandomizeTrades,
         World.RandomizeWallElements,
@@ -185,6 +188,7 @@ class Presets {
 
   readonly Mystery = new Preset(this, 'Mystery', `
       Even the options are random.`, [
+        [World.ShuffleAreas, '?'],
         [World.ShuffleHouses, '?'],
         [World.RandomizeMaps, '?'],
         [World.RandomizeTrades, '?'],
@@ -252,6 +256,12 @@ class World extends FlagSection {
     text: `Individual maps are randomized.  For now this is only a subset of
            possible maps.  A randomized map will have all the same features
            (exits, chests, NPCs, etc) except things are moved around.`,
+    hard: true,
+  });
+
+  static readonly ShuffleAreas = World.flag('Wa', {
+    name: '???', ///Shuffle areas',
+    text: '???', //`Shuffles some or all area connections.`,
     hard: true,
   });
 
@@ -977,7 +987,7 @@ export class FlagSet {
   }
   shuffleAreas() {
     // TODO: consider multiple levels of shuffle?
-    return true;
+    return this.check(World.ShuffleAreas);
   }
   randomizeMaps() {
     return this.check(World.RandomizeMaps);

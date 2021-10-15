@@ -191,12 +191,14 @@ export function fixTilesets(rom: Rom) {
   // sea.screens.add($.desertCaveEntrance);
 
   // To allow caves to be closed, we clear out metatiles 01..04, to be used as
-  // the four corners of the cave: [[01, 02], [03, 04]].  These are copied from
-  // c1,c1,d7,d7.  [TODO - seems like we could just use 2 instead of 4 here].
+  // the four corners of the cave: [[01, 01], [02, 02]].  03 and 04 are used for
+  // water entrances to ensure the player isn't kicked off the dolphin.
+  // These are copied from c1,d7 for most tilesets (though ocean is special).
   // Some tilesets already have metatiles in 01..04 so we need to move them to
   // unoccupied spots on a per-tileset basis (note that sea (94) and desert (9c)
   // are entangled here).  [TODO - clean up 2c and 2d as well]
   $.registerFix(ScreenFix.CloseCaves);
+  // Move the existing tiles in 01..04 to various free spots
   river.getTile(0x07).copyFrom(0x01).replaceIn(...river);
   river.getTile(0x0e).copyFrom(0x02).replaceIn(...river);
   river.getTile(0x20).copyFrom(0x03).replaceIn(...river);
@@ -207,31 +209,50 @@ export function fixTilesets(rom: Rom) {
     ts.getTile(0x88).copyFrom(0x03).replaceIn(...ts);
     ts.getTile(0x89).copyFrom(0x04).replaceIn(...ts);
   }
-  for (const ts of [river, desert]) {
+  // Make 01..04 be flaggable wall/opening
+  for (const ts of [grass, river, desert]) {
     ts.getTile(0x01).copyFrom(0xc1).setAlternative(0x00);
-    ts.getTile(0x02).copyFrom(0xc1).setAlternative(0x00);
-    ts.getTile(0x03).copyFrom(0xd7).setAlternative(0x0a);
+    ts.getTile(0x02).copyFrom(0xd7).setAlternative(0x0a);
+    ts.getTile(0x03).copyFrom(0xc1).setAlternative(0x00);
     ts.getTile(0x04).copyFrom(0xd7).setAlternative(0x0a);
   }
   for (const ts of [sea]) {
     ts.getTile(0x01).copyFrom(0xc1).setAlternative(0x00);
-    ts.getTile(0x02).copyFrom(0xc1).setAlternative(0x00);
-    ts.getTile(0x03).copyFrom(0xcb).setAlternative(0x00);
-    ts.getTile(0x04).copyFrom(0xcb).setAlternative(0x00);
+    ts.getTile(0x02).copyFrom(0xcb).setAlternative(0x00);
+    ts.getTile(0x03).copyFrom(0xc1).setAlternative(0xc0);
+    ts.getTile(0x04).copyFrom(0xcb).setAlternative(0xc0);
+    // copy rock graphics from other tileset (same page is loaded)
+    for (let i = 1; i < 5; i++) {
+      ts.getTile(i).setTiles(grass.getTile(i).tiles);
+    }
   }
-  const closedCaves: Array<[Metascreen, number]> = [
-    [$.boundaryE_cave, 0x48], [$.boundaryW_cave, 0x79],
-    [$.exitW_cave, 0x38], [$.caveAbovePortoa, 0x56],
-    [$.beachCave, 0x18],
-  ];
-  // if ($.isFixed(ScreenFix.SeaCaveEntrances)) {
-  //   // TODO - add $.boundaryN_cave and cornerSE_cave to the list...?
-  // }
-  for (const [scr, pos] of closedCaves) {
-    scr.screen.set2d(pos, [[1, 2], [3, 4]]);
+  // Set the cave entrances to use 01..04 as appropriate
+  const closedCaves = new Set([
+    $.boundaryE_cave, $.boundaryW_cave, $.exitW_cave, $.caveAbovePortoa,
+    $.beachCave, $.outsideWindmill,
+    // TODO - test these:
+    $.exitS_cave, $.townExitW_cave,
+    // TODO - $.zombieTownBottom_caveExit, (town)
+    // TODO - $.channelEndW_cave, (dolphinCave)
+  ]);
+  const waterCaves = new Set<Metascreen>([]);
+  //if ($.isFixed(ScreenFix.SeaCaveEntrances)) {
+    waterCaves.add($.boundaryN_cave);
+    waterCaves.add($.cornerSE_cave);
+  //}
+  for (const scr of [...closedCaves, ...waterCaves]) {
+    const exit = scr.data.exits!.find(e => e.type === 'cave');
+    const pos = Math.min(...exit!.exits) - 0x10;
+    const tiles = waterCaves.has(scr) ? [[3, 3], [4, 4]] : [[1, 1], [2, 2]];
+    scr.screen.set2d(pos, tiles);
     scr.addCustomFlag(true);
   }
-  // NOTE: the closed caves get added by pass/fixentrancetriggers.
+  // Fix the two vanilla sealed-cave graphics to be consistent with
+  // our nicer "rockfall" graphics (specifically, add the arched top).
+  $.outsideWindmill.screen.set2d(0x43, [[0xca, 0x82]]);
+  $.townExitW_cave.screen.set2d(0x2a, [[0xca, 0x82]]);
+
+  // NOTE: the correct caves are closed by pass/fixentrancetriggers.
 
   // sea.getTile(0x0a).copyFrom(0xa2).setTiles([,,0x91,0x91]).setAttrs(0);
   // This does open up screen $ce (desert cave entrance) for use in the sea,

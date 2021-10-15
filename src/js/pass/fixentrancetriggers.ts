@@ -76,13 +76,14 @@ const triggerDirectionAdjustments = [0x10, 0, 0, 0];
  */
 function fixClosedCaveExits(rom: Rom) {
   const {locations: {MtSabreNorth_Main, ValleyOfWind}} = rom;
-  for (const locPos of findClosedCaveExits(ValleyOfWind, 0x0)) {
+  for (const locPos of findClosedCaveExits(ValleyOfWind, 0x11)) {
     const loc = rom.locations[locPos >>> 8];
     const pos = locPos & 0xff;
     setCustomFlag(loc, pos, rom.flags.OpenedSealedCave);
   }
   for (const locPos of findClosedCaveExits(MtSabreNorth_Main, 0x04)) {
     const loc = rom.locations[locPos >>> 8];
+    debugger;
     if (loc.data.fixed) continue; // don't add if there's a fixed slot
     if (loc.spawns.length > 15) continue; // not enough room to add spawns
     const pos = locPos & 0xff;
@@ -90,7 +91,7 @@ function fixClosedCaveExits(rom: Rom) {
     const coord = loc.meta.get(pos).findExitByType('cave').entrance;
     const keyTrigger = Spawn.of({screen: pos, coord: coord, type: 2, id: 0xad});
     loc.spawns.push(keyTrigger);
-    if (loc.spawns.length > 14) continue; // is this a problem? could we ad-hoc?
+    if (loc.spawns.length > 15) continue; // is this a problem? could we ad-hoc?
     const explosion = Spawn.of({screen: pos, coord: coord - 0x1010,
                                 type: 4, id: 0x2c});
     loc.spawns.splice(1, 0, explosion);
@@ -106,6 +107,14 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
     }
   }
   const out: number[] = [];
+
+  // TEST ZOMBIE
+  if (pos === 0x11) {
+    for (const e of loc.rom.locations[0x65].meta.exits()) {
+      if (e[1] === 'cave') out.push(0x6500 | e[0]);
+    }
+  }
+
   for (const exit of queue) {
     if (seen.has(exit[0])) continue;
     const exitLoc = loc.rom.locations[exit[0] >>> 8];

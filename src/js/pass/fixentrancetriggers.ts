@@ -1,6 +1,8 @@
 import { Rom } from '../rom.js';
 import { ConnectionType } from '../rom/metascreendata.js';
 import { Location, Spawn } from '../rom/location.js';
+import { Pos, ExitSpec } from '../rom/metalocation.js';
+import { Flag } from '../rom/flags.js';
 
 /**
  * Moves entrance-based triggers that should be attached to
@@ -25,6 +27,7 @@ export function fixEntranceTriggers(rom: Rom) {
   fixTrigger(Portoa_PalaceEntrance, 'edge:bottom', 0xb7, Portoa);
   fixTrigger(PortoaPalace_ThroneRoom, 'door', 0x92, UndergroundChannel);
   fixTrigger(WaterfallCave2, 'stair:up', 0xbf, WaterfallCave3);
+  fixClosedCaveExits(rom);
 }
 
 /**
@@ -63,3 +66,81 @@ function fixTrigger(exitLocation: Location, exitType: ConnectionType,
 }
 
 const triggerDirectionAdjustments = [0x10, 0, 0, 0];
+
+/**
+ * Moves "closed" caves.  Normally ScreenFix marks the sealed cave exit
+ * on Cordel and the Mt Sabre summit cave exit on Waterfall Valley as
+ * closed by setting a custom flag.  Instead, walk through the caves to
+ * determine any cave exits they connect to.  This is "best effort": if
+ * we run into problems, just leave it open.
+ */
+function fixClosedCaveExits(rom: Rom) {
+  const {locations: {MtSabreNorth_Main, ValleyOfWind}} = rom;
+  for (const locPos of findClosedCaveExits(ValleyOfWind, 0x0)) {
+    const loc = rom.locations[locPos >>> 8];
+    const pos = locPos & 0xff;
+    setCustomFlag(loc, pos, rom.flags.OpenedSealedCave);
+  }
+  for (const locPos of findClosedCaveExits(MtSabreNorth_Main, 0x04)) {
+    const loc = rom.locations[locPos >>> 8];
+    if (loc.data.fixed) continue; // don't add if there's a fixed slot
+    if (loc.spawns.length > 15) continue; // not enough room to add spawns
+    const pos = locPos & 0xff;
+    setCustomFlag(loc, pos, rom.flags.OpenedPrison);
+    const coord = loc.meta.get(pos).findExitByType('cave').entrance;
+    const keyTrigger = Spawn.of({screen: pos, coord: coord, type: 2, id: 0xad});
+    loc.spawns.push(keyTrigger);
+    if (loc.spawns.length > 14) continue; // is this a problem? could we ad-hoc?
+    const explosion = Spawn.of({screen: pos, coord: coord - 0x1010,
+                                type: 4, id: 0x2c});
+    loc.spawns.splice(1, 0, explosion);
+  }
+}
+
+function findClosedCaveExits(loc: Location, pos: Pos): number[] {
+  const seen = new Set<Location|number>([loc, loc.id << 8 | pos]);
+  const queue = new Set<ExitSpec>();
+  for (const exit of loc.meta.exits()) {
+    if (exit[0] === pos && exit[1] === 'cave') {
+      queue.add(exit[2]);
+    }
+  }
+  const out: number[] = [];
+  for (const exit of queue) {
+    if (seen.has(exit[0])) continue;
+    const exitLoc = loc.rom.locations[exit[0] >>> 8];
+    if (exit[1] === 'cave') { // Found a cave
+      const scr = exitLoc.meta.get(exit[0] & 0xff);
+      if (scr.flag === 'custom:true') {
+        out.push(exit[0]);
+      } else {
+        console.error(`No flag for ${scr.name}`);
+      }
+      continue;
+    }
+    if (seen.has(exitLoc)) continue;
+    seen.add(exitLoc);
+    for (const entrance of exitLoc.meta.exits()) {
+      // Don't recurse into a different cave
+      if (entrance[1] === 'cave') continue;
+      queue.add(entrance[2]);
+    }
+  }
+  console.log(`From ${loc}: ${out.map(x=>x.toString(16))}`);;
+  return out;
+}
+
+function setCustomFlag(loc: Location, pos: Pos, val: Flag|null,
+                       noMirror?: boolean) {
+  if (val) {
+    loc.meta.customFlags.set(pos, val);
+  } else {
+    loc.meta.customFlags.delete(pos);
+  }
+  if (noMirror) return;
+  if (loc === loc.rom.locations.CordelPlainEast) {
+    setCustomFlag(loc.rom.locations.CordelPlainWest, pos, val, true);
+  } else if (loc === loc.rom.locations.CordelPlainWest) {
+    setCustomFlag(loc.rom.locations.CordelPlainEast, pos, val, true);
+  }
+}

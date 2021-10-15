@@ -202,43 +202,43 @@ export type ScreenUpdate = (s: Metascreen, seed: number, rom: Rom) => boolean;
 
 export const featureMask = {
   // TODO - cave? fortress? edge?  we already have connections to tell us...
-  'empty': 0x1,
-  'pit': 0x2,
-  'arena': 0x4,
-  'spikes': 0x8,
+  'empty': 0x01,
+  'pit': 0x02,
+  'arena': 0x04,
+  'spikes': 0x08,
   'wide': 0x10,
   'river': 0x20,
   'bridge': 0x40,
   'wall': 0x80,
-  'ramp': 0x100,
-  'overpass': 0x200,
-  'underpass': 0x400,
-  'whirlpool': 0x800,
-  'deadend': 0x1000,
+  'ramp': 0x01_00,
+  'overpass': 0x02_00,
+  'underpass': 0x04_00,
+  'whirlpool': 0x08_00,
+  'deadend': 0x10_00,
 
   // Not actually listed as features, but added separately - we could add others
   // (total of 8 available...?)
-  'stair:up': 0x1_0000,
-  'stair:down': 0x2_0000,
+  'stair:up': 0x01_00_00,
+  'stair:down': 0x02_00_00,
 
   // Unique features: upper bits have various combinations of 3 of 6 bits
   //   7,b,d,e,13,15,16,19,1a,1c,23,25,26,29,2a,2c,31,32,34,38
   // Since they are never shared, we can pack a lot more into the same space.
-  'portoa1': 0x7_000_000,
-  'portoa2': 0xb_000_000,
-  'portoa3': 0xd_000_000,
-  'lake': 0xe_000_000,
-  'lighthouse': 0x13_000_000,
-  'cabin': 0x15_000_000,
-  'windmill': 0x16_000_000,
-  'altar': 0x19_000_000,
-  'pyramid': 0x1a_000_000,
-  'crypt': 0x1c_000_000,
+  'portoa1': 0x07_00_00_00,
+  'portoa2': 0x0b_00_00_00,
+  'portoa3': 0x0d_00_00_00,
+  'lake': 0x0e_00_00_00,
+  'lighthouse': 0x13_00_00_00,
+  'cabin': 0x15_00_00_00,
+  'windmill': 0x16_00_00_00,
+  'altar': 0x19_00_00_00,
+  'pyramid': 0x1a_00_00_00,
+  'crypt': 0x1c_00_00_00,
 
   // Prevents placing this by hand.
-  'manual': 0x4000_0000,
+  'manual': 0x40_00_00_00,
   // Indicates we may want to consolidate this screen.
-  'consolidate': 0x8000_0000,
+  'consolidate': 0x80_00_00_00,
 } as const;
 
 export type Feature = keyof typeof featureMask;

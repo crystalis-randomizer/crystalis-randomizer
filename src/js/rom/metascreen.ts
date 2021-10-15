@@ -25,6 +25,12 @@ export class Metascreen {
 
   used = false;
 
+  // 'always' indicates that the flag toggles between two different metascreens
+  // 'calm' is a special case for whirlpools
+  // 'custom:false' indicates that the flag will default to false, but can be
+  //     overridden by setting a customFlag on the MetaLocation
+  // 'custom:true' is the same but defaults to true (i.e. closeable caves)
+  // absent is used for normal walls and default to allocating a new wall flag
   flag?: 'always' | 'calm' | 'custom:false' | 'custom:true';
   name?: string;
 

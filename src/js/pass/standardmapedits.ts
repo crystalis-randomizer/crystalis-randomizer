@@ -283,6 +283,8 @@ function splitSaberaPalace2(rom: Rom) {
 //   rom.locations.Styx2_East.meta.set(0x42, riverCave_deadEndsE);
 // }
 
+// Moves the listed pos from one location to a new one (i.e. for maps that
+// are actually disconnected).
 function splitMap(newLoc: Location, loc: Location, ...splitPos: number[]) {
   const rom = newLoc.rom;
   rom.locations.allocate(newLoc, loc);

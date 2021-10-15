@@ -375,7 +375,8 @@ export class Locations extends Array<Location> {
                                                houseType: 'inn'});
   readonly Amazones_ItemShop        = $(0xd2, {...HOUSE, houseType: 'tool'});
   readonly Amazones_ArmorShop       = $(0xd3, {...HOUSE, houseType: 'armor'});
-  readonly Amazones_Elder           = $(0xd4, {...HOUSE, houseType: 'house'});
+  readonly Amazones_Elder           = $(0xd4, {...HOUSE, houseType: 'house',
+                                               fixed: [0x0d, 0x0e]}); // guards
   readonly Nadare                   = $(0xd5, {area: Areas.Nadare}); // edge-door?
   readonly Portoa_FishermanHouse    = $(0xd6, {area: Areas.FishermanHouse,
                                                ...HOUSE, music: 0, houseType: 'outside'});

@@ -207,15 +207,22 @@ export function fixTilesets(rom: Rom) {
     ts.getTile(0x88).copyFrom(0x03).replaceIn(...ts);
     ts.getTile(0x89).copyFrom(0x04).replaceIn(...ts);
   }
-  for (const ts of [river, desert, sea]) {
+  for (const ts of [river, desert]) {
     ts.getTile(0x01).copyFrom(0xc1).setAlternative(0x00);
     ts.getTile(0x02).copyFrom(0xc1).setAlternative(0x00);
     ts.getTile(0x03).copyFrom(0xd7).setAlternative(0x0a);
     ts.getTile(0x04).copyFrom(0xd7).setAlternative(0x0a);
   }
+  for (const ts of [sea]) {
+    ts.getTile(0x01).copyFrom(0xc1).setAlternative(0x00);
+    ts.getTile(0x02).copyFrom(0xc1).setAlternative(0x00);
+    ts.getTile(0x03).copyFrom(0xcb).setAlternative(0x00);
+    ts.getTile(0x04).copyFrom(0xcb).setAlternative(0x00);
+  }
   const closedCaves: Array<[Metascreen, number]> = [
     [$.boundaryE_cave, 0x48], [$.boundaryW_cave, 0x79],
     [$.exitW_cave, 0x38], [$.caveAbovePortoa, 0x56],
+    [$.beachCave, 0x18],
   ];
   // if ($.isFixed(ScreenFix.SeaCaveEntrances)) {
   //   // TODO - add $.boundaryN_cave and cornerSE_cave to the list...?
@@ -224,17 +231,7 @@ export function fixTilesets(rom: Rom) {
     scr.screen.set2d(pos, [[1, 2], [3, 4]]);
     scr.addCustomFlag(true);
   }
-  {
-    const {locations: {CordelPlainEast, CordelPlainWest, WaterfallValleyNorth},
-           flags: {OpenedSealedCave, OpenedPrison}} = rom;
-    CordelPlainEast.meta.customFlags.set(0x30, OpenedSealedCave);
-    CordelPlainWest.meta.customFlags.set(0x30, OpenedSealedCave);
-    WaterfallValleyNorth.meta.customFlags.set(0x00, OpenedPrison);
-    const explosion = Spawn.of({y: 0x060, x: 0x060, type: 4, id: 0x2c});
-    const keyTrigger = Spawn.of({y: 0x070, x: 0x070, type: 2, id: 0xad});
-    WaterfallValleyNorth.spawns.splice(1, 0, explosion);
-    WaterfallValleyNorth.spawns.push(keyTrigger);
-  }
+  // NOTE: the closed caves get added by pass/fixentrancetriggers.
 
   // sea.getTile(0x0a).copyFrom(0xa2).setTiles([,,0x91,0x91]).setAttrs(0);
   // This does open up screen $ce (desert cave entrance) for use in the sea,

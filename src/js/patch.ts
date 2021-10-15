@@ -42,6 +42,7 @@ import { hex, seq, watchArray } from './rom/util.js';
 import { DefaultMap } from './util.js';
 import * as version from './version.js';
 import { shuffleAreas } from './pass/shuffleareas.js';
+import { checkTriggers } from './pass/checktriggers.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -360,6 +361,7 @@ async function shuffleInternal(rom: Uint8Array,
   misc(parsed, flags, random);
   fixDialog(parsed);
   fixMovementScripts(parsed);
+  checkTriggers(parsed);
 
   // NOTE: This needs to happen BEFORE postshuffle
   if (flags.buffDyna()) buffDyna(parsed, flags); // TODO - conditional

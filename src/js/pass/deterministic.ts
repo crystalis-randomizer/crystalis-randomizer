@@ -332,7 +332,7 @@ function fogLampNotRequired(rom: Rom, flags: FlagSet) {
 
 /**
  * Remove timer spawns from all chests.  Mimics have already been
- * renumbered to be eunique (pre-parse).  Note that the renumbering
+ * renumbered to be unique (pre-parse).  Note that the renumbering
  * requires an assembly change ($3d3fd in preshuffle.s).
  */
 function fixChests(rom: Rom): void {
@@ -395,6 +395,7 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   // Ensure alarm flute cannot be sold
   AlarmFlute.basePrice = 0;
 
+  // TODO - move item to instead be chests in mezame, at a5 and ab?
   WindmillGuard.data[1] = 0x31;
 
   // if (flags.zebuStudentGivesItem()) {

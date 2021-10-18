@@ -166,6 +166,11 @@ function eastCave(rom: Rom, opts: EastCaveOptions) {
     // chest: mimic
     Spawn.of({y: 0x070, x: 0x108, type: 2, id: 0x7c}),
   );
+  // TODO - this is subtle: there's a handful of different places this check
+  // could end up.  Ultimately, we need to make sure there are unique checks
+  // in the early spheres.  Ultimately, we'd like the student and/or any chests
+  // in Mezame to be "unique" as well, but we've only got one unique item to
+  // play with.  Maybe figure out a way to mark a "unique" medical herb?
   rom.slots.swap(0x31, 0x59);
   // swap out alarm flute for medical herb - this makes it a unique check.
   // WindmillGuard.data[1] = 0x59; // alarm flute -> medical herb

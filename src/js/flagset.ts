@@ -954,6 +954,10 @@ export class FlagSet {
   addEastCave(): boolean {
     return this.check(Vanilla.Maps, false);
   }
+  zebuStudentGivesItem(): boolean {
+    // If he's not guaranteed to be at the start, move check to mezame instead
+    return !this.shuffleAreas() && !this.shuffleHouses();
+  }
   fogLampNotRequired(): boolean {
     return this.check(Routing.VanillaDolphin, false);
   }

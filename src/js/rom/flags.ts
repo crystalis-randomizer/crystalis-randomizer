@@ -464,6 +464,7 @@ export class Flags {
   Vampire1 = tracked(0x12e);
   OasisCaveNorthwestChest = tracked(0x12f);
   AkahanaFluteOfLimeTradein = tracked(0x130);
+  // NOTE: this should be changed to MezameRightChest
   ZebuStudent = tracked(0x131); // TODO - may opt for 2 in cave instead?
   WindmillGuardAlarmFluteTradein = tracked(0x132);
   MtSabreNorthBackOfPrisonChest = tracked(0x133);
@@ -488,6 +489,7 @@ export class Flags {
   BehindWhirlpool = tracked(0x146);
   KensuInSwan = tracked(0x147);
   SlimedKensu = tracked(0x148);
+  MezameShrineLeftChest = tracked(0x149); // medical herb
   SealedCaveBigRoomSouthwestChest = tracked(0x150); // medical herb
   // unused 151 sacred shield chest
   MtSabreWestRightChest = tracked(0x152); // medical herb

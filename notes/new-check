@@ -1,0 +1,14 @@
+How to add a new item check
+===========================
+
+Moving windmill guard in leaf check to a chest in mezame
+ - deterministic - don't add the PersonData anymore, instead add chest
+ - add zebuStudentGivesItem() method to flagset, activate .ifdef
+ - instead add new spawn to mezame - fix npc pattern
+ - consider renaming rom.flags.ZebuStudent
+
+New item
+ - allocate an itemget id (49..4f are free, use them now?)
+   - notate in tables/item to keep track
+   - add itemget flag (149) to Flags
+   - no need to update rom.slots

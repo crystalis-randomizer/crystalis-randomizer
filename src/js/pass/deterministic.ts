@@ -382,9 +382,9 @@ function adjustGoaFortressTriggers(rom: Rom): void {
 function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   const {
     items: {AlarmFlute},
-    // flags: {TalkedToZebuStudent, ZebuStudent},
-    locations: {WaterfallCave4},
-    npcs: {WindmillGuard},
+    flags: {TalkedToZebuStudent, ZebuStudent},
+    locations: {MezameShrine, Leaf_StudentHouse, WaterfallCave4, ZebuCave},
+    npcs: {WindmillGuard, Zebu},
   } = rom;
 
   // Move alarm flute to third row
@@ -395,19 +395,22 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   // Ensure alarm flute cannot be sold
   AlarmFlute.basePrice = 0;
 
-  // TODO - move item to instead be chests in mezame, at a5 and ab?
-  WindmillGuard.data[1] = 0x31;
-
-  // if (flags.zebuStudentGivesItem()) {
-  // Person 14 (Zebu's student): secondary item -> alarm flute
-  //   WindmillGuard.data[1] = 0x31;
-  // } else {
-  //   WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.
-  //   const dialog = WindmillGuard.dialog(Leaf_StudentHouse)[0];
-  //   dialog.condition = ~TalkedToZebuStudent.id;
-  //   dialog.flags.push(TalkedToZebuStudent.id);
-  //   replace(Zebu.spawns(ZebuCave), ZebuStudent.id, TalkedToZebuStudent.id);
-  // }
+  
+  if (flags.zebuStudentGivesItem()) {
+    // Zebu student (aka windmill guard): secondary item -> alarm flute
+    WindmillGuard.data[1] = 0x31;
+  } else {
+    // Actually make use of the TalkedToZebuStudet flag;
+    WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.
+    const dialog = WindmillGuard.dialog(Leaf_StudentHouse)[0];
+    dialog.condition = ~TalkedToZebuStudent.id;
+    dialog.flags.push(TalkedToZebuStudent.id);
+    replace(Zebu.spawns(ZebuCave), ZebuStudent.id, TalkedToZebuStudent.id);
+    // Alarm flute and a medical herb are in chests in mezame
+    MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x9b, type: 2, id: 0x31}));
+    MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x95, type: 2, id: 0x49}));
+    rom.itemGets[0x49].itemId = rom.items.MedicalHerb.id;
+  }
 
   // Remove alarm flute from shops (replace with other items)
   // NOTE - we could simplify this whole thing by just hardcoding indices.
@@ -768,7 +771,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   LeafRabbit.dialog()[2].flags.push(flags.TalkedToLeafRabbit.id);
   LeafRabbit.dialog()[3].flags.push(flags.TalkedToLeafRabbit.id);
 
-  // Windmill guard ($14 @ $0e) shouldn't despawn after abduction (038),
+  // Windmill guard in cave ($14 @ $0e) shouldn't despawn after abduction (038),
   // but instead after giving the item (088)
   WindmillGuard.spawns(WindmillCave)[1] =
       ~flags.WindmillGuardAlarmFluteTradein.id;

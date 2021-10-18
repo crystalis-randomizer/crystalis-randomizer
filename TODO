@@ -1,3 +1,12 @@
+ - Wah broken?
+ - new area shuffle splitpoints at (1) mezame, (2) crypt (reversed), maybe past statues, too?
+ - fix cave closing in all tilesets
+ - clearly document flag (?)
+ - ... new maps
+
+
+
+
 http://localhost:8081/#init=crystalis/debug&rom=orig.nes&patch=crystalis/patch&flags=@FullShuffle&seed=251f825c
  - obfuscate slots (random address, xors)
  - finish flags for flight statue skip

@@ -54,7 +54,7 @@ const connMap = new Map<ConnectionType, AreaConnection>([
 ]);
 
 type ExitDescriptor = readonly [Pos, ConnectionType, ExitSpec];
-type ExitFinder = Location|Pos|ConnectionType|readonly ExitFinder[];
+type ExitFinder = Pos|ConnectionType|readonly ExitFinder[];
 type AreaConnection = 'N'|'S'|'W'|'E'|'C'|'X'|'F'|'O';
 //type AreaExitSpec = readonly [AreaConnection, ExitFinder, Area, boolean?];
 const connInverse = new Map<AreaConnection, AreaConnection>([
@@ -154,15 +154,13 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
     }
     return out;
   }
-  if (flags.shuffleHouses()) {
-    for (const exit of findExits(loc.ValleyOfWind, 'door', 'windmill')) {
-      exit.area = 'windmill';
-    }
+  for (const exit of findExits(loc.ValleyOfWind, 'door', 'windmill')) {
+    exit.area = 'windmill';
   }
   for (const exit of findExits(loc.AngrySea, 0x64)) {
     exit.area = 'lighthouse';
   }
-  findExits(loc.Portoa_FishermanIsland, loc.Portoa)[0].oneWay = true;
+  findExits(loc.Portoa_FishermanIsland, 'edge:right')[0].oneWay = true;
   
   // Mark the exits that are eligible to be shuffled.
   function mark(loc: Location, ...exits: ExitFinder[]): void {
@@ -178,46 +176,49 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
       }
     }
   }
-    
-  mark(loc.Leaf, loc.Leaf_OutsideStart);
-  markOutside(loc.ValleyOfWind, loc.WindmillCave, loc.Windmill);
-  if (flags.shuffleHouses()) markOutside(loc.WindmillCave);
+
+  markOutside(loc.Leaf_OutsideStart);
+  //mark(loc.Leaf, loc.Leaf_OutsideStart);
+  mark(loc.ValleyOfWind, 'cave', 'door', 'edge:bottom', 'edge:top', 'edge:left', 'edge:right');
+  /*if (flags.shuffleHouses())*/ markOutside(loc.WindmillCave);
   markOutside(loc.EastCave1, loc.EastCave2, loc.EastCave3);
   markOutside(loc.ZebuCave, loc.MtSabreWest_Cave1);
   markOutside(loc.CordelPlainWest, loc.CordelPlainEast);
   markOutside(loc.WaterfallValleyNorth, loc.WaterfallValleySouth);
   markOutside(loc.KirisaMeadow);
   markOutside(loc.LimeTreeLake);
-  mark(loc.Portoa_FishermanIsland, loc.Portoa);
-  mark(loc.UndergroundChannel, loc.PortoaPalace_ThroneRoom);
-  mark(loc.AngrySea, loc.Joel);
-  markOutside(loc.JoelSecretPassage); // ???
+  mark(loc.Portoa_FishermanIsland, 'edge:right'); // (Portoa)
+  mark(loc.PortoaPalace_ThroneRoom, 'door'); // (underground channel)
+  mark(loc.Joel, 'edge:bottom'); // (angry sea)
+  markOutside(loc.JoelSecretPassage); // maybe not?
   //findExits(loc.EvilSpiritIsland1, loc.EvilSpiritIsland2)[0].conn = 'C';
-  mark(loc.EvilSpiritIsland1, loc.EvilSpiritIsland2);
-  mark(loc.ZombieTown, loc.EvilSpiritIsland3);
-  mark(loc.AngrySea, loc.Swan);
+  mark(loc.EvilSpiritIsland1, 'stair:up'); // (ESI 2)
+  mark(loc.ZombieTown, 'cave'); // (ESI 3)
+  mark(loc.AngrySea, 'edge:top');
   markOutside(loc.SwanGate);
-  mark(loc.GoaValley, loc.MtHydra);
+  mark(loc.GoaValley, 'edge:left'); // (Mt Hydra)
   markOutside(loc.Desert1);
   markOutside(loc.GoaFortressBasement);
   markOutside(loc.DesertCave1);
   markOutside(loc.SaharaOutsideCave);
   markOutside(loc.DesertCave2);
+  mark(loc.Desert2, 'stair:down');
   if (!flags.shuffleHouses()) {
     // Also mark the fortresses/palaces
-    const palaces: [Location, Location][] = [
+    const palaces: [Location, ExitFinder][] = [
       // Normal palaces
-      [loc.ZombieTown, loc.SaberaPalace1],
-      [loc.MtHydra, loc.Styx1],
-      [loc.Desert2, loc.Pyramid_Entrance],
-      [loc.Goa, loc.GoaFortress_Entrance],
-      [loc.Portoa, loc.Portoa_PalaceEntrance],
-      [loc.Shyron, loc.Shyron_Temple],
+      [loc.ZombieTown, 'fortress'], // Sabera
+      [loc.MtHydra, 'gate'], // Styx
+      [loc.Desert2, 'fortress'], // Pyramid
+      [loc.Goa, 'edge:top'], // Goa Fortress
+      [loc.Portoa, 'fortress'], // Palace
+      [loc.Shyron, 'fortress'], // Temple
       // [loc.UndergroundChannel, loc.Portoa_AsinaRoom], ??
       // Extras
-      [loc.GoaValley, loc.Goa],
-      [loc.OasisCave_Entrance, loc.GoaFortress_Exit],
-      [loc.MtHydra_OutsideShyron, loc.Shyron],
+      [loc.GoaValley, 'fortress'], // Goa Town
+      [loc.OasisCave_Entrance, 'stair:up'], // Goa Fortress backdoor
+      [loc.MtHydra_OutsideShyron, 'gate'], // Shyron
+      [loc.Crypt_Entrance, 'crypt'],
     ];
     for (const [outside, inside] of palaces) {
       const [exit] = findExits(outside, inside);

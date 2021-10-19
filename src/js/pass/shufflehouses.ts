@@ -55,7 +55,7 @@ const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
 export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   const {
-    locations: {Goa, GoaFortress_Exit, Shyron},
+    locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron},
     metascreens: {squareTownNE_house,
                   fortressTownEntrance,
                   mountainPathE_gate},
@@ -70,7 +70,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
 
   if (flags.shuffleAreas()) {
     // Set a few additional locations as palaces
-    for (const loc of [Goa, GoaFortress_Exit, Shyron]) {
+    for (const loc of [Goa, GoaFortress_Exit, Shyron, Crypt_Hall1]) {
       loc.data.houseType = 'palace';
     }
   }

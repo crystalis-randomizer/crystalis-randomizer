@@ -1107,7 +1107,7 @@ export class Metascreens {
     // shyron, zombie town (probably not worth splitting this one)
     id: 0x5e,
     tilesets: {town: {type: 'vertical'}},
-    exits: [cave(0x47), bottomEdge()],
+    exits: [cave(0x47, 'fortress'), bottomEdge()],
   });
   readonly shyronMiddle = this.metascreen({
     // shyron
@@ -2759,7 +2759,7 @@ export class Metascreens {
     feature: ['arena'],
     edges: '  l ',
     connect: 'a',
-    exits: [{...upStair(0x47, 3), type: 'cave'}],
+    exits: [{...upStair(0x47, 3), type: 'gate'}],
     flag: 'custom:false',
   });
   readonly mountainPathN_slopeS_cave = this.metascreen({
@@ -3062,7 +3062,7 @@ export class Metascreens {
     // TODO - indicate uniqueness?
     feature: ['pyramid'],
     edges: 'oooo',
-    exits: [cave(0xa7)],
+    exits: [cave(0xa7, 'fortress')],
   });
   readonly cryptEntrance = this.metascreen({
     id: 0xcc,

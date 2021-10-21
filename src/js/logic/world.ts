@@ -110,7 +110,7 @@ export class World {
 
   constructor(readonly rom: Rom, readonly flagset: FlagSet,
               readonly tracker = false) {
-    // Build itemUses
+    // Build itemUses (e.g. windmill key inside windmill, bow of sun/moon?)
     for (const item of rom.items) {
       for (const use of item.itemUseData) {
         if (use.kind === 'expect') {
@@ -773,7 +773,9 @@ export class World {
       } else if (spawn.isMonster()) {
         this.processMonster(location, spawn);
       } else if (spawn.type === 3 && spawn.id === 0xe0) {
-        // windmill blades
+        // Windmill blades: the cave flag (2ee) isn't set directly by using the
+        // key.  Rather, the windmill blades (e0, action 51 at $366db) check for
+        // 00a to spawn explosion and set 2ee.
         this.processKeyUse(
             Hitbox.screen(TileId.from(location, spawn)),
             this.rom.flags.UsedWindmillKey.r);

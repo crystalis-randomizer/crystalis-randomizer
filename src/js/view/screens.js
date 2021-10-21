@@ -79,8 +79,31 @@ const run = async () => {
     const x = e.offsetX >>> 4 & 0xf;
     const y = e.offsetY >>> 4 & 0xf;
     document.getElementById('coord').textContent = y.toString(16) + x.toString(16);
-    
   });
+
+  let maxPage = 0;
+  for (let i = canvas.patternCoverage.length - 1; i >= 0; i--) {
+    if (canvas.patternCoverage[i]) {
+      maxPage = (i >>> 7) << 1;
+      break;
+    }
+  }
+  const unused = [];
+  const lastTile = (maxPage + 1) << 6;
+  for (let i = 0; i < lastTile; i++) {
+    if (canvas.patternCoverage[i]) continue;
+    if (!unused[i >>> 7]) unused[i >>> 7] = [];
+    unused[i >>> 7].push(i & 0x7f);
+  }
+  for (let i = 0; i < unused.length; i++) {
+    const list = document.createElement('div');
+    list.textContent = `Unused Pat ${(i << 1).toString(16).padStart(2, 0)}:`;
+    document.body.appendChild(list);
+    if (!unused[i]) continue;
+    for (const p of unused[i]) {
+      list.textContent += ` ${p.toString(16).padStart(2, 0)}`;
+    }
+  }
 };
 
 const hex = (x) => x.toString(16).padStart(2, 0);

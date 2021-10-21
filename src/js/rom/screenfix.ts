@@ -118,8 +118,8 @@ export function withRequire<T extends Reqs>(requirement: ScreenFix, props: T) {
 
 /** Apply standard tileset fixes.  Others may be applied later. */
 export function fixTilesets(rom: Rom) {
-  const {desert, grass, lime,
-         mountain, mountainRiver, river, sea} = rom.metatilesets;
+  const {desert, grass, lime, mountain, mountainRiver,
+         river, sea, town} = rom.metatilesets;
   const $ = rom.metascreens;
 
   // Several of the grass/river screens with forest tiles don't work on
@@ -208,6 +208,12 @@ export function fixTilesets(rom: Rom) {
     ts.getTile(0x88).copyFrom(0x03).replaceIn(...ts);
     ts.getTile(0x89).copyFrom(0x04).replaceIn(...ts);
   }
+  for (const ts of [town]) {
+    ts.getTile(0x50).copyFrom(0x01).replaceIn(...ts);
+    ts.getTile(0x51).copyFrom(0x02).replaceIn(...ts);
+    ts.getTile(0x52).copyFrom(0x03).replaceIn(...ts);
+    ts.getTile(0x57).copyFrom(0x04).replaceIn(...ts);
+  }
   // Make 01..04 be flaggable wall/opening
   for (const ts of [grass, river, desert]) {
     ts.getTile(0x01).copyFrom(0xc1).setAlternative(0x00);
@@ -225,24 +231,48 @@ export function fixTilesets(rom: Rom) {
       ts.getTile(i).setTiles(grass.getTile(i).tiles);
     }
   }
+  for (const ts of [town]) {
+    ts.getTile(0x01).copyFrom(0x63).setAlternative(0x00);
+    ts.getTile(0x02).copyFrom(0x64).setAlternative(0xd2);
+    ts.getTile(0x03).copyFrom(0x63).setAlternative(0x00);
+    ts.getTile(0x04).copyFrom(0x64).setAlternative(0xd2);
+  }
   // Set the cave entrances to use 01..04 as appropriate
   const closedCaves = new Set([
     $.boundaryE_cave, $.boundaryW_cave, $.exitW_cave, $.caveAbovePortoa,
     $.beachCave, $.outsideWindmill,
-    // TODO - test these:
     $.exitS_cave, $.townExitW_cave,
-    // TODO - $.zombieTownBottom_caveExit, (town)
-    // TODO - $.channelEndW_cave, (dolphinCave)
+    $.zombieTownBottom_caveExit, // (town)
+    // TODO - any way to do $.channelEndW_cave? (stair in dolphinCave)
+    // TODO - mountain cave entrances? (both 94 and 
+    //   - 0 on top, 16 on bottom for 05 (free in 94) and 06 (from 27 or 3c?)
+    //   - or just use 1a/1a/08/09 - only 08 if a key is needed?
   ]);
   const waterCaves = new Set<Metascreen>([]);
   //if ($.isFixed(ScreenFix.SeaCaveEntrances)) {
     waterCaves.add($.boundaryN_cave);
     waterCaves.add($.cornerSE_cave);
   //}
+  const mountainCaves = new Set([
+    $.mountainDeadEndW_caveEmpty,
+    $.mountainPathW_cave,
+    $.mountainCave_empty,
+    $.mountainPathE_cave,
+    $.mountainPathN_slopeS_cave,
+    $.mountainPathWE_slopeN_cave,
+    $.mountainPathE_gate,
+  ]);
   for (const scr of [...closedCaves, ...waterCaves]) {
     const exit = scr.data.exits!.find(e => e.type === 'cave');
     const pos = Math.min(...exit!.exits) - 0x10;
     const tiles = waterCaves.has(scr) ? [[3, 3], [4, 4]] : [[1, 1], [2, 2]];
+    scr.screen.set2d(pos, tiles);
+    scr.addCustomFlag(true);
+  }
+  for (const scr of [...mountainCaves]) {
+    const exit = scr.data.exits!.find(e => e.type === 'cave' || e.type === 'gate');
+    const pos = Math.min(...exit!.exits) - 0x10;
+    const tiles = [[0x1a, 0x1a], [0x08, 0x09]];
     scr.screen.set2d(pos, tiles);
     scr.addCustomFlag(true);
   }

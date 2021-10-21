@@ -102,24 +102,28 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
   const seen = new Set<Location|number>([loc, loc.id << 8 | pos]);
   const queue = new Set<ExitSpec>();
   for (const exit of loc.meta.exits()) {
-    if (exit[0] === pos && exit[1] === 'cave') {
+    if (exit[0] === pos && (exit[1] === 'cave' || exit[1] === 'gate')) {
       queue.add(exit[2]);
     }
   }
   const out: number[] = [];
 
-  // TEST ZOMBIE
-  if (pos === 0x11) {
-    for (const e of loc.rom.locations[0x65].meta.exits()) {
-      if (e[1] === 'cave') out.push(0x6500 | e[0]);
-    }
-  }
+  // // TEST CAVES
+  // if (pos === 0x11) {
+  //   for (const scr of [0x7c, 0x7e]) {
+  //     for (const e of loc.rom.locations[scr].meta.exits()) {
+  //       if (e[1] === 'cave' || e[1] === 'gate') out.push(scr << 8 | e[0]);
+  //     }
+  //   }
+  // }
 
   for (const exit of queue) {
     if (seen.has(exit[0])) continue;
     const exitLoc = loc.rom.locations[exit[0] >>> 8];
-    if (exit[1] === 'cave') { // Found a cave
-      const scr = exitLoc.meta.get(exit[0] & 0xff);
+    const exitPos = exit[0] & 0xff;
+    if (exitLoc.meta.customFlags.has(exitPos)) continue; // already blocked
+    if (exit[1] === 'cave' || exit[1] === 'gate') { // Found a cave
+      const scr = exitLoc.meta.get(exitPos);
       if (scr.flag === 'custom:true') {
         out.push(exit[0]);
       } else {
@@ -131,7 +135,7 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
     seen.add(exitLoc);
     for (const entrance of exitLoc.meta.exits()) {
       // Don't recurse into a different cave
-      if (entrance[1] === 'cave') continue;
+      if (entrance[1] === 'cave' || entrance[1] === 'gate') continue;
       queue.add(entrance[2]);
     }
   }

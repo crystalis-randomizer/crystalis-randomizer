@@ -15,6 +15,7 @@ export class Canvas {
     this.maxX = this.maxY = -Infinity;
     this.data = new Uint32Array(width * height);
     this.palettes = new Uint32Array(0x400);
+    this.patternCoverage = new Uint8Array(16384); // 256 pages * 64 per page
 
     // initialize palettes
     for (let i = 0; i < 0x100; i++) {
@@ -47,7 +48,7 @@ export class Canvas {
 
   // attr = palette << 2 | vflip << 1 | hflip
   tile(x, y, id, attr) {
-    const pat = this.rom.patterns[id].flip(attr << 6);
+    const pat = this.rom.patterns.get(id).flip(attr << 6);
     for (let r = 0; r < 8; r++) {
       let hi = pat.pixels[8 | r] << 1;
       let lo = pat.pixels[r];
@@ -70,10 +71,20 @@ export class Canvas {
     const palettes = [...loc.tilePalettes, 0x7f];
     const tileset = rom.tilesets[loc.tileset];
     const palette = palettes[tileset.attrs[id]];
+    const anim = loc.animation;
     for (let r = 0; r < 2; r++) {
       for (let c = 0; c < 2; c++) {
         const tile = tileset.tiles[r << 1 | c][id];
         const pattern = patterns[tile & 0x80 ? 1 : 0] << 6 | tile & 0x7f;
+        if (anim && (tile & 0x80)) {
+          for (let i = 0; i < this.rom.tileAnimations[anim].pages.length; i++) {
+            let p = this.rom.tileAnimations[anim].pages[i] << 6 | tile & 0x7f
+            this.patternCoverage[p] = 1;
+          }
+        } else {
+          this.patternCoverage[pattern] = 1;
+        }
+        //////// patternCoverage
         const x1 = x + (c << 3);
         const y1 = y + (r << 3);
         this.tile(x1, y1, pattern, palette << 2);

@@ -746,6 +746,12 @@ class DebugMode extends FlagSection {
   static readonly NeverDie = DebugMode.flag('Di', {
     name: 'Player never dies',
   });
+
+  static readonly NoShuffle = DebugMode.flag('Dn', {
+    name: 'Do not shuffle items',
+    text: `Items will not be shuffled. WARNING: This disables the logic and
+           is very likely to result in an unwinnable seed`,
+  });
 }
 
 export class FlagSet {
@@ -927,6 +933,9 @@ export class FlagSet {
   }
   neverDie(): boolean {
     return this.check(DebugMode.NeverDie);
+  }
+  noShuffle(): boolean {
+    return this.check(DebugMode.NoShuffle);
   }
   chargeShotsOnly(): boolean {
     return this.check(HardMode.ChargeShotsOnly);

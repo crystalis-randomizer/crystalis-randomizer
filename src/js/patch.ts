@@ -304,31 +304,32 @@ async function shuffleInternal(rom: Uint8Array,
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
   const graph = new Graph([world.getLocationList()]);
-  const fill =
-      await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
-  if (fill) {
-    // const n = (i: number) => {
-    //   if (i >= 0x70) return 'Mimic';
-    //   const item = parsed.items[parsed.itemGets[i].itemId];
-    //   return item ? item.messageName : `invalid ${i}`;
-    // };
-    // console.log('item: slot');
-    // for (let i = 0; i < fill.items.length; i++) {
-    //   if (fill.items[i] != null) {
-    //     console.log(`$${hex(i)} ${n(i)}: ${n(fill.items[i])} $${hex(fill.items[i])}`);
-    //   }
-    // }
+  if (!flags.noShuffle()) {
+    const fill = await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
+    if (fill) {
+      // const n = (i: number) => {
+      //   if (i >= 0x70) return 'Mimic';
+      //   const item = parsed.items[parsed.itemGets[i].itemId];
+      //   return item ? item.messageName : `invalid ${i}`;
+      // };
+      // console.log('item: slot');
+      // for (let i = 0; i < fill.items.length; i++) {
+      //   if (fill.items[i] != null) {
+      //     console.log(`$${hex(i)} ${n(i)}: ${n(fill.items[i])} $${hex(fill.items[i])}`);
+      //   }
+      // }
 
-    // TODO - fill the spoiler log!
+      // TODO - fill the spoiler log!
 
-    //w.traverse(w.graph, fill); // fill the spoiler (may also want to just be a sanity check?)
+      //w.traverse(w.graph, fill); // fill the spoiler (may also want to just be a sanity check?)
 
-    for (const [slot, item] of fill) {
-      parsed.slots[slot & 0xff] = item & 0xff;
+      for (const [slot, item] of fill) {
+        parsed.slots[slot & 0xff] = item & 0xff;
+      }
+    } else {
+      return [rom, -1];
+      //console.error('COULD NOT FILL!');
     }
-  } else {
-    return [rom, -1];
-    //console.error('COULD NOT FILL!');
   }
   //console.log('fill', fill);
 

@@ -83,7 +83,6 @@ function fixClosedCaveExits(rom: Rom) {
   }
   for (const locPos of findClosedCaveExits(MtSabreNorth_Main, 0x04)) {
     const loc = rom.locations[locPos >>> 8];
-    debugger;
     if (loc.data.fixed) continue; // don't add if there's a fixed slot
     if (loc.spawns.length > 15) continue; // not enough room to add spawns
     const pos = locPos & 0xff;

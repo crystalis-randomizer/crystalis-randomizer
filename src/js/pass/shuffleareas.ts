@@ -227,6 +227,16 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
     }
   }
 
+  {
+    // NOTE: oak child can now be taken anywhere
+    const [exit] = findExits(loc.Oak, 'edge:bottom');
+    exit.conn = 'X'; // TODO - consider making this 'S'? or some combo?
+    exit.shuffle = true;
+
+    // TODO - mark conn as 'C/X'
+    // TODO - test that child can be taken out of swamp
+  }
+
   // DIAGNOSTIC: check that all the exits are correct
   // const seen = new Set();
   // for (const exit of exits.values()) {
@@ -285,6 +295,12 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
     }
     return [partitions.length, map, partitions[min]];
   }
+
+  // TODO - consider swapping 'X' and 'S' town exits?
+  //  - S: Swan, Shyron, Goa
+  //  - X: Oak, Joel
+
+  // TODO - consider allowing a few wrong exit pairs by adding small connectors?
 
   const exitsByConn = new DefaultMap<AreaConnection, Exit[]>(() => []);
   for (const exit of exits.values()) {

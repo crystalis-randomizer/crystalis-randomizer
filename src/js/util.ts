@@ -990,3 +990,8 @@ export class CaseMap<V> {
 }
 
 export function assertType<T>(actual: T): void {}
+
+export function hex1(x: number, digits = 1): string {
+  return x < 0 ? `~${(~x).toString(16).padStart(digits, '0')}` :
+      x.toString(16).padStart(digits, '0');
+}

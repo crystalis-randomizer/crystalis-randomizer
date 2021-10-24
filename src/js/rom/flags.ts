@@ -6,6 +6,8 @@ import {hex, hex3, upperCamelToSpaces, Writable} from './util.js';
 import {Condition, Requirement} from '../logic/requirement.js';
 import {Rom} from '../rom.js';
 
+const DEBUG = false;
+
 const FLAG = Symbol();
 
 // TODO - maybe alias should just be in overlay.ts?
@@ -782,7 +784,7 @@ export class Flags {
     for (let i = 0; i < 0x300; i++) {
       if (!this[i]) free.push(hex3(i));
     }
-    console.log(`Free flags: ${free.join(' ')}`);
+    if (DEBUG) console.log(`Free flags: ${free.join(' ')}`);
   }
 
   insertZombieWarpFlag() {

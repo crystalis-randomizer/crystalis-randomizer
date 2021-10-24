@@ -60,7 +60,35 @@
 .segment "20"   :bank $20 :size $2000 :off $40000 :mem $8000
 .segment "21"   :bank $21 :size $2000 :off $42000 :mem $a000
 .segment "22"   :bank $22 :size $2000 :off $44000 :mem $8000
-.segment "23"   :bank $23 :size $2000 :off $48000 :mem $a000
+.segment "23"   :bank $23 :size $2000 :off $46000 :mem $a000
+.segment "24"   :bank $24 :size $2000 :off $48000 :mem $8000
+.segment "25"   :bank $25 :size $2000 :off $4a000 :mem $a000
+.segment "26"   :bank $26 :size $2000 :off $4c000 :mem $8000
+.segment "27"   :bank $27 :size $2000 :off $4e000 :mem $a000
+.segment "28"   :bank $28 :size $2000 :off $50000 :mem $8000
+.segment "29"   :bank $29 :size $2000 :off $52000 :mem $a000
+.segment "2a"   :bank $2a :size $2000 :off $54000 :mem $8000
+.segment "2b"   :bank $2b :size $2000 :off $56000 :mem $a000
+.segment "2c"   :bank $2c :size $2000 :off $58000 :mem $8000
+.segment "2d"   :bank $2d :size $2000 :off $5a000 :mem $a000
+.segment "2e"   :bank $2e :size $2000 :off $5c000 :mem $8000
+.segment "2f"   :bank $2f :size $2000 :off $5e000 :mem $a000
+.segment "30"   :bank $30 :size $2000 :off $60000 :mem $8000
+.segment "31"   :bank $31 :size $2000 :off $62000 :mem $a000
+.segment "32"   :bank $32 :size $2000 :off $64000 :mem $8000
+.segment "33"   :bank $33 :size $2000 :off $66000 :mem $a000
+.segment "34"   :bank $34 :size $2000 :off $68000 :mem $8000
+.segment "35"   :bank $35 :size $2000 :off $6a000 :mem $a000
+.segment "36"   :bank $36 :size $2000 :off $6c000 :mem $8000
+.segment "37"   :bank $37 :size $2000 :off $6e000 :mem $a000
+.segment "38"   :bank $38 :size $2000 :off $70000 :mem $8000
+.segment "39"   :bank $39 :size $2000 :off $72000 :mem $a000
+.segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
+.segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000
+.segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000
+.segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000
+;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
+;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 
 
 ;;; Various global definitions.

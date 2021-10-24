@@ -1,14 +1,16 @@
 import {Rom} from '../rom.js';
 //import {Screen} from './screen.js';
 import {Mutable} from './util.js';
-import {DefaultMap} from '../util.js';
+import {DefaultMap, hex1} from '../util.js';
 import {Metascreen, Uid} from './metascreen.js';
 import {MetascreenData, bottomEdge, bottomEdgeHouse, cave, door, downStair,
         icon, leftEdge, readScreen,
         rightEdge, seamlessDown, seamlessUp, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset.js';
-import {ScreenFix, withRequire} from './screenfix.js';
+import {ScreenFix /*, withRequire*/} from './screenfix.js';
+
+const DEBUG = false;
 
 // // BASIC PLAN: Screen is the physical array, Metascreen has the extra info.
 // //             Only Metascreen is tied to specific (Meta)tilesets.
@@ -53,6 +55,7 @@ export class Metascreens {
 
   private readonly screensByFix = new DefaultMap<ScreenFix, Metascreen[]>(() => []);
   private readonly screensById = new DefaultMap<number, Metascreen[]>(() => []);
+  private readonly registeredFixes = new Set<ScreenFix>();
 
   constructor(readonly rom: Rom) {
     for (const key in this) { // add names
@@ -112,6 +115,11 @@ export class Metascreens {
         }
       }
     }
+    this.registeredFixes.add(fix);
+  }
+
+  isFixed(fix: ScreenFix): boolean {
+    return this.registeredFixes.has(fix);
   }
 
   /**
@@ -119,14 +127,16 @@ export class Metascreens {
    * screen ID.  Updates all relevant links.  `newId` must not be used by
    * any existing metascreens.
    */
-  renumber(oldId: number, newId: number) {
-    console.log(`renumber ${oldId} -> ${newId}`);
+  renumber(oldId: number, newId: number, tilesets?: Set<Metatileset>) {
+    if (oldId === newId) return;
+    if (DEBUG) console.log(`renumber ${hex1(oldId)} -> ${hex1(newId)}`);
     const dest = this.screensById.get(newId);
-    if (dest.length) throw new Error(`ID already used: ${newId}: ${dest}`);
+    if (dest.length) throw new Error(`ID already used: ${hex1(newId)}: ${dest.join(', ')}`);
     let sourceDefinition: Uint8Array|undefined;
     for (const screen of this.getById(oldId)) {
+      if (tilesets && !screen.tilesets().some(t => tilesets.has(t))) continue;
       if (screen.data.definition) {
-        sourceDefinition = screen.data.definition;
+        sourceDefinition = screen.data.definition(this.rom);
         screen.data.definition = undefined;
       }
       screen.unsafeSetId(newId);
@@ -136,7 +146,7 @@ export class Metascreens {
     // TODO - should this be encapsulated in Screens? probably...
     const oldScreen = this.rom.screens.getScreen(oldId);
     if (oldId >= 0 && newId < 0) { // back up the old screen
-      dest[0].data.definition = Uint8Array.from(oldScreen.tiles);
+      dest[0].data.definition = constant(Uint8Array.from(oldScreen.tiles));
     }
     const clone = oldScreen.clone(newId);
     this.rom.screens.setScreen(newId, clone);
@@ -1565,7 +1575,7 @@ export class Metascreens {
     edges: 's   ',
     connect: '2',
     poi: [[0]],
-    definition: readScreen(
+    definition: constant(readScreen(
         `.  .  .  .  cf f6 c7 ad c4 b7 f6 cc .  .  .  .
          .  .  .  .  cf f6 b8 b9 c3 b7 f6 cc .  .  .  .
          .  .  .  .  cf f6 b7 b8 ad ad d2 cc .  .  .  .
@@ -1581,7 +1591,7 @@ export class Metascreens {
          .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .`,
-        ['.', 0xc8]),
+        ['.', 0xc8])),
   });
   readonly swampS = this.metascreen({
     id: ~0x71,
@@ -1595,7 +1605,7 @@ export class Metascreens {
     edges: '  s ',
     connect: 'a',
     poi: [[0]],
-    definition: readScreen(
+    definition: constant(readScreen(
         `.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          .  .  .  .  .  .  cd c9 c9 ca .  .  .  .  .  .
          .  .  .  .  .  cd eb a0 a0 cb ca .  .  .  .  .
@@ -1611,7 +1621,7 @@ export class Metascreens {
          .  .  .  .  cf f6 b8 b6 b6 b6 d2 cc .  .  .  .
          .  .  .  .  cf f6 b7 b7 b7 b7 f6 cc .  .  .  .
          .  .  .  .  cf f6 b7 b7 b8 b6 d2 cc .  .  .  .`,
-        ['.', 0xc8]),
+        ['.', 0xc8])),
   });
   readonly swampNS = this.metascreen({
     id: ~0x72,
@@ -1625,7 +1635,7 @@ export class Metascreens {
     edges: 's s ',
     connect: '2a',
     exits: [topEdge({left: 6, width: 4}), bottomEdge({left: 6, width: 4})],
-    definition: readScreen(
+    definition: constant(readScreen(
         `.  .  .  .  cf d3 b6 b6 c6 b6 f6 cc .  .  .  .
          .  .  .  .  cf d3 b6 c3 c7 b6 f6 cc .  .  .  .
          .  .  .  .  cf f5 c3 c7 b6 b6 d2 cc .  .  .  .
@@ -1641,7 +1651,7 @@ export class Metascreens {
          .  .  .  .  cf f6 b7 b7 b8 b6 d2 cc .  .  .  .
          .  .  .  .  cf d3 b9 b7 b7 b7 f6 cc .  .  .  .
          .  .  .  .  cf f6 b7 b7 c7 b6 d2 cc .  .  .  .`,
-        ['.', 0xc8]),
+        ['.', 0xc8])),
   });
   readonly swampWE = this.metascreen({
     id: ~0x73,
@@ -1656,7 +1666,7 @@ export class Metascreens {
     connect: '6e',
     exits: [leftEdge({top: 7, height: 4, shift: -0.5}),
             rightEdge({top: 7, height: 4, shift: -0.5})],
-    definition: readScreen(
+    definition: constant(readScreen(
         `.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9 c9
          a0 e4 e8 eb e4 a0 a0 a0 eb eb e8 f0 f1 a0 e4 a0
@@ -1672,7 +1682,7 @@ export class Metascreens {
          .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .`,
-        ['.', 0xc8]),
+        ['.', 0xc8])),
   });
   readonly swampWE_door = this.metascreen({
     id: ~0x73,
@@ -1702,7 +1712,7 @@ export class Metascreens {
     exits: [rightEdge({top: 7, height: 4, shift: -0.5}),
             bottomEdge({left: 6, width: 4})],
     poi: [[2]],
-    definition: readScreen(
+    definition: constant(readScreen(
         `.  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
          .  .  .  .  .  .  cd c9 c9 c9 c9 c9 c9 c9 c9 c9
          .  .  .  .  .  cd a0 a0 a0 e8 04 a0 e8 a0 a0 e4
@@ -1718,7 +1728,7 @@ export class Metascreens {
          .  .  .  .  cf d3 b9 b8 ad b9 f6 cc .  .  .  .
          .  .  .  .  cf f6 c7 ad b9 c7 d2 cc .  .  .  . 
          .  .  .  .  cf d3 b6 b9 c3 b8 d2 cc .  .  .  .`,
-        ['.', 0xc8]),
+        ['.', 0xc8])),
   });
   readonly swampSE_door = this.metascreen({
     id: ~0x74,
@@ -1748,7 +1758,7 @@ export class Metascreens {
     exits: [topEdge({left: 6, width: 4}),
             bottomEdge({left: 6, width: 4}),
             rightEdge({top: 7, height: 4, shift: -0.5})],
-    definition: readScreen(
+    definition: constant(readScreen(
         `.  .  .  .  cf d3 c4 c3 c3 c3 f7 f8 ca .  .  .
          .  .  .  .  cf f5 c3 c3 c3 c3 f7 f7 a0 ca c9 c9
          .  .  .  .  cf f6 c3 c3 b8 b6 d2 f7 f8 e8 e4 a0
@@ -1764,7 +1774,7 @@ export class Metascreens {
          .  .  .  .  cf d3 ad ad ad ad d2 cc .  .  .  .
          .  .  .  .  cf d3 c4 c3 b7 b8 d2 cc .  .  .  .
          .  .  .  .  cf d3 b6 b9 b7 b7 f6 cc .  .  .  .`,
-        ['.', 0xc8]),
+        ['.', 0xc8])),
   });
   // Cave screens
   readonly caveEmpty = this.metascreen({
@@ -1774,8 +1784,19 @@ export class Metascreens {
       |   |
       |   |`,
     tile: '   |   |   ',
-    tilesets: {cave: {}, fortress: {}, labyrinth: {}, pyramid: {},
-               iceCave: {}, dolphinCave: {}},
+    tilesets: {cave: {}, fortress: {}, labyrinth: {}, pyramid: {}, iceCave: {}},
+    feature: ['empty'],
+    edges: '    ',
+    delete: true,
+  });
+  readonly dolphinCave_empty = this.metascreen({
+    id: 0x80,
+    icon: icon`
+      |   |
+      |   |
+      |   |`,
+    tile: '   |   |   ',
+    tilesets: {dolphinCave: {}},
     feature: ['empty'],
     edges: '    ',
     delete: true,
@@ -3863,12 +3884,30 @@ export class Metascreens {
       | ░ |
       |─░ |
       | ░ |`,
-    tilesets: withRequire(ScreenFix.ExtraSpikes,
-                          {cave: {}, fortress: {}, pyramid: {}, iceCave: {}}),
+    tilesets: //withRequire(ScreenFix.ExtraSpikes,
+              {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     tile: ' s |cs | s ',
     feature: ['spikes'],
     edges: 'scs ',
     connect: '26a',
+    definition: (rom: Rom) => readScreen(
+        `L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R`,
+      ['L', rom.metascreens.spikesNS_hallWE],
+      ['R', rom.metascreens.spikesNS]),
   });
   readonly spikesNS_hallE = this.metascreen({
     id: ~0xe1,
@@ -3876,12 +3915,30 @@ export class Metascreens {
       | ░ |
       | ░─|
       | ░ |`,
-    tilesets: withRequire(ScreenFix.ExtraSpikes,
-                          {cave: {}, fortress: {}, pyramid: {}, iceCave: {}}),
+    tilesets: //withRequire(ScreenFix.ExtraSpikes,
+              {cave: {}, fortress: {}, pyramid: {}, iceCave: {}},
     tile: ' s | sc| s ',
     feature: ['spikes'],
     edges: 's sc',
     connect: '2ae',
+    definition: (rom: Rom) => readScreen(
+        `L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R
+         L L L L L L L L R R R R R R R R`,
+      ['L', rom.metascreens.spikesNS],
+      ['R', rom.metascreens.spikesNS_hallWE]),
   });
   readonly riverCave_deadEndsNS = this.metascreen({
     id: 0xf0,
@@ -4025,6 +4082,71 @@ export class Metascreens {
     connect: '15p:3dp:7f',
     poi: [[4, 0x00, 0x48], [4, 0x00, 0x98]],
   });
+  readonly riverCaveNWS = this.metascreen({
+    id: ~0xf0,
+    icon: icon`
+      |┘║│|
+      |═╣│|
+      |┐║│|`,
+    tile: ' r |rr | r ',
+    tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
+    edges: 'rrr ',
+    connect: '15p:3b:79',
+    poi: [[4, 0x00, 0x48]],
+    definition: (rom: Rom) => readScreen(
+        `A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         A A A A A A A A R R R R R R R R
+         B B B B B B B B R R R R R R R R
+         B B B B B B B B R R R R R R R R
+         B B B B B B B B R R R R R R R R
+         B B B B B B B B R R R R R R R R
+         B B B B B B B B R R R R R R R R
+         B B B B B B B B R R R R R R R R
+         B B B B B B B B R R R R R R R R`,
+      ['A', rom.metascreens.riverCaveNWE],
+      ['B', rom.metascreens.riverCaveWSE],
+      ['R', rom.metascreens.riverCaveNS]),
+  });
+  readonly riverCaveNSE = this.metascreen({
+    id: ~0xf1,
+    icon: icon`
+      |│║└|
+      |│╠═|
+      |│║┌|`,
+    tile: ' r | rr| r ',
+    tilesets: {cave: {}, fortress: {}},
+    feature: ['river'],
+    edges: 'r rr',
+    connect: '19:3dp:bf',
+    poi: [[4, 0x00, 0x98]],
+    definition: (rom: Rom) => readScreen(
+        `L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L A A A A A A A A
+         L L L L L L L L B B B B B B B B
+         L L L L L L L L B B B B B B B B
+         L L L L L L L L B B B B B B B B
+         L L L L L L L L B B B B B B B B
+         L L L L L L L L B B B B B B B B
+         L L L L L L L L B B B B B B B B
+         L L L L L L L L B B B B B B B B`,
+      ['A', rom.metascreens.riverCaveNWE],
+      ['B', rom.metascreens.riverCaveWSE],
+      ['L', rom.metascreens.riverCaveNS]),
+  });
+
   readonly riverCaveNS_blockedRight = this.metascreen({
     id: 0xf5,
     icon: icon`
@@ -4223,3 +4345,5 @@ export class Metascreens {
 // U+259x ▐ ░ ▒ ▓ ▔ ▕ ▖ ▗ ▘ ▙ ▚ ▛ ▜ ▝ ▞ ▟
 //
 // ∩ \cap
+
+function constant<T>(x: T): () => T { return () => x; }

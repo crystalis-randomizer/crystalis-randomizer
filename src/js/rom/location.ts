@@ -732,16 +732,23 @@ export class Location extends Entity {
   // }
 
   mapPlane(): number {
-    const set = new Set<number>();
+    const set = new DefaultMap<number, Set<number>>(() => new Set());
     for (const row of this.screens) {
       for (const s of row) {
-        set.add(s >>> 8);
+        set.get(s >>> 8).add(s);
       }
     }
     if (set.size !== 1) {
-      throw new Error(`Non-unique screen page: ${[...set].join(', ')}`);
+      throw new Error(`Non-unique screen page for ${this}: ${
+          [...set.values()].map(sids =>
+            [...sids].map(sid => {
+              const [scr] = this.rom.metascreens.getById(sid);
+              return `${hex(sid)} ${scr?.name ?? '??'}`;
+            }).join(', ')
+          ).join(', ')}`);
     }
-    return set[Symbol.iterator]().next().value;
+    const [result] = set.keys();
+    return result;
   }
 
   isShop(): boolean {

@@ -54,8 +54,9 @@ export enum ScreenFix {
   // South-facing town entrances use 07 for the top of the town wall.
   // This could be replaced with (e.g. 8c) or maybe something better.
   DesertTownEntrance, // TODO
-  // Labyrinth parapets can be blocked/unblocked with a flag.
-  LabyrinthParapets, // TODO (see maze/goa)
+  // Labyrinth parapets can be blocked/unblocked with a flag.  Registered
+  // in maze/goa.
+  LabyrinthParapets,
   // Adds flaggable doors to various screens.
   SwampDoors, // TODO (see maze/swamp)
   // Adds some extra spike screens.
@@ -168,22 +169,22 @@ export function fixTilesets(rom: Rom) {
       .replaceIn($.beachExitN, $.lighthouseEntrance, $.oceanShrine);
   sea.getTile(0x0a).copyFrom(0xa2); // don't bother setting an alternative.
   //sea.getTile(0x0a).setTiles([0x91, 0x91, 0x7d, 0x7d]).setAttrs(2);
-  $.boundaryN_cave.screen.set2d(0x38, [[null, 0x00, 0x00, null],
-                                       [null, 0x0a, 0x0a, null],
-                                       [null, 0xf7, 0xf7, null],
+  $.boundaryN_cave.screen.set2d(0x38, [[    , 0x00, 0x00      ],
+                                       [    , 0x0a, 0x0a      ],
+                                       [    , 0xf7, 0xf7      ],
                                        [0xf8, 0xf8, 0xf8, 0xf8]]);
-  $.cornerSE_cave.screen.set2d(0x49, [[null, 0x00, 0x00],
-                                      [null, 0x0a, 0x0a],
-                                      [null, 0xf7, 0xf7],
+  $.cornerSE_cave.screen.set2d(0x49, [[    , 0x00, 0x00],
+                                      [    , 0x0a, 0x0a],
+                                      [    , 0xf7, 0xf7],
                                       [0xf8, 0xf7, 0xf7],
-                                      [null, 0xfd, 0xf7]]);
+                                      [    , 0xfd, 0xf7]]);
   $.cornerSE_cave.screen.set2d(0x4a, [[0x00, 0x00],
                                       [0x0a, 0x0a],
                                       [0xf7, 0xf7],
                                       [0xf8, 0xf7],
                                       [0x80, 0xfd],
                                       [0x80, 0xff],
-                                      [0xfa, null]]);
+                                      [0xfa      ]]);
 
      // , [0xf8, 0xf8], [null, 0xfd]]);
   // sea.screens.add($.boundaryW_cave);
@@ -249,10 +250,10 @@ export function fixTilesets(rom: Rom) {
     //   - or just use 1a/1a/08/09 - only 08 if a key is needed?
   ]);
   const waterCaves = new Set<Metascreen>([]);
-  //if ($.isFixed(ScreenFix.SeaCaveEntrances)) {
+  if ($.isFixed(ScreenFix.SeaCaveEntrance)) {
     waterCaves.add($.boundaryN_cave);
     waterCaves.add($.cornerSE_cave);
-  //}
+  }
   const mountainCaves = new Set([
     $.mountainDeadEndW_caveEmpty,
     $.mountainPathW_cave,

@@ -185,7 +185,7 @@ export interface MetascreenData {
    * this structure), and only one screen in a group of same-sid screens should
    * specify it.  It must be 240 bytes long.
    */
-  definition?: Uint8Array;
+  definition?: (rom: Rom) => Uint8Array;
 
   /** Arena type.  This should be preserved when inferring screens. */
   arena?: number;
@@ -265,13 +265,18 @@ export function icon(arr: TemplateStringsArray): Icon {
 }
 
 export function readScreen(spec: string,
-                           ...replacements: [string, number][]): Uint8Array {
+                           ...replacements: [string, number|Metascreen][]): Uint8Array {
   const s = spec.split(/\s+/g);
   if (!s[0]) s.shift();
   if (!s[s.length - 1]) s.pop();
   if (s.length !== 240) throw new Error(`Bad screen definition: ${s.length}`);
   const map = new Map(replacements);
-  return Uint8Array.from(s, x => map.get(x) ?? parseInt(x, 16));
+  return Uint8Array.from(s, (x, i) => {
+    const repl = map.get(x);
+    if (typeof repl === 'number') return repl;
+    if (repl) return repl.screen.tiles[i];
+    return parseInt(x, 16);
+  });
 }
 
 export type StairType = 'stair:up' | 'stair:down';

@@ -5,18 +5,11 @@
 // TODO -
 //  for each tileeffects/screen combo, find edges and exits and connections
 
-
 import {Canvas} from './canvas.js';
-import {Rom} from '../rom.js';
-import {prepareScreens} from '../pass/shufflemazes.js';
+import {loadRom} from './load.js';
 
 const run = async () => {
-  const rom = await Rom.load();
-  window.rom = rom;
-  if (/extend/.test(location.hash)) {
-    prepareScreens(rom);
-  }
-
+  const rom = await loadRom();
   const canvas = new Canvas(rom, 256, 256);
 
   const screens = [];
@@ -38,6 +31,7 @@ const run = async () => {
   }
   
   for (let i = 0; i < screens.length; i++) {
+    if (!screens[i]) continue;
     const h1 = document.createElement('h1');
     h1.textContent = `Screen ${hex(i)}`;
     document.body.appendChild(h1);

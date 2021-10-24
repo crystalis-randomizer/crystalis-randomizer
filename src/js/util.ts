@@ -964,7 +964,7 @@ export namespace CancelToken {
 }
 
 export function lowerCamelToWords(lowerCamel: string): string {
-  const split = lowerCamel.split(/(?>[A-Z0-9])/g);
+  const split = lowerCamel.split(/(?=[A-Z0-9])/g);
   return split.map(s => s[0].toUpperCase() + s.substring(1)).join(' ');
 }
 
@@ -990,3 +990,8 @@ export class CaseMap<V> {
 }
 
 export function assertType<T>(actual: T): void {}
+
+export function hex1(x: number, digits = 1): string {
+  return x < 0 ? `~${(~x).toString(16).padStart(digits, '0')}` :
+      x.toString(16).padStart(digits, '0');
+}

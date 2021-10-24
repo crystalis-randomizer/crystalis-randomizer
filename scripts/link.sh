@@ -6,7 +6,7 @@ if [ ! -d src ]; then
   echo "Must run link.sh from repository root."
 fi
 
-rm -rf dist/
+rm -rf dist/ tsconfig.tsbuildinfo
 
 copy=false
 if [ "$1" = "--copy" ]; then

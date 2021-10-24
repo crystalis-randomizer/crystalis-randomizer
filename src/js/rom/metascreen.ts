@@ -3,7 +3,7 @@ import {Connection, ConnectionType, Feature, MetascreenData,
 import {Metatileset, Metatilesets} from './metatileset.js';
 import {Screen} from './screen.js';
 import {Rom} from '../rom.js';
-import {DefaultMap} from '../util.js';
+import {DefaultMap, hex1} from '../util.js';
 
 export type Uid = number & {__uid__: never};
 
@@ -205,7 +205,7 @@ export class Metascreen {
 
   set sid(sid: number) {
     if (this.sid === sid) return;
-    this.rom.metascreens.renumber(this.sid, sid);
+    this.rom.metascreens.renumber(this.sid, sid, new Set(this.tilesets()));
   }
 
   get screen(): Screen {
@@ -321,6 +321,10 @@ export class Metascreen {
       if (e1[opp] !== '*' && e1[opp] === e2[dir]) return true;
     }
     return false;
+  }
+
+  toString() {
+    return `${hex1(this.sid)} ${this.name}`;
   }
 }
 

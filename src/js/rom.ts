@@ -669,27 +669,41 @@ export class Rom {
   // TODO - clean this up somehow... would be nice to use the assembler/linker
   //        w/ an .align option for this, but then we have to hold onto weird
   //        data in many places, which isn't great.
-  moveScreens(tileset: Metatileset, page: number): void {
+  //         - at least, we could "reserve" blocks in various pages?
+  moveScreens(tilesetArray: Metatileset[], page: number): void {
     if (!this.compressedMapData) throw new Error(`Must compress maps first.`);
     const map = new Map<number, number>();
     let i = page << 8;
     while (this.screens[i]) {
       i++;
     }
-    for (const screen of tileset) {
-      if (screen.sid >= 0x100) continue;
-      //if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
-      const prev = screen.sid;
-      if (map.has(prev)) continue;
-      const next = screen.sid = i++;
-      map.set(prev, next);
-      map.set(next, next);
-      //this.metascreens.renumber(prev, next);
+    const tilesets = new Set(tilesetArray);
+    for (const tileset of tilesets) {
+      for (const screen of tileset) {
+        if (screen.sid >= 0x100) {
+          map.set(screen.sid, screen.sid); // ignore shops
+          continue;
+        }
+        //if ((i & 0xff) === 0x20) throw new Error(`No room left on page.`);
+        const prev = screen.sid;
+        if (!map.has(prev)) {
+          // usually not important, but ensure all variants are renumbered
+          //screen.sid = map.get(prev)!;
+        //} else {
+          const next = i++;
+          map.set(prev, next);
+          map.set(next, next);
+          this.metascreens.renumber(prev, next, tilesets);
+        }
+      }
     }
+    if ((i >>> 8) !== page) throw new Error(`Out of space on page ${page}`);
+
+    // Move the screen and make sure that all locations are on a single plane
+    const missed = new Set<string>();
     for (const loc of this.locations) {
-      if (loc.tileset != tileset.tilesetId) continue;
+      if (!tilesets.has(loc.meta.tileset)) continue;
       let anyMoved = false;
-      let allMoved = true;
       for (const row of loc.screens) {
         for (let j = 0; j < row.length; j++) {
           const mapped = map.get(row[j]);
@@ -697,24 +711,25 @@ export class Rom {
             row[j] = mapped;
             anyMoved = true;
           } else {
-            allMoved = false;
+            missed.add(loc.name);
           }
         }
       }
-      if (anyMoved) {
-        if (!allMoved) throw new Error(`Inconsistent move`);
-        //loc.extended = page;
-      }
+      if (anyMoved && missed.size) throw new Error(`Inconsistent move [${[...tilesets].map(t => t.name).join(', ')}] to ${page}: missed ${[...missed].join(', ')}`);
     }
   }
 
   // Use the browser API to load the ROM.  Use #reset to forget and reload.
   static async load(patch?: (data: Uint8Array) => void|Promise<void>,
-                    receiver?: (picker: Element) => void) {
+                    receiver?: (picker: Element) => void): Promise<Rom> {
     const file = await pickFile(receiver);
     if (patch) await patch(file);
     return new Rom(file);
   }  
+
+  static async loadBytes(): Promise<Uint8Array> {
+    return await pickFile();
+  }
 }
 
 // const intersects = (left, right) => {

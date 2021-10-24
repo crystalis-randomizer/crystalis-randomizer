@@ -10,7 +10,7 @@ import { FetchReader } from './fetchreader.js';
 import { FlagSet } from './flagset.js';
 import { Graph } from './logic/graph.js';
 import { World } from './logic/world.js';
-import { compressMapData } from './pass/compressmapdata.js';
+import { compressMapData, moveScreensIntoExpandedRom } from './pass/compressmapdata.js';
 import { crumblingPlatforms } from './pass/crumblingplatforms.js';
 import { deterministic, deterministicPreParse } from './pass/deterministic.js';
 import { fixDialog } from './pass/fixdialog.js';
@@ -257,10 +257,16 @@ async function shuffleInternal(rom: Uint8Array,
 // (window as any).cave = shuffleCave;
   parsed.flags.defrag();
   compressMapData(parsed);
+  moveScreensIntoExpandedRom(parsed);
              // TODO - the screens aren't moving?!?
   // NOTE: delete these if we want more free space back...
-  parsed.moveScreens(parsed.metatilesets.swamp, 4); // move to new plane
-  parsed.moveScreens(parsed.metatilesets.house, 4); // move to new plane
+  // parsed.moveScreens(parsed.metatilesets.swamp, 4); // move 17 screens to $40000
+  // parsed.moveScreens(parsed.metatilesets.house, 4); // 15 screens
+  // parsed.moveScreens(parsed.metatilesets.town, 4);
+  // parsed.moveScreens(parsed.metatilesets.[cave, pyramid, fortress, labyrinth, iceCave], 4);
+  // parsed.moveScreens(parsed.metatilesets.dolphinCave, 4);
+  // parsed.moveScreens(parsed.metatilesets.lime, 4);
+  // parsed.moveScreens(parsed.metatilesets.shrine, 4);
   if (typeof window == 'object') (window as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) log.spoiler = parsed.spoiler;

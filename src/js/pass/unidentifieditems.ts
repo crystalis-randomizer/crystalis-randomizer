@@ -96,15 +96,16 @@ const STATUE_NAMES = [
   'Copper Statue',
   'White Statue',
   'Invisible Statue',
-  'Mattrick Figurine',
-  'Dragondarch Statue',
-  'Overswarm Statue',
-  'Trueblue83 Statue',
-  'TheAxeMan Idol',
-  'Acmlm Figurine',
   'Flail Guy Trophy',
   'Metroid Amiibo',
   'Model of Dyna',
+  'Mattrick Figurine',  // #2 speedrun 2017 (1h04m04s)
+  'Dragondarch Statue', // #1 speedrun 2016 (58m14s)
+  'Overswarm Statue',   // #1 speedrun 2019-2021 (52m53s)
+  'Trueblue83 Statue',  // #3 speedrun 2019 (59m29s)
+  'TheAxeMan Idol',     // #4 speedrun 2020 (59h59m), TAS
+  'Acmlm Figurine',     // #2 speedrun 2021 (56m00s)
+  'CodeGorilla Trophy', // Full Stupid 2021/11/21
 ];
 
 

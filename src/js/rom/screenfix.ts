@@ -1,5 +1,4 @@
 import {Rom} from '../rom.js';
-import { Spawn } from './locationtables.js';
 import { Metascreen } from './metascreen.js';
 import { iters } from '../util.js';
 

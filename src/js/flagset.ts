@@ -260,8 +260,8 @@ class World extends FlagSection {
   });
 
   static readonly ShuffleAreas = World.flag('Wa', {
-    name: '???', ///Shuffle areas',
-    text: '???', //`Shuffles some or all area connections.`,
+    name: 'Shuffle areas',
+    text: `Shuffles some or all area connections.`,
     hard: true,
   });
 

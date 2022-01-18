@@ -37,10 +37,7 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
     const [use, originalItem, npcName] = npcs.pop()!;
     item.itemUseData[trade] = use;
     if (rom.spoiler) rom.spoiler.addTrade(item.id, item.messageName, npcName);
-    if (use.want === 0x123) { // aryllis item requires being a girl
-      // TODO - consider moving this to Item.write?
-      rom.prg[0x3d4b5] = item.id - 0x1c;
-    } else if (use.want === 0x164 && flags.fogLampNotRequired()) {
+    if (use.want === 0x164 && flags.fogLampNotRequired()) {
       // fisherman now spawns based on trade-in item
       [...rom.npcs[0x64].spawnConditions.values()][0][0] = 0x200 | item.id;
     }

@@ -1278,8 +1278,8 @@ export class World {
     // this should handle most trade-ins automatically
     hitbox = new Set([...hitbox].map(t => this.walkableNeighbor(t) ?? t));
     const req2 = [[(0x200 | item.id) as Condition]]; // requires the item.
-    // check for kirisa plant, add change as a requirement.
-    if (item.id === this.rom.prg[0x3d4b5] + 0x1c) {
+    // check for Aryllis trade-in, add change as a requirement.
+    if (item.itemUseData.some(u => u.tradeNpc() === this.rom.npcs.Aryllis.id)) {
       req2[0].push(this.rom.flags.Change.c);
     }
     if (item === this.rom.items.MedicalHerb) { // dolphin

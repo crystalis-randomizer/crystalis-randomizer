@@ -214,6 +214,13 @@ export class Item extends Entity {
       a.byte(this.value!);
     }
 
+    // If Aryllis wants this then set it as the item that requires change
+    if (this.itemUseData.some(u => u.tradeNpc() === this.rom.npcs.Aryllis.id)) {
+      a.segment('fe');
+      a.org(0xd4b5); // hard-coded check in otherwise-untouched assembly code
+      a.byte(this.id - 0x1c); // equipped item id
+    }
+
     // writer.write([...stringToBytes(this.messageName), 0],
     // 0x28000, 0x29fff, `ItemMessageName ${hex(this.id)}`),
     // writeLittleEndian(writer.rom, this.messageNamePointer, messageAddress - 0x20000);

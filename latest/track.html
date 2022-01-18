@@ -9,95 +9,36 @@
   gtag('config', 'UA-131783670-1');
 </script>
 <title>Crystalis Randomizer Tracker</title>
-<link rel="stylesheet" href="css/tracker.css">
-<script type="module" src="js/tracker.min.js"></script>
-<div class="grid h">
-  <div class="grid v">
-    <div class="grid g4">
-      <!-- weapons -->
-      <div class="item sword-of-wind"></div>
-      <div class="item sword-of-fire"></div>
-      <div class="item sword-of-water"></div>
-      <div class="item sword-of-thunder"></div>
-      <div class="item ball-of-wind"></div>
-      <div class="item ball-of-fire"></div>
-      <div class="item ball-of-water"></div>
-      <div class="item ball-of-thunder"></div>
-      <div class="item tornado-bracelet"></div>
-      <div class="item flame-bracelet"></div>
-      <div class="item blizzard-bracelet"></div>
-      <div class="item storm-bracelet"></div>
-    </div>
-    <div class="grid g4">
-      <!-- passive items -->
-      <div class="item gas-mask"></div>
-      <div class="item power-ring"></div>
-      <div class="item warrior-ring"></div>
-      <div class="item iron-necklace"></div>
-      <div class="item deos-pendant"></div>
-      <div class="item rabbit-boots"></div>
-      <div class="item leather-boots"></div>
-      <div class="item shield-ring"></div>
-    </div>
-    <div class="grid g4">
-      <!-- magic -->
-      <div class="item refresh"></div>
-      <div class="item paralysis"></div>
-      <div class="item telepathy"></div>
-      <div class="item teleport"></div>
-      <div class="item recover"></div>
-      <div class="item barrier"></div>
-      <div class="item change"></div>
-      <div class="item flight"></div>
-    </div>
-  </div>
-  <div class="grid v">
-    <div class="grid g3">
-      <!-- bows -->
-      <div class="item bow-of-moon"></div>
-      <div class="item bow-of-sun"></div>
-      <div class="item bow-of-truth"></div>
-    </div>
-    <div class="grid g3">
-      <!-- quest -->
-      <div class="item windmill-key"></div>
-      <div class="item key-to-prison"></div>
-      <div class="item key-to-styx"></div>
+<link rel="stylesheet" href="css/main.css">
+<!--link rel="stylesheet" href="css/tracker.css"-->
 
-      <div class="item alarm-flute"></div>
-      <div class="item insect-flute"></div>
-      <div class="item flute-of-lime"></div>
+<nav>
+  <a class="img if-not-permalink" href="/"><img src="images/crystalis-sword.png"></a>
+  <a href="index">Play</a>
+  <a class="if-not-permalink" href="track">Track</a>
+  <a href="help">Help</a>
+  <!-- TODO: better process for stable version numbers. -->
+  <span id="version"></span>
+</nav>
+<div></div>
 
-      <div class="item fog-lamp"></div>
-      <div class="item glowing-lamp"></div>
-      <div class="item shell-flute"></div>
+<main>
+  <section>
+    <h1>Out of Order</h1>
+    <div>
+      <p><b>The web tracker is currently out of order.</b>
 
-      <div class="item statue-of-onyx"></div>
-      <div class="item broken-statue"></div>
-      <div class="item ivory-statue"></div>
+      <p>The best available tracker is currently CodeGorilla's
+        <a href="https://emotracker.net">EmoTracker</a> package.
+        It can be found by installing EmoTracker and searching
+        for Crystalis modules (<a
+        href="https://github.com/Ars-Ignis/crystalis-randomizer-tracker">contributions
+          welcome</a>).
 
-      <div class="item kirisa-plant"></div>
-      <div class="item love-pendant"></div>
-      <div class="item eye-glasses"></div>
+      <p>If you require a web-based tracker, the best workaround is to
+        use an <a href="/1.2.4">older version</a> with flags set as similarly
+        as possible. Note that many flags don't have equivalents, so this is
+        a <i>very</i> rough workaround.
     </div>
-    <div class="grid g3">
-      <!-- misc -->
-      <div class="item statue-of-gold"></div>
-      <div class="item sacred-shield"></div>
-      <div class="item psycho-armor"></div>
-    </div>
-  </div>
-  <!--div class="rest"></div-->
-  <div class="map" style="transform: scale(1.25); transform-origin: top left"></div>
-</div>
-<br/>
-<div class="flags">
-  <!-- TODO - fill in extra checkable flags -->
-  <!-- TODO - flags for whether iron walls destroyed? -->
-</div>
-<!-- TODO - make a separate section with drop-downs for wall types? -->
-<br/><a href="javascript:" id="toggle-map">toggle map</a>
-<!--br/><a href="javascript:" id="availability-on-grid">availability on grid</a-->
-<br/><a href="javascript:" id="clear-all">clear all</a>
-<br/><a href="javascript:" id="voice">enable voice</a>
-<br/><br/><div id="reqs"></div>
+  </section>
+</main>

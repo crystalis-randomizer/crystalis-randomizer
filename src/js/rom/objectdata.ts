@@ -57,7 +57,7 @@ export class ObjectData extends Entity {
     return out;
   }
 
-  write(): Module[] {
+  write(this: ObjectData): Module[] {
     const name = `Object_${this.id.toString(16).padStart(2, '0')}`;
     const a = this.rom.assembler();
     a.segment('0d');
@@ -66,6 +66,23 @@ export class ObjectData extends Entity {
     a.byte(...this.serialize());
     a.org(0xac00 + (this.id << 1), `${name}_Ptr`);
     a.word(label);
+
+    // Handle slime transformation.  We assume all slimes are invulnerable
+    // to the same element (rescalemonsters guarantees this, anyway).
+    if (this === this.rom.objects.blueSlime) {
+      // Figure out which bit is set (elements = 1<<(b-1))
+      // Note the extra offset is due to 0 being "no sword equipped"
+      let e = this.elements;
+      let b = 0;
+      while (e) {
+        e >>= 1;
+        b++;
+      }
+      a.segment('1a');
+      a.org(0x922d); // $3522d
+      a.byte(b);
+    }
+
     return [a.module()];
   }
 

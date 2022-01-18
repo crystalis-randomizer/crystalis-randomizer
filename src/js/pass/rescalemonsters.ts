@@ -65,7 +65,6 @@ export function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random) {
   if (flags.shuffleMonsterElements()) {
     // pick an element for slime defense
     const e = random.nextInt(4);
-    rom.prg[0x3522d] = e + 1;
     for (const id of SLIMES) {
       rom.objects[id].elements = 1 << e;
     }

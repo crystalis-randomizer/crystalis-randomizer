@@ -24,6 +24,9 @@ const BOSS_OBJECT_ADDRESS = [
 ] as const;
 
 export function shuffleBosses(rom: Rom, random: Random) {
+  // TODO - this doesn't actually work, but if it did, we'd need to
+  // store it properly in the Rom object, rather than writing it
+  // directly to rom.prg.
   const b = BOSS_OBJECT_ADDRESS.filter(([,x]) => x).map(([x,]) => x);
   const v = b.map(x => rom.prg[x]);
   random.shuffle(v);

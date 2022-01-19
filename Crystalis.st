@@ -61749,6 +61749,10 @@ PrepareNametableStageForHorizontalScroll
         $3ed5f  xx xx:      xxx $xx
         $3ed61  xx xx xx:   xxx EnableNMI
 ;;; --------------------------------
+;;; Convert the X, Y position ($34, $36) into PPUADDR writes.
+;;; (second write - $10, first write - $11)
+;;; $10 = x >> 3 | ((y << 5) & %11100000
+;;; $11 = (y >> 3) & %00000011 | (1 << 5)
         $3ed64  xx xx:      xxx $xx
         $3ed66  xx:         xxx
         $3ed67  xx:         xxx
@@ -61941,7 +61945,7 @@ WriteMetatileAttributesForVerticalScroll
         $3ee2c  xx xx:      xxx $xx
         $3ee2e  xx xx xx:   xxx MapTilesToAttributesForVerticalScroll
 ;;; --------------------------------
-WriteMetatileAttributsForHorizontalScroll
+WriteMetatileAttributesForHorizontalScroll
         ;; Initialize ($10) and ($10),y based on $67 and $34
         ;; Note the similarity to vertical, which reads $36 (ylo) instead of
         ;; $34 (xlo) and then does a lookup into $3ef07 before doing some

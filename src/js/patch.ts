@@ -196,6 +196,7 @@ function defines(flags: FlagSet,
     _TWELVTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
     _ZEBU_STUDENT_GIVES_ITEM: true, // flags.zebuStudentGivesItem(),
+    // _CROWD_CONTROL: false, //flags.crowdControl(),
   };
   return Object.keys(defines)
       .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');

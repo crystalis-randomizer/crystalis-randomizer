@@ -3,8 +3,7 @@
   "compilerOptions": {
     "rootDir": "src/js",
     "outDir": "dist/js",
-    "module": "es6",
-    "noEmit": false
+    "module": "es6"
   },
   "include": [
     "src/js/**/*.ts"

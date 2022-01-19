@@ -122,41 +122,8 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
-; .ifdef _CROWD_CONTROL_
-
 GAME_MODE_CHANGE_LOCATION = $01
 OP_JMP_ABS  = $4c
-
-; Short How-To-Use documentation:
-;
-; 0. Make sure that there isn't already anything waiting to be run by seeing if
-; CrowdControlFlag is zero. This gets cleared after the effects are completed.
-;
-; 1. Set one or more flags in the CrowdControlQueue field to run that operation
-; the next time the game is available.
-;
-; 2. If you need to update the status bar for an operation, set the appropriate bit
-; in CrowdControlStatusBarUpdate.
-;
-; 3. Set CrowdControlFlag to 1, and the game will run the update the next time the
-; player gets back to "normal" play state.
-;
-
-; If set, during the next main loop, run the next CC op from the queue
-; INTERNAL - bit 7 will be set when we need to early return (after wild warp)
-CrowdControlFlag              = $6220
-
-; Bit packed operations that Crowd Control can update.
-; %0000duws
-;      |||+-- s = status bar update. Updates the following fields:
-;      |||        Level, Money, Exp, Max MP, MP, Difficulty
-;      ||+--- w = Wild Warp. This will always wild warp the player to the
-;      ||         first location in the wild warp table (which could be randomized)
-;      |+---- u = Player level up. Increases the level by one
-;      +----- d = Player level down. Decreases the level by one.
-CrowdControlQueue             = $6221
-
-; .endif
 
 ;;; Constants
 GAME_MODE_STATUS_MSG = $10

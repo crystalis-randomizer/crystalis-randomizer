@@ -459,6 +459,14 @@ class Aesthetics extends FlagSection {
     modes: '!',
     optional: NO_BANG,
   });
+
+  static readonly CrowdControl = Aesthetics.flag('Aw', {
+    name: `Enable Crowd Control integration.`,
+    text: `Allows for additional crowd control effects that
+      are more integrated with the gameplay.`,
+    modes: '!',
+    optional: OPTIONAL,
+  });
 }
 
 class Monsters extends FlagSection {
@@ -1105,5 +1113,8 @@ export class FlagSet {
   }
   noMusic(pass: 'early' | 'late'): boolean {
     return pass === 'late' && this.check(Aesthetics.NoMusic);
+  }
+  crowdControl(): boolean {
+    return this.check(Aesthetics.CrowdControl);
   }
 }

@@ -65,6 +65,10 @@
 
 ;;; Various global definitions.
 GameMode = $41
+CurrentLocation = $6c
+CurrentEntrance = $6d
+PrgPageShadowLo = $6e
+PrgPageShadowHi = $6f
 ObjectRecoil = $340
 ObjectHP = $3c0
 PlayerHP = $3c1
@@ -118,6 +122,9 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
+GAME_MODE_CHANGE_LOCATION = $01
+OP_JMP_ABS  = $4c
+
 ;;; Constants
 GAME_MODE_STATUS_MSG = $10
 ITEM_RABBIT_BOOTS    = $12
@@ -165,6 +172,7 @@ BankSwitch8k_a000          = $c427
 FlushNametableDataWrite    = $c676
 MainLoop_01_Game           = $cab6
 CheckForPlayerDeath        = $cb84
+WildWarpLocations          = $cbec
 DialogAction_11            = $d21d
 LoadAndShowDialog          = $d347
 WaitForDialogToBeDismissed = $d354
@@ -173,8 +181,10 @@ MainLoopItemGet            = $d3ff
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
+HandleStatusConditions        = $ef55
 ReadControllersWithDirections = $fe80
 DisplayNumber                 = $ffa9
+RestoreBanks                  = $ffdb
 
 ;;; Various free sections
 

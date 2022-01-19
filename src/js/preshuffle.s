@@ -836,6 +836,7 @@ FREE_UNTIL $bad9
 ;; 4 - MP
 ;; 5 - (currently unused)
 ;; 6 - Difficulty
+;; 7 - (currently unused)
 .reloc
 UpdateStatusBarDisplays:
   ldx #$07
@@ -889,7 +890,7 @@ StoreObjectExp:
   ora PlayerExp+1
   cmp #$00
   beq LevelUp
-  jmp UpdateCurrentEXPAndExit
+  jmp UpdateCurrentEXPDisplayAndExit
 LevelUp:
   ; double check here that we aren't already max level
   inc PlayerLevel
@@ -902,14 +903,15 @@ LevelUp:
   lda PlayerExp+1
   adc $8b9f,y
   sta PlayerExp+1
+UpdateStatsAfterLevelChange:
   jsr UpdatePlayerMaxHPAndMPAfterLevelUp
   jsr UpdateDisplayAfterLevelUp
-  jmp UpdateCurrentEXPAndExit
+  jmp UpdateCurrentEXPDisplayAndExit
 .assert * <= $91ef
 FREE_UNTIL $91ef
 
 .org $91ef
-UpdateCurrentEXPAndExit:
+UpdateCurrentEXPDisplayAndExit:
 
 .org $91f4
 ExitWithoutDrawingEXP:

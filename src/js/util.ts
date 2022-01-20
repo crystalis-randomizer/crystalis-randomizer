@@ -964,7 +964,7 @@ export namespace CancelToken {
 }
 
 export function lowerCamelToWords(lowerCamel: string): string {
-  const split = lowerCamel.split(/(?>[A-Z0-9])/g);
+  const split = lowerCamel.split(/(?=[A-Z0-9])/g);
   return split.map(s => s[0].toUpperCase() + s.substring(1)).join(' ');
 }
 

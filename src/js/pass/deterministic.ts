@@ -95,6 +95,16 @@ export function deterministicPreParse(prg: Uint8Array): void {
         0xb2, 0x42,  // b2 summit trigger -> 42 paralysis
         0xb4, 0x41,  // b4 windmill cave trigger -> 41 refresh
         0xff);       // for bookkeeping purposes, not actually used
+
+  // Make the sword use the element's palette instead of the player.
+  // TODO - move this into post-parse as a metasprite edit (we'll need to
+  // do a full write on that table...).  If we don't color the sword
+  // elements then this turns the swords a brighter white.
+  for (const addr of [0x38757, 0x38777, 0x3877b, 0x38797, 0x3879b,
+                      0x387db, 0x387df, 0x387fb, 0x387ff, 0x3881b, 0x3881f,
+                      0x38865, 0x38885, 0x38889, 0x388a5]) {
+    prg[addr] |= 1;
+  }
 }
 
 export function deterministic(rom: Rom, flags: FlagSet): void {
@@ -156,7 +166,26 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.hardcoreMode()) hardcoreMode(rom);
 
   useNewStatusBarGraphics(rom);
+  if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
+}
 
+function useElementSwordColors(rom: Rom): void {
+  function swapTiles(start: number, thunder?: number) {
+    for (let addr = 0; addr <= 0xa; addr++) {
+      if (addr === 8) continue;
+      const p = rom.patterns.get(addr | start);
+      const orig = [...p.pixels];
+      for (let i = 0; i < p.pixels.length; i++) {
+        p.pixels[i] = orig[i ^ 8];
+        if ((i >>> 3) === thunder) p.pixels[i] |= orig[i];
+      }
+    }
+  }
+  swapTiles(0x1090); // wind
+  swapTiles(0x10d0); // fire
+  swapTiles(0x1110); // water
+  swapTiles(0x1150); // thunder
+  swapTiles(0x1190); // crystalis
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation

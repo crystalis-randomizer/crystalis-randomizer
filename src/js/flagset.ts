@@ -1121,4 +1121,8 @@ export class FlagSet {
   noMusic(pass: 'early' | 'late'): boolean {
     return pass === 'late' && this.check(Aesthetics.NoMusic);
   }
+
+  shouldColorSwordElements(): boolean {
+    return true;
+  }
 }

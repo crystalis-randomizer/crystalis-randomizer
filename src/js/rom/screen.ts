@@ -144,6 +144,15 @@ export class Screens extends Array<Screen> {
     }
   }
 
+  allocateIdOnPage(page: number): number {
+    page <<= 8;
+    for (let i = 0; i < 256; i++) {
+      if (this[page  | i]) continue;
+      return page | i;
+    }
+    throw new Error(`Could not allocate on page ${page}`);
+  }
+
   // moveScreen(oldId: number, newId: number): Screen {
   //   // Entity.id is const, but maybe shouldn't be?
   // }

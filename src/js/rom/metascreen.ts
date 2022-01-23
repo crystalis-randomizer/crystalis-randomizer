@@ -213,6 +213,20 @@ export class Metascreen {
     return sid < 0 ? screens.unallocated[~sid] : screens[sid];
   }
 
+  /**
+   * Splits this metascreen out from the other metascreens that share the same
+   * underlying screen id.
+   */
+  split() {
+    const oldTiles = this.screen.tiles;
+    const newSid = this.rom.screens.allocateIdOnPage(this.sid >>> 8);
+    this.unsafeSetId(newSid);
+    const newScr = this.rom.screens[newSid] = new Screen(this.rom, newSid);
+    newScr.used = true;
+    newScr.tiles = [...oldTiles];
+    return this;
+  }
+  
   // Only Metascreens.renumber should call this.
   unsafeSetId(sid: number) {
     (this.data as {id: number}).id = sid;

@@ -3955,7 +3955,7 @@ export class Metascreens {
     poi: [[1, -0x30, 0x48], [1, -0x30, 0x98],
           [1, 0x110, 0x48], [1, 0x110, 0x98]],
   });
-  readonly riverCave_deadEndsN = this.metascreen({
+  readonly riverCave_deadEndN = this.metascreen({
     id: 0xf0,
     icon: icon`
       | ╨ |
@@ -3970,7 +3970,7 @@ export class Metascreens {
     match: (reachable) => !reachable(0x108, 0x48) && !reachable(0x108, 0x98),
     mod: 'bridge', // f2 is bridged version
   });
-  readonly riverCave_deadEndsS = this.metascreen({
+  readonly riverCave_deadEndS = this.metascreen({
     id: 0xf0,
     icon: icon`
       |   |
@@ -3999,7 +3999,7 @@ export class Metascreens {
     poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28],
           [1, 0x60, 0x108], [1, 0xa0, 0x108]],
   });
-  readonly riverCave_deadEndsW = this.metascreen({
+  readonly riverCave_deadEndW = this.metascreen({
     id: 0xf1,
     icon: icon`
       |   |
@@ -4013,7 +4013,7 @@ export class Metascreens {
     poi: [[1, 0x60, -0x28], [1, 0xa0, -0x28]],
     match: (reachable) => !reachable(0x60, 0x108) && !reachable(0xa0, 0x108),
   });
-  readonly riverCave_deadEndsE = this.metascreen({
+  readonly riverCave_deadEndE = this.metascreen({
     id: 0xf1,
     icon: icon`
       |   |

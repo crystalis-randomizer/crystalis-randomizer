@@ -58,6 +58,48 @@ export function moveScreensIntoExpandedRom(rom: Rom) {
   rom.moveScreens([mountain, mountainRiver], 4);
   rom.moveScreens([cave, pyramid, fortress, labyrinth, iceCave], 5);
   const [] = [sea, dolphinCave, grass, river, desert];
+
+  // TODO - different condition for this pass?
+  splitDeadEnds(rom);
 }
 
+function splitDeadEnds(rom: Rom) {
+  const {
+    caveEmpty,
+    deadEndE,
+    deadEndN,
+    deadEndN_stairs,
+    deadEndS,
+    deadEndS_stairs,
+    deadEndW,
+    riverCave_deadEndE,
+    riverCave_deadEndN,
+    riverCave_deadEndS,
+    riverCave_deadEndW,
+    riverCaveN_bridge,
+    riverCaveS_bridge,
+    wideHall_deadEndN,
+    wideHall_deadEndS,
+  } = rom.metascreens;
+  const empty = caveEmpty.screen.tiles[0];
+  deadEndN_stairs.split().screen.tiles.fill(empty, 0x80);
+  deadEndS_stairs.split().screen.tiles.fill(empty, 0, 0x80);
+  deadEndN.split().screen.tiles.fill(empty, 0x80);
+  deadEndS.split().screen.tiles.fill(empty, 0, 0x80);
+  deadEndE.split().screen.set2d(0x00, repeat(15, repeat(6, empty)));
+  deadEndW.split().screen.set2d(0x0a, repeat(15, repeat(6, empty)));
+  wideHall_deadEndN.split().screen.tiles.fill(empty, 0xa0);
+  wideHall_deadEndS.split().screen.tiles.fill(empty, 0, 0x70);
+  riverCave_deadEndN.split().screen.tiles.fill(empty, 0x80);
+  riverCave_deadEndS.split().screen.tiles.fill(empty, 0, 0x80);
+  riverCave_deadEndE.split().screen.set2d(0x00, repeat(15, repeat(6, empty)));
+  riverCave_deadEndW.split().screen.set2d(0x0a, repeat(15, repeat(6, empty)));
+  riverCaveN_bridge.split().screen.tiles.fill(empty, 0x60);
+  riverCaveS_bridge.split().screen.tiles.fill(empty, 0, 0x60);
+}
+
+function repeat<T>(length: number, x: T): T[] {
+  return Array.from({length}, () => x);
+}
+  
 const [] = [Location];

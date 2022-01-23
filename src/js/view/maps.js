@@ -3,6 +3,7 @@
 // Basic idea:
 // input for locations, array of checkboxes for flags, canvas for display
 
+import {loadRom} from './load.js';
 import {View} from './view.js';
 import {Rom} from '../rom.js';
 import {Random} from '../random.js';
@@ -37,10 +38,10 @@ class MapsView extends View {
     super();
 
     this.rom = rom;
-    if (/extend/.test(window.location.hash)) {
-      prepareScreens(rom);
-      fixTilesets(rom);
-    }
+    // if (/extend/.test(window.location.hash)) {
+    //   prepareScreens(rom);
+    //   fixTilesets(rom);
+    // }
     // if (/goa/.test(window.location.hash)) {
     //   shuffleGoa(rom, new Random(1));
     // }
@@ -211,8 +212,9 @@ class MapsView extends View {
       // draw background
       for (let x = 0; x < opts.wd; x++) {
         for (let y = 0; y < opts.ht; y++) {
-          const screenId = (opts.screens[y] || [])[x];
-          if (screen != null) {
+          let screenId = (opts.screens[y] || [])[x];
+          if (screenId != null) {
+            screenId &= 0xff;
             const screen = this.rom.screens[screenId + (opts.plane << 8)];
             this.drawScreen(buf, x << 8, 240 * y,
                             screen, tileset, tilePal, tilePat, (opts.flags[y] || [])[x]);
@@ -348,8 +350,9 @@ class MapsView extends View {
     const opts = Object.assign({
       screens: [], flags: [],
     }, this.options);
-    const scrId = opts.screens[scrY][scrX];
-    if (!scrId) return;
+    let scrId = opts.screens[scrY][scrX];
+    if (scrId == null) return;
+    scrId &= 0xff;
     const metatileId = this.rom.screens[(opts.plane << 8) | scrId]
           .tiles[tileY << 4 | tileX];
     const flagged =
@@ -371,20 +374,21 @@ class MapsView extends View {
 }
 
 const run = async () => {
-  const hash = {};
-  if (window.location.hash) {
-    // look for a patch to apply
-    for (const component of window.location.hash.substring(1).split('&')) {
-      const split = component.split('=');
-      hash[split[0]] = decodeURIComponent(split[1]);
-    }
-  }
-  let patch;
-  if (hash['patch']) {
-    const p = await loadModule(hash['patch']);
-    patch = p && p.apply ? (rom) => p.apply(rom, hash) : undefined;
-  }
-  const rom = await Rom.load(patch);
+  // const hash = {};
+  // if (window.location.hash) {
+  //   // look for a patch to apply
+  //   for (const component of window.location.hash.substring(1).split('&')) {
+  //     const split = component.split('=');
+  //     hash[split[0]] = decodeURIComponent(split[1]);
+  //   }
+  // }
+  // let patch;
+  // if (hash['patch']) {
+  //   const p = await loadModule(hash['patch']);
+  //   patch = p && p.apply ? (rom) => p.apply(rom, hash) : undefined;
+  // }
+  const rom = await loadRom();
+  //const rom = await Rom.load(patch);
   // window.shuffleGoa1 = (s) => shuffleGoa1(rom, new Random(s || 1));
   // window.shuffleSwamp = (s) => shuffleSwamp(rom, new Random(s || 1));
   // window.shuffleCave = (l, s) => shuffleCave(rom.locations[l], new Random(s || 1));

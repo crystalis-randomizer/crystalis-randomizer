@@ -139,6 +139,7 @@ export class SwampShuffle extends CaveShuffle {
       doorCount--;
     }
     if (doorCount) return {ok: false, fail: `could not place all doors`};
+    this.meta = meta;
     return OK;
   }
 }

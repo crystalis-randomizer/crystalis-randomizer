@@ -5,18 +5,11 @@
 // TODO -
 //  for each tileeffects/screen combo, find edges and exits and connections
 
-
 import {Canvas} from './canvas.js';
-import {Rom} from '../rom.js';
-import {prepareScreens} from '../pass/shufflemazes.js';
+import {loadRom} from './load.js';
 
 const run = async () => {
-  const rom = await Rom.load();
-  window.rom = rom;
-  if (/extend/.test(location.hash)) {
-    prepareScreens(rom);
-  }
-
+  const rom = await loadRom();
   const canvas = new Canvas(rom, 256, 256);
 
   const screens = [];
@@ -38,6 +31,7 @@ const run = async () => {
   }
   
   for (let i = 0; i < screens.length; i++) {
+    if (!screens[i]) continue;
     const h1 = document.createElement('h1');
     h1.textContent = `Screen ${hex(i)}`;
     document.body.appendChild(h1);
@@ -79,8 +73,31 @@ const run = async () => {
     const x = e.offsetX >>> 4 & 0xf;
     const y = e.offsetY >>> 4 & 0xf;
     document.getElementById('coord').textContent = y.toString(16) + x.toString(16);
-    
   });
+
+  let maxPage = 0;
+  for (let i = canvas.patternCoverage.length - 1; i >= 0; i--) {
+    if (canvas.patternCoverage[i]) {
+      maxPage = (i >>> 7) << 1;
+      break;
+    }
+  }
+  const unused = [];
+  const lastTile = (maxPage + 1) << 6;
+  for (let i = 0; i < lastTile; i++) {
+    if (canvas.patternCoverage[i]) continue;
+    if (!unused[i >>> 7]) unused[i >>> 7] = [];
+    unused[i >>> 7].push(i & 0x7f);
+  }
+  for (let i = 0; i < unused.length; i++) {
+    const list = document.createElement('div');
+    list.textContent = `Unused Pat ${(i << 1).toString(16).padStart(2, 0)}:`;
+    document.body.appendChild(list);
+    if (!unused[i]) continue;
+    for (const p of unused[i]) {
+      list.textContent += ` ${p.toString(16).padStart(2, 0)}`;
+    }
+  }
 };
 
 const hex = (x) => x.toString(16).padStart(2, 0);

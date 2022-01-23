@@ -318,7 +318,7 @@ class MapsView extends View {
   }
 
   drawTile(img, x, y, id, palette, flip = 0) {
-    const pat = this.rom.patterns[id].flip(flip);
+    const pat = this.rom.patterns.get(id).flip(flip);
     for (let r = 0; r < 8; r++) {
       let hi = pat.pixels[8 | r] << 1;
       let lo = pat.pixels[r];

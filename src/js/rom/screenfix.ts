@@ -1,4 +1,4 @@
-import {Rom} from '../rom.js';
+import { Rom } from '../rom.js';
 import { Metascreen } from './metascreen.js';
 import { iters } from '../util.js';
 

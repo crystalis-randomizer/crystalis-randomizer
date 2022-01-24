@@ -220,7 +220,7 @@ class MonsterPool {
 
       // For each location.... try to fill up the slots
       const monsterPlacer =
-          slots.length && this.flags.randomizeMaps() ?
+          location.monstersMoved || (slots.length && this.flags.randomizeMaps()) ?
               location.monsterPlacer(random) : null;
 
       if (flyers && slots.length) {
@@ -272,7 +272,9 @@ class MonsterPool {
       constraint.fix(location, random);
 
       if (slots.length) {
-        console.error/*report.push*/(`Failed to fill location ${location.id.toString(16)}: ${slots.length} remaining`);
+        // NOTE: This can happen if a bomber bird is on the same screen as a
+        // treasure chest, since this locks in too much to fit anything else.
+        console.error/*report.push*/(`Failed to fill location ${location.id.toString(16)} ${location.name}: ${slots.length} remaining`);
         for (const slot of slots) {
           const spawn = location.spawns[slot - 0x0d];
           spawn.x = spawn.y = 0;

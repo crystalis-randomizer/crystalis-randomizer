@@ -1309,7 +1309,7 @@ export class Metalocation {
       if (!(monster instanceof Monster)) continue;
       const pos = placer(monster);
       if (pos == null) {
-        console.error(`no valid location for ${hex(monster.id)} in ${loc}`);
+        console.error(`no valid location for ${hex(monster.id)} ${monster.name} in ${loc}`);
         spawn.used = false;
       } else {
         spawn.screen = pos >>> 8;

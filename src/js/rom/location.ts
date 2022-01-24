@@ -543,6 +543,8 @@ export class Location extends Entity {
   spritePatterns: [number, number];
   spawns: Spawn[];
 
+  monstersMoved = false;
+
   private _isShop: boolean|undefined = undefined;
   private _meta?: Metalocation = undefined;
   // Lazily-populated map keys for keeping consistent music and colors.
@@ -1085,6 +1087,7 @@ export class Location extends Entity {
   //   - holds metadata about map tiles in general?
   //   - need to figure out what to do with pits...
   monsterPlacer(random: Random): (m: Monster) => number | undefined {
+    this.monstersMoved = true;
     // If there's a boss screen, exclude it from getting enemies.
     const boss = this.data.bossScreen;
     // Start with list of reachable tiles.
@@ -1119,12 +1122,14 @@ export class Location extends Entity {
     //  - NOTE: still need to move chests to dead ends, etc?
     return (m: Monster) => {
       // check for placement.
+      const r = m.clearance();
       const placement = m.placement();
       const pool = [...(placement === 'normal' ? normal :
                         placement === 'moth' ? moths :
                         placement === 'bird' ? birds :
                         placement === 'plant' ? plants :
                         assertNever(placement))]
+      let result!: [number, number, number]|undefined; // x, y, z2
       POOL:
       while (pool.length) {
         const i = random.nextInt(pool.length);
@@ -1132,21 +1137,29 @@ export class Location extends Entity {
 
         const x = (pos & 0xf00) >>> 4 | (pos & 0xf);
         const y = (pos & 0xf000) >>> 8 | (pos & 0xf0) >>> 4;
-        const r = m.clearance();
 
-        // test distance from other enemies.
-        for (const [, x1, y1, r1] of placed) {
-          const z2 = ((y - y1) ** 2 + (x - x1) ** 2);
-          if (z2 < (r + r1) ** 2) continue POOL;
-        }
         // test distance from entrances.
         for (const {x: x1, y: y1, used} of this.entrances) {
           if (!used) continue;
           const z2 = ((y - (y1 >> 4)) ** 2 + (x - (x1 >> 4)) ** 2);
           if (z2 < (r + 1) ** 2) continue POOL;
         }
+        // test distance from other enemies.
+        for (const [, x1, y1, r1] of placed) {
+          const z2 = ((y - y1) ** 2 + (x - x1) ** 2);
+          if (!z2) continue POOL;  // no overlap
+          if (z2 < (r + r1) ** 2) {
+            if (!result || result[2] < z2) result = [x, y, z2];
+            continue POOL;
+          }
+        }
+        // Valid spot (but still, how to approximately *maximize* distances?)
+        result = [x, y, Infinity]; // z2 urrelevant
+        break;
+      }
 
-        // Valid spot (still, how toa approximately *maximize* distances?)
+      if (result) {
+        const [x, y] = result;
         placed.push([m, x, y, r]);
         const scr = (y & 0xf0) | (x & 0xf0) >>> 4;
         const tile = (y & 0x0f) << 4 | (x & 0x0f);

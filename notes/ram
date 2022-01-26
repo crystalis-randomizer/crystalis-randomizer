@@ -510,6 +510,41 @@ song number that's playing.
    an indication of when the sound effect will be done) if one is
  - 111 is sound effect priority???
 
+There are 6 channels (one does double duty for bgm and sfx), typically
+indexed by X, as follows:
+  X=0 => BGM Pulse 1 ?
+  X=1 => BGM Pulse 2 ?
+  X=2 => BGM Triangle ?
+  X=3 => BGM Noise ?
+  X=4 => SFX Pulse 2
+  X=5 => SFX Noise
+What about DMC?
+
+$102
+----
+Currently playing BGM track index, for purpose of determining whether to
+start playing a track from the start or to continue playing the same track.
+This does _not_ seem to be used to continue playing tracks (potentially
+because we instead just store pointers directly into the channel data?).
+ - ?? The sign bit seems to have some significance as well. ??
+
+$110
+----
+Currently playing (or last played) SFX index
+
+$112
+----
+Currently playing SFX priority, smaller numbers more important.
+This is $#ff if nothing is playing.
+
+$11a..$125
+----------
+Pointers to the current positions in the current bgm/sfx individual channel
+data subtables.  11a..11f is the low byte, 120..125 is the high byte of the
+address.
+
+
+
 Free/unused bytes in this range:
  - $f4, $10a..$10e, $13d, $149
 

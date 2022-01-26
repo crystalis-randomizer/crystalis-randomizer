@@ -53,6 +53,8 @@ define ObjectXHi   $0090
 define ObjectYLo   $00b0
 define ObjectYHi   $00d0
 
+define ChannelDataPtrLo    $011a
+define ChannelDataPtrHi    $0120
 
 define SpriteRam           $0200
 define SpriteRamY          $0200
@@ -171,6 +173,32 @@ define PPUSCROLL $2005
 define PPUADDR   $2006
 define PPUDATA   $2007
 define OAMDMA    $4014
+
+define PULSE1_DUTY       $4000
+define PULSE1_VOLUME     $4000
+define PULSE1_SWEEP      $4001
+define PULSE1_TIMER_LO   $4002
+define PULSE1_TIMER_HI   $4003
+define PULSE1_LOAD       $4003
+define PULSE2_DUTY       $4004
+define PULSE2_VOLUME     $4004
+define PULSE2_SWEEP      $4005
+define PULSE2_TIMER_LO   $4006
+define PULSE2_TIMER_HI   $4007
+define PULSE2_LOAD       $4007
+define TRIANGLE_CTL      $4008
+define TRIANGLE_TIMER_LO $400A
+define TRIANGLE_TIMER_HI $400B
+define TRIANGLE_LOAD     $400B
+define NOISE_VOLUME      $400C
+define NOISE_PERIOD      $400E
+define NOISE_LOAD        $400F
+define DMC_ENABLE        $4010
+define DMC_LOAD_COUNTER  $4011
+define DMC_SAMPLE_ADDR   $4012
+define DMC_SAMPLE_LENGTH $4013
+define APU_STATUS        $4015
+define APU_FRAME_COUNTER $4017
 
 define BANKSELECT $8000
 define BANKDATA   $8001
@@ -14318,24 +14346,45 @@ SoundEffectData_Track20                                   ; Track 20
         $180c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track21                                   ; Track 21
-        $180ce              .byte $xx,$xx
-        $180d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $180e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $180ce              .byte $xx      ; Priority
+        $180cf              .word ($xxxx)  ; Address for x=4/y=4
+        $180d1              .word ($xxxx)  ; Address for x=5/y=c
+Sfx21_Ch4
+        ;; Seems to be the pulse2 channel
+        $180d3              .byte $xx,$xx,$xx,$xx,$xx
+        $180d8              .byte $xx,$xx
+        $180da              .byte $xx,$xx,$xx,$xx,$xx
+Sfx21_Ch5
+        ;; Seems to be the noise channel
+        $180df              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track23                                   ; Track 23
-        $180ea              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $180f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $18100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $18110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $180ea              .byte $xx      ; Priority
+        $180eb              .word ($xxxx)
+        $180ed              .word ($xxxx)
+Sfx23_Ch4
+        $180ef              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $180f5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $180fe              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $18108              .byte $xx,$xx,$xx,$xx,$xx
+        $1810d              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $1811d              .byte $xx,$xx,$xx
         $18120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $18160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $18160              .byte $xx,$xx,$xx,$xx
+Sfx23_Ch5
+        $18164              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $18170              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track24                                   ; Track 24
-        $18172              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $18172              .byte $xx      ; Priority
+        $18173              .word ($xxxx)
+        $18175              .word ($xxxx)
+Sfx24_Ch4
+        $18177              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Sfx24_Ch5
         $18180              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 SoundEffectData_Track25                                   ; Track 25
@@ -40761,14 +40810,14 @@ ResumeAudioInner
         ;; --------------------------------
 +       $30064  xx xx xx:   xxx $xxxx
         $30067  xx xx:      xxx + ; $30071
-        $30069  xx xx:      xxx #$xx
-        $3006b  xx xx:      xxx ++ ; $30094
-        $3006d  xx xx xx:   xxx $300e4
-        ;; --------------------------------
-        $30070  xx:         xxx
-        ;; --------------------------------
+        $30069  xx xx:       xxx  #$xx
+        $3006b  xx xx:       xxx  ResumeSfx ; $30094
+        $3006d  xx xx xx:     xxx  ResumeBgm ; $300e4
+        ;;                    --------------
+        $30070  xx:          xxx
+        ;;                   ---
 +       $30071  xx xx xx:   xxx $xxxx
-        $30074  xx xx:      xxx <rts
+        $30074  xx xx:      xxx <rts ; $30070 (but could be >rts)
         $30076  xx xx:      xxx $xx
         $30078  xx xx xx:   xxx $xxxx
         $3007b  xx xx:      xxx $xx
@@ -40776,8 +40825,8 @@ ResumeAudioInner
         $3007f  xx xx:      xxx $xx
         $30081  xx xx:      xxx #$xx
         $30083  xx xx:      xxx + ; $30086
-        $30085  xx:         xxx
-        ;; --------------------------------
+        $30085  xx:          xxx
+        ;;                   ---
 +       $30086  xx xx:      xxx #$xx
 -       $30088  xx xx xx:    xxx $30465
         $3008b  xx xx xx:    xxx $30388
@@ -40786,8 +40835,9 @@ ResumeAudioInner
         $30091  xx xx:      xxx - ; $30088
         $30093  xx:         xxx
 ;;; --------------------------------
+ResumeSfx
 	;; Map $18000 -> $a000
-++      $30094  xx xx:      xxx #$xx
+        $30094  xx xx:      xxx #$xx
         $30096  xx xx xx:   xxx BANKSELECT
         $30099  xx xx:      xxx #$xx
         $3009b  xx xx xx:   xxx BANKDATA
@@ -40797,15 +40847,15 @@ ResumeAudioInner
         ;; So all this data actually comes from the 18000 bank
         ;; in the $a000-$bfff block.  This is consistent with
         ;; sound effects starting at $20.
-        $300a0  xx xx xx:   xxx $17fc0,x
+        $300a0  xx xx xx:   xxx $xxxx,x  ; SoundEffectData-$40
         $300a3  xx xx:      xxx $xx
-        $300a5  xx xx xx:   xxx $17fc1,x
+        $300a5  xx xx xx:   xxx $xxxx,x  ; SoundEffectData-$3f
         $300a8  xx xx:      xxx $xx
         $300aa  xx xx:      xxx $xx
-        $300ac  xx xx:      xxx <rts
+        $300ac  xx xx:       xxx <rts ; no sound effect: bail out
         $300ae  xx xx:      xxx $xx
         $300b0  xx xx:      xxx #$xx
-        $300b2  xx xx:      xxx <rts
+        $300b2  xx xx:       xxx <rts
         $300b4  xx xx:      xxx #$xx
         $300b6  xx xx:      xxx ($xx),y
         $300b8  xx xx xx:   xxx $xxxx
@@ -40814,7 +40864,7 @@ ResumeAudioInner
         ;; plays, it will override a larger (lower) priority
         ;; SFX in progress.
         $300bb  xx xx:      xxx + ; $300bf
-        $300bd  xx xx:      xxx <rts
+        $300bd  xx xx:       xxx <rts
 +       $300bf  xx xx xx:   xxx $xxxx
         $300c2  xx:         xxx
         $300c3  xx xx:      xxx #$xx
@@ -40833,6 +40883,7 @@ ResumeAudioInner
 ;;; --------------------------------
         $300e2  xx:         xxx
         $300e3  xx:         xxx
+ResumeBgm
         $300e4  xx xx xx:   xxx $30177
         $300e7  xx xx:      xxx ++ ; $30102
         $300e9  xx xx:      xxx $xx
@@ -40893,6 +40944,9 @@ ResumeAudioInner
         $30167  xx:         xxx
         $30168  xx:         xxx
 ;;; --------------------------------
+;;; Inputs: x=4 or 5, y=1 or 3 (respectively)
+;;;         ($f5) is start of an SFX track data
+;;; Seems to initialize the 11a/120 pointer table for the two SFX channels.
         $30169  xx xx:      xxx ($xx),y
         $3016b  xx xx xx:   xxx $xxxx,x
         $3016e  xx:         xxx
@@ -41039,9 +41093,9 @@ ResumeAudioInner
         $3028e  xx xx:      xxx $xx
         $30290  xx xx xx:   xxx $xxxx,x
         $30293  xx xx:      xxx $xx
--       $30295  xx xx xx:   xxx $30347
-        $30298  xx xx:      xxx $xx
-        $3029a  xx xx:      xxx $xx
+-       $30295  xx xx xx:    xxx $30347
+        $30298  xx xx:       xxx $xx
+        $3029a  xx xx:       xxx $xx
         $3029c  xx xx:      xxx - ; $30295
         $3029e  xx xx xx:   xxx $xxxx,x
         $302a1  xx xx xx:   xxx $xxxx,x
@@ -41058,15 +41112,15 @@ ResumeAudioInner
         $302ba  xx xx:      xxx $xx
         $302bc  xx xx:      xxx #$xx
         $302be  xx xx:      xxx + ; $302d8
-        $302c0  xx xx xx:   xxx $xxxx,x
-        $302c3  xx xx:      xxx #$xx
-        $302c5  xx xx xx:   xxx $xxxx,x
-        $302c8  xx xx xx:   xxx $xxxx,x
-        $302cb  xx xx:      xxx #$xx
-        $302cd  xx xx xx:   xxx $xxxx,x
-        $302d0  xx xx xx:   xxx $xxxx,x
-        $302d3  xx xx:      xxx #$xx
-        $302d5  xx xx xx:   xxx $xxxx,x
+        $302c0  xx xx xx:    xxx $xxxx,x
+        $302c3  xx xx:       xxx #$xx
+        $302c5  xx xx xx:    xxx $xxxx,x
+        $302c8  xx xx xx:    xxx $xxxx,x
+        $302cb  xx xx:       xxx #$xx
+        $302cd  xx xx xx:    xxx $xxxx,x
+        $302d0  xx xx xx:    xxx $xxxx,x
+        $302d3  xx xx:       xxx #$xx
+        $302d5  xx xx xx:    xxx $xxxx,x
 +       $302d8  xx xx xx:   xxx $xxxx,x
         $302db  xx xx:      xxx #$xx
         $302dd  xx xx:      xxx ++ ; $302f3
@@ -41089,32 +41143,33 @@ ResumeAudioInner
         $30303  xx xx:      xxx #$xx
         $30305  xx xx:      xxx $xx
 ++      $30307  xx xx xx:   xxx $xxxx,x
-        $3030a  xx xx:      xxx ++ ; $30346
+        $3030a  xx xx:       xxx >rts ; $30346
         $3030c  xx xx xx:   xxx $307ac,x
         $3030f  xx xx:      xxx $xx
         $30311  xx xx:      xxx + ; $30319
-        $30313  xx xx xx:   xxx $xxxx,x
-        $30316  xx xx xx:   xxx $xxxx,y
+        $30313  xx xx xx:    xxx $xxxx,x
+        $30316  xx xx xx:    xxx $xxxx,y
 +       $30319  xx xx:      xxx $xx
         $3031b  xx xx:      xxx + ; $30323
-        $3031d  xx xx xx:   xxx $xxxx,x
-        $30320  xx xx xx:   xxx $xxxx,y
+        $3031d  xx xx xx:    xxx $xxxx,x
+        $30320  xx xx xx:    xxx $xxxx,y
 +       $30323  xx xx:      xxx $xx
         $30325  xx xx:      xxx + ; $3032d
-        $30327  xx xx xx:   xxx $xxxx,x
-        $3032a  xx xx xx:   xxx $xxxx,y
+        $30327  xx xx xx:    xxx $xxxx,x
+        $3032a  xx xx xx:    xxx $xxxx,y
 +       $3032d  xx xx:      xxx $xx
-        $3032f  xx xx:      xxx ++ ; $30346
-        $30331  xx xx xx:   xxx $xxxx,x
-        $30334  xx xx xx:   xxx $xxxx,y
-        $30337  xx xx:      xxx #$xx
-        $30339  xx xx:      xxx #$xx
-        $3033b  xx xx xx:   xxx $xxxx,x
-        $3033e  xx xx xx:   xxx $xxxx,x
-        $30341  xx xx:      xxx #$xx
-        $30343  xx xx xx:   xxx $xxxx,y
-++      $30346  xx:         xxx
+        $3032f  xx xx:      xxx >rts ; $30346
+        $30331  xx xx xx:    xxx $xxxx,x
+        $30334  xx xx xx:    xxx $xxxx,y
+        $30337  xx xx:       xxx #$xx
+        $30339  xx xx:       xxx #$xx
+        $3033b  xx xx xx:    xxx $xxxx,x
+        $3033e  xx xx xx:    xxx $xxxx,x
+        $30341  xx xx:       xxx #$xx
+        $30343  xx xx xx:    xxx $xxxx,y
+        $30346  xx:         xxx
 ;;; --------------------------------
+;;; Runs the next command for the audio finite state machine
         $30347  xx xx:      xxx $xx
         $30349  xx xx:      xxx $xx
         $3034b  xx xx:      xxx ($xx),y
@@ -41139,40 +41194,40 @@ AudioJumpTable_01
         $3036c  xx xx:      xxx #$xx
         $3036e  xx xx xx:   xxx $xxxx,x
         $30371  xx xx:      xxx #$xx
-        $30373  xx xx:      xxx $xx
-        $30375  xx xx:      xxx $xx
-        $30377  xx xx:      xxx #$xx
-        $30379  xx xx xx:   xxx $xxxx
-        $3037c  xx:         xxx
-;;; --------------------------------
-        $3037d  xx xx xx:   xxx $307b2,x
+        $30373  xx xx:      xxx + ; $3037d
+        $30375  xx xx:       xxx $xx
+        $30377  xx xx:       xxx #$xx
+        $30379  xx xx xx:    xxx $xxxx
+        $3037c  xx:          xxx
+        ;;                   ---
++       $3037d  xx xx xx:   xxx $307b2,x
         $30380  xx xx:      xxx $xx
         $30382  xx xx:      xxx $xx
         $30384  xx xx xx:   xxx $307a6,x
         $30387  xx:         xxx
         $30388  xx xx xx:   xxx $xxxx,x
-        $3038b  xx xx:      xxx $xx
-        $3038d  xx xx:      xxx #$xx
-        $3038f  xx xx:      xxx #$xx
-        $30391  xx xx xx:   xxx $xxxx,x
-        $30394  xx:         xxx
+        $3038b  xx xx:      xxx + ; $30394
+        $3038d  xx xx:       xxx #$xx
+        $3038f  xx xx:       xxx #$xx
+        $30391  xx xx xx:    xxx $xxxx,x
++       $30394  xx:         xxx
 ;;; --------------------------------
 AudioJumpTable_0c
         $30395  xx xx:      xxx $xx
         $30397  xx:         xxx
-        $30398  xx xx:      xxx $xx
-        $3039a  xx xx:      xxx $xx
-        $3039c  xx xx:      xxx $xx
-        $3039e  xx xx:      xxx #$xx
-        $303a0  xx xx:      xxx $xx
-        $303a2  xx xx:      xxx $xx
-        $303a4  xx xx:      xxx $xx
-        $303a6  xx xx:      xxx ($xx),y
-        $303a8  xx xx:      xxx #$xx
-        $303aa  xx xx xx:   xxx $xxxx,x
-        $303ad  xx:         xxx
-;;; --------------------------------
-        $303ae  xx xx:      xxx $xx
+        $30398  xx xx:      xxx + ; $303ae
+        $3039a  xx xx:       xxx $xx
+        $3039c  xx xx:       xxx $xx
+        $3039e  xx xx:       xxx #$xx
+        $303a0  xx xx:       xxx $xx
+        $303a2  xx xx:       xxx $xx
+        $303a4  xx xx:       xxx $xx
+        $303a6  xx xx:       xxx ($xx),y
+        $303a8  xx xx:       xxx #$xx
+        $303aa  xx xx xx:    xxx $xxxx,x
+        $303ad  xx:          xxx
+        ;;                   ---
++       $303ae  xx xx:      xxx $xx
         $303b0  xx xx:      xxx $xx
         $303b2  xx xx:      xxx #$xx
         $303b4  xx xx:      xxx $xx
@@ -41186,10 +41241,10 @@ AudioJumpTable_0c
 AudioJumpTable_0d
         $303c2  xx xx xx:   xxx $307a6,x
         $303c5  xx xx:      xxx #$xx
-        $303c7  xx xx:      xxx $xx
-        $303c9  xx xx xx:   xxx $3063b
-;;; --------------------------------
-        $303cc  xx xx xx:   xxx $xxxx,x
+        $303c7  xx xx:      xxx + ; $303cc
+        $303c9  xx xx xx:    xxx $3063b
+        ;;                   ----------
++       $303cc  xx xx xx:   xxx $xxxx,x
         $303cf  xx:         xxx
         $303d0  xx:         xxx
         $303d1  xx:         xxx
@@ -41271,17 +41326,17 @@ AudioJumpTable_04
         $30464  xx:         xxx
 ;;; --------------------------------
         $30465  xx xx xx:   xxx $xxxx,x
-        $30468  xx xx:      xxx + ; $3047c
+        $30468  xx xx:       xxx >rts ; $3047c
         $3046a  xx xx:      xxx $xx
         $3046c  xx:         xxx
         $3046d  xx xx:       xxx #$xx
         $3046f  xx xx:       xxx $xx
         $30471  xx xx xx:    xxx $307b2,x
         $30474  xx xx:       xxx $xx
-        $30476  xx xx xx:    xxx $xxxx
+        $30476  xx xx xx:    xxx APU_STATUS
         $30479  xx:         xxx
         $3047a  xx xx:      xxx $xx
-+       $3047c  xx:         xxx
+        $3047c  xx:         xxx
 ;;; --------------------------------
 AudioJumpTable_05
 AudioJumpTable_06
@@ -41742,38 +41797,38 @@ DataTable_30714
         $30bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 BackgroundMusicData
-        $30c0c              .word ($xxxx) ; $30c4c: 00
-        $30c0e              .word ($xxxx) ; $30c61: 01
+        $30c0c              .word ($xxxx) ; $30c4c: 00 Silence
+        $30c0e              .word ($xxxx) ; $30c61: 01 Plains
         $30c10              .word ($xxxx)
-        $30c12              .word ($xxxx) ; $310bc: 03
-        $30c14              .word ($xxxx) ; $311b6: 04
+        $30c12              .word ($xxxx) ; $310bc: 03 Swamp
+        $30c14              .word ($xxxx) ; $311b6: 04 Desert
         $30c16              .word ($xxxx)
-        $30c18              .word ($xxxx) ; $31314: 06
-        $30c1a              .word ($xxxx) ; $31695: 07
-        $30c1c              .word ($xxxx) ; $3188d: 08
-        $30c1e              .word ($xxxx) ; $31a8b: 09
-        $30c20              .word ($xxxx) ; $31c6d: 0a
-        $30c22              .word ($xxxx) ; $31e8e: 0b
-        $30c24              .word ($xxxx) ; $31f4b: 0c
-        $30c26              .word ($xxxx) ; $320e5: 0d
-        $30c28              .word ($xxxx) ; $32247: 0e
-        $30c2a              .word ($xxxx) ; $323ce: 0f
+        $30c18              .word ($xxxx) ; $31314: 06 Sea
+        $30c1a              .word ($xxxx) ; $31695: 07 Cave 3 (ESI, Stxy, Hydra)
+        $30c1c              .word ($xxxx) ; $3188d: 08 Fortress
+        $30c1e              .word ($xxxx) ; $31a8b: 09 Start movie
+        $30c20              .word ($xxxx) ; $31c6d: 0a Intro
+        $30c22              .word ($xxxx) ; $31e8e: 0b Title
+        $30c24              .word ($xxxx) ; $31f4b: 0c Draygon 2
+        $30c26              .word ($xxxx) ; $320e5: 0d Shyron
+        $30c28              .word ($xxxx) ; $32247: 0e Fortune teller
+        $30c2a              .word ($xxxx) ; $323ce: 0f Portoa queen
         $30c2c              .word ($xxxx)
-        $30c2e              .word ($xxxx) ; $32470: 11
-        $30c30              .word ($xxxx) ; $325db: 12
-        $30c32              .word ($xxxx) ; $32796: 13
-        $30c34              .word ($xxxx) ; $327e7: 14
-        $30c36              .word ($xxxx) ; $329af: 15
-        $30c38              .word ($xxxx) ; $32d3d: 16
-        $30c3a              .word ($xxxx) ; $3302a: 17
-        $30c3c              .word ($xxxx) ; $33255: 18
-        $30c3e              .word ($xxxx) ; $33658: 19
-        $30c40              .word ($xxxx) ; $33814: 1a
-        $30c42              .word ($xxxx) ; $339f2: 1b
-        $30c44              .word ($xxxx) ; $33a8e: 1c
-        $30c46              .word ($xxxx) ; $33dde: 1d
-        $30c48              .word ($xxxx) ; $33ed1: 1e
-        $30c4a              .word ($xxxx) ; $33f3a: 1f
+        $30c2e              .word ($xxxx) ; $32470: 11 Cave (wind, etc)
+        $30c30              .word ($xxxx) ; $325db: 12 Boss
+        $30c32              .word ($xxxx) ; $32796: 13 Fanfare
+        $30c34              .word ($xxxx) ; $327e7: 14 Dyna
+        $30c36              .word ($xxxx) ; $329af: 15 Tower
+        $30c38              .word ($xxxx) ; $32d3d: 16 Town
+        $30c3a              .word ($xxxx) ; $3302a: 17 Cave 2 (waterfall)
+        $30c3c              .word ($xxxx) ; $33255: 18 Mountain
+        $30c3e              .word ($xxxx) ; $33658: 19 Crypt
+        $30c40              .word ($xxxx) ; $33814: 1a Ending credits ?
+        $30c42              .word ($xxxx) ; $339f2: 1b Wise men
+        $30c44              .word ($xxxx) ; $33a8e: 1c Ending credits ?
+        $30c46              .word ($xxxx) ; $33dde: 1d Ending credits ?
+        $30c48              .word ($xxxx) ; $33ed1: 1e Heartbeat (dyna prelude)
+        $30c4a              .word ($xxxx) ; $33f3a: 1f Computer boot (at start)
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track00                               ; Track 00
         $30c4c              .byte $xx,$xx,$xx,$xx
@@ -41781,7 +41836,13 @@ BackgroundMusicData_Track00                               ; Track 00
         $30c60              .byte $xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track01                               ; Track 01
-        $30c61              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30c61              .byte $xx
+        $30c62              .word ($xxxx)
+        $30c64              .word ($xxxx)
+        $30c66              .word ($xxxx)
+        $30c68              .word ($xxxx)
+Bgm01_Ch0
+        $30c6a              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $30c70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41804,7 +41865,9 @@ BackgroundMusicData_Track01                               ; Track 01
         $30da0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30db0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm01_Ch1
+        $30ddc              .byte $xx,$xx,$xx,$xx
         $30de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41826,7 +41889,9 @@ BackgroundMusicData_Track01                               ; Track 01
         $30f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm01_Ch2
+        $30f37              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41845,7 +41910,9 @@ BackgroundMusicData_Track01                               ; Track 01
         $31030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm01_Ch3
+        $3106d              .byte $xx,$xx,$xx
         $31070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31090              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41853,33 +41920,53 @@ BackgroundMusicData_Track01                               ; Track 01
         $310b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track03                               ; Track 03
-        $310bc              .byte $xx,$xx,$xx,$xx
-        $310c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $310bc              .byte $xx
+        $310bd              .word ($xxxx)
+        $310bf              .word ($xxxx)
+        $310c1              .word ($xxxx)
+        $310c3              .word ($xxxx)
+Bgm03_Ch0
+        $310c5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $310cf              .byte $xx
         $310d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $310e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $310f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31110              .byte $xx,$xx,$xx,$xx
+Bgm03_Ch1
+        $31114              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31120              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31160              .byte $xx,$xx,$xx,$xx,$xx
+Bgm03_Ch2
+        $31165              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $311a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $311b0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+        $311b0              .byte $xx,$xx,$xx
+Bgm03_Ch3
+        $311b3              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track04                               ; Track 04
-        $311b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $311b6              .byte $xx
+        $311b7              .word ($xxxx)
+        $311b9              .word ($xxxx)
+        $311bb              .word ($xxxx)
+        $311bd              .word ($xxxx)
+Bgm04_Ch0
+        $311bf              .byte $xx
         $311c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $311d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $311e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $311f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm04_Ch1
+        $3122d              .byte $xx,$xx,$xx
         $31230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41887,6 +41974,7 @@ BackgroundMusicData_Track04                               ; Track 04
         $31270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31290              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm04_Ch2
         $312a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $312b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $312c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41894,10 +41982,18 @@ BackgroundMusicData_Track04                               ; Track 04
         $312e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $312f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31310              .byte $xx,$xx,$xx,$xx
+        $31310              .byte $xx
+Bgm04_Ch3
+        $31311              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track06                               ; Track 06
-        $31314              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31314              .byte $xx
+        $31315              .word ($xxxx)
+        $31317              .word ($xxxx)
+        $31319              .word ($xxxx)
+        $3131b              .word ($xxxx)
+Bgm06_Ch0
+        $3131d              .byte $xx,$xx,$xx
         $31320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31330              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31340              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41914,7 +42010,9 @@ BackgroundMusicData_Track06                               ; Track 06
         $313f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31420              .byte $xx,$xx,$xx
+Bgm06_Ch1
+        $31423              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31430              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31440              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31450              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41929,6 +42027,7 @@ BackgroundMusicData_Track06                               ; Track 06
         $314e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $314f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm06_Ch2
         $31510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31530              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41946,7 +42045,9 @@ BackgroundMusicData_Track06                               ; Track 06
         $315f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31620              .byte $xx,$xx,$xx,$xx
+Bgm06_Ch3
+        $31624              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31630              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31640              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31650              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41956,7 +42057,13 @@ BackgroundMusicData_Track06                               ; Track 06
         $31690              .byte $xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track07                               ; Track 07
-        $31695              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31695              .byte $xx
+        $31696              .word ($xxxx)
+        $31698              .word ($xxxx)
+        $3169a              .word ($xxxx)
+        $3169c              .word ($xxxx)
+Bgm07_Ch0
+        $3169e              .byte $xx,$xx
         $316a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $316b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $316c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41966,7 +42073,9 @@ BackgroundMusicData_Track07                               ; Track 07
         $31700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31730              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31730              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm07_Ch1
+        $3173e              .byte $xx,$xx
         $31740              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31750              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31760              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41976,7 +42085,9 @@ BackgroundMusicData_Track07                               ; Track 07
         $317a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $317b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $317c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $317d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $317d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm07_Ch2
+        $317db              .byte $xx,$xx,$xx,$xx,$xx
         $317e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $317f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41984,21 +42095,30 @@ BackgroundMusicData_Track07                               ; Track 07
         $31820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31850              .byte $xx,$xx,$xx
+Bgm07_Ch3
+        $31853              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track08                               ; Track 08
-        $3188d              .byte $xx,$xx,$xx
-        $31890              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3188d              .byte $xx
+        $3188e              .word ($xxxx)
+        $31890              .word ($xxxx)
+        $31892              .word ($xxxx)
+        $31894              .word ($xxxx)
+Bgm08_Ch0
+        $31896              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $318a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $318b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $318c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $318d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $318e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $318f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm08_Ch1
+        $31909              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31930              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42006,7 +42126,9 @@ BackgroundMusicData_Track08                               ; Track 08
         $31950              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31970              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31980              .byte $xx,$xx,$xx
+Bgm08_Ch2
+        $31983              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31990              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $319a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $319b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42018,15 +42140,22 @@ BackgroundMusicData_Track08                               ; Track 08
         $31a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31a30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31a40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31a40              .byte $xx
+Bgm08_Ch3
+        $31a41              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31a50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31a60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31a70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31a80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track09                               ; Track 09
-        $31a8b              .byte $xx,$xx,$xx,$xx,$xx
-        $31a90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31a8b              .byte $xx
+        $31a8c              .word ($xxxx)
+        $31a8e              .word ($xxxx)
+        $31a90              .word ($xxxx)
+        $31a92              .word ($xxxx)
+Bgm09_Ch0
+        $31a94              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31aa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42036,7 +42165,9 @@ BackgroundMusicData_Track09                               ; Track 09
         $31b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31b10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31b20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31b30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31b30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm09_Ch1
+        $31b3c              .byte $xx,$xx,$xx,$xx
         $31b40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31b50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31b60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42048,18 +42179,27 @@ BackgroundMusicData_Track09                               ; Track 09
         $31bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm09_Ch2
+        $31bf7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31c60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31c60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm09_Ch3
+        $31c6a              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track0a                               ; Track 0a
-        $31c6d              .byte $xx,$xx,$xx
-        $31c70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31c6d              .byte $xx
+        $31c6e              .word ($xxxx)
+        $31c70              .word ($xxxx)
+        $31c72              .word ($xxxx)
+        $31c74              .word ($xxxx)
+Bgm0a_Ch0
+        $31c76              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ca0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42070,7 +42210,9 @@ BackgroundMusicData_Track0a                               ; Track 0a
         $31cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31d20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31d20              .byte $xx,$xx,$xx,$xx
+Bgm0a_Ch1
+        $31d24              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31d30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31d40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31d50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42082,7 +42224,9 @@ BackgroundMusicData_Track0a                               ; Track 0a
         $31db0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31de0              .byte $xx,$xx
+Bgm0a_Ch2
+        $31de2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42092,26 +42236,44 @@ BackgroundMusicData_Track0a                               ; Track 0a
         $31e50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0a_Ch3
+        $31e8b              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track0b                               ; Track 0b
-        $31e8e              .byte $xx,$xx
-        $31e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31e8e              .byte $xx
+        $31e8f              .word ($xxxx)
+        $31e91              .word ($xxxx)
+        $31e93              .word ($xxxx)
+        $31e95              .word ($xxxx)
+Bgm0b_Ch0
+        $31e97              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31e9f              .byte $xx
         $31ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+Bgm0b_Ch1
+        $31ed6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0b_Ch2
+        $31f19              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31f29              .byte $xx,$xx,$xx,$xx,$xx,$xx
+Bgm0b_Ch3
+        $31f2f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31f3f              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track0c                               ; Track 0c
-        $31f4b              .byte $xx,$xx,$xx,$xx,$xx
-        $31f50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31f4b              .byte $xx
+        $31f4c              .word ($xxxx)
+        $31f4e              .word ($xxxx)
+        $31f50              .word ($xxxx)
+        $31f52              .word ($xxxx)
+Bgm0c_Ch0
+        $31f54              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31f70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31f80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42119,7 +42281,9 @@ BackgroundMusicData_Track0c                               ; Track 0c
         $31fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $31fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $31fd0              .byte $xx,$xx
+Bgm0c_Ch1
+        $31fd2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $31ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42127,7 +42291,9 @@ BackgroundMusicData_Track0c                               ; Track 0c
         $32020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32050              .byte $xx
+Bgm0c_Ch2
+        $32051              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32070              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32080              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42136,10 +42302,18 @@ BackgroundMusicData_Track0c                               ; Track 0c
         $320b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $320c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $320d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $320e0              .byte $xx,$xx,$xx,$xx,$xx
+        $320e0              .byte $xx,$xx
+Bgm0c_Ch3
+        $320e2              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track0d                               ; Track 0d
-        $320e5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $320e5              .byte $xx
+        $320e6              .word ($xxxx)
+        $320e8              .word ($xxxx)
+        $320ea              .word ($xxxx)
+        $320ec              .word ($xxxx)
+Bgm0d_Ch0
+        $320ee              .byte $xx,$xx
         $320f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42147,31 +42321,44 @@ BackgroundMusicData_Track0d                               ; Track 0d
         $32130              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32150              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0d_Ch1
+        $3216b              .byte $xx,$xx,$xx,$xx,$xx
         $32170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $321a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $321b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $321c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $321d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $321d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0d_Ch2
+        $321db              .byte $xx,$xx,$xx,$xx,$xx
         $321e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $321f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32200              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32210              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32240              .byte $xx,$xx,$xx,$xx
+Bgm0d_Ch3
+        $32244              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track0e                               ; Track 0e
-        $32247              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32247              .byte $xx
+        $32248              .word ($xxxx)
+        $3224a              .word ($xxxx)
+        $3224c              .word ($xxxx)
+        $3224e              .word ($xxxx)
+Bgm0e_Ch0
         $32250              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32290              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $322a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $322b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $322b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0e_Ch1
+        $322bf              .byte $xx
         $322c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $322d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $322e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42181,30 +42368,52 @@ BackgroundMusicData_Track0e                               ; Track 0e
         $32320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32330              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32340              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32350              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32350              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0e_Ch2
+        $32357              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32360              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32380              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $323a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $323b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $323c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $323c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0e_Ch3
+        $323cb              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track0f                               ; Track 0f
-        $323ce              .byte $xx,$xx
-        $323d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $323ce              .byte $xx
+        $323cf              .word ($xxxx)
+        $323d1              .word ($xxxx)
+        $323d3              .word ($xxxx)
+        $323d5              .word ($xxxx)
+Bgm0f_Ch0
+        $323d7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $323df              .byte $xx
         $323e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $323f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32400              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32410              .byte $xx,$xx,$xx,$xx
+Bgm0f_Ch1
+        $32414              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32430              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32440              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32440              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0f_Ch2
+        $3244b              .byte $xx,$xx,$xx,$xx,$xx
         $32450              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm0f_Ch3
+        $3246d              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track11                               ; Track 11
-        $32470              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32470              .byte $xx
+        $32471              .word ($xxxx)
+        $32473              .word ($xxxx)
+        $32475              .word ($xxxx)
+        $32477              .word ($xxxx)
+Bgm11_Ch0
+        $32479              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32480              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32490              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $324a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42212,7 +42421,9 @@ BackgroundMusicData_Track11                               ; Track 11
         $324c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $324d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $324e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $324f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $324f0              .byte $xx,$xx,$xx,$xx
+Bgm11_Ch1
+        $324f4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32500              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42220,17 +42431,26 @@ BackgroundMusicData_Track11                               ; Track 11
         $32540              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32550              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32560              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32570              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32570              .byte $xx,$xx
+Bgm11_Ch2
+        $32572              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32580              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32590              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $325a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $325b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $325c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $325d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $325d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm11_Ch3
+        $325d8              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track12                               ; Track 12
-        $325db              .byte $xx,$xx,$xx,$xx,$xx
-        $325e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $325db              .byte $xx
+        $325dc              .word ($xxxx)
+        $325de              .word ($xxxx)
+        $325e0              .word ($xxxx)
+        $325e2              .word ($xxxx)
+Bgm12_Ch0
+        $325e4              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $325f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42238,19 +42458,25 @@ BackgroundMusicData_Track12                               ; Track 12
         $32630              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32640              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32650              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32660              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32660              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm12_Ch1
+        $32668              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32670              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32680              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32690              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $326a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $326b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $326c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $326d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $326d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm12_Ch2
+        $326dc              .byte $xx,$xx,$xx,$xx
         $326e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $326f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm12_Ch3
+        $3272a              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $32730              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32740              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32750              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42260,15 +42486,32 @@ BackgroundMusicData_Track12                               ; Track 12
         $32790              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track13                               ; Track 13
-        $32796              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32796              .byte $xx
+        $32797              .word ($xxxx)
+        $32799              .word ($xxxx)
+        $3279b              .word ($xxxx)
+        $3279d              .word ($xxxx)
+Bgm13_Ch0
+        $3279f              .byte $xx
         $327a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $327b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $327c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $327b0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+Bgm13_Ch1
+        $327b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $327c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm13_Ch2
+        $327ce              .byte $xx,$xx
         $327d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $327e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $327e0              .byte $xx,$xx,$xx,$xx
+Bgm13_Ch3
+        $327e4              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track14                               ; Track 14
-        $327e7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $327e7              .byte $xx
+        $327e8              .word ($xxxx)
+        $327ea              .word ($xxxx)
+        $327ec              .word ($xxxx)
+        $327ee              .word ($xxxx)
+Bgm14_Ch0
         $327f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42277,7 +42520,9 @@ BackgroundMusicData_Track14                               ; Track 14
         $32840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm14_Ch1
+        $32879              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32890              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $328a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42286,12 +42531,16 @@ BackgroundMusicData_Track14                               ; Track 14
         $328d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $328e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $328f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32900              .byte $xx,$xx,$xx,$xx
+Bgm14_Ch2
+        $32904              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32930              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32940              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32950              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32950              .byte $xx,$xx,$xx,$xx
+Bgm14_Ch3
+        $32954              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32970              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42300,7 +42549,12 @@ BackgroundMusicData_Track14                               ; Track 14
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track15                               ; Track 15
         $329af              .byte $xx
-        $329b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $329b0              .word ($xxxx)
+        $329b2              .word ($xxxx)
+        $329b4              .word ($xxxx)
+        $329b6              .word ($xxxx)
+Bgm15_Ch0
+        $329b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $329c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $329d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $329e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42318,7 +42572,9 @@ BackgroundMusicData_Track15                               ; Track 15
         $32aa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32ad0              .byte $xx,$xx,$xx
+Bgm15_Ch1
+        $32ad3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42337,7 +42593,9 @@ BackgroundMusicData_Track15                               ; Track 15
         $32bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32c00              .byte $xx,$xx,$xx,$xx
+Bgm15_Ch2
+        $32c04              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32c10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32c20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32c30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42351,7 +42609,9 @@ BackgroundMusicData_Track15                               ; Track 15
         $32cb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32cd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32ce0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm15_Ch3
+        $32cec              .byte $xx,$xx,$xx,$xx
         $32cf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32d00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32d10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42359,8 +42619,13 @@ BackgroundMusicData_Track15                               ; Track 15
         $32d30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track16                               ; Track 16
-        $32d3d              .byte $xx,$xx,$xx
-        $32d40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32d3d              .byte $xx
+        $32d3e              .word ($xxxx)
+        $32d40              .word ($xxxx)
+        $32d42              .word ($xxxx)
+        $32d44              .word ($xxxx)
+Bgm16_Ch0
+        $32d46              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32d50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42373,7 +42638,9 @@ BackgroundMusicData_Track16                               ; Track 16
         $32de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32e10              .byte $xx,$xx,$xx,$xx,$xx
+Bgm16_Ch1
+        $32e15              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32e30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32e40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42386,7 +42653,9 @@ BackgroundMusicData_Track16                               ; Track 16
         $32eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $32ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $32ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm16_Ch2
+        $32ee8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $32f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42406,11 +42675,19 @@ BackgroundMusicData_Track16                               ; Track 16
         $32ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm16_Ch3
+        $33027              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track17                               ; Track 17
-        $3302a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $33030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3302a              .byte $xx
+        $3302b              .word ($xxxx)
+        $3302d              .word ($xxxx)
+        $3302f              .word ($xxxx)
+        $33031              .word ($xxxx)
+Bgm17_Ch0
+        $33033              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3303f              .byte $xx
         $33040              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33050              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33060              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42421,7 +42698,9 @@ BackgroundMusicData_Track17                               ; Track 17
         $330b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $330c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $330d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $330e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $330e0              .byte $xx,$xx
+Bgm17_Ch1
+        $330e2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $330f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33100              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33110              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42432,7 +42711,9 @@ BackgroundMusicData_Track17                               ; Track 17
         $33160              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm17_Ch2
+        $33198              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $331a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $331b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $331c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42444,10 +42725,18 @@ BackgroundMusicData_Track17                               ; Track 17
         $33220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33230              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33240              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33250              .byte $xx,$xx,$xx,$xx,$xx
+        $33250              .byte $xx,$xx
+Bgm17_Ch3
+        $33252              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track18                               ; Track 18
-        $33255              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33255              .byte $xx
+        $33256              .word ($xxxx)
+        $33258              .word ($xxxx)
+        $3325a              .word ($xxxx)
+        $3325c              .word ($xxxx)
+Bgm18_Ch0
+        $3325e              .byte $xx,$xx
         $33260              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33270              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33280              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42465,7 +42754,9 @@ BackgroundMusicData_Track18                               ; Track 18
         $33340              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33350              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33360              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33370              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm18_Ch1
+        $33379              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33380              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33390              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $333a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42485,7 +42776,9 @@ BackgroundMusicData_Track18                               ; Track 18
         $33480              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33490              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $334a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $334b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $334b0              .byte $xx,$xx
+Bgm18_Ch2
+        $334b2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $334c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $334d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $334e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42501,7 +42794,9 @@ BackgroundMusicData_Track18                               ; Track 18
         $33580              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33590              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $335a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $335b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $335b0              .byte $xx
+Bgm18_Ch3
+        $335b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $335c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $335d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $335e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42514,8 +42809,14 @@ BackgroundMusicData_Track18                               ; Track 18
         $33650              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track19                               ; Track 19
-        $33658              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33660              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33658              .byte $xx
+        $33659              .word ($xxxx)
+        $3365b              .word ($xxxx)
+        $3365d              .word ($xxxx)
+        $3365f              .word ($xxxx)
+Bgm19_Ch0
+        $33661              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $3366f              .byte $xx
         $33670              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33680              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33690              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42523,7 +42824,9 @@ BackgroundMusicData_Track19                               ; Track 19
         $336b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $336c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $336d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $336e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $336e0              .byte $xx,$xx,$xx
+Bgm19_Ch1
+        $336e3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $336f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42534,7 +42837,9 @@ BackgroundMusicData_Track19                               ; Track 19
         $33760              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33770              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33780              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33790              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33790              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm19_Ch2
+        $3379d              .byte $xx,$xx,$xx
         $337a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $337b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $337c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42542,10 +42847,18 @@ BackgroundMusicData_Track19                               ; Track 19
         $337e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $337f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33810              .byte $xx,$xx,$xx,$xx
+        $33810              .byte $xx
+Bgm19_Ch3
+        $33811              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track1a                               ; Track 1a
-        $33814              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33814              .byte $xx
+        $33815              .word ($xxxx)
+        $33817              .word ($xxxx)
+        $33819              .word ($xxxx)
+        $3381b              .word ($xxxx)
+Bgm1a_Ch0
+        $3381d              .byte $xx,$xx,$xx
         $33820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42556,7 +42869,9 @@ BackgroundMusicData_Track1a                               ; Track 1a
         $33890              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $338a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $338b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $338c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $338c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1a_Ch1
+        $338ca              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $338d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $338e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $338f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42568,30 +42883,52 @@ BackgroundMusicData_Track1a                               ; Track 1a
         $33950              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33960              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33970              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33980              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1a_Ch2
+        $33988              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33990              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $339a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $339b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $339c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $339c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1a_Ch3
+        $339c9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $339d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $339e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $339f0              .byte $xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track1b                               ; Track 1b
-        $339f2              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $339f2              .byte $xx
+        $339f3              .word ($xxxx)
+        $339f5              .word ($xxxx)
+        $339f7              .word ($xxxx)
+        $339f9              .word ($xxxx)
+Bgm1b_Ch0
+        $339fb              .byte $xx,$xx,$xx,$xx,$xx
         $33a00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33a10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33a20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33a30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33a40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33a40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1b_Ch1
+        $33a4d              .byte $xx,$xx,$xx
         $33a50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33a60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33a70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33a80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33a80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1b_Ch2
+        $33a88              .byte $xx,$xx,$xx
+Bgm1b_Ch3
+        $33a8b              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track1c                               ; Track 1c
-        $33a8e              .byte $xx,$xx
-        $33a90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33a8e              .byte $xx
+        $33a8f              .word ($xxxx)
+        $33a91              .word ($xxxx)
+        $33a93              .word ($xxxx)
+        $33a95              .word ($xxxx)
+Bgm1c_Ch0
+        $33a97              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33a9f              .byte $xx
         $33aa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42606,7 +42943,9 @@ BackgroundMusicData_Track1c                               ; Track 1c
         $33b50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33b60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33b70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33b80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33b80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1c_Ch1
+        $33b8a              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $33b90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33ba0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33bb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42623,7 +42962,9 @@ BackgroundMusicData_Track1c                               ; Track 1c
         $33c60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33c70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1c_Ch2
+        $33c9d              .byte $xx,$xx,$xx
         $33ca0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33cb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33cc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42636,7 +42977,9 @@ BackgroundMusicData_Track1c                               ; Track 1c
         $33d30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33d40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33d50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1c_Ch3
+        $33d6e              .byte $xx,$xx
         $33d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33d80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33d90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42646,11 +42989,19 @@ BackgroundMusicData_Track1c                               ; Track 1c
         $33dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track1d                               ; Track 1d
-        $33dde              .byte $xx,$xx
-        $33de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33dde              .byte $xx
+        $33ddf              .word ($xxxx)
+        $33de1              .word ($xxxx)
+        $33de3              .word ($xxxx)
+        $33de5              .word ($xxxx)
+Bgm1d_Ch0
+        $33de7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33def              .byte $xx
         $33df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1d_Ch1
+        $33e1c              .byte $xx,$xx,$xx,$xx
         $33e20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33e30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33e40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -42658,35 +43009,67 @@ BackgroundMusicData_Track1d                               ; Track 1d
         $33e60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33e70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33e80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33e90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1d_Ch2
+        $33e9a              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $33ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33ed0              .byte $xx
+        $33ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1d_Ch3
+        $33ece              .byte $xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track1e                               ; Track 1e
-        $33ed1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33ed1              .byte $xx
+        $33ed2              .word ($xxxx)
+        $33ed4              .word ($xxxx)
+        $33ed6              .word ($xxxx)
+        $33ed8              .word ($xxxx)
+Bgm1e_Ch0
+        $33eda              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $33ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx
+Bgm1e_Ch1
+        $33ef6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33f10              .byte $xx,$xx
+Bgm1e_Ch2
+        $33f12              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33f20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+Bgm1e_Ch3
+        $33f2d              .byte $xx,$xx,$xx
         $33f30              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------------------------------------------------------
 BackgroundMusicData_Track1f                               ; Track 1f
-        $33f3a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $33f40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33f3a              .byte $xx
+        $33f3b              .word ($xxxx)
+        $33f3d              .word ($xxxx)
+        $33f3f              .word ($xxxx)
+        $33f41              .word ($xxxx)
+Bgm1f_Ch0
+        $33f43              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33f4f              .byte $xx
         $33f50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33f60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33f70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33f80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33f80              .byte $xx,$xx,$xx,$xx
+Bgm1f_Ch1
+        $33f84              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33f90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33fa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $33fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $33ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33fc0              .byte $xx,$xx,$xx,$xx
+        $33fc4              .byte $xx,$xx,$xx
+Bgm1f_Ch2
+        $33fc7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33fd0              .byte $xx,$xx,$xx,$xx
+        $33fd4              .byte $xx,$xx,$xx
+Bgm1f_Ch3
+        $33fd7              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $33fee              .byte $xx,$xx,$xx
+;;; --------------------------------
+;;; UNUSED
+        $33ff1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 RomBank_1a                      ; @@ $8000
 ;;; 32x32 table mapping tile displacements to two nibbles of information:
@@ -55778,11 +56161,11 @@ StartAudioTrack
         $3c12e  xx xx:      xxx #$xx
         $3c130  xx xx:      xxx ++ ; $3c13f
         $3c132  xx xx xx:   xxx $xxxx ; Do we need to play a different music track?
-        $3c135  xx xx:      xxx +++ ; $3c165
+        $3c135  xx xx:       xxx +++ ; $3c165
         $3c137  xx xx xx:   xxx $xxxx
         $3c13a  xx xx xx:   xxx ++ ; $3c13f
-        ;; --------------------------------
-+       $3c13d  xx xx:      xxx #$xx
+        ;;                  ------
++       $3c13d  xx xx:       xxx #$xx
 ++      $3c13f  xx xx:      xxx #$xx
         $3c141  xx xx xx:   xxx $xxxx
         $3c144  xx xx xx:   xxx $xxxx

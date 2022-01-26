@@ -1,0 +1,91 @@
+PRG 30094 is the routine for playing sfx
+The sound effect to play is in A, from 0110
+This indexes the SoundEffectData table (offset by $40) at $18000
+($f5),y indexes into the entry from this table
+
+$f0:40 indicates not to continue?
+$0110 is new track to play
+$0112 is current sfx's priority
+
+Then store #$0a into $fb, #4 into x
+jsr $30169 x2 (2nd time w/ y=3 instead of 1)  [x=4,5]
+  read ($f5),y++, store in $011a,x     [11e,11f]
+  read ($f5),y, add #$20, store $120,x [124,125]
+  store 1 in $14a,x and $150,x   [14e,14f] [154,155]
+  store 0 in 156,x               [15a,15b]
+             pulse2/noise regs 0,2,3
+             168,x 174,x 17a,x   [16c,16d] [178,179] [17e,17f]
+        8 in pule2/noise reg 1; 16e,x  [172,173]
+        1 in 114,x               [118,119]
+  set APU status based on DMC in $ff:10 (clobbered 1d then 17 ???)
+set $115:80, $117:80
+
+When do these get read again?
+
+
+  jmp $30132
+    (stores $120,x)
+    1 => 14a,x and 150,x
+    0 => 156,x
+    y <= 307ac,x  [04,0c]
+    0 => 4000,y 4002,y 4003,y   [pulse2, noise]
+    0 => 0168,x 0174,x 017a,x
+    8 => 4001,y 016e,x          [pulse2, noise]
+    1 => 0114,x
+    jsr $30465
+      if (114,x positive) {
+        $ff:10 | 307b2,x => 4015 (APU_STATUS)
+        :10 is DMC enable, 307b2,x [0d,07] is NT1 or T21
+      }
+
+Initializes pulse2 and noise to 0,8,0,0
+ - sweep negate, volume 0, timer 0
+
+Reading the 11e,124 subtable:
+ - fd++
+ - y <= f1++ (where we're at?) read first byte
+ - ($f5),y => f3
+ - upper 5 bits indexes audio jump table $30000
+
+
+
+
+Table structure:
+ 0    Priority (smaller takes precedence)
+ 1,2  => 11e,124 => f5,f6 (+20)
+ 3,4  => 11f,125 => f5,f6 (+20)
+11e,124 subtable:
+ 0    => Read by 3034b
+
+These look to be instructions (in upper nibble) and arguments (in lower)
+for some sort of state machine
+
+Looped in 30298 until f2 is nonzero (jump 2 does this)
+302a5 keeps place for next time?
+
+30307 reads data from $01xx and sets registers:
+ bits of fc indicates which of these happen (skip if set)
+ 01: 16c => 4004
+ 02: 172 => 4005
+ 04: 178 => 4006
+ 08: 172 => 4005, &~80, |08 => 172
+     17e|08 => 4007
+
+
+Audio commands:
+ - 0 seems to be "done"?
+ - 0/1 ??
+ - 2 is maybe some sort of pause/wait?
+   - a4 also seems like a light terminal?
+ - 3 seems to set pitch
+ - 4 is ???
+ - 5/6 seems to set some sort of duration?
+ - 7 seems to affect the roll-off?
+ - 8 seems to set volume
+ - 9 is maybe something about tone/instrument?
+     - may be samples from a table somewhere, too-long duration gets weird
+
+
+Weirdly, the first sequence in Sfx21_Ch4 seems to affect the _end_ of the
+sound effect - not sure why.  It could be because the sfx is over by the
+time it gets to the second chunk?

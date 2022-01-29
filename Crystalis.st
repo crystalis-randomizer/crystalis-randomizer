@@ -40790,29 +40790,29 @@ InitializeAudio
         $30045  xx xx:      xxx $xx
         $30047  xx:         xxx
 ;;; --------------------------------
-ResumeAudio
+StartAudio
         $30048  xx xx:      xxx $xx
         $3004a  xx xx:      xxx #$xx
         $3004c  xx xx:      xxx $xx
-        $3004e  xx xx xx:   xxx ResumeAudioInner
+        $3004e  xx xx xx:   xxx StartAudioInner
         $30051  xx xx:      xxx $xx
         $30053  xx xx:      xxx #$xx
         $30055  xx xx:      xxx $xx
         $30057  xx:         xxx
 ;;; --------------------------------
-ResumeAudioInner
+StartAudioInner
         $30058  xx xx xx:   xxx $xxxx
         $3005b  xx xx:      xxx #$xx
         $3005d  xx xx:      xxx + ; $30064
-        $3005f  xx xx:      xxx #$xx
-        $30061  xx xx:      xxx $xx
-        $30063  xx:         xxx
-        ;; --------------------------------
+        $3005f  xx xx:       xxx #$xx
+        $30061  xx xx:       xxx $xx
+        $30063  xx:          xxx
+        ;;                   ---
 +       $30064  xx xx xx:   xxx $xxxx
         $30067  xx xx:      xxx + ; $30071
-        $30069  xx xx:       xxx  #$xx
-        $3006b  xx xx:       xxx  ResumeSfx ; $30094
-        $3006d  xx xx xx:     xxx  ResumeBgm ; $300e4
+        $30069  xx xx:       xxx #$xx
+        $3006b  xx xx:       xxx  StartSfx ; $30094
+        $3006d  xx xx xx:     xxx  StartBgm ; $300e4
         ;;                    --------------
         $30070  xx:          xxx
         ;;                   ---
@@ -40835,7 +40835,7 @@ ResumeAudioInner
         $30091  xx xx:      xxx - ; $30088
         $30093  xx:         xxx
 ;;; --------------------------------
-ResumeSfx
+StartSfx
 	;; Map $18000 -> $a000
         $30094  xx xx:      xxx #$xx
         $30096  xx xx xx:   xxx BANKSELECT
@@ -40881,25 +40881,25 @@ ResumeSfx
         $300de  xx xx xx:   xxx $xxxx
         $300e1  xx:         xxx
 ;;; --------------------------------
-        $300e2  xx:         xxx
-        $300e3  xx:         xxx
-ResumeBgm
+        $300e2  xx:         xxx ; unused
+        $300e3  xx:         xxx ; unused
+StartBgm
         $300e4  xx xx xx:   xxx $30177
-        $300e7  xx xx:      xxx ++ ; $30102
+        $300e7  xx xx:       xxx >rts ; $30102
         $300e9  xx xx:      xxx $xx
-        $300eb  xx xx:      xxx ++ ; $30102
+        $300eb  xx xx:       xxx >rts ; $30102
         $300ed  xx xx xx:   xxx $30103
         $300f0  xx xx:      xxx #$xx
         $300f2  xx xx:      xxx $xx
         $300f4  xx:         xxx
         $300f5  xx:         xxx
         $300f6  xx xx:      xxx + ; $300fb
-        $300f8  xx xx xx:   xxx $xxxx
+        $300f8  xx xx xx:    xxx $xxxx
 +       $300fb  xx:         xxx
         $300fc  xx:         xxx
-        $300fd  xx xx:      xxx ++ ; $30102
+        $300fd  xx xx:       xxx >rts ; $30102
         $300ff  xx xx xx:   xxx $xxxx
-++      $30102  xx:         xxx
+        $30102  xx:         xxx
 ;;; --------------------------------
         $30103  xx xx:      xxx #$xx
         $30105  xx xx:      xxx $xx
@@ -40940,7 +40940,7 @@ ResumeBgm
         $3015c  xx xx xx:   xxx $xxxx,x
         $3015f  xx xx:      xxx #$xx
         $30161  xx xx xx:   xxx $xxxx,x
-        $30164  xx xx xx:   xxx $30465
+        $30164  xx xx xx:   xxx MaybeSilenceCurrentChannel ; uncond
         $30167  xx:         xxx
         $30168  xx:         xxx
 ;;; --------------------------------
@@ -40955,21 +40955,24 @@ ResumeBgm
         $30172  xx xx:      xxx #$xx
         $30174  xx xx xx:   xxx $30132
 ;;; --------------------------------
+;;; Inits reading a track
         $30177  xx:         xxx
         $30178  xx:         xxx
-        $30179  xx xx xx:   xxx $30c0c,x
+        $30179  xx xx xx:   xxx $30c0c,x ; BackgroundMusicData,x
         $3017c  xx xx:      xxx $xx
-        $3017e  xx xx xx:   xxx $30c0d,x
+        $3017e  xx xx xx:   xxx $30c0d,x ; BackgroundMusicData+1,x
         $30181  xx xx:      xxx $xx
         $30183  xx xx:      xxx $xx
         $30185  xx:         xxx
 ;;; --------------------------------
 ;;; Runs during IRQ, maybe also sometimes during rendering?
+;;; Called from 3f870
+ResumeAudio
         $30186  xx xx:      xxx $xx
         $30188  xx:         xxx
         $30189  xx xx:      xxx + ; $3018c
-        $3018b  xx:         xxx
-;;; --------------------------------
+        $3018b  xx:          xxx
+        ;;                   ---
 +       $3018c  xx xx:      xxx #$xx
         $3018e  xx xx:      xxx $xx
         $30190  xx:         xxx
@@ -41003,48 +41006,54 @@ ResumeBgm
         $301cd  xx xx xx:   xxx $30388
 +       $301d0  xx xx xx:   xxx $xxxx
         $301d3  xx xx:      xxx + ; $301de
-        $301d5  xx xx:      xxx $xx
-        $301d7  xx xx:      xxx #$xx
-        $301d9  xx xx:      xxx + ; $301de
-        $301db  xx xx xx:   xxx $301f3
+        $301d5  xx xx:       xxx $xx
+        $301d7  xx xx:       xxx #$xx
+        $301d9  xx xx:       xxx + ; $301de
+        $301db  xx xx xx:     xxx $301f3
 +       $301de  xx xx xx:   xxx $xxxx
         $301e1  xx xx:      xxx + ; $301ec
-        $301e3  xx xx:      xxx $xx
-        $301e5  xx xx:      xxx #$xx
-        $301e7  xx xx:      xxx + ; $301ec
-        $301e9  xx xx xx:   xxx $30258
+        $301e3  xx xx:       xxx $xx
+        $301e5  xx xx:       xxx #$xx
+        $301e7  xx xx:       xxx + ; $301ec
+        $301e9  xx xx xx:     xxx $30258
 +       $301ec  xx xx:      xxx $xx
         $301ee  xx xx:      xxx #$xx
         $301f0  xx xx:      xxx $xx
         $301f2  xx:         xxx
 ;;; --------------------------------
+ResumeBgm
         $301f3  xx xx xx:   xxx $xxxx
         $301f6  xx xx:      xxx #$xx
-        $301f8  xx xx:      xxx $xx
-        $301fa  xx xx:      xxx #$xx
-        $301fc  xx xx xx:   xxx $xxxx
-        $301ff  xx xx:      xxx #$xx
-        $30201  xx xx xx:   xxx $30276
+        $301f8  xx xx:      xxx + ; $301ff
+        ;;                   DMC active, has bytes remaining
+        ;;                   Zero out the DMC sample length
+        $301fa  xx xx:       xxx #$xx
+        $301fc  xx xx xx:    xxx $xxxx
++       $301ff  xx xx:      xxx #$xx
+        $30201  xx xx xx:   xxx RunAudioCommandsForChannel
         $30204  xx xx:      xxx #$xx
-        $30206  xx xx xx:   xxx $30276
+        $30206  xx xx xx:   xxx RunAudioCommandsForChannel
         $30209  xx xx:      xxx #$xx
-        $3020b  xx xx xx:   xxx $30276
+        $3020b  xx xx xx:   xxx RunAudioCommandsForChannel
         $3020e  xx xx:      xxx #$xx
-        $30210  xx xx xx:   xxx $30276
+        $30210  xx xx xx:   xxx RunAudioCommandsForChannel
+        ;; Check all the 114..117 registers.  If ANY has :01 set then return.
         $30213  xx xx xx:   xxx $xxxx
         $30216  xx xx xx:   xxx $xxxx
         $30219  xx xx xx:   xxx $xxxx
         $3021c  xx xx xx:   xxx $xxxx
         $3021f  xx:         xxx
-        $30220  xx xx:      xxx + ; $3022f
+        $30220  xx xx:       xxx >rts ; $3022f
+        ;;                  All channels in 0..3 have 114,x:01 clear
         $30222  xx xx xx:   xxx $xxxx
         $30225  xx xx xx:   xxx $xxxx
-        $30228  xx xx:      xxx ++ ; $30230
--       $3022a  xx xx:      xxx #$xx
-        $3022c  xx xx xx:   xxx $xxxx
-+       $3022f  xx:         xxx
-        ;; --------------------------------
-++      $30230  xx xx xx:   xxx $30177
+        $30228  xx xx:      xxx + ; $30230
+        ;;                   Turn off the music?
+-       $3022a  xx xx:       xxx #$xx
+        $3022c  xx xx xx:    xxx $xxxx
+        $3022f  xx:          xxx
+        ;;                   ---
++       $30230  xx xx xx:   xxx $30177
         $30233  xx xx:      xxx - ; $3022a
         $30235  xx xx:      xxx #$xx
         $30237  xx xx:      xxx #$xx
@@ -41064,51 +41073,62 @@ ResumeBgm
         $30255  xx xx:      xxx - ; $30239
         $30257  xx:         xxx
 ;;; --------------------------------
+ResumeSfx
         ;; Map $18000 -> $a000 (misaligned!)
         $30258  xx xx:      xxx #$xx
         $3025a  xx xx xx:   xxx BANKSELECT
         $3025d  xx xx:      xxx #$xx
         $3025f  xx xx xx:   xxx BANKDATA
         $30262  xx xx:      xxx #$xx
-        $30264  xx xx xx:   xxx ++ ; $30276
+        $30264  xx xx xx:   xxx RunAudioCommandsForChannel
         $30267  xx xx:      xxx #$xx
-        $30269  xx xx xx:   xxx ++ ; $30276
+        $30269  xx xx xx:   xxx RunAudioCommandsForChannel
         $3026c  xx xx:      xxx $xx
-        $3026e  xx xx:      xxx + ; $30275
-        $30270  xx xx:      xxx #$xx
-        $30272  xx xx xx:   xxx $xxxx
-- +     $30275  xx:         xxx
+        $3026e  xx xx:      xxx >rts ; $30275
+        ;;                   fb zero -> sfx done, reset 112 to ff
+        $30270  xx xx:       xxx #$xx
+        $30272  xx xx xx:    xxx $xxxx
+        $30275  xx:         xxx
 ;;; --------------------------------
-++      $30276  xx xx xx:   xxx $xxxx,x
+RunAudioCommandsForChannel
+        ;; Check channel timer: if it's already zero, nothing to do
+        $30276  xx xx xx:   xxx $xxxx,x
         $30279  xx:         xxx
-        $3027a  xx xx:      xxx - ; $30275
+        $3027a  xx xx:       xxx <rts ; $30275
         $3027c  xx xx:      xxx #$xx
         $3027e  xx xx:      xxx $xx
         $30280  xx xx:      xxx $xx
         $30282  xx xx:      xxx $xx
+        ;; Decrement the channel timer: only run commands if it hits 0
         $30284  xx xx xx:   xxx $xxxx,x
         $30287  xx xx:      xxx + ; $302b3
-        $30289  xx xx:      xxx $xx
-        $3028b  xx xx xx:   xxx $xxxx,x
-        $3028e  xx xx:      xxx $xx
-        $30290  xx xx xx:   xxx $xxxx,x
-        $30293  xx xx:      xxx $xx
--       $30295  xx xx xx:    xxx $30347
-        $30298  xx xx:       xxx $xx
-        $3029a  xx xx:       xxx $xx
-        $3029c  xx xx:      xxx - ; $30295
-        $3029e  xx xx xx:   xxx $xxxx,x
-        $302a1  xx xx xx:   xxx $xxxx,x
-        $302a4  xx:         xxx
-        $302a5  xx xx:      xxx $xx
-        $302a7  xx xx:      xxx $xx
-        $302a9  xx xx xx:   xxx $xxxx,x
-        $302ac  xx xx:      xxx #$xx
-        $302ae  xx xx:      xxx $xx
-        $302b0  xx xx xx:   xxx $xxxx,x
+        ;; We're going to run audio commands for this channel.
+        ;; Load up the current position into $f5$f6, and stash the
+        ;; channel index in $fa.  Loop until $f2>0
+        $30289  xx xx:       xxx $xx
+        $3028b  xx xx xx:    xxx $xxxx,x
+        $3028e  xx xx:       xxx $xx
+        $30290  xx xx xx:    xxx $xxxx,x
+        $30293  xx xx:       xxx $xx
+-       $30295  xx xx xx:     xxx RunNextAudioCommandForChannel
+        $30298  xx xx:        xxx $xx
+        $3029a  xx xx:        xxx $xx
+        $3029c  xx xx:       xxx - ; $30295
+        ;; Done running commands: now save $150,x into $14a,x and
+        ;; increment $11a,x and $120,x past already-read commands
+        $3029e  xx xx xx:    xxx $xxxx,x
+        $302a1  xx xx xx:    xxx $xxxx,x
+        $302a4  xx:          xxx
+        $302a5  xx xx:       xxx $xx
+        $302a7  xx xx:       xxx $xx
+        $302a9  xx xx xx:    xxx $xxxx,x
+        $302ac  xx xx:       xxx #$xx
+        $302ae  xx xx:       xxx $xx
+        $302b0  xx xx xx:    xxx $xxxx,x
+        ;; Silence the DMC?
 +       $302b3  xx xx:      xxx $xx
         $302b5  xx xx:      xxx #$xx
-        $302b7  xx xx xx:   xxx $xxxx
+        $302b7  xx xx xx:   xxx APU_STATUS
         $302ba  xx xx:      xxx $xx
         $302bc  xx xx:      xxx #$xx
         $302be  xx xx:      xxx + ; $302d8
@@ -41124,27 +41144,27 @@ ResumeBgm
 +       $302d8  xx xx xx:   xxx $xxxx,x
         $302db  xx xx:      xxx #$xx
         $302dd  xx xx:      xxx ++ ; $302f3
-        $302df  xx xx xx:   xxx $xxxx,x
-        $302e2  xx xx:      xxx #$xx
-        $302e4  xx xx:      xxx + ; $302e9
-        $302e6  xx xx xx:   xxx $304af
-+       $302e9  xx xx xx:   xxx $xxxx,x
-        $302ec  xx xx:      xxx #$xx
-        $302ee  xx xx:      xxx ++ ; $302f3
-        $302f0  xx xx xx:   xxx $306aa
+        $302df  xx xx xx:    xxx $xxxx,x
+        $302e2  xx xx:       xxx #$xx
+        $302e4  xx xx:       xxx + ; $302e9
+        $302e6  xx xx xx:     xxx $304af
++       $302e9  xx xx xx:    xxx $xxxx,x
+        $302ec  xx xx:       xxx #$xx
+        $302ee  xx xx:       xxx ++ ; $302f3
+        $302f0  xx xx xx:     xxx $306aa
 ++      $302f3  xx xx:      xxx $xx
         $302f5  xx xx:      xxx ++ ; $30307
-        $302f7  xx xx:      xxx #$xx
-        $302f9  xx xx:      xxx + ; $30300
-        $302fb  xx xx:      xxx $xx
-        $302fd  xx xx xx:   xxx $30307
-        ;; --------------------------------
-+       $30300  xx xx xx:   xxx $30609
-        $30303  xx xx:      xxx #$xx
-        $30305  xx xx:      xxx $xx
+        $302f7  xx xx:       xxx #$xx
+        $302f9  xx xx:       xxx + ; $30300
+        $302fb  xx xx:        xxx $xx
+        $302fd  xx xx xx:     xxx $30307
+        ;;                    ----------
++       $30300  xx xx xx:    xxx $30609
+        $30303  xx xx:       xxx #$xx
+        $30305  xx xx:       xxx $xx
 ++      $30307  xx xx xx:   xxx $xxxx,x
         $3030a  xx xx:       xxx >rts ; $30346
-        $3030c  xx xx xx:   xxx $307ac,x
+        $3030c  xx xx xx:   xxx ApuChannelRegisterGroupOffset,x ; $307ac
         $3030f  xx xx:      xxx $xx
         $30311  xx xx:      xxx + ; $30319
         $30313  xx xx xx:    xxx $xxxx,x
@@ -41169,7 +41189,7 @@ ResumeBgm
         $30343  xx xx xx:    xxx $xxxx,y
         $30346  xx:         xxx
 ;;; --------------------------------
-;;; Runs the next command for the audio finite state machine
+RunNextAudioCommandForChannel
         $30347  xx xx:      xxx $xx
         $30349  xx xx:      xxx $xx
         $3034b  xx xx:      xxx ($xx),y
@@ -41186,10 +41206,10 @@ ResumeBgm
         $3035f  xx xx:      xxx $xx
         $30361  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-AudioJumpTable_00
-AudioJumpTable_01
+AudioJumpTable_0X
+AudioJumpTable_1X
         $30364  xx xx:      xxx $xx
-        $30366  xx xx xx:   xxx $30465
+        $30366  xx xx xx:   xxx MaybeSilenceCurrentChannel
         $30369  xx xx xx:   xxx $xxxx,x
         $3036c  xx xx:      xxx #$xx
         $3036e  xx xx xx:   xxx $xxxx,x
@@ -41200,19 +41220,21 @@ AudioJumpTable_01
         $30379  xx xx xx:    xxx $xxxx
         $3037c  xx:          xxx
         ;;                   ---
-+       $3037d  xx xx xx:   xxx $307b2,x
+        ;; Zero out bits for channel x in $fb
+        ;; Check the 114,bgm(x) - if negative, clear :80, set :10
++       $3037d  xx xx xx:   xxx ApuChannelStatusMask,x ; $307b2
         $30380  xx xx:      xxx $xx
         $30382  xx xx:      xxx $xx
-        $30384  xx xx xx:   xxx $307a6,x
+        $30384  xx xx xx:   xxx ApuChannelRegisterGroupIndex,x ; $307a6
         $30387  xx:         xxx
         $30388  xx xx xx:   xxx $xxxx,x
-        $3038b  xx xx:      xxx + ; $30394
+        $3038b  xx xx:      xxx >rts ; $30394
         $3038d  xx xx:       xxx #$xx
         $3038f  xx xx:       xxx #$xx
         $30391  xx xx xx:    xxx $xxxx,x
-+       $30394  xx:         xxx
+        $30394  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_0c
+AudioJumpTable_cX
         $30395  xx xx:      xxx $xx
         $30397  xx:         xxx
         $30398  xx xx:      xxx + ; $303ae
@@ -41238,7 +41260,7 @@ AudioJumpTable_0c
         $303be  xx xx xx:   xxx $xxxx,x
         $303c1  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_0d
+AudioJumpTable_dX
         $303c2  xx xx xx:   xxx $307a6,x
         $303c5  xx xx:      xxx #$xx
         $303c7  xx xx:      xxx + ; $303cc
@@ -41255,29 +41277,36 @@ AudioJumpTable_0d
 ;;; --------------------------------
 DataTable_303da 
         $303da              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-AudioJumpTable_0b
+AudioJumpTable_bX
         $303e2  xx xx xx:   xxx $303b6
-AudioJumpTable_02
+AudioJumpTable_2X
+        ;; Set the pitch (and update mask) and indicate final op
         $303e5  xx xx:      xxx #$xx
         $303e7  xx xx:      xxx $xx
         $303e9  xx xx:      xxx $xx
-        $303eb  xx xx xx:   xxx $303f8
+        $303eb  xx xx xx:   xxx LoadPitchFromTable
         $303ee  xx xx xx:   xxx $xxxx,x
         $303f1  xx xx:      xxx $xx
         $303f3  xx xx:      xxx #$xx
         $303f5  xx xx:      xxx $xx
         $303f7  xx:         xxx
 ;;; --------------------------------
-        $303f8  xx xx xx:   xxx $307a6,x
+;;; Called from 2X and 7X, seems to select pitch?
+LoadPitchFromTable
+        $303f8  xx xx xx:   xxx ApuChannelRegisterGroupIndex,x ; $307a6
         $303fb  xx xx:      xxx #$xx
         $303fd  xx xx:      xxx $xx
-        $303ff  xx xx:      xxx $xx
-        $30401  xx xx:      xxx #$xx
-        $30403  xx xx xx:   xxx $xxxx,x
-        $30406  xx xx xx:   xxx $30651
-        $30409  xx xx:      xxx #$xx
-        $3040b  xx xx:      xxx $xx
-        $3040d  xx xx:      xxx #$xx
+        $303ff  xx xx:      xxx + ; $3040d
+        ;;                   This is a noise channel, store subcmd nibble
+        ;;                   directly since noise only has 16 "pitches"
+        $30401  xx xx:       xxx #$xx
+        $30403  xx xx xx:    xxx $xxxx,x
+        $30406  xx xx xx:    xxx $30651
+        $30409  xx xx:       xxx #$xx
+        $3040b  xx xx:       xxx >rts ; $30421 (unconditional)
+        ;;                   ----------
+        ;; Melody channel (square or triangle)
++       $3040d  xx xx:      xxx #$xx
         $3040f  xx xx xx:   xxx $xxxx,x
         $30412  xx:         xxx
         $30413  xx:         xxx
@@ -41286,69 +41315,73 @@ AudioJumpTable_02
         $30419  xx xx xx:   xxx $xxxx,x
         $3041c  xx xx xx:   xxx $30838,y
         $3041f  xx xx:      xxx #$xx
+        ;; A ends up being stored into 17a,x
         $30421  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_03
+AudioJumpTable_3X
         $30422  xx xx:      xxx $xx
         $30424  xx xx:      xxx #$xx
         $30426  xx:         xxx
-        $30427  xx xx xx:   xxx $3042d,y
+        $30427  xx xx xx:   xxx $3042d,y ; AudioKeyTable-1
         $3042a  xx xx xx:   xxx $xxxx,x
         $3042d  xx:         xxx
 ;;; --------------------------------
-DataTable_3042e 
+;;; Basically just <<4, but used w/ the pitch tables
+AudioKeyTable
         $3042e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-AudioJumpTable_04
+AudioJumpTable_4X
         $30436  xx xx:      xxx $xx
         $30438  xx xx xx:   xxx $xxxx,x
         $3043b  xx xx:      xxx #$xx
         $3043d  xx xx xx:   xxx $xxxx,x
         $30440  xx xx:      xxx $xx
         $30442  xx xx:      xxx #$xx
-        $30444  xx xx:      xxx $xx
+        $30444  xx xx:      xxx MaybeSilenceCurrentChannel
         $30446  xx xx:      xxx $xx
         $30448  xx:         xxx
         $30449  xx xx:      xxx #$xx
-        $3044b  xx xx:      xxx $xx
-        $3044d  xx:         xxx
-        $3044e  xx xx:      xxx #$xx
-        $30450  xx xx:      xxx $xx
-        $30452  xx xx:      xxx $xx
-        $30454  xx xx:      xxx $xx
-        $30456  xx:         xxx
-;;; --------------------------------
-        $30457  xx xx xx:   xxx $xxxx,x
+        $3044b  xx xx:      xxx + ; $30457
+        $3044d  xx:          xxx
+        $3044e  xx xx:       xxx #$xx
+        $30450  xx xx:       xxx + ; $30457
+        $30452  xx xx:        xxx $xx
+        $30454  xx xx:        xxx + ; $30457
+        $30456  xx:            xxx
+        ;;                     ---
++       $30457  xx xx xx:   xxx $xxxx,x
         $3045a  xx xx:      xxx #$xx
         $3045c  xx xx:      xxx $xx
         $3045e  xx xx xx:   xxx $307ac,x
         $30461  xx xx xx:   xxx $xxxx,y
         $30464  xx:         xxx
 ;;; --------------------------------
+;;; If 114,x is positive, silence its channel
+MaybeSilenceCurrentChannel
         $30465  xx xx xx:   xxx $xxxx,x
         $30468  xx xx:       xxx >rts ; $3047c
         $3046a  xx xx:      xxx $xx
         $3046c  xx:         xxx
         $3046d  xx xx:       xxx #$xx
         $3046f  xx xx:       xxx $xx
-        $30471  xx xx xx:    xxx $307b2,x
+        $30471  xx xx xx:    xxx ApuChannelStatusMask,x ; $307b2
         $30474  xx xx:       xxx $xx
         $30476  xx xx xx:    xxx APU_STATUS
         $30479  xx:         xxx
         $3047a  xx xx:      xxx $xx
         $3047c  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_05
-AudioJumpTable_06
+AudioJumpTable_5X
+AudioJumpTable_6X
         $3047d  xx:         xxx
         $3047e  xx xx:      xxx $xx
         $30480  xx xx:      xxx #$xx
         $30482  xx:         xxx
-        $30483  xx xx xx:   xxx $30ab8,y
+        $30483  xx xx xx:   xxx AudioDelayTable,y ; $30ab8
         $30486  xx xx xx:   xxx $xxxx,x
         $30489  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_07
+AudioJumpTable_7X
         $3048a  xx xx:      xxx #$xx
         $3048c  xx xx:      xxx $xx
         $3048e  xx xx:      xxx $xx
@@ -41356,13 +41389,14 @@ AudioJumpTable_07
         $30492  xx xx:      xxx #$xx
         $30494  xx xx:      xxx $xx
         $30496  xx xx:      xxx #$xx
-        $30498  xx xx:      xxx $xx
-        $3049a  xx xx xx:   xxx $303f8
+        $30498  xx xx:       xxx >rts ; $304ae
+        $3049a  xx xx xx:   xxx LoadPitchFromTable
         $3049d  xx xx:      xxx #$xx
         $3049f  xx xx xx:   xxx $xxxx,x
         $304a2  xx xx xx:   xxx $xxxx,x
         $304a5  xx xx:      xxx + ; $304a9
-        $304a7  xx xx:      xxx #$xx
+        ;;                   Flag 4002,y and 4003,y for update if changed
+        $304a7  xx xx:       xxx #$xx
 +       $304a9  xx:         xxx
         $304aa  xx xx:      xxx $xx
         $304ac  xx xx:      xxx $xx
@@ -41436,7 +41470,8 @@ AudioJumpTable_07
         $3052e  xx xx xx:   xxx $xxxx,y
         $30531  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_08
+;;; Sets the volume (or envelope info)
+AudioJumpTable_8X
         $30532  xx xx:      xxx $xx
         $30534  xx xx:      xxx $xx
         $30536  xx xx:      xxx $xx
@@ -41451,7 +41486,7 @@ AudioJumpTable_08
         $3054a  xx xx:      xxx $xx
         $3054c  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_09
+AudioJumpTable_9X
         $3054d  xx xx xx:   xxx $307a6,x
         $30550  xx xx:      xxx $xx
         $30552  xx:         xxx
@@ -41459,20 +41494,20 @@ AudioJumpTable_09
         $30554  xx:         xxx
         $30555  xx:         xxx
         $30556  xx xx:      xxx #$xx
-        $30558  xx xx:      xxx + ; $30571
-        $3055a  xx:         xxx
-        $3055b  xx xx:       xxx #$xx
-        $3055d  xx xx:       xxx $xx
-        $3055f  xx xx:       xxx $xx
-        $30561  xx xx xx:    xxx $xxxx,x
-        $30564  xx xx:       xxx #$xx
-        $30566  xx xx xx:    xxx $xxxx,x
-        $30569  xx:         xxx
-        $3056a  xx:         xxx
-        $3056b  xx xx:      xxx #$xx
-        $3056d  xx xx:      xxx $xx
-        $3056f  xx xx:      xxx #$xx
-+       $30571  xx xx:      xxx $xx
+        $30558  xx xx:      xxx ++ ; $30571
+        $3055a  xx:          xxx
+        $3055b  xx xx:        xxx #$xx
+        $3055d  xx xx:        xxx $xx
+        $3055f  xx xx:        xxx + ; $30569
+        $30561  xx xx xx:      xxx $xxxx,x
+        $30564  xx xx:         xxx #$xx
+        $30566  xx xx xx:      xxx $xxxx,x
++       $30569  xx:          xxx
+        $3056a  xx:          xxx
+        $3056b  xx xx:       xxx #$xx
+        $3056d  xx xx:       xxx $xx
+        $3056f  xx xx:       xxx #$xx
+++      $30571  xx xx:      xxx $xx
         $30573  xx xx xx:   xxx $xxxx,x
         $30576  xx xx:      xxx #$xx
         $30578  xx xx:      xxx $xx
@@ -41482,29 +41517,34 @@ AudioJumpTable_09
         $30581  xx xx:      xxx $xx
         $30583  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_0a
+AudioJumpTable_aX
         $30584  xx xx:      xxx $xx
         $30586  xx xx:      xxx $xx
         $30588  xx xx:      xxx #$xx
-        $3058a  xx xx:      xxx $xx
+        $3058a  xx xx:       xxx AudioCommand_a0
         $3058c  xx xx:      xxx #$xx
-        $3058e  xx xx:      xxx $xx
-        $30590  xx xx:      xxx #$xx
-        $30592  xx xx:      xxx $xx
-        $30594  xx xx:      xxx #$xx
-        $30596  xx xx:      xxx $xx
-        $30598  xx xx xx:   xxx $305f1
-        $3059b  xx xx xx:   xxx $xxxx,x
-        $3059e  xx xx:      xxx $xx
-        $305a0  xx xx xx:   xxx $xxxx,x
-        $305a3  xx xx:      xxx $xx
-        $305a5  xx xx xx:   xxx $xxxx,x
-        $305a8  xx xx:      xxx $xx
-        $305aa  xx xx:      xxx #$xx
-        $305ac  xx xx:      xxx $xx
-        $305ae  xx:         xxx
+        $3058e  xx xx:      xxx + ; $3059b
+        $30590  xx xx:        xxx #$xx
+        $30592  xx xx:        xxx AudioCommand_a1
+        $30594  xx xx:        xxx #$xx
+        $30596  xx xx:        xxx AudioCommand_a2
+        ;;                     Subcommands other than 0,1,2,4 (3 or 5+?)
+        $30598  xx xx xx:      xxx Add6ToX
++       $3059b  xx xx xx:    xxx $xxxx,x
+        $3059e  xx xx:        xxx >rts ; $305ae
+        $305a0  xx xx xx:    xxx $xxxx,x
+        $305a3  xx xx:       xxx $xx
+        $305a5  xx xx xx:    xxx $xxxx,x
+        $305a8  xx xx:       xxx $xx
+        $305aa  xx xx:       xxx #$xx
+        $305ac  xx xx:       xxx $xx
+        $305ae  xx:          xxx
 ;;; --------------------------------
-        $305af  xx xx xx:   xxx $305f1
+AudioCommand_a2
+        $305af  xx xx xx:   xxx Add6ToX
+AudioCommand_a1
+        ;; Sets the start of a repeat, up to a4
+        ;; Takes a single byte argument (repeat count + 1)
         $305b2  xx xx:      xxx ($xx),y
         $305b4  xx xx xx:   xxx $xxxx,x
         $305b7  xx xx:      xxx $xx
@@ -41517,6 +41557,9 @@ AudioJumpTable_0a
         $305c5  xx xx xx:   xxx $xxxx,x
         $305c8  xx:         xxx
 ;;; --------------------------------
+AudioCommand_a0
+        ;; Reads next two bytes as an address -> jumps to it
+        ;; Also does some stuff with 144,x; 12c,x; and 138,x
         $305c9  xx xx:      xxx ($xx),y
         $305cb  xx:         xxx
         $305cc  xx:          xxx
@@ -41534,20 +41577,21 @@ AudioJumpTable_0a
         $305e1  xx xx xx:     xxx $xxxx,x
         $305e4  xx:          xxx
         $305e5  xx xx:       xxx #$xx
-        $305e7  xx xx:       xxx $xx
-        $305e9  xx xx:       xxx #$xx
-        $305eb  xx xx:       xxx $xx
+        $305e7  xx xx:       xxx + ; $305eb
+        $305e9  xx xx:        xxx #$xx ; x>=4 (sfx)
++       $305eb  xx xx:       xxx $xx
         $305ed  xx:         xxx
         $305ee  xx xx:      xxx $xx
         $305f0  xx:         xxx
 ;;; --------------------------------
+Add6ToX
         $305f1  xx:         xxx
         $305f2  xx:         xxx
         $305f3  xx xx:      xxx #$xx
         $305f5  xx:         xxx
         $305f6  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_0e
+AudioJumpTable_eX
         $305f7  xx xx:      xxx $xx
         $305f9  xx:         xxx
         $305fa  xx:         xxx
@@ -41588,30 +41632,34 @@ AudioJumpTable_0e
         $30638  xx xx:      xxx $xx
         $3063a  xx:         xxx
 ;;; --------------------------------
+        ;; Jmp here from opcode D handling
         $3063b  xx:         xxx
         $3063c  xx xx:      xxx #$xx
-        $3063e  xx xx:      xxx $xx
+        $3063e  xx xx:       xxx >>>rts ; $3065e
+        ;; BGM only
         $30640  xx xx:      xxx $xx
         $30642  xx xx:      xxx #$xx
-        $30644  xx xx:      xxx $xx
-        $30646  xx xx:      xxx $xx
-        $30648  xx xx xx:   xxx $xxxx
-        $3064b  xx:         xxx
-;;; --------------------------------
-        $3064c  xx xx:      xxx #$xx
+        $30644  xx xx:      xxx + ; $3064c
+        $30646  xx xx:       xxx $xx
+        $30648  xx xx xx:    xxx $xxxx
+        $3064b  xx:          xxx
+        ;;                   ---
++       $3064c  xx xx:      xxx #$xx
         $3064e  xx xx:      xxx $xx
         $30650  xx:         xxx
-;;; --------------------------------
+        ;;;                 ---
         $30651  xx:         xxx
         $30652  xx xx:      xxx #$xx
-        $30654  xx xx:      xxx $xx
+        ;;                   SFX -> return
+        $30654  xx xx:       xxx >rts ; $3065e
         $30656  xx xx:      xxx $xx
         $30658  xx xx:      xxx #$xx
-        $3065a  xx xx:      xxx $xx
-        $3065c  xx xx:      xxx $xx
-        $3065e  xx:         xxx
-;;; --------------------------------
-        $3065f  xx:         xxx
+        $3065a  xx xx:      xxx + ; $3065f
+        $3065c  xx xx:       xxx $xx
+        $3065e  xx:          xxx
+        ;;                   ---
+        ;; Initiate DMC
++       $3065f  xx:         xxx
         $30660  xx:         xxx
         $30661  xx:         xxx
         $30662  xx xx:      xxx #$xx
@@ -41628,7 +41676,7 @@ AudioJumpTable_0e
         $30681  xx xx xx:   xxx $xxxx
         $30684  xx:         xxx
 ;;; --------------------------------
-AudioJumpTable_0f
+AudioJumpTable_fX
         $30685  xx xx:      xxx $xx
         $30687  xx xx:      xxx #$xx
         $30689  xx:         xxx
@@ -41705,6 +41753,7 @@ AudioJumpTable_0f
 DataTable_30714 
         $30714              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+;;; This table seems to be used by the fX audio opcodes
         $30724              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30734              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30744              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41715,30 +41764,39 @@ DataTable_30714
         $30794              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $307a4              .byte $xx,$xx
 ;;; --------------------------------
+ApuChannelRegisterGroupIndex
         $307a6              .byte $xx,$xx,$xx,$xx,$xx,$xx
+ApuChannelRegisterGroupOffset
         $307ac              .byte $xx,$xx,$xx,$xx,$xx,$xx
+ApuChannelStatusMask
+        ;; Mask of bits for all _other_ tracks in APU_STATUS
         $307b2              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $307b8              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $307be              .byte $xx,$xx
-        $307c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $307d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $307e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $307f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; Low byte of pitches.  This is 8 separate "rows", where the row index is the
+;;; subcmd argument to the 3X opcode, while the column is the subcmd argument to
+;;; the 7X or 2X opcode.  These are written to $174,x -> $4002,y
+AudioPitchTableLo
+        $307b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $307c8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $307d8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $307e8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $307f8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30808              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30818              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30828              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $30838              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30890              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $308a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $308b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; High byte of pitches.  This is 8 separate "rows", where the row index is the
+;;; subcmd argument to the 3X opcode, while the column is the subcmd argument to
+;;; the 7X or 2X opcode.  These are eventually written to $17a,x -> $4003,y
+AudioPitchTableHi
+        $30838              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30848              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30858              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30868              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30878              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30888              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30898              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $308a8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $308b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $308c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41774,9 +41832,16 @@ DataTable_30714
         $30a80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30a90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30aa0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ab0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+;;; 32-byte table of delay values to write to $150,x on 5X and 6X commands.
+AudioDelayTable
+        $30ab8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ac0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ac8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ad0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $30ad8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30ae0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30af0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30b00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41792,10 +41857,24 @@ DataTable_30714
         $30ba0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30bb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+DmcTable
+        ;; Sample address is e8 => 3fa00, length 3e
+        ;; As far as I can tell, only d1 is used?  We could just as well
+        ;; hardcode these values directly into the dX opcode
+        $30bd8              .byte $xx,$xx,$xx,$xx
+        $30bdc              .byte $xx,$xx,$xx,$xx
+        $30be0              .byte $xx,$xx,$xx,$xx
+        $30be4              .byte $xx,$xx,$xx,$xx
+        $30be8              .byte $xx,$xx,$xx,$xx
+        $30bec              .byte $xx,$xx,$xx,$xx
+        $30bf0              .byte $xx,$xx,$xx,$xx
+        $30bf4              .byte $xx,$xx,$xx,$xx
+        $30bf8              .byte $xx,$xx,$xx,$xx
+        $30bfc              .byte $xx,$xx,$xx,$xx
+        $30c00              .byte $xx,$xx,$xx,$xx
+        $30c04              .byte $xx,$xx,$xx,$xx
+        $30c08              .byte $xx,$xx,$xx,$xx
 BackgroundMusicData
         $30c0c              .word ($xxxx) ; $30c4c: 00 Silence
         $30c0e              .word ($xxxx) ; $30c61: 01 Plains
@@ -41842,8 +41921,9 @@ BackgroundMusicData_Track01                               ; Track 01
         $30c66              .word ($xxxx)
         $30c68              .word ($xxxx)
 Bgm01_Ch0
-        $30c6a              .byte $xx,$xx,$xx,$xx,$xx,$xx
-        $30c70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30c6a              .byte $xx,$xx,$xx,$xx,$xx
+        $30c6f              .word ($xxxx) ; 30d77
+        $30c71              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30c80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30c90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30ca0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41859,7 +41939,9 @@ Bgm01_Ch0
         $30d40              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30d50              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30d60              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30d70              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30d77              .byte $xx,$xx,$xx ; jumped to here from first line
+        $30d7a              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $30d80              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30d90              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30da0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41867,8 +41949,10 @@ Bgm01_Ch0
         $30dc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30dd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 Bgm01_Ch1
-        $30ddc              .byte $xx,$xx,$xx,$xx
-        $30de0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ddc              .byte $xx,$xx,$xx,$xx,$xx
+        $30de1              .word ($xxxx) ; $30ee8
+        $30de3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30dec              .byte $xx,$xx,$xx,$xx
         $30df0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30e00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30e10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -41884,7 +41968,9 @@ Bgm01_Ch1
         $30eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $30ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $30ee8              .byte $xx,$xx,$xx ; jumped to here from first line
+        $30eeb              .byte $xx,$xx,$xx,$xx,$xx
         $30ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $30f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -56129,6 +56215,10 @@ DataTable_3c121
 ;;; when the effect will be done.  Values > $a0 are used for other
 ;;; controls, such as $a4 to pause and $a5 to resume (??).
 ;;;
+;;; For music (01..1f), the sign bit indicates to start over.
+;;; i.e. play(01) is a no-op if 01 is already playing, but play(81)
+;;; will unconditionally start track 01 back at the beginning.
+;;;
 ;;; Catalogue of sounds:
 ;;;   function playAll(i) {
 ;;;     setTimeout(() => {
@@ -56139,7 +56229,7 @@ DataTable_3c121
 ;;;     }, 5000);
 ;;;   }
 ;;; 
-;;; NOTE: This function preserves the value of the X register.
+;;; NOTE: This function preserves the value of both X and Y.
 StartAudioTrack
         ;; TODO - figure out what these even are
         ;; first stash y, then look at a.
@@ -56156,10 +56246,10 @@ StartAudioTrack
         ;; certain circumstances align
         $3c125  xx xx xx:   xxx $xxxx ; looks like maybe temp space?
         $3c128  xx xx:      xxx #$xx
-        $3c12a  xx xx:      xxx ++ ; $3c13f
-        $3c12c  xx xx:      xxx + ; $3c13d
+        $3c12a  xx xx:      xxx ++ ; $3c13f  >=a0
+        $3c12c  xx xx:      xxx + ; $3c13d   >=80 but <a0
         $3c12e  xx xx:      xxx #$xx
-        $3c130  xx xx:      xxx ++ ; $3c13f
+        $3c130  xx xx:      xxx ++ ; $3c13f  >=20 but <80
         $3c132  xx xx xx:   xxx $xxxx ; Do we need to play a different music track?
         $3c135  xx xx:       xxx +++ ; $3c165
         $3c137  xx xx xx:   xxx $xxxx
@@ -63705,6 +63795,8 @@ MaybeUpdateMusic
         $3f813  xx xx:      xxx +++ ; $3f843
         $3f815  xx xx:      xxx $xx
         $3f817  xx xx:      xxx ++ ; $3f82b
+        ;; OR together all the 4000,y shadows (:0f bits are mainly volume,
+        ;; except triangle which is part of linear counter load)
         $3f819  xx xx xx:   xxx $xxxx
         $3f81c  xx xx xx:   xxx $xxxx
         $3f81f  xx xx xx:   xxx $xxxx
@@ -63719,7 +63811,7 @@ MaybeUpdateMusic
         $3f835  xx xx:      xxx #$xx
         $3f837  xx xx xx:   xxx $xxxx
         $3f83a  xx xx xx:   xxx $xxxx
-        $3f83d  xx xx xx:   xxx ResumeAudio
+        $3f83d  xx xx xx:   xxx StartAudio
         $3f840  xx xx xx:   xxx + ; $3f866
         ;; --------------------------------
 +++     $3f843  xx xx xx:   xxx $xxxx
@@ -63728,19 +63820,19 @@ MaybeUpdateMusic
         $3f84b  xx xx:      xxx + ; $3f866
         $3f84d  xx xx xx:   xxx $xxxx
         $3f850  xx xx xx:   xxx $xxxx
-        $3f853  xx xx xx:   xxx ResumeAudio
+        $3f853  xx xx xx:   xxx StartAudio
         $3f856  xx xx:      xxx #$xx
--       $3f858  xx xx xx:   xxx $xxxx,y ; Move 104,...,109 -> 103,...,108 - why?
-        $3f85b  xx xx xx:   xxx $xxxx,y ; Seems to be progressing something.
-        $3f85e  xx:         xxx
-        $3f85f  xx xx:      xxx #$xx
+-       $3f858  xx xx xx:    xxx $xxxx,y ; Move 104..109 -> 103..108 - why?
+        $3f85b  xx xx xx:    xxx $xxxx,y ; Seems to be progressing something.
+        $3f85e  xx:          xxx
+        $3f85f  xx xx:       xxx #$xx
         $3f861  xx xx:      xxx - ; $3f858
         $3f863  xx xx xx:   xxx $xxxx
 +       $3f866  xx xx:      xxx #$xx
         $3f868  xx xx xx:   xxx BANKSELECT
         $3f86b  xx xx:      xxx #$xx
         $3f86d  xx xx xx:   xxx BANKDATA ; NOTE: ResumeAudio may change $a000 page.
-        $3f870  xx xx xx:   xxx $30186
+        $3f870  xx xx xx:   xxx ResumeAudio
         $3f873  xx xx:      xxx $xx
         ;; Restore banks that were present before.
         $3f875  xx xx:      xxx $xx
@@ -63875,6 +63967,9 @@ WritePaletteDataToPpu
         $3f9d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3f9e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3f9f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; ----------------
+;;; This is maybe DMC data specified by the DmcTable
+DmcData
         $3fa00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fa10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fa20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -63937,6 +64032,8 @@ WritePaletteDataToPpu
         $3fdb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fdd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; Maybe end of DMC data?!?
+;;; --------------------------------
         $3fde0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fdf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------

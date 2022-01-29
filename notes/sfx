@@ -77,6 +77,7 @@ Audio commands:
  - 0/1 ??
  - 2 is maybe some sort of pause/wait?
    - a4 also seems like a light terminal?
+   - 2X is change pitch and be done...?
  - 3 seems to set pitch
  - 4 is ???
  - 5/6 seems to set some sort of duration?
@@ -84,8 +85,200 @@ Audio commands:
  - 8 seems to set volume
  - 9 is maybe something about tone/instrument?
      - may be samples from a table somewhere, too-long duration gets weird
+     - seems to be doing stuff w/ the duty cycle...
 
+ - a0 is an unconditional jump (reads 2 byte arg)
+ - a4 seems to sometimes jump back 4?
+      - jumps to 126,x/132,x IF --(13e,x) != 0
+ - a1 stores next byte to 13e,x and points 126,x/132,x to next command
+      => [a1 (N) ... a4] is a repeat of (...) N-1 times
+ - a2/a8 is same as a1/a4 but uses 144,x and 12c,x/138,x instead,
+         (which are also set by a0, with y+2=>0144,x as repeat count?)
+         Repeat count may just be to ensure >1, since will always be at least 2
+         Allows returning to right after the a0 - so a0 is more like a jsr
+         and a8 is rts
+ - bX looks like 2X but it takes an argument and stores it (ORed with #$80) into
+   16e,x first => enables sweet unit
+ - cX if X is even: read arg (_PPP NSSS), enable sweep
+      if X is odd: read but ignore arg, disable sweep
+ - dX looks like it plays DMC track X from 30bd8
 
 Weirdly, the first sequence in Sfx21_Ch4 seems to affect the _end_ of the
 sound effect - not sure why.  It could be because the sfx is over by the
 time it gets to the second chunk?
+
+
+TODO - same analysis on SFX, which should be a little easier and get to end
+     - fewer channels...
+     - then we can maybe adjust some to see effect?
+     - pick a more melodic one?
+
+
+SFX23
+=====
+
+3f7fe MaybeUpdateMusic
+ - finds 00 in 102, takes bpls to 843
+ - finds 00 in 101, skips bne
+ - finds 23 in 103, skips beq
+ - writes 23 into 110 and calls StartAudio
+30048 StartAudio
+ - sets f0:01, calls StartAudioInner, clears f0:01
+30058 StartAudioInner
+ - finds 23 in 110, checks !=ff, takes bne to skip early return
+                    skips bmi to check 111?
+                    compares >= 20, takes bcs to StartSfx
+30094 StartSfx
+ - selects 18000 @ a000 [misaligned]
+ - looks up track from table
+ - checks priority 06 against 112, finds ff so updates 112<-06
+ - initializes track pointers
+    11a,x <- lo
+    120,x <- hi+20
+    14a,x;150,x <- 1
+    156,x <- 0
+    y <- 307ac,x track register offset [0,4,8,c,4,c]
+    4000,y;4002,y;4003,y <- 0
+    168,x;174,x;17a,x <- 0
+    4001,y <- 8
+    16e,x <- 8
+    114,x <- 1
+    Negate 115 and 117 (bgm channels co-opted by sfx)
+
+Then ResumeAudio goes
+  f0 is 0, so go on
+  fd <- 0
+  f0 gets :01 set
+  f3 <- f0
+     (would clear f0:20 if not positive, and ff-out 111 if it was positive
+      before silencing all channels)
+  shift f3 and _again_ check if it's positive
+     (if not, do something similar with 112, but only kill already-off chans???
+      i.e. writes ($fb ^ #$0f), then zeros out $fb)
+
+
+
+
+Frame 993
+ read addrs from table
+ ch4: read 180ef..f4: 95 e7 36 57 8a 2c
+ ch5: read 18164..67: 91 8f 66 40
+
+Frame 996 (+3)    ch4: read 180f5: 2e
+Frame 999 (+6)    ch4: read 180f6: 2d
+Frame 1002 (+9)   ch4: read 180f7: 2f
+Frame 1005 (+12)  ch4: read 180f8: 2e
+Frame 1008 (+15)  ch4: read 180f9: 20
+Frame 1011 (+18)  ch4: read 180fa: 2f
+Frame 1014 (+21)  ch4: read 180fb: 2a
+
+Frame 1017 (+24)
+ ch4: read 180fc..fd: 84 2c
+
+Frame 1020 (+27)  ch4: read 180fe: 2e
+Frame 1023 (+30)  ch4: read 180ff: 2d
+Frame 1026 (+33)  ch4: read 18100: 2f
+Frame 1029 (+36)  ch4: read 18101: 2e
+Frame 1032 (+39)  ch4: read 18102: 20
+Frame 1035 (+42)  ch4: read 18103: 2f
+Frame 1038 (+45)  ch4: read 18104: 2a
+
+Frame 1041 (+48)
+ ch4: read 18105:     20
+ ch5: read 18168..69  53 22
+
+Frame 1042 (+49)  ch5: read 1816a: 21
+Frame 1043 (+50)  ch5: read 1816b: 20
+
+Frame 1044 (+51)
+ ch4: read 18106:     2b
+ ch5: read 1816c:     22
+
+Frame 1045 (+52)  ch5: read 1816d: 21
+Frame 1046 (+53)  ch5: read 1816e: 20
+
+Frame 1047 (+54)
+ ch4: read 18107..0c: 93 e2 8f 53 31 25
+ ch5: read 1816f:     53
+
+BGM
+===
+
+Let's trace through Bgm01:
+
+this is the part that goes ~ 2 4 6 8 7 6 5 4 (8 notes, up then down)
+baseline is 1 3 1 3 2 4 2 4
+
+Frame 4260
+ ch0: read 30c6a..70: 93 89 ef f3 a0 (77 8d)
+      read 30d77..79: 26 60 2a
+ ch1: read 30ddc..e2: 93 89 ef f3 a0 (e8 8e)
+      read 30ee8..ea: 62 32 d6 (why stop on d6?)
+ ch2: read 30f37..3b: 91 88 a0 (30 90)
+      read 31030..34: 62 a1 (02) 32 26
+ ch3: read 3106d..75: 91 8f ed a1 (08) d1 80 64 |40
+
+Note: 40 was read on next frame...?
+
+Frame 4272 (+12)
+ ch0: read 30d7a..7c: 60 33 2d
+ ch1: read 30eeb..ed: 60 33 dd
+ ch2: read 31035..36: 33 26
+
+Frame 4278 (+18)
+ ch0: read 30d7d:     2f
+ ch1: read 30eee:     df
+
+Frame 4284 (+24)
+ ch0: read 30d7e:     40
+ ch1: read 30eef:     40
+ ch2: read 31037:     a4 (1 => back)
+      read 31033..34: 32 26
+ ch3: read 31076:     2a
+
+Frame 4290 (+30)
+ ch0: read 30d7f..80: 69 2a
+ ch1: read 30ef0..f1: 69 da
+
+Frame 4296 (+36)
+ ch2: read 31035..36: 33 26
+
+Frame 4302 (+42)
+ nothing
+
+Frame 4308 (+48)
+ ch0: read 30d81..82: 62 20
+ ch1: read 30ef2..f3: 62 d0
+ ch2: read 31037..3b: a4 (0 => continue) a1 (02) 33 2c
+ ch3: read 31077:     40
+
+Frame 4314 (+54)
+ nothing
+
+Frame 4320 (+60)
+ ch0: read 30d83..84: 60 2f
+ ch1: read 30ef4..e5: 60 df
+ ch2: read 3103c..3d: 34 2c
+
+Frame 4326 (+66)
+ ch0: read 30d85:     2e
+ ch1: read 30ef6:     de
+
+Frame 4332 (+72)
+ ch0: read 30d86:     40
+ ch1: read 30ef7:     40
+ ch2: read 3103e:     a4
+      read 3103a..3b: 33 2c
+ ch3: read 31078:     2a
+
+Frame 4338 (+78)
+ ch0: read 30d87..88: 69 2d
+ ch1: read 30ef8..f9: 69 dd
+
+Frame 4344 (+84)
+ ch2: read 3103c..3d: 34 2c
+
+
+nes.debug.breakAt([0x30c6a,0x310bc], 'prg', 'r', (a) => void console.log(`${nes.ppu.frame}@${nes.cpu.REG_PC.toString(16)}: ${(a+0x28000).toString(16)} => ${nes.rom.rom[a+0x28000].toString(16).padStart(2,0)}`));
+function play(a) { nes.cpu.REG_ACC=a; nes.debug.call(0x7c125); }
+play(1);setTimeout(()=>play(0),1500);

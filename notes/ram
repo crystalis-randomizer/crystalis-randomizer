@@ -520,6 +520,61 @@ indexed by X, as follows:
   X=5 => SFX Noise
 What about DMC?
 
+$f0
+---
+If :01 bit is set, ResumeAudio bails out
+If :20 is set, ResumeAudio skips playing BGM??
+
+$f1
+---
+Cursor past $f5$f6 in current track (essentially shadows Y in ($f5),y),
+used to update $11a,x;$120,x after commands done
+
+$f2
+---
+Zero indicates there's more audio commands to run in current channel
+
+$f3
+---
+Current opcode being handled, among other things?
+
+$f7
+---
+Pitch shift? (always zero)
+
+$fa
+---
+Temp space for storing current channel index
+
+$fb
+---
+Seems to have 0 bits for the channels that are playing?
+
+$fc
+---
+:08 bit nonzero causes clearing $15c,x:0f, $162,x:07, and $114,x:01
+Other bits seem to indicate APU registers that need updated
+
+$fd
+---
+If >#$14, ResumeAudio skips playing SFX ??
+
+$fe
+---
+
+
+$ff
+---
+APU_STATUS shadow?
+Temp variable?  Seems to maybe be used for D opcode?
+
+$100
+----
+
+
+$101
+----
+
 $102
 ----
 Currently playing BGM track index, for purpose of determining whether to
@@ -528,14 +583,37 @@ This does _not_ seem to be used to continue playing tracks (potentially
 because we instead just store pointers directly into the channel data?).
  - ?? The sign bit seems to have some significance as well. ??
 
+$103..$109
+----------
+Maybe some sort of buffer of when we need to play something?
+ - $103 is eventually written to $110 during IRQ
+   before StartAudio ...?
+
+$10f
+----
+Temp?
+
 $110
 ----
 Currently playing (or last played) SFX index
+
+$111
+----
+Currently playing BGM (priorityish) maybe ?????
 
 $112
 ----
 Currently playing SFX priority, smaller numbers more important.
 This is $#ff if nothing is playing.
+
+$114..$119
+----------
+When initializing track pointers:
+ 114,x <- 1
+ SFX clobbers 115,117 with :80 bit
+ :80 => playing (0) or silent (1)
+ :10 => ?
+ :01 => ?
 
 $11a..$125
 ----------
@@ -543,7 +621,50 @@ Pointers to the current positions in the current bgm/sfx individual channel
 data subtables.  11a..11f is the low byte, 120..125 is the high byte of the
 address.
 
+$126..$149
+----------
+Two pairs of repeat return addresses and counts, used by the $A? opcodes.
+A0 is a "call" that stores the return address in register 2, A1 is a "start
+repeat" that stores a repeat count in register 1, A2 is a "start repeat" for
+register 2 (though A0 is often used instead), A4 is the "end repeat" for
+register 1, A8 is the "end repeat" (or "return") for register 2.
+ 126..12b is return address lo byte for reg 1
+ 12c..131 is return address lo byte for reg 2
+ 132..137 is return address hi byte for reg 1
+ 138..13d is return address hi byte for reg 2
+ 13e..143 is repeat count for reg 1
+ 144..149 is repeat count for reg 2
 
+$14a..$14f
+----------
+Channel timers: when they decrease to 1, run more ops on channel
+
+$150..$155
+----------
+Staging area for writes to $14a,x.  Opcodes will update $150,x and then
+this value will get copied to $14a,x at the end.
+
+$156..$15b
+----------
+Seems to maybe be a key?  Ends up in the high nibble of the index of
+$307b8 data table.  Written by audio command 3X by reading from 3042d table,
+which maps 31->00, 32->10, ... 38->70.
+
+$15c..$161
+----------
+
+
+$162..$167
+----------
+
+
+$168..$17f
+----------
+When initializing track pointers:
+ 168,x <- 0 shadow for 4000,y
+ 16e,x <- 8 shadow for 4001,y
+ 174,x <- 0 shadow for 4002,y  => pitch (low 8)
+ 17a,x <- 0 shadow for 4003,y  => pitch (high 3)
 
 Free/unused bytes in this range:
  - $f4, $10a..$10e, $13d, $149

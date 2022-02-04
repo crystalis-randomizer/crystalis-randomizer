@@ -78,7 +78,7 @@ Audio commands:
  - 2 is maybe some sort of pause/wait?
    - a4 also seems like a light terminal?
    - 2X is change pitch and be done...?
- - 3 seems to set pitch
+ - 3 sets octave
  - 4 is ???
  - 5/6 seems to set some sort of duration?
  - 7 seems to affect the roll-off?
@@ -101,7 +101,8 @@ Audio commands:
    16e,x first => enables sweet unit
  - cX if X is even: read arg (_PPP NSSS), enable sweep
       if X is odd: read but ignore arg, disable sweep
- - dX looks like it plays DMC track X from 30bd8
+ - dX on noise channels: plays DMC track X from 30bd8
+      on melodic channels: plays pitch X with octave-dependent pitch bend
 
 Weirdly, the first sequence in Sfx21_Ch4 seems to affect the _end_ of the
 sound effect - not sure why.  It could be because the sfx is over by the
@@ -282,3 +283,13 @@ Frame 4344 (+84)
 nes.debug.breakAt([0x30c6a,0x310bc], 'prg', 'r', (a) => void console.log(`${nes.ppu.frame}@${nes.cpu.REG_PC.toString(16)}: ${(a+0x28000).toString(16)} => ${nes.rom.rom[a+0x28000].toString(16).padStart(2,0)}`));
 function play(a) { nes.cpu.REG_ACC=a; nes.debug.call(0x7c125); }
 play(1);setTimeout(()=>play(0),1500);
+
+
+=======
+Buzzing...
+
+nes.debug.breakAt(0x63b, 'prg', 'x', () => void nes.mmap.apuWrites.push([0, 0, 0, 0, 0]))
+pb=nes.mmap.apuWrites;
+(function(){let last=-1; for (let i = 0; i < pb.length; i++) { let w=pb[i]; if(w[2]===0){last=-1;pb.slice(i--,1);continue;}if (w[2]!==0x4015)continue; if (w[3]===last){pb.splice(i--,1);}else{last=w[3]}}})()
+pb.filter(([,,a])=>a==0x4015).map(v=>v[0]+':'+v[3].toString(16)).join(' ')
+nes.apuPlayback=pb;

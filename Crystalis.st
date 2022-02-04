@@ -41125,7 +41125,7 @@ RunAudioCommandsForChannel
         $302ac  xx xx:       xxx #$xx
         $302ae  xx xx:       xxx $xx
         $302b0  xx xx xx:    xxx $xxxx,x
-        ;; Silence the DMC?
+        ;; Turn on all non-DMC channels
 +       $302b3  xx xx:      xxx $xx
         $302b5  xx xx:      xxx #$xx
         $302b7  xx xx xx:   xxx APU_STATUS
@@ -41264,18 +41264,23 @@ AudioJumpTable_dX
         $303c2  xx xx xx:   xxx $307a6,x
         $303c5  xx xx:      xxx #$xx
         $303c7  xx xx:      xxx + ; $303cc
-        $303c9  xx xx xx:    xxx $3063b
+        $303c9  xx xx xx:    xxx StartDMC
         ;;                   ----------
+        ;; dX on non-noise channels - reads the octave (stored in hi nibble
+        ;; of 156,x) and indexes 303da table to do a 2 but with a different
+        ;; value in f7 (pitch bend).  This bends the note down anywhere from
+        ;; a quarter step (at the higher notes, e.g. B) to an eighth step
+        ;; (at the lower notes, e.g. C).
 +       $303cc  xx xx xx:   xxx $xxxx,x
         $303cf  xx:         xxx
         $303d0  xx:         xxx
         $303d1  xx:         xxx
         $303d2  xx:         xxx
         $303d3  xx:         xxx
-        $303d4  xx xx xx:   xxx $303da,y
+        $303d4  xx xx xx:   xxx AudioPitchBendTable,y ; $303da
         $303d7  xx xx xx:   xxx $303e7
 ;;; --------------------------------
-DataTable_303da 
+AudioPitchBendTable
         $303da              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 AudioJumpTable_bX
         $303e2  xx xx xx:   xxx $303b6
@@ -41322,12 +41327,12 @@ AudioJumpTable_3X
         $30422  xx xx:      xxx $xx
         $30424  xx xx:      xxx #$xx
         $30426  xx:         xxx
-        $30427  xx xx xx:   xxx $3042d,y ; AudioKeyTable-1
+        $30427  xx xx xx:   xxx $3042d,y ; AudioOctaveTable-1
         $3042a  xx xx xx:   xxx $xxxx,x
         $3042d  xx:         xxx
 ;;; --------------------------------
 ;;; Basically just <<4, but used w/ the pitch tables
-AudioKeyTable
+AudioOctaveTable
         $3042e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 AudioJumpTable_4X
@@ -41632,7 +41637,8 @@ AudioJumpTable_eX
         $30638  xx xx:      xxx $xx
         $3063a  xx:         xxx
 ;;; --------------------------------
-        ;; Jmp here from opcode D handling
+StartDMC   
+        ;; Starts DMC channel
         $3063b  xx:         xxx
         $3063c  xx xx:      xxx #$xx
         $3063e  xx xx:       xxx >>>rts ; $3065e
@@ -41775,6 +41781,16 @@ ApuChannelStatusMask
 ;;; Low byte of pitches.  This is 8 separate "rows", where the row index is the
 ;;; subcmd argument to the 3X opcode, while the column is the subcmd argument to
 ;;; the 7X or 2X opcode.  These are written to $174,x -> $4002,y
+;;; Each octave defines the 12 notes from C up to B, though in a weird order:
+;;;   G  C# D# -  F# G# A# -
+;;;   -  -  A  B  C  D  E  F
+;;; Note that the B and C next to each other are the extreme high and low notes
+;;; of the octave, respectively.  So it's not even in as straightforward an order
+;;; as it looks like at first glance.  The octave is 2 more than the argument to
+;;; the 3X opcode, so <30 20> plays G2, <32 2A> plays A4.  The table goes all the
+;;; way up to (theoretically) B9, but these pitches are basically inaudible, and
+;;; there's so much distortion at that point that it doesn't even make sense to
+;;; call it a pitch.
 AudioPitchTableLo
         $307b8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $307c8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -63969,7 +63985,7 @@ WritePaletteDataToPpu
         $3f9f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; ----------------
 ;;; This is maybe DMC data specified by the DmcTable
-DmcData
+DmcSample
         $3fa00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fa10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3fa20              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx

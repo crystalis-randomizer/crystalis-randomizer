@@ -553,6 +553,7 @@ Seems to have 0 bits for the channels that are playing?
 $fc
 ---
 :08 bit nonzero causes clearing $15c,x:0f, $162,x:07, and $114,x:01
+:01 bit indicates volume updated - 4000,y must be written
 Other bits seem to indicate APU registers that need updated
 
 $fd
@@ -561,6 +562,15 @@ If >#$14, ResumeAudio skips playing SFX ??
 
 $fe
 ---
+Seems to only be zero at the start of a BGM track?
+ - set in 30105, elsewhere assigned to #$bc
+ - dec'd in 302fb?
+Nonzero skips volume setting??
+
+Read in RunAudioCommandsForChannel
+ - if it's zero then we check sign bit of 114,x and only
+   write the registers if it's positive
+ - if it's nonzero we look at low 6 bits, dec'd if nonzero
 
 
 $ff
@@ -612,7 +622,8 @@ When initializing track pointers:
  114,x <- 1
  SFX clobbers 115,117 with :80 bit
  :80 => playing (0) or silent (1)
- :10 => ?
+ :40 => cleared on 90 subcommand?
+ :10 => set by 4X
  :01 => ?
 
 $11a..$125
@@ -652,6 +663,7 @@ which maps 31->00, 32->10, ... 38->70.
 
 $15c..$161
 ----------
+Written by eX commands (along w/ setting 114,x:40)
 
 
 $162..$167

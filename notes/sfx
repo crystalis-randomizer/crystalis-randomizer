@@ -80,10 +80,13 @@ Audio commands:
    - 2X is change pitch and be done...?
  - 3 sets octave
  - 4 is ???
+   - ends commands for frame
+   - 40 immediately silences current channel (vi 4015) if 114,x positive
  - 5/6 seems to set some sort of duration?
  - 7 seems to affect the roll-off?
+   - 3052e writes 4000,y with successive smaller values, who calls it?
  - 8 seems to set volume
- - 9 is maybe something about tone/instrument?
+ - 9 sets timbre
      - may be samples from a table somewhere, too-long duration gets weird
      - seems to be doing stuff w/ the duty cycle...
 
@@ -103,6 +106,7 @@ Audio commands:
       if X is odd: read but ignore arg, disable sweep
  - dX on noise channels: plays DMC track X from 30bd8
       on melodic channels: plays pitch X with octave-dependent pitch bend
+ - eX ??
 
 Weirdly, the first sequence in Sfx21_Ch4 seems to affect the _end_ of the
 sound effect - not sure why.  It could be because the sfx is over by the

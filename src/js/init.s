@@ -279,11 +279,17 @@ FREE "fe" [$d654, $d659)
 ;;; Recovered from other item/trigger jumps (06/11, 0b, 0c, 0d, 0e, 0f,
 FREE "fe" [$d6d5, $d746)
 
-FREE "ff" [$f9ba, $fe00)
+FREE "ff" [$f9ba, $fa00) ; first byte of DMC sample actually matters
+FREE "ff" [$fa01, $fe00) ; rts at 3fe00 is important
 FREE "ff" [$fe01, $fe16)
 FREE "ff" [$fe18, $fe78) ;; NOTE: 3fe2e might be safer than 3fe18
 FREE "ff" [$ff44, $ff80)
 FREE "ff" [$ffe3, $fffa)
+
+;;; Patch the DMC Sample to start with FF to eliminate the buzz
+.segment "ff"
+.org $fa00
+  .byte $ff
 
 ;;; Patch the end of ItemUse to check for a few more items.
 .segment "0e"

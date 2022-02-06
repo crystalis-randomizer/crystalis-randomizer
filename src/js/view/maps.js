@@ -7,6 +7,7 @@ import {View} from './view.js';
 import {Rom} from '../rom.js';
 import {Random} from '../random.js';
 import {ImageBuffer} from './imagebuffer.js';
+import {loadRom} from './load.js';
 
 //import {shuffleCave} from '../maze/cave.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
@@ -213,7 +214,7 @@ class MapsView extends View {
         for (let y = 0; y < opts.ht; y++) {
           const screenId = (opts.screens[y] || [])[x];
           if (screen != null) {
-            const screen = this.rom.screens[screenId + (opts.plane << 8)];
+            const screen = this.rom.screens[screenId]; // + (opts.plane << 8)];
             this.drawScreen(buf, x << 8, 240 * y,
                             screen, tileset, tilePal, tilePat, (opts.flags[y] || [])[x]);
           }
@@ -371,20 +372,7 @@ class MapsView extends View {
 }
 
 const run = async () => {
-  const hash = {};
-  if (window.location.hash) {
-    // look for a patch to apply
-    for (const component of window.location.hash.substring(1).split('&')) {
-      const split = component.split('=');
-      hash[split[0]] = decodeURIComponent(split[1]);
-    }
-  }
-  let patch;
-  if (hash['patch']) {
-    const p = await loadModule(hash['patch']);
-    patch = p && p.apply ? (rom) => p.apply(rom, hash) : undefined;
-  }
-  const rom = await Rom.load(patch);
+  const rom = await loadRom();
   // window.shuffleGoa1 = (s) => shuffleGoa1(rom, new Random(s || 1));
   // window.shuffleSwamp = (s) => shuffleSwamp(rom, new Random(s || 1));
   // window.shuffleCave = (l, s) => shuffleCave(rom.locations[l], new Random(s || 1));

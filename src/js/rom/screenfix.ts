@@ -210,8 +210,15 @@ export function fixTilesets(rom: Rom) {
     ts.getTile(0x89).copyFrom(0x04).replaceIn(...ts);
   }
   for (const ts of [town]) {
-    ts.getTile(0x50).copyFrom(0x01).replaceIn(...ts);
-    ts.getTile(0x51).copyFrom(0x02).replaceIn(...ts);
+    // Note: we need the 03/04 tiles here because Sahara Meadow north
+    // cave exit is shared with ESI entrance.
+    // Need to move 01,02 (vanilla Swan Gate) to somewhere else flaggable,
+    // but there aren't two available spots, so we'll move 1a,1b to 50,51
+    // first, and then move 01,02 to 1a,1b.
+    ts.getTile(0x50).copyFrom(0x1a).replaceIn(...ts);
+    ts.getTile(0x51).copyFrom(0x1b).replaceIn(...ts);
+    ts.getTile(0x1a).copyFrom(0x01).replaceIn(...ts);
+    ts.getTile(0x1b).copyFrom(0x02).replaceIn(...ts);
     ts.getTile(0x52).copyFrom(0x03).replaceIn(...ts);
     ts.getTile(0x57).copyFrom(0x04).replaceIn(...ts);
   }

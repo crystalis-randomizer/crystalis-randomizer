@@ -4,18 +4,14 @@
 
 import {Canvas} from './canvas.js';
 import {Rom} from '../rom.js';
-import {prepareScreens} from '../pass/shufflemazes.js';
+import {loadRom} from './load.js';
 
 const run = async () => {
   const showUnused = /unused/.test(window.location.hash);
   const mixPalettes = /(-|no)pal/.test(window.location.hash);
   const usedByTileset = {};
   for (let i = 0x80; i < 0xb0; i += 4) usedByTileset[i] = new Set();
-  const rom = await Rom.load();
-  window.rom = rom;
-  if (/extend/.test(window.location.hash)) {
-    prepareScreens(rom);
-  }
+  const rom = await loadRom();
 
   // for (const s of rom.disjointTilesets()) {
   //   console.log(`Disjoint: ${[...s].map(hex).join(' ')}`);

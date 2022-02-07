@@ -1258,7 +1258,7 @@ export class World {
       Money, RageSkip,
       Sword, SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder,
     } = this.rom.flags;
-    if (location.id === this.limeTreeEntranceLocation && monster.isFlyer &&
+    if (location.id === this.limeTreeEntranceLocation && monster.isBird() &&
         this.flagset.assumeRageSkip()) {
       this.addCheck([this.entrance(location)], Requirement.OPEN, [RageSkip.id]);
 

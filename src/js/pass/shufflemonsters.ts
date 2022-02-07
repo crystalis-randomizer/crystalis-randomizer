@@ -202,7 +202,12 @@ class MonsterPool {
             .push('$' + location.id.toString(16));
         const slot = slots[eligible];
         const spawn = location.spawns[slot - 0x0d];
-        if (monsterPlacer) { // pos == null returned false earlier
+        if (flyer) {
+          // Spawn in a random location
+          spawn.data[0] = 0xfd; // spawn.y = 0xfd0;
+          spawn.data[1] = 0xff; // spawn.x = 0x7f0;
+          // spawn.timed = true;
+        } else if (monsterPlacer) { // pos == null returned false earlier
           spawn.screen = pos! >>> 8;
           spawn.tile = pos! & 0xff;
         } else if (slot in nonFlyers) {

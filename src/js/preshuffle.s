@@ -756,6 +756,20 @@ MaybeSetCheckpoint:
 MaybeSetCheckpointActual:
 
 
+;;; Store global attempted step counter in $32 as a semi-prng
+.segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
+.reloc
+UpdateGlobalStepCounter:
+  inc $32
+  lda #$00
+  sta $25
+  rts
+.org $98d7
+  nop
+  jsr UpdateGlobalStepCounter
+.assert * = $98db
+
+
 .segment "12", "13", "fe", "ff"
 ;.bank $24000 $8000:$4000
 
@@ -793,7 +807,6 @@ MaybeSetCheckpointActual:
 
 .segment "1a", "1b", "fe", "ff"
 ;.bank $34000 $8000:$4000
-
 
 ;; Move the position of the main UI number elements
 .org $8ec7 ; Lv
@@ -2779,8 +2792,8 @@ DestroyStatue:
 ;;; Now fix the LoadNpcDataForLocation code
 .org $e19a  ; in the middle of CheckForNpcSpawn
   lda $18
-  beq $e1ae ; <rts
-  lda ($10),y
+  beq $e1ae ; >rts
+  lda ($10),y  ; npc[1]: sign bit indicates a timer spawn
   dey
   asl
   bcs $e1af ; skip the rts
@@ -2788,6 +2801,97 @@ DestroyStatue:
   inx
   jmp $e18f ; Check next NPC spawn.
 FREE_UNTIL $e1ae
+
+;;; Vanilla returns out of timer spawns when it sees a commented spawn.
+;;; Check instead for specifically $ff; $fe will never be a timer (this
+;;; is guaranteed by Spawn's [Symbol.iterator] method).
+.org $e0ff
+  nop
+  nop
+  cmp #$ff
+.assert * = $e103
+
+.ifdef _RANDOM_FLYER_SPAWNS
+
+.org $e1c9 ; In middle of TryNpcSpawn, replacing {iny; lda $2c}
+  jsr RandomizeFlyerSpawnPosition
+
+.reloc
+;;; When spawning an NPC, if the first two bytes are $fd,$ff then pick
+;;; a random location instead.
+RandomizeFlyerSpawnPosition:
+  lda $2c
+  eor #$02 ; $fd -> ff
+  and $2d
+  eor #$ff
+   bne @done
+  ;; Read the low 4 bits of $32 (random step counter)
+  ;; for 16 possible spawn positions: each of X and Y
+  ;; can be one of 4 values: 0, max, half-max, or player.
+  txa
+  pha
+   ;; 62fc,62fd is w,h of map - use that?
+   lda #$00
+   sta $2c
+   sta $2d
+   lda $32
+   lsr
+   bcc +
+    ldx $62fd ; map height
+    stx $2c
++  lsr
+   bcc +
+    ldx $62dc ; map width
+    stx $2d
++  lsr
+   pha
+    bcc +
+     lsr $2c  ; half height
+     bne +
+      ;; player y
+      lda $d0
+      sta $2c
++  pla
+   lsr
+    bcc +
+     lsr $2d  ; half width
+     bne +
+      ;; player x
+      lda $90
+      sta $2d
++  ldx #$04
+-   asl $2c
+    asl $2d
+    dex
+   bne -
+  pla
+  tax
+
+  ;; Note: We could possibly shorten this routine if needed by
+  ;; instead making it a +/-2 screen (in each direction) delta from
+  ;; the player's current position, regardless of map size (it's
+  ;; fine to spawn off the map).  This would make the bombardment
+  ;; a little more relentless, since the bird wouldn't need to
+  ;; traverse a potentially large map to get to the player, but
+  ;; would always spawn no more than 2 screens away.
+  ;; ;;     lda $32
+  ;; ;;     ldx #$04
+  ;; ;; -    asl
+  ;; ;;      ror $2c
+  ;; ;;      asl
+  ;; ;;      ror $2d
+  ;; ;;      dex
+  ;; ;;     bne -
+  ;; ;;    pla
+  ;; ;;    tax
+
+@done:
+  iny      ; Replace 3 bytes at 3e1c9
+  lda $2c
+  rts
+
+.endif
+
 
 .reloc
 Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`

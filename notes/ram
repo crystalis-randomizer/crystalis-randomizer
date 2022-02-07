@@ -190,6 +190,9 @@ More temps, seem to be written in pairs:
 $32, $33
 --------
 Unused?
+ - Repurpose $32 for global step counter of all objects (low byte).  This is a
+   decent proxy for random numbers in code segments where the normal table isn't
+   available.
 
 
 $34..$37

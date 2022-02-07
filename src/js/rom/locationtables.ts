@@ -176,6 +176,12 @@ export class Spawn extends DataTuple {
     this.data[0] = used ? 0 : 0xfe;
   }
 
+  [Symbol.iterator]() {
+    // Override iterator to ensure unused spawns have no data.
+    if (this.used) return super[Symbol.iterator]();
+    return [0xfe, 0, 0, 0][Symbol.iterator]();
+  }
+
   /** Object ID of monster spawn (shifted by $50 from ID). */
   get monsterId(): number {
     return (this.id + 0x50) & 0xff;

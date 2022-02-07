@@ -1311,6 +1311,11 @@ export class Metalocation {
       if (pos == null) {
         console.error(`no valid location for ${hex(monster.id)} ${monster.name} in ${loc}`);
         spawn.used = false;
+      } else if (monster.isBird()) {
+        // Spawn in a random location
+        spawn.y = 0xfd0;
+        spawn.x = 0x7f0;
+        spawn.timed = true;
       } else {
         spawn.screen = pos >>> 8;
         spawn.tile = pos & 0xff;

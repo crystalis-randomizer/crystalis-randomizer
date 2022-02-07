@@ -60501,8 +60501,9 @@ CheckForNpcSpawn
         $3e19c  xx:         xxx            ; y <- &npc[0]
         $3e19d  xx:         xxx            ; a <- npc[1] << 1
         $3e19e  xx xx:      xxx + ; $3e1a7 - npc[1] < $80 => try to spawn the NPC
-        ;; This looks pretty redundant with ++ below, since this is where we'd end
-        ;; up if npc[0] == $fe anyway.  Basically, if (npc[0] & $80) then skip.
+        ;; This looks pretty redundant with ++ below, but covers the case where
+        ;; npc[1] is negative (a timer spawn), rather than npc[0] == $fe (a comment).
+        ;; But there's no reason we can't just jmp to 3e1af and save a few bytes.
         $3e1a0  xx:         xxx
         $3e1a1  xx:         xxx
         $3e1a2  xx:         xxx

@@ -79,6 +79,11 @@ export class Monster extends ObjectData {
     return this.type === 'projectile';
   }
 
+  isBird(): boolean {
+    const a = this.rom.objectActions[this.action];
+    return a?.data.bird || false;
+  }
+
   isFlyer(): boolean {
     const a = this.rom.objectActions[this.action];
     return a?.data.bird || a?.data.moth || false;

@@ -1125,12 +1125,12 @@ export class Metalocation {
                          spawn.isBoss() ? 'Boss' : 'Trigger'} ${spawn.hex()
                          }\n${this.show()}`);
       }
+      // We've taken care of everything that needs special placement
+      // (i.e. relative to something else, etc).  This leaves spawns
+      // that want to live at POIs (i.e. chests, dungeon NPCs, etc).
       const next = allPoi.shift();
       if (!next) throw new Error(`Ran out of POI for ${loc}`);
       const [y, x] = next;
-      // TODO - what is this about? I seem to have forgotten.
-      // Maybe this is just a fall-back in case we can't find aything else?
-      console.error(`Weird map addition: ${loc} ${spawn.hex()}`);
       map.push([spawn.y >>> 4, spawn.x >>> 4, y >>> 4, x >>> 4, 4, '???']);
       spawn.y = y;
       spawn.x = x;

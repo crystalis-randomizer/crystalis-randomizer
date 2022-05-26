@@ -1,0 +1,9 @@
+Rage skip wants flyer to come from certain direction.  If the spawn point is
+in a bad place, then it will be very hard to accomplish.
+
+1. Update requirement to require flyer on a timed slot
+2. Put all flyers on timed slots at 0,0
+3. Update TryNpcSpawn to recognize 0,0 and spawn in a random offscreen location
+
+Should never be an initial spawn, so no worry about that...
+ - will just try again next spawn frame

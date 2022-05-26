@@ -1,0 +1,33 @@
+bits: 7 => knockback
+      5,6 => direction resolution (8/16/32/64)
+      0..4 => speed
+
+
+0 => 1/4
+31 => 8
+
+Given step count S (0..7), speed v at 1/4 resolution (0..31)
+sin/cos tables at 1/64 resolution c,s (0..63)
+
+dx = c*(S+1)*v
+
+
+64 directions -> 16 entries to sin table
+16 angles * 32 speeds = 512 bytes, on 0..31 scale (1/4)?
+  - ultimately need 1/8 resolution => 0..63
+Multiply by 0..7 -> 9 bits (use carry?)
+
+  ;; Step should be in the upper 3 bits
+  asl Step
+  asl Step
+  asl Step
+  asl Step
+  asl Step
+  ;; Do the multiplication
+  lda Frac  ; 0..63
+  sta $61
+  lda Step  ; 0..7
+  sta $62
+  lda #$00
+  
+  asl $62

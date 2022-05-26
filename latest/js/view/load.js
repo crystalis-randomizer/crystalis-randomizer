@@ -13,7 +13,8 @@ export async function loadRom() {
   }));
   if (hash.has('flags')) {
     const flags = new FlagSet(hash.get('flags'));
-    flags.set('Dn', true);
+    // NOTE: this changes the shuffle - set it manually to skip logic
+    // flags.set('Dn', true);
     const seedStr = hash.get('seed') ?? Math.floor(Math.random() * 0x100000000).toString(16);
     const seed = patch.parseSeed(seedStr);
     const romData = await Rom.loadBytes();

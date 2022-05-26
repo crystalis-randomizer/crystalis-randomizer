@@ -287,8 +287,19 @@ export default (nes) => {
     window.heal();
     window.setTimeout(window.alwaysHeal, 500);
   };
-};
 
+  window.noClip = () => {
+    nes.debug.patchRom(0x35a30, 0x18); // clc
+    nes.debug.patchRom(0x35a31, 0x60); // rts
+  };
+
+  function patch(addr, ...val) {
+    if ((addr & 0xfc000) === 0x3c000 && nes.rom.rom.length > 0x40000) {
+      addr |= 0x40000;
+    }
+    nes.debug.patchRom(addr, ...val);
+  }
+};
 
 const getItem = (nes, item) => {
   // look up the position in the chart...

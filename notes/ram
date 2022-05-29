@@ -1040,6 +1040,11 @@ $6e0,x
 ------
 used for ad-hoc spawns? mixed in with direction.
 
+also used for random other purposes:
+  $6f3 - jump table position in main title screen
+  $6fc..$6fd - used for some temporary jumps (e.g. in title screen)
+  $6ff - seems to be something about a timer in title screen
+
 
 $0708
 -----

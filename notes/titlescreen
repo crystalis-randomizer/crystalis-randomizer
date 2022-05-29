@@ -1,0 +1,51 @@
+How does the title screen work?
+===============================
+
+Main loop ($40) mode 3 jumps to $3c939, which jumps to
+$26015.  This dec's $6ff and uses $6f3 to start indexing
+a series of jump tables.
+
+At this point, $8000 => $24000, $a000 => $26000
+
+TitleScreenJumpTable ($26038 : $6f3)
+ case $6f3 = 0:  // not fading
+  TitleMovieJumpTable ($26052 : $6f0)
+   case $6f0 = 0:  // title loop
+    check for select or start on ctrl1
+     case no button:
+      long sequence, indexed by 6f1 with 6fe as delay
+      0: clear something, set delay to 60
+      1: delay 60 frames
+      2: show text "1997, End Day", set delay to 120
+      3: delay 120 frames
+      4: fade out, 30 to delay
+      5: delay 30 frames (after fade-out done)
+      6: show picture+text "Savage war engulfs..."
+      7: 
+      TitleScreen00SubJumpTable ($267bc : $6f1)
+       9fc2 1,3,5,a,f,13,17 - delay $6fe frames
+       a064 4,9
+       a070 0
+       a7f6 2 - "1997, End Day"
+       a843 6 - "Savage war engulfs the world"
+       a8d2 7 - lightning bolt
+       a92d 8 - color strobe
+     case button:
+
+
+ case $6f3 = 2:
+  
+
+------------------
+
+Goal: Add another mode to title screen for other menus/features?
+
+We could use the TitleMovieJumpTable (6f0 index), since items
+7 and 8 are unused (we'd keep 6f3 pinned to 0).
+
+Then the handler jumps out to a fresh bank to show our own menu,
+and we could use 6f1 for subindex, etc.
+
+Note: normal 3c125-based audio player is NOT ACTIVE during the
+title movie for some reason.  We'd need to patch it in for a
+proper sound test?

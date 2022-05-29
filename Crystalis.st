@@ -32517,7 +32517,7 @@ AnimateSNKLogo
 -       $240c5  xx xx xx:    xxx $24198
         $240c8  xx xx xx:    xxx $xxxx
         $240cb  xx xx:      xxx - ; $240c5
-        $240cd  xx xx xx:   xxx $24344
+        $240cd  xx xx xx:   xxx TitleScreenFadeOut
 -       $240d0  xx xx xx:    xxx $24198
         $240d3  xx xx xx:    xxx $xxxx
         $240d6  xx xx xx:    xxx $2434a
@@ -32811,7 +32811,10 @@ ClearMapPaletteSpace
         $242bd  xx:         xxx
 ;;; --------------------------------
 ;;; Input: A = s000 rrrr
-;;; Copies the r-th 16-byte row into S ? 6e0 : 6d0.
+;;; Copies the r-th 16-byte row (from $2438b table) into S ? 6e0 : 6d0.
+;;; Given that these are subsequently copied into $6140, I assume it's
+;;; palette data.  $0x is bg/nametable, $8x is fg/sprites
+LoadTitleMoviePalette
         $242be  xx:         xxx
         $242bf  xx xx:      xxx #$xx
         $242c1  xx xx:      xxx #$xx
@@ -32854,86 +32857,103 @@ ClearMapPaletteSpace
         $242fa  xx xx:      xxx $xx
         $242fc  xx:         xxx
 ;;; --------------------------------
+;;; Copy 32 low-nibbles from 6d0..6ef to 6140 (palettes?)
+;;; Switch mode to "fade in"
+TitleScreenFadeIn
         $242fd  xx xx:      xxx #$xx
-        $242ff  xx xx xx:   xxx $xxxx,x
-        $24302  xx xx:      xxx #$xx
-        $24304  xx xx xx:   xxx $xxxx,x
-        $24307  xx:         xxx
-        $24308  xx xx:      xxx $xx
+-       $242ff  xx xx xx:    xxx $xxxx,x
+        $24302  xx xx:       xxx #$xx
+        $24304  xx xx xx:    xxx $xxxx,x
+        $24307  xx:          xxx
+        $24308  xx xx:      xxx - ; $242ff
         $2430a  xx xx:      xxx #$xx
         $2430c  xx xx xx:   xxx $xxxx
         $2430f  xx:         xxx
 ;;; --------------------------------
+TitleScreenJump_1               ; FadeIn
         $24310  xx xx xx:   xxx $xxxx
         $24313  xx xx:      xxx #$xx
-        $24315  xx xx:      xxx $xx
+        $24315  xx xx:      xxx + ; $24318
         $24317  xx:         xxx
-;;; --------------------------------
-        $24318  xx xx:      xxx #$xx
+        ;;;                 ---
++       $24318  xx xx:      xxx #$xx
         $2431a  xx xx xx:   xxx $xxxx
         $2431d  xx xx:      xxx #$xx
-        $2431f  xx xx xx:   xxx $xxxx,x
-        $24322  xx xx xx:   xxx $xxxx,x
-        $24325  xx xx:      xxx $xx
-        $24327  xx xx xx:   xxx $xxxx
-        $2432a  xx xx xx:   xxx $24333
-;;; --------------------------------
-        $2432d  xx:         xxx
-        $2432e  xx xx:      xxx #$xx
-        $24330  xx xx xx:   xxx $xxxx,x
-        $24333  xx:         xxx
-        $24334  xx xx:      xxx $xx
+-       $2431f  xx xx xx:    xxx $xxxx,x
+        $24322  xx xx xx:    xxx $xxxx,x
+        $24325  xx xx:       xxx + ; $2432d
+        $24327  xx xx xx:     xxx $xxxx
+        $2432a  xx xx xx:     xxx ++ ; $24333
+        ;;;                   ----------
++       $2432d  xx:            xxx
+        $2432e  xx xx:         xxx #$xx
+        $24330  xx xx xx:      xxx $xxxx,x
+++      $24333  xx:          xxx
+        $24334  xx xx:      xxx - ; $2431f
         $24336  xx xx xx:   xxx $xxxx
         $24339  xx xx:      xxx #$xx
-        $2433b  xx xx:      xxx $xx
-        $2433d  xx:         xxx
+        $2433b  xx xx:      xxx TitleScreenResumeMovie
+        $2433d  xx:          xxx
 ;;; --------------------------------
+TitleScreenResumeMovie
         $2433e  xx xx:      xxx #$xx
         $24340  xx xx xx:   xxx $xxxx
         $24343  xx:         xxx
 ;;; --------------------------------
+TitleScreenFadeOut
         $24344  xx xx:      xxx #$xx
         $24346  xx xx xx:   xxx $xxxx
         $24349  xx:         xxx
 ;;; --------------------------------
+;;; Fade the screen to black by replacing colors w/ a slightly
+;;; darker version every 4 frames.  NES has 64 colors over 14
+;;; different hues, where the low nibble is the hue and the
+;;; :30 mask is the brightness (Xe and Xf are all black).
+;;; For each |p| of the 32 palette bytes:
+;;;  - if `p < #$0f` -> set it to #$0f
+;;;  - if `p > #$0f` -> store `p - 10`
+;;;  - if `p = #$0f` -> inc 6cf to count it
+TitleScreenJump_2               ; FadeOut
         $2434a  xx xx xx:   xxx $xxxx
         $2434d  xx xx:      xxx #$xx
-        $2434f  xx xx:      xxx $xx
-        $24351  xx:         xxx
-;;; --------------------------------
-        $24352  xx xx:      xxx #$xx
+        $2434f  xx xx:      xxx + ; $24352
+        $24351  xx:          xxx
+        ;;;                  ---
++       $24352  xx xx:      xxx #$xx
         $24354  xx xx xx:   xxx $xxxx
         $24357  xx xx:      xxx #$xx
-        $24359  xx xx xx:   xxx $xxxx,x
-        $2435c  xx xx:      xxx #$xx
-        $2435e  xx xx:      xxx $xx
-        $24360  xx xx xx:   xxx $xxxx
-        $24363  xx xx xx:   xxx $2437a
-;;; --------------------------------
-        $24366  xx:         xxx
-        $24367  xx xx:      xxx #$xx
-        $24369  xx xx:      xxx $xx
-        $2436b  xx xx:      xxx #$xx
-        $2436d  xx xx xx:   xxx $xxxx,x
-        $24370  xx xx xx:   xxx $2437a
-;;; --------------------------------
-        $24373  xx:         xxx
-        $24374  xx:         xxx
-        $24375  xx xx:      xxx #$xx
-        $24377  xx xx xx:   xxx $xxxx,x
-        $2437a  xx:         xxx
-        $2437b  xx xx:      xxx $xx
+-       $24359  xx xx xx:    xxx $xxxx,x
+        $2435c  xx xx:       xxx #$xx
+        $2435e  xx xx:       xxx + ; $24366
+        $24360  xx xx xx:     xxx $xxxx
+        $24363  xx xx xx:     xxx ++ ; $2437a
+        ;;;                   ----------
++       $24366  xx:          xxx
+        $24367  xx xx:       xxx #$xx
+        $24369  xx xx:       xxx + ; $24373
+        $2436b  xx xx:        xxx #$xx
+        $2436d  xx xx xx:     xxx $xxxx,x
+        $24370  xx xx xx:     xxx ++ ; $2437a
+        ;;;                  ----------
++       $24373  xx:          xxx
+        $24374  xx:          xxx
+        $24375  xx xx:       xxx #$xx
+        $24377  xx xx xx:    xxx $xxxx,x
+++      $2437a  xx:          xxx
+        $2437b  xx xx:      xxx - ; $24359
         $2437d  xx xx xx:   xxx $xxxx
         $24380  xx xx:      xxx #$xx
         $24382  xx xx:      xxx $xx
         $24384  xx:         xxx
-;;; --------------------------------
+        ;;;                 ---
         $24385  xx xx:      xxx #$xx
         $24387  xx xx xx:   xxx $xxxx
         $2438a  xx:         xxx
 ;;; --------------------------------
 ;;; This looks like it contains graphics for the title screen and maybe movies.
-DataTable_2438b
+;;; This is actually probably color palettes?
+;;; Looks like the used rows (16 bytes each) are 0..e with the exception of $a
+TitleMoviePaletteTable
         $2438b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2439b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $243ab              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32942,14 +32962,15 @@ DataTable_2438b
         $243db              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $243eb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $243fb              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $2440b              .byte $xx,$xx,$xx,$xx,$xx
-        $24410              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24430              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24440              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24450              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $24470              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2440b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2441b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2442b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2443b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2444b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2445b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $2446b              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $2447b              .byte $xx,$xx,$xx,$xx,$xx
         $24480              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $24490              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $244a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -33271,11 +33292,28 @@ DataTable_2438b
         $25892              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $258a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $258b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $258c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $258d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $258e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $258f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $25900              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $258c0              .byte $xx,$xx
+;;; --------------------------------
+;;; This is something about sprite data (it's copied into $200,x)
+;;; The format seems to be 5-byte chunks, where the first byte is the offset
+;;; into the sprite table and the rest go into 200,x .. 203,x.
+;;; This is used for the main menu screen (Start/Continue)
+        $258c2              .byte $xx,$xx,$xx,$xx,$xx
+        $258c7              .byte $xx,$xx,$xx,$xx,$xx
+        $258cc              .byte $xx,$xx,$xx,$xx,$xx
+        $258d1              .byte $xx,$xx,$xx,$xx,$xx
+        $258d6              .byte $xx,$xx,$xx,$xx,$xx
+        $258db              .byte $xx,$xx,$xx,$xx,$xx
+        $258e0              .byte $xx,$xx,$xx,$xx,$xx
+        $258e5              .byte $xx,$xx,$xx,$xx,$xx
+        $258ea              .byte $xx,$xx,$xx,$xx,$xx
+        $258ef              .byte $xx,$xx,$xx,$xx,$xx
+        $258f4              .byte $xx,$xx,$xx,$xx,$xx
+        $258f9              .byte $xx,$xx,$xx,$xx,$xx
+        $258fe              .byte $xx,$xx,$xx,$xx,$xx
+        $25903              .byte $xx,$xx,$xx,$xx,$xx
+;;; --------------------------------
+        $25908              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25910              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25920              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25930              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -33385,18 +33423,13 @@ DataTable_2438b
         $25fb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $25fc0              .byte $xx,$xx
 ;;; --------------------------------
-JumpTable_267bc_01
-JumpTable_267bc_03
-JumpTable_267bc_05
-JumpTable_267bc_0a
-JumpTable_267bc_0f
-JumpTable_267bc_13
-JumpTable_267bc_17
+;;; Delays for $6fe frames, then inc index ($6f1)
+;;; Called at index 1,3,5,a,f,13,17
+TitleScreen00SubJump_Delay
         $25fc2  xx xx xx:   xxx $xxxx
-        $25fc5  xx xx:      xxx $xx
-        $25fc7  xx:         xxx
-;;; --------------------------------
-        $25fc8  xx xx xx:   xxx $xxxx
+        $25fc5  xx xx:      xxx + ; $25fc8
+        $25fc7  xx:          xxx
++       $25fc8  xx xx xx:   xxx $xxxx
         $25fcb  xx:         xxx
 ;;; --------------------------------
 MainLoop_PrepareTitleScreen
@@ -33426,73 +33459,79 @@ MainLoop_PrepareTitleScreen
         ;; RomBank_13                      ; @@ $a001
         $26001  xx xx:      xxx $xx
         $26003  xx xx:      xxx $xx
-        $26005  xx xx xx:   xxx $2607c
+        $26005  xx xx xx:   xxx TitleMovieFlushSound
         $26008  xx xx:      xxx #$xx
         $2600a  xx xx xx:   xxx $xxxx
         $2600d  xx xx:      xxx $xx
         $2600f  xx xx:      xxx #$xx
-        $26011  xx xx xx:   xxx $2607c
+        $26011  xx xx xx:   xxx TitleMovieFlushSound
         $26014  xx:         xxx
 ;;; --------------------------------
 MainLoop_TitleScreen
         $26015  xx xx xx:   xxx $xxxx
-        $26018  xx xx:      xxx $xx
-        $2601a  xx xx xx:   xxx $2607c
-        $2601d  xx xx:      xxx #$xx
+        $26018  xx xx:      xxx + ; $2601d
+        $2601a  xx xx xx:    xxx TitleMovieFlushSound
+        ;; Trigger OAMDMA
++       $2601d  xx xx:      xxx #$xx
         $2601f  xx xx:      xxx $xx
         $26021  xx xx xx:   xxx $xxxx
         $26024  xx xx xx:   xxx $xxxx
         $26027  xx:         xxx
         $26028  xx:         xxx
-        $26029  xx xx xx:   xxx $26038,y
+        $26029  xx xx xx:   xxx TitleScreenJumpTable,y
         $2602c  xx xx xx:   xxx $xxxx
-        $2602f  xx xx xx:   xxx $26039,y
+        $2602f  xx xx xx:   xxx TitleScreenJumpTable+1,y
         $26032  xx xx xx:   xxx $xxxx
         $26035  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_26038                           ; Jump table (see above)
-        $26038              .word ($xxxx) ; 2603e
-        $2603a              .word ($xxxx) ; 24310
-        $2603c              .word ($xxxx) ; 2434a
+TitleScreenJumpTable
+        $26038              .word ($xxxx) ; 0 $2603e MovieScene
+        $2603a              .word ($xxxx) ; 1 $24310 FadeIn
+        $2603c              .word ($xxxx) ; 2 $2434a FadeOut
 ;;; --------------------------------
+TitleScreenJump_0               ; Playing Movie Scene
         $2603e  xx xx xx:   xxx $xxxx
         $26041  xx:         xxx
         $26042  xx:         xxx
-        $26043  xx xx xx:   xxx $26052,y
+        $26043  xx xx xx:   xxx TitleMovieJumpTable,y
         $26046  xx xx xx:   xxx $xxxx
-        $26049  xx xx xx:   xxx $26053,y
+        $26049  xx xx xx:   xxx TitleMovieJumpTable+1,y
         $2604c  xx xx xx:   xxx $xxxx
         $2604f  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_26052                           ; Jump table (see above)
-        $26052              .word ($xxxx) ; 2679f
-        $26054              .word ($xxxx) ; 26653
-        $26056              .word ($xxxx) ; 26bea
-        $26058              .word ($xxxx) ; 260b5
-        $2605a              .word ($xxxx) ; 26176
-        $2605c              .word ($xxxx) ; 26653
-        $2605e              .word ($xxxx) ; 266df
+TitleMovieJumpTable ; Indexed by $6f0
+        $26052              .word ($xxxx) ; 0 $2679f Title loop
+        $26054              .word ($xxxx) ; 1 $26bb4 Switching to start movie
+        $26056              .word ($xxxx) ; 2 $26bea Start movie
+        $26058              .word ($xxxx) ; 3 $260b5 Switching to computer
+        $2605a              .word ($xxxx) ; 4 $26176 Booting/running computer
+        $2605c              .word ($xxxx) ; 5 $26653 Switching to title page
+        $2605e              .word ($xxxx) ; 6 $266df Title page
         $26060              .word ($xxxx)
         $26062              .word ($xxxx)
 ;;; --------------------------------
-JumpTable_267bc_04
-JumpTable_267bc_09
-JumpTable_267bc_0e
-JumpTable_267bc_12
-JumpTable_267bc_16
-        $26064  xx xx xx:   xxx $24344
+;;; Called at index 4, 9, e, 12, 16
+;;; Switches the primary index (6f3) to 2 - maybe this is a fade?
+TitleLoopSceneJump_FadeOut
+        $26064  xx xx xx:   xxx TitleScreenFadeOut
         $26067  xx xx:      xxx #$xx
         $26069  xx xx xx:   xxx $xxxx
         $2606c  xx xx xx:   xxx $xxxx
         $2606f  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_00
-        $26070  xx xx xx:   xxx $242b3
+TitleLoopSceneJump_00
+        $26070  xx xx xx:   xxx ClearMapPaletteSpace
         $26073  xx xx:      xxx #$xx
-        $26075  xx xx xx:   xxx $xxxx
+        $26075  xx xx xx:   xxx $xxxx ; Title screen delay timer
         $26078  xx xx xx:   xxx $xxxx
         $2607b  xx:         xxx
 ;;; --------------------------------
+;;; This seems to be handling the music (manually) for the title movie?
+;;; Plays the sound (bgm or sfx) from register A.  In practice, the main
+;;; way this is called is at the beginning of the loop using $6b2 as the
+;;; data, so the correct way to play a sound in the title movie seems to
+;;; be to write the index to $6b2, and it will start in the next frame.
+TitleMovieFlushSound
         $2607c  xx xx xx:   xxx $xxxx
         $2607f  xx xx:      xxx #$xx
         $26081  xx xx xx:   xxx $xxxx
@@ -33526,6 +33565,7 @@ JumpTable_267bc_00
         $260b3  xx:         xxx
         $260b4  xx:         xxx
 ;;; --------------------------------
+TitleMovieJump_3                ; Preparing computer (6f0=3)
         $260b5  xx xx:      xxx #$xx
         $260b7  xx xx xx:   xxx $xxxx
         $260ba  xx xx xx:   xxx $242b3
@@ -33604,6 +33644,7 @@ JumpTable_267bc_00
 DataTable_2616a
         $2616a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+TitleMovieJump_4                ; Booting/running computer (6f0=4)
         $26176  xx xx xx:   xxx $241d8
         $26179  xx xx xx:   xxx $26212
         $2617c  xx xx xx:   xxx $261aa
@@ -33619,7 +33660,7 @@ DataTable_2616a
 DataTable_26193
         $26193              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $261a1  xx xx:      xxx #$xx
+        $261a1  xx xx:      xxx #SFX_COMPUTER_BEEPS
         $261a3  xx xx xx:   xxx $xxxx
         $261a6  xx xx xx:   xxx $xxxx
         $261a9  xx:         xxx
@@ -33718,7 +33759,7 @@ DataTable_26193
         $26270  xx xx:      xxx $xx
         $26272  xx:         xxx
 ;;; --------------------------------
-        $26273  xx xx:      xxx #$xx
+        $26273  xx xx:      xxx #BGM_START_BOOT
         $26275  xx xx xx:   xxx $xxxx
         $26278  xx xx xx:   xxx $xxxx
         $2627b  xx:         xxx
@@ -33764,7 +33805,7 @@ DataTable_26193
         $262cf  xx xx xx:   xxx $xxxx,x
         $262d2  xx:         xxx
         $262d3  xx xx:      xxx $xx
-        $262d5  xx xx:      xxx #$xx
+        $262d5  xx xx:      xxx #SFX_COMPUTER_PROMPT
         $262d7  xx xx xx:   xxx $xxxx
         $262da  xx xx xx:   xxx $26092
         $262dd  xx xx xx:   xxx $24174
@@ -33960,7 +34001,7 @@ DataTable_26349
         $26443  xx xx:      xxx $xx
         $26445  xx xx xx:   xxx $264e3
 ;;; --------------------------------
-        $26448  xx xx:      xxx #$xx
+        $26448  xx xx:      xxx #SFX_COMPUTER_BEEP
         $2644a  xx xx xx:   xxx $xxxx
         $2644d  xx xx xx:   xxx $xxxx
         $26450  xx xx xx:   xxx $xxxx
@@ -34074,7 +34115,7 @@ DataTable_264b1
         $2652d  xx xx:      xxx $xx
         $2652f  xx xx:      xxx #$xx
         $26531  xx xx xx:   xxx $xxxx,x
-        $26534  xx xx xx:   xxx $24344
+        $26534  xx xx xx:   xxx TitleScreenFadeOut
         $26537  xx xx xx:   xxx $xxxx
         $2653a  xx:         xxx
 ;;; --------------------------------
@@ -34118,7 +34159,7 @@ DataTable_2656e
         $26585  xx xx:      xxx $xx
         $26587  xx xx:      xxx #$xx
         $26589  xx xx:      xxx $xx
-        $2658b  xx xx:      xxx #$xx
+        $2658b  xx xx:      xxx #SFX_CURSOR_MOVE
         $2658d  xx xx xx:   xxx $xxxx
         $26590  xx xx:      xxx $xx
         $26592  xx xx xx:   xxx $xxxx
@@ -34218,6 +34259,7 @@ DataTable_2656e
         $2664f  xx xx xx:   xxx $xxxx
         $26652  xx:         xxx
 ;;; --------------------------------
+TitleMovieJump_5                ; Preparing main title menu (6f0=5)
         $26653  xx xx xx:   xxx $242b3
         $26656  xx xx xx:   xxx $24198
         $26659  xx xx:      xxx #$xx
@@ -34270,27 +34312,29 @@ DataTable_2656e
         $266ca  xx xx xx:   xxx $xxxx
         $266cd  xx xx:      xxx #$xx
         $266cf  xx xx xx:   xxx $xxxx
-        $266d2  xx xx:      xxx #$xx
+        $266d2  xx xx:      xxx #BGM_TITLE
         $266d4  xx xx xx:   xxx $xxxx
         $266d7  xx xx xx:   xxx $xxxx
         $266da  xx xx xx:   xxx $266df
 ;;; --------------------------------
+;;; Initial address for ($82) when main menu starts
 DataTable_266dd
-        $266dd              .byte $xx,$xx
+        $266dd              .word ($xxxx) ; $258c2
 ;;; --------------------------------
+TitleMovieJump_6                ; Main title menu: Start/Continue (6f0=6)
         $266df  xx xx xx:   xxx $xxxx
         $266e2  xx:         xxx
         $266e3  xx:         xxx
-        $266e4  xx xx xx:   xxx $266f3,y
+        $266e4  xx xx xx:   xxx TitleMenuJumpTable,y ; $266f3
         $266e7  xx xx xx:   xxx $xxxx
-        $266ea  xx xx xx:   xxx $266f4,y
+        $266ea  xx xx xx:   xxx TitleMenuJumpTable+1,y ; $266f4
         $266ed  xx xx xx:   xxx $xxxx
         $266f0  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_266f3                           ; Jump table
-        $266f3              .word ($xxxx) ; 266fe
-        $266f5              .word ($xxxx) ; 26749
-        $266f7              .word ($xxxx) ; 26796
+TitleMenuJumpTable ; Indexed by $6f1
+        $266f3              .word ($xxxx) ; 0 $266fe 
+        $266f5              .word ($xxxx) ; 1 $26749
+        $266f7              .word ($xxxx) ; 2 $26796
 ;;; --------------------------------
         $266f9  xx xx:      xxx #MAIN_LOOP_PREPARE_GAME_START
         $266fb  xx xx:      xxx MainLoopMode
@@ -34333,12 +34377,13 @@ DataTable_266f3                           ; Jump table
         $26745  xx xx xx:   xxx $xxxx
         $26748  xx:         xxx
 ;;; --------------------------------
+;;; Look for select/start while on main menu
         $26749  xx xx:      xxx $xx
         $2674b  xx xx:      xxx #$xx
-        $2674d  xx xx:      xxx $xx
+        $2674d  xx xx:       xxx TitleMenuHandleStart
         $2674f  xx xx:      xxx $xx
         $26751  xx xx:      xxx #$xx
-        $26753  xx xx:      xxx $xx
+        $26753  xx xx:       xxx TitleMenuHandleSelect
         $26755  xx xx xx:   xxx $xxxx
         $26758  xx xx:      xxx $xx
         $2675a  xx:         xxx
@@ -34347,11 +34392,12 @@ DataTable_266f3                           ; Jump table
         $2675e  xx xx:      xxx $xx
         $26760  xx:         xxx
 ;;; --------------------------------
-        $26761  xx xx xx:   xxx $24344
+        $26761  xx xx xx:   xxx TitleScreenFadeOut
         $26764  xx xx xx:   xxx $xxxx
         $26767  xx:         xxx
 ;;; --------------------------------
-        $26768  xx xx:      xxx #$xx
+TitleMenuHandleSelect
+        $26768  xx xx:      xxx #SFX_CURSOR_MOVE
         $2676a  xx xx xx:   xxx $xxxx
         $2676d  xx xx:      xxx $xx
         $2676f  xx xx:      xxx #$xx
@@ -34364,9 +34410,11 @@ DataTable_266f3                           ; Jump table
 DataTable_2677b
         $2677b              .byte $xx,$xx
 ;;; --------------------------------
+;;; Start was pressed on main menu
+TitleMenuHandleStart
         $2677d  xx xx:      xxx #$xx
-        $2677f  xx xx xx:   xxx $2607c
-        $26782  xx xx:      xxx #$xx
+        $2677f  xx xx xx:   xxx TitleMovieFlushSound
+        $26782  xx xx:      xxx #BGM_START_MOVIE
         $26784  xx xx xx:   xxx $xxxx
         $26787  xx xx:      xxx $xx
         $26789  xx xx:      xxx $xx
@@ -34383,22 +34431,24 @@ DataTable_2677b
         $2679b  xx xx xx:   xxx $24198
         $2679e  xx:         xxx
 ;;; --------------------------------
-        $2679f  xx xx:      xxx $xx
-        $267a1  xx xx:      xxx #$xx
-        $267a3  xx xx:      xxx $xx
-        $267a5  xx xx xx:   xxx $267ee
-;;; --------------------------------
-        $267a8  xx xx xx:   xxx $xxxx
+TitleMovieJump_0                ; Main looping title movie (6f0=0)
+        $2679f  xx xx:      xxx Ctrl1NewlyPressed
+        $267a1  xx xx:      xxx #$xx ; Select|Start
+        $267a3  xx xx:      xxx + ; $267a8
+        $267a5  xx xx xx:    xxx TitleLoop_Button
+        ;;                   ----------
+        ;; Select/start not pressed: progress the movie
++       $267a8  xx xx xx:   xxx $xxxx
         $267ab  xx:         xxx
         $267ac  xx:         xxx
-        $267ad  xx xx xx:   xxx $267bc,y
+        $267ad  xx xx xx:   xxx TitleLoopSceneJumpTable,y
         $267b0  xx xx xx:   xxx $xxxx
-        $267b3  xx xx xx:   xxx $267bd,y
+        $267b3  xx xx xx:   xxx TitleLoopSceneJumpTable+1,y
         $267b6  xx xx xx:   xxx $xxxx
         $267b9  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
 ;;; STRIP: word=$1c000
-JumpTable_267bc
+TitleLoopSceneJumpTable
         $267bc              .word ($26070) ; 00
         $267be              .word ($25fc2) ; 01
         $267c0              .word ($267f6) ; 02
@@ -34425,13 +34475,16 @@ JumpTable_267bc
         $267ea              .word ($25fc2) ; 17
         $267ec              .word ($26bab) ; 18
 ;;; --------------------------------
+;;; Button was pressed: switch back to main title menu screen
+TitleLoop_Button
         $267ee  xx xx:      xxx #$xx
-        $267f0  xx xx xx:   xxx $2607c
+        $267f0  xx xx xx:   xxx TitleMovieFlushSound
         $267f3  xx xx xx:   xxx $26bab
 ;;; --------------------------------
-JumpTable_267bc_02
-        $267f6  xx xx xx:   xxx $242b3
-        $267f9  xx xx xx:   xxx $241d8
+;;; Displays "1997, End Day" screen
+TitleLoopSceneJump_02
+        $267f6  xx xx xx:   xxx ClearMapPaletteSpace
+        $267f9  xx xx xx:   xxx ClearSpriteOAMSpace
         $267fc  xx xx:      xxx #$xx
         $267fe  xx xx xx:   xxx $xxxx
         $26801  xx xx:      xxx #$xx
@@ -34452,19 +34505,20 @@ JumpTable_267bc_02
         $26823  xx xx xx:   xxx $xxxx
         $26826  xx xx:      xxx $xx
         $26828  xx xx:      xxx $xx
-        $2682a  xx xx xx:   xxx $241f0
+        $2682a  xx xx xx:   xxx WriteRectangleToNametable
         $2682d  xx xx:      xxx #$xx
         $2682f  xx xx xx:   xxx $242be
         $26832  xx xx xx:   xxx $242fd
         $26835  xx xx:      xxx #$xx
         $26837  xx xx xx:   xxx $xxxx
-        $2683a  xx xx:      xxx #$xx
+        $2683a  xx xx:      xxx #BGM_INTRO
         $2683c  xx xx xx:   xxx $xxxx
         $2683f  xx xx xx:   xxx $xxxx
         $26842  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_06
-        $26843  xx xx xx:   xxx $242b3
+;;; Displays "Savage war engulfs the world" screen
+TitleLoopSceneJump_06
+        $26843  xx xx xx:   xxx ClearMapPaletteSpace
         $26846  xx xx:      xxx #$xx
         $26848  xx xx xx:   xxx $xxxx
         $2684b  xx xx xx:   xxx $xxxx
@@ -34486,7 +34540,7 @@ JumpTable_267bc_06
         $26873  xx xx:      xxx $xx
         $26875  xx xx:      xxx #$xx
         $26877  xx xx:      xxx $xx
-        $26879  xx xx xx:   xxx $241f0
+        $26879  xx xx xx:   xxx WriteRectangleToNametable
         $2687c  xx xx xx:   xxx $24c37
         $2687f  xx xx:      xxx $xx
         $26881  xx xx xx:   xxx $24c38
@@ -34495,7 +34549,7 @@ JumpTable_267bc_06
         $26888  xx xx:      xxx $xx
         $2688a  xx xx:      xxx #$xx
         $2688c  xx xx:      xxx $xx
-        $2688e  xx xx xx:   xxx $241f0
+        $2688e  xx xx xx:   xxx WriteRectangleToNametable
         $26891  xx xx xx:   xxx $271c0
         $26894  xx xx:      xxx $xx
         $26896  xx xx xx:   xxx $271c1
@@ -34504,12 +34558,12 @@ JumpTable_267bc_06
         $2689d  xx xx:      xxx $xx
         $2689f  xx xx:      xxx #$xx
         $268a1  xx xx:      xxx $xx
-        $268a3  xx xx xx:   xxx $241f0
+        $268a3  xx xx xx:   xxx WriteRectangleToNametable
         $268a6  xx xx:      xxx #$xx
-        $268a8  xx xx xx:   xxx $242be
+        $268a8  xx xx xx:   xxx LoadTitleMoviePalette ; row 0 -> bg
         $268ab  xx xx:      xxx #$xx
-        $268ad  xx xx xx:   xxx $242be
-        $268b0  xx xx xx:   xxx $242fd
+        $268ad  xx xx xx:   xxx LoadTitleMoviePalette ; row 0 -> fg
+        $268b0  xx xx xx:   xxx TitleScreenFadeIn
         $268b3  xx xx:      xxx #$xx
         $268b5  xx xx xx:   xxx $xxxx
         $268b8  xx xx xx:   xxx $xxxx
@@ -34520,10 +34574,14 @@ JumpTable_267bc_06
         $268c7  xx:         xxx
 ;;; --------------------------------
 DataTable_268c8
-        $268c8              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Maybe durations/times for the different sounds???
+        $268c8              .byte $xx,$xx,$xx,$xx,$xx
+        ;; Sound effects for thundercracks
+        $268cd              .byte $xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-JumpTable_267bc_07
-        $268d2  xx xx xx:   xxx $241d8
+;;; Animate "Savage war engulfs..." page (i.e. lightning bolt)
+TitleLoopSceneJump_07
+        $268d2  xx xx xx:   xxx ClearSpriteOAMSpace
         $268d5  xx xx xx:   xxx $xxxx
         $268d8  xx xx:      xxx $xx
         $268da  xx xx xx:   xxx $xxxx
@@ -34534,33 +34592,34 @@ JumpTable_267bc_07
         $268e5  xx xx:      xxx $xx
         $268e7  xx xx xx:   xxx $240e7
         $268ea  xx xx xx:   xxx $xxxx
-        $268ed  xx xx:      xxx $xx
-        $268ef  xx xx xx:   xxx $xxxx
-        $268f2  xx xx xx:   xxx $xxxx
-        $268f5  xx xx xx:   xxx $xxxx
-        $268f8  xx xx xx:   xxx $2692c
-;;; --------------------------------
-        $268fb  xx xx xx:   xxx $xxxx
-        $268fe  xx xx:      xxx $xx
+        $268ed  xx xx:      xxx + ; $268fb
+        $268ef  xx xx xx:    xxx $xxxx
+        $268f2  xx xx xx:    xxx $xxxx
+        $268f5  xx xx xx:    xxx $xxxx
+        $268f8  xx xx xx:    xxx $2692c
+        ;;                   ----------
++       $268fb  xx xx xx:   xxx $xxxx
+        $268fe  xx xx:       xxx >rts ; $2692c
         $26900  xx xx:      xxx #$xx
         $26902  xx xx xx:   xxx $xxxx
         $26905  xx xx xx:   xxx $xxxx
         $26908  xx xx xx:   xxx $268c8,y
         $2690b  xx xx xx:   xxx $xxxx
-        $2690e  xx xx:      xxx $xx
-        $26910  xx xx xx:   xxx $xxxx
-        $26913  xx xx xx:   xxx $268cd,y
-        $26916  xx xx xx:   xxx $xxxx
-        $26919  xx xx xx:   xxx $xxxx
+        $2690e  xx xx:      xxx + ; $26919
+        $26910  xx xx xx:    xxx $xxxx
+        $26913  xx xx xx:    xxx $268cd,y
+        $26916  xx xx xx:    xxx $xxxx ; play thunder sound
++       $26919  xx xx xx:   xxx $xxxx
         $2691c  xx xx xx:   xxx $xxxx
         $2691f  xx xx xx:   xxx $xxxx
-        $26922  xx xx:      xxx $xx
+        $26922  xx xx:       xxx >rts ; $2692c
         $26924  xx xx:      xxx #$xx
         $26926  xx xx xx:   xxx $xxxx
         $26929  xx xx xx:   xxx $xxxx
         $2692c  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_08
+;;; White/red strobe on "Savage war engulfs..." page
+TitleLoopSceneJump_08
         $2692d  xx xx xx:   xxx $xxxx
         $26930  xx:         xxx
         $26931  xx xx:      xxx #$xx
@@ -34581,7 +34640,7 @@ JumpTable_267bc_08
         $2694f  xx xx xx:   xxx $xxxx
         $26952  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_0b
+TitleLoopSceneJump_0b
         $26953  xx xx xx:   xxx $242b3
         $26956  xx xx xx:   xxx $241d8
         $26959  xx xx:      xxx #$xx
@@ -34665,8 +34724,8 @@ JumpTable_267bc_0b
         $26a12  xx xx xx:   xxx $xxxx
         $26a15  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_0c
-JumpTable_267bc_0d
+TitleLoopSceneJump_0c
+TitleLoopSceneJump_0d
         $26a16  xx xx xx:   xxx $xxxx
         $26a19  xx:         xxx
         $26a1a  xx:         xxx
@@ -34683,7 +34742,7 @@ JumpTable_267bc_0d
         $26a2c  xx xx xx:   xxx $xxxx
         $26a2f  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_10
+TitleLoopSceneJump_10
         $26a30  xx xx xx:   xxx $242b3
         $26a33  xx xx:      xxx #$xx
         $26a35  xx xx xx:   xxx $xxxx
@@ -34747,7 +34806,7 @@ JumpTable_267bc_10
         $26abe  xx xx xx:   xxx $xxxx
         $26ac1  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_11
+TitleLoopSceneJump_11
         $26ac2  xx xx xx:   xxx $xxxx
         $26ac5  xx xx:      xxx #$xx
         $26ac7  xx xx:      xxx $xx
@@ -34772,7 +34831,7 @@ JumpTable_267bc_11
         $26aed  xx xx xx:   xxx $xxxx
         $26af0  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_14
+TitleLoopSceneJump_14
         $26af1  xx xx xx:   xxx $242b3
         $26af4  xx xx:      xxx #$xx
         $26af6  xx xx xx:   xxx $xxxx
@@ -34834,7 +34893,7 @@ JumpTable_267bc_14
         $26b7d  xx xx xx:   xxx $xxxx
         $26b80  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_15
+TitleLoopSceneJump_15
         $26b81  xx xx xx:   xxx $xxxx
         $26b84  xx xx:      xxx #$xx
         $26b86  xx xx:      xxx $xx
@@ -34857,12 +34916,13 @@ JumpTable_267bc_15
         $26ba7  xx xx xx:   xxx $xxxx
         $26baa  xx:         xxx
 ;;; --------------------------------
-JumpTable_267bc_18
-        $26bab  xx xx xx:   xxx $24344
+TitleLoopSceneJump_18
+        $26bab  xx xx xx:   xxx TitleScreenFadeOut
         $26bae  xx xx:      xxx #$xx
         $26bb0  xx xx xx:   xxx $xxxx
         $26bb3  xx:         xxx
 ;;; --------------------------------
+TitleMovieJump_1                ; Switching to intro movie (6f0=1)
         $26bb4  xx xx xx:   xxx $242b3
         $26bb7  xx xx xx:   xxx $24198
         $26bba  xx xx:      xxx #SCREEN_MODE_MOVIE
@@ -34886,6 +34946,7 @@ JumpTable_267bc_18
         $26be6  xx xx xx:   xxx $241d8
         $26be9  xx:         xxx
 ;;; --------------------------------
+TitleMovieJump_2                ; Intro movie playing (6f0=2)
         $26bea  xx xx:      xxx $xx
         $26bec  xx xx:      xxx #$xx
         $26bee  xx xx:      xxx $xx
@@ -35098,7 +35159,7 @@ DataTable_26cda
 DataTable_26df5 
         $26df5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $26dff  xx xx xx:   xxx $24344
+        $26dff  xx xx xx:   xxx TitleScreenFadeOut
         $26e02  xx xx xx:   xxx $xxxx
         $26e05  xx:         xxx
 ;;; --------------------------------
@@ -35285,7 +35346,7 @@ DataTable_26fbb
         $26fbb              .byte $xx,$xx,$xx,$xx,$xx
         $26fc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $26fcb  xx xx xx:   xxx $24344
+        $26fcb  xx xx xx:   xxx TitleScreenFadeOut
         $26fce  xx xx xx:   xxx $xxxx
         $26fd1  xx:         xxx
 ;;; --------------------------------
@@ -57312,14 +57373,14 @@ ImmediateWriteNametableDataToPpu
 MainLoop
         $3c900  xx xx:      xxx $xx
         $3c902  xx xx:      xxx MainLoop
-        $3c904  xx xx:      xxx $xx
+        $3c904  xx xx:      xxx MainLoopMode
         $3c906  xx:         xxx
         $3c907  xx:         xxx
         $3c908  xx xx:      xxx #OP_JMP_ABS
         $3c90a  xx xx:      xxx $xx
-        $3c90c  xx xx xx:   xxx MainLoopJump,x
+        $3c90c  xx xx xx:   xxx MainLoopJumpTable,x
         $3c90f  xx xx:      xxx $xx
-        $3c911  xx xx xx:   xxx MainLoopJump+1,x
+        $3c911  xx xx xx:   xxx MainLoopJumpTable+1,x
         $3c914  xx xx:      xxx $xx
         $3c916  xx xx xx:   xxx $xxxx
         $3c919  xx xx:      xxx #$xx
@@ -57334,7 +57395,7 @@ MainLoop
 ;;;   4: two frames after killing dyna
 ;;;   5: ending sequence
 ;;;   8: three frames on hitting continue
-MainLoopJump
+MainLoopJumpTable
         $3c91f              .word ($xxxx)
         $3c921              .word ($xxxx)
         $3c923              .word ($xxxx)

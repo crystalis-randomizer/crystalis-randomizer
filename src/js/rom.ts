@@ -670,10 +670,23 @@ export class Rom {
   //        w/ an .align option for this, but then we have to hold onto weird
   //        data in many places, which isn't great.
   //         - at least, we could "reserve" blocks in various pages?
-  moveScreens(tilesetArray: Metatileset[], page: number): void {
+
+  /**
+   * Moves all the screens from the given tileset(s) into the given plane.
+   * Note that the tilesets must be _closed over sharing_, which means that
+   * if screen S is in tilesets A and B, then A and B must be either both
+   * or neither in the array.  A plane is 64kb and holds 256 screens.
+   * Planes 0..3 are the original unexpanded PRG.  The extra expanded space
+   * opens up planes 4..7, though (1) we should avoid using plane 7 since
+   * the "fe" and "ff" segments live there, and we'll also reserve the lower
+   * segments in plane 7 for relocated code and data.  We can probably also
+   * avoid plane 6 because 512 extra screens should be more than anybody
+   * could ever need.
+   */
+  moveScreens(tilesetArray: Metatileset[], plane: number): void {
     if (!this.compressedMapData) throw new Error(`Must compress maps first.`);
     const map = new Map<number, number>();
-    let i = page << 8;
+    let i = plane << 8;
     while (this.screens[i]) {
       i++;
     }
@@ -697,7 +710,7 @@ export class Rom {
         }
       }
     }
-    if ((i >>> 8) !== page) throw new Error(`Out of space on page ${page}`);
+    if ((i >>> 8) !== plane) throw new Error(`Out of space on page ${plane}`);
 
     // Move the screen and make sure that all locations are on a single plane
     const missed = new Set<string>();
@@ -715,7 +728,7 @@ export class Rom {
           }
         }
       }
-      if (anyMoved && missed.size) throw new Error(`Inconsistent move [${[...tilesets].map(t => t.name).join(', ')}] to ${page}: missed ${[...missed].join(', ')}`);
+      if (anyMoved && missed.size) throw new Error(`Inconsistent move [${[...tilesets].map(t => t.name).join(', ')}] to plane ${plane}: missed ${[...missed].join(', ')}`);
     }
   }
 

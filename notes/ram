@@ -206,6 +206,7 @@ these to $[79bd]0,x and $358a8 goes the other way.
 $38, $39
 --------
 Unused?
+ - Repurpose for cross-page call jump-addr?
 
 
 $3c..$3f
@@ -339,7 +340,7 @@ If non-zero, exit NMI handler immediately.
 TODO - why would we do DisableNMI and EnableNMI if we have this?
 
 
-$61..$66
+$61..$65
 --------
 Unused (co-opted for a handful of things in randomizer)
 

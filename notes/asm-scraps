@@ -1,0 +1,45 @@
+Assembly scraps
+===============
+
+.reloc
+;;; Swaps the top two elements from the stack.
+;;; Preserves all registers.
+SwapStack:
+  pha
+   txa
+   pha
+    tsa
+    tax
+    lda $0105,x
+    pha
+     lda $0106,x
+     sta $0105,x
+    pla
+    sta $0106,x
+   pla
+   tax
+  pla
+  rts
+
+.reloc
+;;; Rotates the top 3 elements from the stack, such that
+;;; the element 3rd from the top is now at the top.
+;;; Preserves all registers.
+Rot3Stack:
+  pha
+   txa
+   pha
+    tsa
+    tax
+    lda $0107,x
+    pha
+     lda $0106,x
+     sta $0107,x
+     lda $0105,x
+     sta $0106,x
+    pla
+    sta $0105,x
+   pla
+   tax
+  pla
+  rts

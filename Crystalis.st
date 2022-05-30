@@ -34724,6 +34724,8 @@ TitleLoopSceneJump_0b
         $26a12  xx xx xx:   xxx $xxxx
         $26a15  xx:         xxx
 ;;; --------------------------------
+;;; NOTE: We should be able to move this to a separate page since it's
+;;; self-contained and does not require preserving any registers...?
 TitleLoopSceneJump_0c
 TitleLoopSceneJump_0d
         $26a16  xx xx xx:   xxx $xxxx
@@ -34734,10 +34736,10 @@ TitleLoopSceneJump_0d
         $26a1d  xx xx:      xxx #$xx
         $26a1f  xx xx:      xxx $xx
         $26a21  xx xx xx:   xxx $xxxx
-        $26a24  xx xx:      xxx $xx
-        $26a26  xx:         xxx
-;;; --------------------------------
-        $26a27  xx xx:      xxx #$xx
+        $26a24  xx xx:      xxx + ; $26a27
+        $26a26  xx:          xxx
+        ;;;                 ---
++       $26a27  xx xx:      xxx #$xx
         $26a29  xx xx xx:   xxx $xxxx
         $26a2c  xx xx xx:   xxx $xxxx
         $26a2f  xx:         xxx
@@ -34809,9 +34811,9 @@ TitleLoopSceneJump_10
 TitleLoopSceneJump_11
         $26ac2  xx xx xx:   xxx $xxxx
         $26ac5  xx xx:      xxx #$xx
-        $26ac7  xx xx:      xxx $xx
-        $26ac9  xx xx xx:   xxx $xxxx
-        $26acc  xx xx:      xxx #$xx
+        $26ac7  xx xx:      xxx + ; $26acc
+        $26ac9  xx xx xx:    xxx $xxxx
++       $26acc  xx xx:      xxx #$xx
         $26ace  xx xx:      xxx $xx
         $26ad0  xx xx:      xxx #$xx
         $26ad2  xx xx:      xxx $xx
@@ -34821,14 +34823,14 @@ TitleLoopSceneJump_11
         $26adc  xx xx:      xxx $xx
         $26ade  xx xx xx:   xxx $240e7
         $26ae1  xx xx xx:   xxx $xxxx
-        $26ae4  xx xx:      xxx $xx
-        $26ae6  xx:         xxx
-;;; --------------------------------
-        $26ae7  xx xx xx:   xxx $xxxx
-        $26aea  xx xx:      xxx $xx
-        $26aec  xx:         xxx
-;;; --------------------------------
-        $26aed  xx xx xx:   xxx $xxxx
+        $26ae4  xx xx:      xxx + ; $26ae7
+        $26ae6  xx:          xxx
+        ;;;                  ---
++       $26ae7  xx xx xx:   xxx $xxxx
+        $26aea  xx xx:      xxx + ; $26aed
+        $26aec  xx:          xxx
+        ;;;                  ---
++       $26aed  xx xx xx:   xxx $xxxx
         $26af0  xx:         xxx
 ;;; --------------------------------
 TitleLoopSceneJump_14
@@ -34896,10 +34898,10 @@ TitleLoopSceneJump_14
 TitleLoopSceneJump_15
         $26b81  xx xx xx:   xxx $xxxx
         $26b84  xx xx:      xxx #$xx
-        $26b86  xx xx:      xxx $xx
-        $26b88  xx:         xxx
-;;; --------------------------------
-        $26b89  xx xx xx:   xxx $xxxx
+        $26b86  xx xx:      xxx + ; $26b89
+        $26b88  xx:          xxx
+        ;;;                  ---
++       $26b89  xx xx xx:   xxx $xxxx
         $26b8c  xx xx:      xxx #$xx
         $26b8e  xx xx:      xxx $xx
         $26b90  xx xx:      xxx #$xx
@@ -34910,10 +34912,10 @@ TitleLoopSceneJump_15
         $26b9c  xx xx:      xxx $xx
         $26b9e  xx xx xx:   xxx $240e7
         $26ba1  xx xx xx:   xxx $xxxx
-        $26ba4  xx xx:      xxx $xx
-        $26ba6  xx:         xxx
-;;; --------------------------------
-        $26ba7  xx xx xx:   xxx $xxxx
+        $26ba4  xx xx:      xxx + ; $26ba7
+        $26ba6  xx:          xxx
+        ;;;                  ---
++       $26ba7  xx xx xx:   xxx $xxxx
         $26baa  xx:         xxx
 ;;; --------------------------------
 TitleLoopSceneJump_18
@@ -34923,8 +34925,8 @@ TitleLoopSceneJump_18
         $26bb3  xx:         xxx
 ;;; --------------------------------
 TitleMovieJump_1                ; Switching to intro movie (6f0=1)
-        $26bb4  xx xx xx:   xxx $242b3
-        $26bb7  xx xx xx:   xxx $24198
+        $26bb4  xx xx xx:   xxx ClearMapPaletteSpace
+        $26bb7  xx xx xx:   xxx WaitForNMI_alt2
         $26bba  xx xx:      xxx #SCREEN_MODE_MOVIE
         $26bbc  xx xx:      xxx ScreenMode
         $26bbe  xx xx:      xxx #$xx
@@ -34943,16 +34945,16 @@ TitleMovieJump_1                ; Switching to intro movie (6f0=1)
         $26bdd  xx xx xx:   xxx $xxxx
         $26be0  xx xx xx:   xxx $xxxx
         $26be3  xx xx xx:   xxx $xxxx
-        $26be6  xx xx xx:   xxx $241d8
+        $26be6  xx xx xx:   xxx ClearSpriteOAMSpace
         $26be9  xx:         xxx
 ;;; --------------------------------
 TitleMovieJump_2                ; Intro movie playing (6f0=2)
         $26bea  xx xx:      xxx $xx
         $26bec  xx xx:      xxx #$xx
-        $26bee  xx xx:      xxx $xx
-        $26bf0  xx xx xx:   xxx $2715c
-;;; --------------------------------
-        $26bf3  xx xx xx:   xxx $xxxx
+        $26bee  xx xx:      xxx + ; $26bf3
+        $26bf0  xx xx xx:    xxx $2715c
+        ;;;                  ----------
++       $26bf3  xx xx xx:   xxx $xxxx
         $26bf6  xx:         xxx
         $26bf7  xx:         xxx
         $26bf8  xx xx xx:   xxx $26c07,y
@@ -35018,18 +35020,18 @@ DataTable_26c07
         $26cb1  xx xx xx:   xxx $242f1
         $26cb4  xx xx xx:   xxx $xxxx
         $26cb7  xx xx:      xxx #$xx
-        $26cb9  xx xx xx:   xxx $26cda,x
-        $26cbc  xx xx xx:   xxx $xxxx,x
-        $26cbf  xx xx xx:   xxx $26cdf,x
-        $26cc2  xx xx xx:   xxx $xxxx,x
-        $26cc5  xx xx xx:   xxx $26ce4,x
-        $26cc8  xx xx xx:   xxx $xxxx,x
-        $26ccb  xx xx:      xxx #$xx
-        $26ccd  xx xx xx:   xxx $xxxx,x
-        $26cd0  xx xx xx:   xxx $xxxx,x
-        $26cd3  xx xx xx:   xxx $xxxx,x
-        $26cd6  xx:         xxx
-        $26cd7  xx xx:      xxx $xx
+-       $26cb9  xx xx xx:    xxx $26cda,x
+        $26cbc  xx xx xx:    xxx $xxxx,x
+        $26cbf  xx xx xx:    xxx $26cdf,x
+        $26cc2  xx xx xx:    xxx $xxxx,x
+        $26cc5  xx xx xx:    xxx $26ce4,x
+        $26cc8  xx xx xx:    xxx $xxxx,x
+        $26ccb  xx xx:       xxx #$xx
+        $26ccd  xx xx xx:    xxx $xxxx,x
+        $26cd0  xx xx xx:    xxx $xxxx,x
+        $26cd3  xx xx xx:    xxx $xxxx,x
+        $26cd6  xx:          xxx
+        $26cd7  xx xx:      xxx - ; $26cb9
         $26cd9  xx:         xxx
 ;;; --------------------------------
 DataTable_26cda
@@ -58005,6 +58007,7 @@ MainGameModeJump_1f_DynaAppears
         $3ce0f  xx xx:      xxx - ; $3ce0b
         $3ce11  xx:         xxx
 ;;; --------------------------------
+;;; This seems to be related to Storm Bracelet?
 ;;; Look up the A-th row of the table.  Most rows have [0] positive.
 ;;; But if it's negative, then [2] is a pointer into the nametable
 ;;; write stage table showing where the data pointed to by the $f0
@@ -59069,25 +59072,25 @@ ItemOrTriggerActionJump_08
 ;;; --------------------------------
 ItemOrTriggerActionJump_09  ; Spawn Dolphin
         $3d659  xx xx xx:   xxx PlayerStatus
-        $3d65c  xx xx:      xxx $xx
+        $3d65c  xx xx:       xxx >rts ; $3d6a7
         $3d65e  xx xx xx:   xxx $xxxx
-        $3d661  xx xx:      xxx $xx
+        $3d661  xx xx:       xxx >rts ; $3d6a7
         $3d663  xx xx:      xxx #$xx
         $3d665  xx xx:      xxx CurrentLocation
         $3d667  xx xx:      xxx #LOC_UNDERGROUND_CHANNEL
         $3d669  xx xx:      xxx + ; $3d679
-        $3d66b  xx xx:      xxx #$xx
-        $3d66d  xx xx:      xxx #LOC_EVIL_SPIRIT_ISLAND_1
-        $3d66f  xx xx:      xxx + ; $3d679
-        $3d671  xx xx:      xxx $xx
-        $3d673  xx:         xxx
-        $3d674  xx:         xxx
-        $3d675  xx:         xxx
-        $3d676  xx xx:      xxx $xx
-        $3d678  xx:         xxx
+        $3d66b  xx xx:       xxx #$xx
+        $3d66d  xx xx:       xxx #LOC_EVIL_SPIRIT_ISLAND_1
+        $3d66f  xx xx:       xxx + ; $3d679
+        $3d671  xx xx:        xxx $xx
+        $3d673  xx:           xxx
+        $3d674  xx:           xxx
+        $3d675  xx:           xxx
+        $3d676  xx xx:        xxx $xx
+        $3d678  xx:           xxx
 +       $3d679  xx xx xx:   xxx DolphinSpawnTable,y
         $3d67c  xx xx:      xxx #$xx
-        $3d67e  xx xx:      xxx $xx
+        $3d67e  xx xx:       xxx >rts ; $3d6a7
         $3d680  xx xx:      xxx $xx
         $3d682  xx xx:      xxx #$xx
         $3d684  xx xx:      xxx $xx
@@ -59104,7 +59107,7 @@ ItemOrTriggerActionJump_09  ; Spawn Dolphin
         $3d69f  xx xx xx:   xxx $xxxx
         $3d6a2  xx xx:      xxx SFX_FLUTE
         $3d6a4  xx xx xx:   xxx StartAudioTrack
-;;; --------------------------------
+        ;;; --------------------------------
         $3d6a7  xx:         xxx
 ;;; --------------------------------
 DolphinSpawnTable
@@ -61427,7 +61430,7 @@ AnimateBackground
         $3e762  xx:         xxx
         $3e763  xx:         xxx
         $3e764  xx xx:      xxx $xx
-        $3e766  xx xx:      xxx + ; $3e778
+        $3e766  xx xx:      xxx >rts ; $3e778
         $3e768  xx xx:      xxx $xx
         $3e76a  xx:         xxx
         $3e76b  xx:         xxx
@@ -61437,7 +61440,7 @@ AnimateBackground
         $3e771  xx:         xxx
         $3e772  xx xx xx:   xxx BackgroundAnimationTable,y
         $3e775  xx xx xx:   xxx $xxxx
-+       $3e778  xx:         xxx
+        $3e778  xx:         xxx
 ;;; --------------------------------
 ;;; Four sequences of values for $7f1, depending on MapData[loc][0][2].
 ;;; Each value lasts 8 frames before moving to the next value.
@@ -61697,10 +61700,10 @@ DataTable_3e8b6
         $3e99d  xx xx xx:   xxx BankSwitch8k_8000
         $3e9a0  xx xx xx:   xxx AddDisplacementVectorLong
         $3e9a3  xx xx:      xxx #$xx
-        $3e9a5  xx xx:      xxx $xx,x
-        $3e9a7  xx xx:      xxx $xx,x
-        $3e9a9  xx:         xxx
-        $3e9aa  xx xx:      xxx $xx
+-       $3e9a5  xx xx:       xxx $xx,x
+        $3e9a7  xx xx:       xxx $xx,x
+        $3e9a9  xx:          xxx
+        $3e9aa  xx xx:      xxx - ; $3e9a5
         $3e9ac  xx:         xxx
 ;;; --------------------------------
 KeepPlayerInCenterOfScreenIfPossible
@@ -61800,7 +61803,7 @@ ClampAToPlusMinus3
 ;;; --------------------------------
         $3ea41  xx xx:      xxx $xx
         $3ea43  xx:         xxx
-        $3ea44  xx xx:      xxx ++ ; $3ea71
+        $3ea44  xx xx:      xxx >>rts ; $3ea71
         $3ea46  xx xx:      xxx #$xx
         $3ea48  xx xx:      xxx #$xx
         $3ea4a  xx xx xx:   xxx $3ea5f
@@ -61809,21 +61812,21 @@ ClampAToPlusMinus3
         $3ea50  xx xx xx:   xxx $3ea5f
         $3ea53  xx xx:      xxx $xx
         $3ea55  xx xx:      xxx $xx
-        $3ea57  xx xx:      xxx ++ ; $3ea71
+        $3ea57  xx xx:      xxx >>rts ; $3ea71
         $3ea59  xx xx:      xxx #$xx
         $3ea5b  xx xx xx:   xxx $xxxx
         $3ea5e  xx:         xxx
         ;; --------------------------------
         ;; if $3c,y > 0, dec $30,x; if < 0 then inc, if == 0 then nothing
         $3ea5f  xx xx xx:   xxx $xxxx,y
-        $3ea62  xx xx:      xxx ++ ; $3ea71
+        $3ea62  xx xx:      xxx >rts ; $3ea71
         $3ea64  xx xx:      xxx + ; $3ea6a
         $3ea66  xx xx:      xxx $xx,x
         $3ea68  xx xx:      xxx $xx,x
 +       $3ea6a  xx xx:      xxx $xx,x
         $3ea6c  xx xx:      xxx #$xx
         $3ea6e  xx xx xx:   xxx $xxxx
-++      $3ea71  xx:         xxx
+        $3ea71  xx:         xxx
 ;;; --------------------------------
 ClampScreenPosition
         ;; Compare screen position against map geometry,
@@ -61897,7 +61900,7 @@ ClampScreenPosition
 +       $3eade  xx:         xxx
 ;;; --------------------------------
         $3eadf  xx xx xx:   xxx $xxxx
-        $3eae2  xx xx:      xxx ++ ; $3eb04
+        $3eae2  xx xx:      xxx >>rts ; $3eb04
         $3eae4  xx xx xx:   xxx $xxxx
         $3eae7  xx xx:      xxx + ; $3eaee
         $3eae9  xx xx:      xxx #$xx
@@ -61916,7 +61919,7 @@ ClampScreenPosition
         $3eaff  xx xx:      xxx - ; $3eafa
         $3eb01  xx xx xx:   xxx $3e993
         ;; --------------------------------
-++      $3eb04  xx:         xxx
+        $3eb04  xx:         xxx
 ;;; --------------------------------
 DataTable_3eb05 
         $3eb05              .byte $xx,$xx,$xx,$xx
@@ -61983,7 +61986,7 @@ FindExit
 TakeExit
         $3eb55  xx xx:      xxx $xx
         $3eb57  xx xx:      xxx #$xx
-        $3eb59  xx xx:      xxx $xx
+        $3eb59  xx xx:       xxx >rts ; $3eb6c
         $3eb5b  xx xx:      xxx ($xx),y
         $3eb5d  xx xx:      xxx $xx ; Store new map
         $3eb5f  xx:         xxx
@@ -63008,16 +63011,16 @@ ValidateSaveFile2
 ResetSaveFile2
         ;; Reset both copies of save file2 7700..79ff and 7a00..7cff
         $3f1a3  xx xx:      xxx #$xx
-        $3f1a5  xx xx xx:   xxx $2fe00,x
-        $3f1a8  xx xx xx:   xxx $xxxx,x
-        $3f1ab  xx xx xx:   xxx $xxxx,x
-        $3f1ae  xx xx:      xxx #$xx
-        $3f1b0  xx xx xx:   xxx $xxxx,x
-        $3f1b3  xx xx xx:   xxx $xxxx,x
-        $3f1b6  xx xx xx:   xxx $xxxx,x
-        $3f1b9  xx xx xx:   xxx $xxxx,x
-        $3f1bc  xx:         xxx
-        $3f1bd  xx xx:      xxx $xx
+-       $3f1a5  xx xx xx:    xxx $2fe00,x
+        $3f1a8  xx xx xx:    xxx $xxxx,x
+        $3f1ab  xx xx xx:    xxx $xxxx,x
+        $3f1ae  xx xx:       xxx #$xx
+        $3f1b0  xx xx xx:    xxx $xxxx,x
+        $3f1b3  xx xx xx:    xxx $xxxx,x
+        $3f1b6  xx xx xx:    xxx $xxxx,x
+        $3f1b9  xx xx xx:    xxx $xxxx,x
+        $3f1bc  xx:          xxx
+        $3f1bd  xx xx:      xxx - ; $3f1a5
         $3f1bf  xx xx:      xxx #$xx
         $3f1c1  xx xx xx:   xxx $xxxx ; unused here??
         $3f1c4  xx xx xx:   xxx $3f1e2

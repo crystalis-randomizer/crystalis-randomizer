@@ -139,6 +139,7 @@ export namespace Expr {
   export function parseOnly(tokens: Token[], index = 0): Expr {
     const [expr, i] = parse(tokens, index);
     if (i < tokens.length) {
+      debugger; parse(tokens, index);
       throw new Error(`Garbage after expression: ${Token.nameAt(tokens[i])}`);
     } else if (!expr) {
       throw new Error(`No expression?`);

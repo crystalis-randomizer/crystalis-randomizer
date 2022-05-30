@@ -1,0 +1,24 @@
+Use of new expanded ROM pages
+=============================
+
+Each 8k page can fit 32 map screens.  Map planes are 64k and
+fit 256 map screens.  We have started loading extra maps into
+planes 4 and 5 (i.e. 40000..5ffff), which may free up some
+sporadic space in plane 0, but the best bet may be stick with
+keeping relocated code in the later pages (i.e. plane 7),
+particularly since plane 7 already contains the relocated
+segments "fe" and "ff".
+
+Unfortunately, we don't move "fe"/"ff" until the _very_ end of
+shuffling, which is problematic for using segments "1e"/"1f"
+in the future.
+
+
+Broken out by segment
+---------------------
+
+ * 20..27 - plane 4, currently just map screens
+ * 28..2f - plane 5, currently just map screens
+ * 30..37 - plane 6, unused
+ * 38..3d - plane 7, new/relocated material
+ * 3e, 3f - fixed pages (DO NOT USE DIRECTLY)

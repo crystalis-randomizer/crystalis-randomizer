@@ -170,6 +170,7 @@ function defines(flags: FlagSet,
     _DISABLE_WARP_BOOTS_REUSE: flags.disableShopGlitch(),
     _DISABLE_WILD_WARP: false,
     _DISPLAY_DIFFICULTY: true,
+    _EXPAND_PRG: EXPAND_PRG,
     _EXTRA_EXTENDED_SCREENS: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_COIN_SPRITES: true,
@@ -425,6 +426,7 @@ async function shuffleInternal(rom: Uint8Array,
     toks.enter(TokenSource.concat(
         new Tokenizer(flagFile, 'flags.s'),
         await tokenizer('init.s'),
+        await tokenizer('alloc.s'),
         await tokenizer('preshuffle.s'),
         await tokenizer('postparse.s'),
         await tokenizer('postshuffle.s')));

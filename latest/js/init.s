@@ -5,19 +5,56 @@
     .popseg
 .define FREE {seg [start, end]} .noexpand FREE seg [start, end + 1)
 
+
+;;; Relocate a block of code and update refs
+;;; Usage:
+;;;   RELOCATE segments [start, end) refs...
+;;; Where |segments| is an optional comma-separated list of segment
+;;; names, and |refs| is a space-separated list of addresses whose
+;;; contents point to |start| and that need to be updated to point to
+;;; whereever it eventually ended up.  If no segments are specified
+;;; then the relocation will stay within the current segment.
+.define RELOCATE {seg [start, end) refs .eol} \
+.org start .eol \
+: FREE_UNTIL end .eol \
+.ifnblank seg .eol \
+.pushseg seg .eol \
+.endif .eol \
+.reloc .eol \
+: .move (end-start), :-- .eol \
+.ifnblank seg .eol \
+.popseg .eol \
+.endif .eol \
+UPDATE_REFS :- @ refs
+
+
+;;; Update a handful of refs to point to the given address.
+;;; Usage:
+;;;   UPDATE_REFS target @ refs...
+;;; Where |refs| is a space-separated list of addresses, and
+;;; |target| is an address or label to insert into each ref.
+.define UPDATE_REFS {target @ ref refs .eol} \
+.org ref .eol \
+  .word (target) .eol \
+UPDATE_REFS target @ refs
+.define UPDATE_REFS {target @ .eol}
+
+
 .macro FREE_UNTIL end
   .assert * <= end
   .free end - *
 .endmacro
 
-.macro MOVE bytes, segment, source
-  .local S
-  .pushseg segment
-  .org source
-  S = *
-  .popseg
-  .move bytes, S
-.endmacro
+
+;;; TODO - this macro is currently broken!
+;; .macro MOVE bytes, segment, source
+;;   .local S
+;;   .pushseg segment
+;;   .org source
+;;   S = *
+;;   .popseg
+;;   .move bytes, S
+;; .endmacro
 
 .segment "00"   :bank $00 :size $2000 :off $00000 :mem $8000
 .segment "01"   :bank $01 :size $2000 :off $02000 :mem $a000
@@ -51,12 +88,14 @@
 .segment "1b"   :bank $1b :size $2000 :off $36000 :mem $a000
 .segment "1c"   :bank $1c :size $2000 :off $38000 :mem $8000
 .segment "1d"   :bank $1d :size $2000 :off $3a000 :mem $a000
+;;; Currently no good way to access the post-expanded 1e/1f
 
 ;;; Note: we moved these when we expanded the rom.
 .segment "fe"   :bank $1e :size $2000 :off $3c000 :mem $c000
 .segment "ff"   :bank $1f :size $2000 :off $3e000 :mem $e000
 
 ;;; Expanded rom segments??? consider doing these programmatically?
+;;; Plane 4 - reserved for map data
 .segment "20"   :bank $20 :size $2000 :off $40000 :mem $8000
 .segment "21"   :bank $21 :size $2000 :off $42000 :mem $a000
 .segment "22"   :bank $22 :size $2000 :off $44000 :mem $8000
@@ -65,6 +104,7 @@
 .segment "25"   :bank $25 :size $2000 :off $4a000 :mem $a000
 .segment "26"   :bank $26 :size $2000 :off $4c000 :mem $8000
 .segment "27"   :bank $27 :size $2000 :off $4e000 :mem $a000
+;;; Plane 5 - reserved for map data
 .segment "28"   :bank $28 :size $2000 :off $50000 :mem $8000
 .segment "29"   :bank $29 :size $2000 :off $52000 :mem $a000
 .segment "2a"   :bank $2a :size $2000 :off $54000 :mem $8000
@@ -73,6 +113,7 @@
 .segment "2d"   :bank $2d :size $2000 :off $5a000 :mem $a000
 .segment "2e"   :bank $2e :size $2000 :off $5c000 :mem $8000
 .segment "2f"   :bank $2f :size $2000 :off $5e000 :mem $a000
+;;; Plane 6 - currently unused
 .segment "30"   :bank $30 :size $2000 :off $60000 :mem $8000
 .segment "31"   :bank $31 :size $2000 :off $62000 :mem $a000
 .segment "32"   :bank $32 :size $2000 :off $64000 :mem $8000
@@ -81,12 +122,22 @@
 .segment "35"   :bank $35 :size $2000 :off $6a000 :mem $a000
 .segment "36"   :bank $36 :size $2000 :off $6c000 :mem $8000
 .segment "37"   :bank $37 :size $2000 :off $6e000 :mem $a000
+;;; Plane 7 - available for code/data
 .segment "38"   :bank $38 :size $2000 :off $70000 :mem $8000
 .segment "39"   :bank $39 :size $2000 :off $72000 :mem $a000
 .segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
 .segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000
 .segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000
 .segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000
+
+FREE "38" [$8000, $a000)
+FREE "39" [$a000, $c000)
+FREE "3a" [$8000, $a000)
+FREE "3b" [$a000, $c000)
+FREE "3c" [$8000, $a000)
+FREE "3d" [$a000, $c000)
+
+;;; These are the fixed pages and should not be used!
 ;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
 ;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 

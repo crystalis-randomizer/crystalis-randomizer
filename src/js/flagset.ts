@@ -1138,4 +1138,7 @@ export class FlagSet {
   shouldColorSwordElements(): boolean {
     return true;
   }
+  shouldUpdateHud(): boolean {
+    return true;
+  }
 }

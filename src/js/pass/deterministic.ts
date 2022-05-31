@@ -9,7 +9,7 @@ import {ShopType} from '../rom/shop.js';
 import {Trigger} from '../rom/trigger.js';
 import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
-import { Monster } from '../rom/monster.js';
+import {Monster} from '../rom/monster.js';
 import {Patterns} from '../rom/pattern.js';
 
 const [] = [hex]; // generally useful
@@ -165,7 +165,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   if (flags.hardcoreMode()) hardcoreMode(rom);
 
-  useNewStatusBarGraphics(rom);
+  if (flags.shouldUpdateHud()) useNewStatusBarGraphics(rom);
   if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
 }
 
@@ -188,8 +188,6 @@ function useElementSwordColors(rom: Rom): void {
   swapTiles(0x1190); // crystalis
 }
 
-// Updates a few itemuse and trigger actions in light of consolidation
-// around item granting.
 function useNewStatusBarGraphics(rom: Rom): void {
   const page = 0x38 << 6
   rom.patterns.set(page, 0x0, Patterns.HUD_LF);

@@ -41,7 +41,7 @@ const srcs = (...srcs) => srcs.map(s => './dist/js/' + s);
  * output a single `.ts` file for each `.chr` file. This ts file
  * contains a declaration for an ASCII representation of the tiles,
  * which can be used in the randomizer code to update a tile.
- * 
+ *
  * This task is not part of any other pipeline, it is intended to be
  * used as a one-off task, and the output is intended to be copy-pasted
  * into the other source files as needed.
@@ -71,8 +71,8 @@ gulp.task('buildchr', function() {
               .join('')
               .match(/.{1,8}/g)
               .join('\n  ');
-              
-            
+
+
             out += `public static readonly ${file.stem}_tile${start} = parsePattern(\`\n  ${concatted}\n\`);\n`;
             ++start;
           }

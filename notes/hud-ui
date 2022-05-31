@@ -1,7 +1,7 @@
 The Crystalis Randomizer UI changes involve the following updates:
 
 ---------------------------------
-StatusBarDataTable 
+StatusBarDataTable
 
 starts at address $27ad9 and contains a list of bytes that populates the initial status bar
 

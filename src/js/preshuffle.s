@@ -770,8 +770,9 @@ UpdateGlobalStepCounter:
 .assert * = $98db
 
 
-.segment "12", "13", "fe", "ff"
-;.bank $24000 $8000:$4000
+
+.segment "12", "13", "fe", "ff"  ;.bank $24000 $8000:$4000
+.ifdef _UPDATE_HUD
 
 ;; Overwrite the StatusBarDataTable with the new UI tile layout
 .org $badb
@@ -803,11 +804,19 @@ UpdateGlobalStepCounter:
   .byte $85,$20,$20,$20 ; Mp _ _ _
   .byte $9d,$20,$20,$20 ;  / _ _ _
 
+.else
+  ;; Even if we're not fully-updating the HUD, we still remove the
+  ;; "next EXP" display in favor of a decreasing count, so we delete
+  ;; the "/00000" from the display and replace it with spaces.
+.org $bb26
+  .byte $20,$20,$20,$20,$20,$20
+.endif ; _UPDATE_HUD
 
 
 .segment "1a", "1b", "fe", "ff"
 ;.bank $34000 $8000:$4000
 
+.ifdef _UPDATE_HUD
 ;; Move the position of the main UI number elements
 .org $8ec7 ; Lv
   .byte $36,$2b
@@ -815,22 +824,31 @@ UpdateGlobalStepCounter:
   .byte $3a,$2b
 .org $8ed3 ; Experience
   .byte $5a,$2b
+.endif ; _UPDATE_HUD
 
 ;;; Numeric displays
 .org $8ed7  ; 03 - was Exp Left, now its Max MP
   .word (PlayerMaxMP)
   .byte $7b,$2b,$02,$00 ; copied from $34ee3
+
 .org $8ee3  ; 05 - was Max MP, now its unused
+
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
+.ifdef _UPDATE_HUD
   .byte $56,$2b,$03,$00 ; display left of exp
+.else
+  .byte $3c,$2b,$03,$00 ; display right of lvl
+.endif
+
 .org $8f19  ; 0e - was unused, now it's LV(menu)
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
 
+
 .pushseg "13", "fe", "ff"
-;InitializeStatusBarNametable
 .org $baca
+InitializeStatusBarNametable:
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
@@ -863,16 +881,19 @@ UpdateStatusBarDisplays:
   rts
 .popseg
 
+.ifdef _UPDATE_HUD
 ;;; HP / Force bar display
 ;; Overwrites the tile position used by the nametable update buffer to move the tiles
 .org $8d1f
   lda #$23 ; Subtracted 3 from the original value to move the player HP bar to the left
 .org $8db2
   lda #$43 ; Subtracted 3 from the original to move the force bar to the left
+.endif
 
 ;;; ----------------------------------------------------
 ;;; KillObject
 ;;; Recalculate PlayerEXP to count down from max instead of up
+;;; NOTE: This is about 40 bytes more than vanilla.
 
 
 .org $9152
@@ -880,7 +901,7 @@ UpdateStatusBarDisplays:
   ; and push it onto the stack for use later. The code needs to check for an
   ; object replacement and we don't wanna clobber that
   jsr StoreObjectExp
-.assert * <= $9155
+.assert * = $9155
 
 .reloc
 StoreObjectExp:
@@ -918,7 +939,6 @@ LevelUp:
   jsr UpdatePlayerMaxHPAndMPAfterLevelUp
   jsr UpdateDisplayAfterLevelUp
   jmp UpdateCurrentEXPAndExit
-.assert * <= $91ef
 FREE_UNTIL $91ef
 
 .org $91ef
@@ -983,7 +1003,7 @@ AwardExperiencePoints:
   ldy #$00
   sty $11      ; $11 is used to store the upper bits of monster exp temporarily
   jmp Do16BitSubtractionForEXP
-.assert * <= $925d
+FREE_UNTIL $925d
 
 .org $9261
   ;; instead of loading from ObjExp, we store the Exp value in $61

@@ -40,7 +40,7 @@ export class Pattern extends Entity {
   }
 }
 
-export class Patterns implements Iterable<Pattern> {
+                            export class Patterns implements Iterable<Pattern> {
   private _all: Pattern[] = [];
 
   get(page: number, tile_idx?: number): Pattern {
@@ -134,11 +134,11 @@ export class Patterns implements Iterable<Pattern> {
   `);
 }
 
-function parsePattern(data: String) : number[] {
+function parsePattern(data: String): number[] {
   const text = data.replace(/\s/g, '');
   if (text.length !== 64) throw new Error(`Bad CHR tile: ${text}`);
   let arr: number[] = new Array(16).fill(0);
-  for (let i = 0, c=''; c = text.charAt(i); ++i) {
+  for (let i = 0, c = ''; c = text.charAt(i); ++i) {
     let off = i >>> 3;
     let lo = off;
     let hi = off | 8;

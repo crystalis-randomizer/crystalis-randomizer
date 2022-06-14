@@ -77,7 +77,7 @@ const LAMP_NAMES = [
   'Frog Lamp',
   'Smog Lamp',
   'Dog Lamp',
-  'Pog Champ',
+  'Bog Lamp',
   'Brass Lantern',
   'Candelabra',
 ];
@@ -107,6 +107,29 @@ const STATUE_NAMES = [
   'Acmlm Figurine',     // #2 speedrun 2021 (56m00s)
   'CodeGorilla Trophy', // Full Stupid 2021/11/21
 ];
+const BOW_NAMES = [
+  'Crossbow',
+  'Autocrossbow',
+  'Long Bow',
+  'Compound Bow',
+  'Silver Arrows',
+  'Violin Bow',
+  'Tae Bo',
+  'Rainbow',
+  'Hair Bow',
+  'Bow of Earth',
+  'Bow of Stars',
+  'Bow of Wind',
+  'Bow of Fire',
+  'Bow of Water',
+  'Bow of Thunder',
+  'Bow of Lies',
+  'Bow of Life',
+  'Bow of Death',
+  'Bow of Light',
+  'Bow of Freedom',
+  'Bow of Darkness',
+];
 
 
 export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
@@ -116,11 +139,14 @@ export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
   const flutes = items(0x27, 0x28, 0x31, 0x36);
   const lamps = items(0x35, 0x39);
   const statues = items(0x25, /* opel 0x26, */ 0x38, 0x3a, 0x3d);
+  const bows = items(0x3e, 0x3f, 0x40);
 
   for (const [list, [...names]] of [[keys, KEY_NAMES],
                                     [flutes, FLUTE_NAMES],
                                     [lamps, LAMP_NAMES],
-                                    [statues, STATUE_NAMES]] as const) {
+                                    [statues, STATUE_NAMES],
+                                    [bows, BOW_NAMES],
+                                   ] as const) {
     // palettes are :03 bit of item.itemDataValue
     random.shuffle(names);
     const palettes = random.shuffle([0, 1, 2, 3]);

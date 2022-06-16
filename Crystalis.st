@@ -14872,61 +14872,23 @@ RomBank_0c_Remainder            ; @@ $9201  -- NPCDATA_BANK
 ;;;       - 7f4 is pattern map for NPC bank 1
 ;;;       - 7f5 is pattern map for NPC bank 2
 ;;;   * byte 5..?: individual NPCs, in quads ($2c..$2f in TryNpcSpawn)
-;;;       - 2c is y-tile coordinate (yh,yt)
-;;;       - 2d:7f is x-tile coordinate (xh,xt)
-;;;         2d:80 indicates a timer-based spawn (cf. $3e10e)
-;;;       - 2e:40 is a half-tile fine x offset
-;;;       - 2e:07 is a jump table index into NpcDataJump:
-;;;           0: enemy
-;;;              $2e:80 maybe indicates to use 2nd pattern/palette combo
-;;;              $2f is monster ID less $50
-;;;              $2d:80 indicates a timer-based spawn
-;;;              c0 2e: platform over pit
-;;;              c0 3e: shooting iron wall
-;;;           1: person or boss
-;;;              2e:80 indicates ???
-;;;              01 65 is jumping dude - condition built in somewhere...
-;;;              0d: leaf elder
-;;;              81 0e, 81 0f, 81 10, 01 12: leaf villagers
-;;;              08, c1 14, 41 15: sleeping windmill keeper (either state?)
-;;;              16..1a: brynmaer villagers
-;;;              1d: oak elder
-;;;              81 1f: oak child
-;;;              20..22: oak villagers walking around,  7c..7d: oak guards (before child)
-;;;              c1 5e: zebu in cave
-;;;              41 c0: vampire
-;;;              41 c1: insect
-;;;           2: treasure chest, item, or flag trigger
-;;;              items normally found in chests store a flag so that it only
-;;;              shows up once, but others do not, so chest will reappear
-;;;              02 25: statue of onyx - chest is invisible no matter where it is
-;;;              c2 70: mimic
-;;;              02 80: trigger shyron massacre
-;;;              82 8c: sorrow in leaf
-;;;              02 8e: oak child returns
-;;;              02 90: enter amazones
-;;;              02 99: enter leaf
-;;;              02 a6: enter brynmaer
-;;;              02 aa: enter oak
-;;;              02 ac: enter sahara
-;;;              02 ba: blocks mt sabre north
-;;;              02 b4: refresh
-;;;              02 b5: message for teleport, but still grants refresh?!?
-;;;              02 b6: mesia's "it's a trap" warning
-;;;              02 bc: amazones guard (0d) moves right if not changed into woman?
-;;;               - note: condition for triggering is stored elsewhere...
-;;;           3:
-;;;              03 00: rock wall
-;;;              03 01: ice wall
-;;;              03 02: ice bridge
-;;;              03 03: iron wall
-;;;              83 e0: windmill
-;;;              03 e1: windmill gears
-;;;           4:
-;;;              04 28: cave explosion (e.g. start, sealed cave)
-;;;              c4 29: on top of rescused wise men in draygonia castle
-;;; 
-;;;       - 2f
+;;;       - $2c          $2d          $2e          $2f
+;;;       - YYYY yyyy    sXXX xxxx    0h00 0ttt    zzzz zzzz
+;;;       - Usage:
+;;;          YYYY: y-screen
+;;;          yyyy: y-tile within screen
+;;;           XXX: x-screen
+;;;          xxxx: x-tile within screen
+;;;             s: 1 if a timer spawn, 0 if an initial spawn
+;;;             h: 1 for a half-tile horizontal shift
+;;;           ttt: type of spawn (NpcDataJump index)
+;;;                 * 0: enemy
+;;;                 * 1: person (00..bf) or boss (c0..)
+;;;                 * 2: treasure chest (00..6f), mimic (7x), or trigger (80..)
+;;;                 * 3: wall/bridge hitbox (id has element 0..3),
+;;;                      or windmill gears (e0, e1)
+;;;                 * 4: misc object (cave explosion, windmill blades, etc)
+;;;             z: id of spawn (shifted by $#50 for enemies)
 ;;;   * The list of NPCs is terminated by an $ff.
 ;;; STRIP: word=$10000
 NpcData                         ; also includes enemies?
@@ -19329,6 +19291,7 @@ TriggerSquare_ConditionMet
         $1c10b  xx xx:      xxx #$xx
         $1c10d  xx xx:      xxx $xx ; condition met
         $1c10f  xx xx xx:   xxx PrepareMessageFrom24y
+        ;;                  fall-through to SetOrClearFlagsFromBytePair_24y
 ;;; Reads the next two bytes from ($24),y and either sets or clears the
 ;;; corresponding flag from $6480..$657f.  The sign of the first byte
 ;;; indicates set (positive) or clear (negative).  The low 3 bits of
@@ -19336,7 +19299,7 @@ TriggerSquare_ConditionMet
 ;;; low 3 of the second are the bit.  The $40 bit of the first byte
 ;;; indicates that we're done - if it's clear then repeat.
 SetOrClearFlagsFromBytePair_24y
--       $1c112  xx xx xx:    xxx ParseFlagFromBytePair_24y
+        $1c112  xx xx xx:    xxx ParseFlagFromBytePair_24y
         $1c115  xx xx:       xxx $xx
         $1c117  xx xx:       xxx + ; $1c124
         ;; SET
@@ -19354,7 +19317,7 @@ SetOrClearFlagsFromBytePair_24y
         ;; Maybe loop
 ++      $1c12e  xx xx:       xxx $xx
         $1c130  xx xx:       xxx #$xx
-        $1c132  xx xx:      xxx - ; $1c112
+        $1c132  xx xx:      xxx SetOrClearFlagsFromBytePair_24y
         $1c134  xx:         xxx
 ;;; --------------------------------
 ;;; Read two bytes from dialog script at $24$25
@@ -23407,11 +23370,11 @@ ItemUseData_25 ; StatueOfOnyx 1c565
         $1e08c              .byte $xx,$xx ; Set: 050 given statue to akahana
 ItemUseData_31 ; AlarmFlute 1c4a9
         $1e08e              .byte $xx,$xx ; Expect: NPC 15 windmill guard asleep
-        $1e090              .byte $xx,$xx ; action 6 (LoadNpcDataForCurrentLocation)
+        $1e090              .byte $xx,$xx ; action 6 (ReloadNpcDataForCurrentLocation)
         $1e092              .byte $xx,$xx ; Set: 00f woke windmill guard
         ;; try again with another NPC if the first one failed
         $1e094              .byte $xx,$xx ; Expect: NPC 6b kensu in lighthouse asleep
-        $1e096              .byte $xx,$xx ; action 6 (LoadNpcDataForCurrentLocation)
+        $1e096              .byte $xx,$xx ; action 6 (ReloadNpcDataForCurrentLocation)
         $1e098              .byte $xx,$xx ; Set: 0a4 woke kensu
 ItemUseData_32 ; WindmillKey 1c45f
         $1e09a              .byte $xx     ; Expect location $0f (windmill)
@@ -30218,7 +30181,7 @@ LoadGame
         $21be1  xx xx:      xxx #$xx
         $21be3  xx xx xx:   xxx $xxxx
         $21be6  xx xx:      xxx CurrentLocation
-        $21be8  xx xx xx:   xxx $2ff00,x
+        $21be8  xx xx xx:   xxx CheckpointLocations,x ; $2ff00
         $21beb  xx:         xxx
         $21bec  xx xx:      xxx + ; $21c12
         $21bee  xx xx:       xxx #$xx
@@ -40758,7 +40721,7 @@ DataTable_2fdde
 ;;; --------------------------------
 SetCarryIfCheckpoint
         $2fdf6  xx xx:      xxx CurrentLocation
-        $2fdf8  xx xx xx:   xxx $2ff00,x
+        $2fdf8  xx xx xx:   xxx CheckpointLocations,x ; $2ff00
         $2fdfb  xx:         xxx
         $2fdfc  xx:         xxx
 ;;; --------------------------------
@@ -58438,7 +58401,7 @@ DialogFollowupActionJump_14
 ;;; --------------------------------
 ;;; UNUSED?!? - repurpose for WriteObjectCoordinatesAndLoadObjectData
         $3d196  xx xx xx:   xxx WaitForAudio
-        $3d199  xx xx xx:   xxx $3e148
+        $3d199  xx xx xx:   xxx LoadNpcDataForCurrentLocation
 ;;; --------------------------------
 DialogFollowupActionJump_01
         $3d19c  xx xx xx:   xxx $xxxx
@@ -58459,7 +58422,7 @@ DialogFollowupActionJump_13
         $3d1b8  xx xx xx:   xxx $3d1ff
         $3d1bb  xx xx:      xxx #$xx
         $3d1bd  xx xx xx:   xxx $xxxx
-        $3d1c0  xx xx xx:   xxx LoadNpcDataForCurrentLocation
+        $3d1c0  xx xx xx:   xxx ReloadNpcDataForCurrentLocation
         $3d1c3  xx xx xx:   xxx $xxxx
         $3d1c6  xx:         xxx
         $3d1c7  xx xx xx:   xxx $3d31f
@@ -58472,7 +58435,7 @@ DialogFollowupActionJump_16
         $3d1d4  xx xx:      xxx #$xx
         $3d1d6  xx xx xx:   xxx $xxxx
         $3d1d9  xx xx xx:   xxx WaitForDialogToBeDismissedInternal
-        $3d1dc  xx xx xx:   xxx LoadNpcDataForCurrentLocation
+        $3d1dc  xx xx xx:   xxx ReloadNpcDataForCurrentLocation
         $3d1df  xx xx xx:   xxx $xxxx
         $3d1e2  xx xx xx:   xxx $3d1ff
         $3d1e5  xx xx:      xxx #$xx
@@ -58500,7 +58463,7 @@ DialogFollowupActionJump_10
         $3d212  xx xx xx:   xxx LoadOneObjectDataInternal
         $3d215  xx xx:      xxx #$xx
         $3d217  xx xx xx:   xxx $xxxx,x
-        $3d21a  xx xx xx:   xxx $3e148
+        $3d21a  xx xx xx:   xxx LoadNpcDataForCurrentLocation
 ;;; --------------------------------
 DialogFollowupActionJump_11
         ;; Give an item (from $6a0,y), which is the 2nd byte
@@ -59128,7 +59091,7 @@ DolphinSpawnTable
 ItemOrTriggerActionJump_06
 ItemOrTriggerActionJump_11
         ;; reload NpcData for location
-        $3d6d5  xx xx xx:   xxx $3e148
+        $3d6d5  xx xx xx:   xxx LoadNpcDataForCurrentLocation
 ;;; --------------------------------
 ItemOrTriggerActionJump_0b
         $3d6d8  xx xx:      xxx #INV_MAGIC_BARRIER
@@ -59145,7 +59108,7 @@ ItemOrTriggerActionJump_0d
         $3d6e9  xx xx xx:   xxx GrantItemInRegisterA
 ;;; --------------------------------
 ItemOrTriggerActionJump_0e
-        $3d6ec  xx xx xx:   xxx LoadNpcDataForCurrentLocation
+        $3d6ec  xx xx xx:   xxx ReloadNpcDataForCurrentLocation
         $3d6ef  xx xx:      xxx #$xx
         $3d6f1  xx xx:      xxx #$xx
         $3d6f3  xx xx xx:   xxx BankSwitch8k_8000
@@ -60493,11 +60456,13 @@ ClcIfObjectIsOnScreen
 +       $3e142  xx:         xxx
         $3e143  xx:         xxx
 ;;; --------------------------------
-LoadNpcDataForCurrentLocation
+;;; This function has two modes.
+ReloadNpcDataForCurrentLocation
         $3e144  xx xx:      xxx #$xx
         $3e146  xx xx:      xxx + ; $3e14a - unconditional
         ;; This is an alternate entry point, from some trigger/item actions
         ;; NOTE: this doesn't appear to actually ever be read!
+LoadNpcDataForCurrentLocation
         $3e148  xx xx:       xxx #$xx
 +       $3e14a  xx xx:      xxx $xx
         ;; Load the NpcData table for the current location
@@ -61358,7 +61323,7 @@ ReadMapDataGraphicsTable
         $3e6f9  xx:         xxx
         $3e6fa  xx xx:      xxx ($xx),y
         $3e6fc  xx xx xx:   xxx $xxxx
-        $3e6ff  xx xx xx:   xxx $3e148
+        $3e6ff  xx xx xx:   xxx LoadNpcDataForCurrentLocation
 ;;; --------------------------------
 CopyMapDataFlags
         ;; Read pairs (p, q) until a == $ff.
@@ -63069,16 +63034,16 @@ ResetCheckpointFileIndirect
         $3f216  xx xx xx:   xxx ResetCheckpointFile
 ResetCheckpointFile
         $3f219  xx xx:      xxx #$xx
-        $3f21b  xx xx xx:   xxx $2fe00,x
-        $3f21e  xx xx xx:   xxx $xxxx,x
-        $3f221  xx xx xx:   xxx $xxxx,x
-        $3f224  xx xx:      xxx #$xx
-        $3f226  xx xx xx:   xxx $xxxx,x
-        $3f229  xx xx xx:   xxx $xxxx,x
-        $3f22c  xx xx xx:   xxx $xxxx,x
-        $3f22f  xx xx xx:   xxx $xxxx,x
-        $3f232  xx:         xxx
-        $3f233  xx xx:      xxx $xx
+-       $3f21b  xx xx xx:    xxx $2fe00,x
+        $3f21e  xx xx xx:    xxx $xxxx,x
+        $3f221  xx xx xx:    xxx $xxxx,x
+        $3f224  xx xx:       xxx #$xx
+        $3f226  xx xx xx:    xxx $xxxx,x
+        $3f229  xx xx xx:    xxx $xxxx,x
+        $3f22c  xx xx xx:    xxx $xxxx,x
+        $3f22f  xx xx xx:    xxx $xxxx,x
+        $3f232  xx:          xxx
+        $3f233  xx xx:      xxx - ; $3f21b
         $3f235  xx xx:      xxx #$xx
         $3f237  xx xx xx:   xxx $xxxx ; unused??
         $3f23a  xx xx xx:   xxx FinishSaveFileValidations

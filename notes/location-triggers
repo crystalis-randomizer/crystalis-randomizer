@@ -1,0 +1,31 @@
+Would be nice to run triggers on location load rather than tile.
+
+LoadNpcDataForLocation run at various times
+SetCarryIfCheckpoint (2fdf6) reads table at 2ff00
+ - could maybe compress table from 256 bytes to ~80 listing
+   locations (iterating should be fine, and all save locations
+   are also checkpoints, so we just start iterating earlier)
+
+just execute trigger?
+
+we could also compress 2fe00 w/ RLE
+ - maybe pick a missing value to trigger a run?
+ - 137 bytes instead of 255?
+but... read from 3 different places...?
+
+  lda #$00
+  sta $61
+  sta $63
+  lda #$6d
+  sta $62
+  lda #$7d
+  sta $72
+  
+ --> not feasible?  too complicated and don't want to repeat the RLE 3x
+
+TriggerSquare (1c0e3, 16k page 07:1c..1f)
+ - store ID into $23, then run
+
+Should be able to run right away instead of spawning some triggers?
+ - CheckForNpcSpawn 3e19d seems to be doing something
+    - where is the timer-spawn check???  can we repurpose that flag for triggers?

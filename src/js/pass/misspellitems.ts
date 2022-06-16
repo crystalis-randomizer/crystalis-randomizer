@@ -44,7 +44,6 @@ export function misspellItems(rom: Rom, flags: FlagSet, random: Random) {
   const newName = MISSPELLINGS.get(item.messageName) || [];
   // Use custom misspelling 3x more often than a random one
   const index = Math.floor(random.nextInt(3 * newName.length + 1) / 3);
-  let msg='\n';
   if (index < newName.length) {
     // Use one of the custom misspellings
     item.messageName = item.menuName = newName[index];
@@ -64,5 +63,4 @@ export function misspellItems(rom: Rom, flags: FlagSet, random: Random) {
     }
     item.messageName = item.menuName = name.join('');
   }
-  alert(`MISSPELL: ${item.messageName} ${index} vs ${newName.length}${msg}`);
 }

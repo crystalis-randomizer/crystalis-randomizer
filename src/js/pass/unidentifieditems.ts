@@ -129,6 +129,9 @@ const BOW_NAMES = [
   'Bow of Light',
   'Bow of Freedom',
   'Bow of Darkness',
+  'Buriza-Do Kyanon',
+  'Windforce',
+  'Eaglehorn',
 ];
 
 

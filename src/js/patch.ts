@@ -44,6 +44,7 @@ import { DefaultMap } from './util.js';
 import * as version from './version.js';
 import { shuffleAreas } from './pass/shuffleareas.js';
 import { checkTriggers } from './pass/checktriggers.js';
+import { Sprite } from './characters.js';
 
 const EXPAND_PRG: boolean = true;
 
@@ -206,6 +207,14 @@ function defines(flags: FlagSet,
   };
   return Object.keys(defines)
       .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
+}
+
+export function patchGraphics(rom: Uint8Array, sprites: Sprite[]): Uint8Array {
+  const patched = new Uint8Array(rom);
+  for (let sprite of sprites) {
+    sprite.applyPatch(patched);
+  }
+  return patched;
 }
 
 export async function shuffle(rom: Uint8Array,

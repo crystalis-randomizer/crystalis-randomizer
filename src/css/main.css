@@ -394,3 +394,33 @@ progress {
   font-family: monospace;
   white-space: pre;
 }
+
+.sprite-replacement {
+  flex-grow: 1;
+  margin-right: 2em;
+  margin-bottom: .5em;
+  padding: 1ex;
+  border: 1px solid var(--dark);
+  border-radius: var(--radius);
+  color: var(--dark);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.sprite-replacement > .title {
+  font-size: 118%;
+  font-weight: bold;
+  color: var(--dark);
+}
+
+.sprite-replacement > .desc {
+  color: #555;
+}
+
+.sprite-replacement:hover {
+  border: 2px solid var(--dark);
+}
+
+input[type="radio"]:checked + label.sprite-replacement {
+  background-color: var(--light);
+} 

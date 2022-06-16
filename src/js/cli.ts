@@ -131,7 +131,7 @@ const main = (...args: string[]) => {
     const filename = fillTemplate(output, {c, n, s, v, f, '%': '%'}) + '.nes';
     await new Promise(
         (resolve, reject) => fs.writeFile(
-            filename, shuffled, (err) => err ? reject(err) : resolve()));
+            filename, shuffled, (err) => err ? reject(err) : resolve('')));
     console.log(`Wrote ${filename}`);
   }));
 };

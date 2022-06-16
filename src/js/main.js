@@ -6,6 +6,7 @@ import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
 import {ProgressTracker} from './progress.js';
 import {FetchReader} from './fetchreader.js';
+import { CharacterSet } from './characters.js';
 
 // global state
 let flags;
@@ -55,6 +56,7 @@ const main = () => {
 
   render.renderPresets(document.getElementById('presets'));
   render.renderOptions(document.getElementById('select-options'));
+  render.renderCharacters(document.getElementById('semia-sprite-options'));
 
   // Check for a stored ROM.
   loadRomFromStorage();
@@ -211,10 +213,13 @@ const shuffleRom = async (seed) => {
   showWork();
   let shuffled;
   let crc;
+  const selectedSemiaSprite = document.querySelector('input[name="semia-replacement"]:checked').value;
+  const sprite = CharacterSet.semia().find((spr) => spr.name == selectedSemiaSprite);
+  const graphicsPatchedRom = patch.patchGraphics(orig, [sprite]);
   try {
     [shuffled, crc] =
         await patch.shuffle(
-            orig, seed, flagsClone, new FetchReader(), log, progressTracker);
+          graphicsPatchedRom, seed, flagsClone, new FetchReader(), log, progressTracker);
   } catch (err) {
     document.body.classList.add('failure');
     const errorText = document.getElementById('error-text');

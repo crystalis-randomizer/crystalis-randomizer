@@ -1,5 +1,6 @@
 // Utilities for rendering flags.
 
+import { CharacterSet } from './characters.js';
 import {FlagSection, FlagSet, Preset} from './flagset.js';
 
 export function renderPresets(presets: HTMLElement) {
@@ -34,6 +35,7 @@ export function renderOptions(options: HTMLElement) {
   for (const {name, description, flags} of FlagSection.all()) {
     const h2 = document.createElement('h2');
     h2.textContent = name;
+
     options.appendChild(h2);
     if (description) {
       const p = document.createElement('p');
@@ -57,6 +59,46 @@ export function renderOptions(options: HTMLElement) {
       }
       div.appendChild(flagDiv);
     }
+  }
+}
+
+export function renderCharacters(options: HTMLElement) {
+  const semiaReplacements = CharacterSet.semia();
+  for (const {name, image, chr_data, description} of semiaReplacements.values()) {
+    const container = document.createElement('div');
+    container.className = "flex-row";
+    container.style.width = '100%';
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = 'semia-replacement'
+    input.id = `semia-replacement-${name}`;
+    input.value = name;
+    input.style.display = 'none';
+    if (chr_data.length == 0) {
+      input.checked = true;
+    }
+    container.appendChild(input);
+    const label = document.createElement('label');
+    label.className = "sprite-replacement";
+    label.htmlFor = `semia-replacement-${name}`;
+    const img = document.createElement('img');
+    img.src = image;
+    img.style.float = "left";
+    label.appendChild(img);
+
+    const title = document.createElement('div');
+    title.textContent = name;
+    title.className = "title";
+    label.appendChild(title);
+    
+    if (description) {
+      const desc = document.createElement('div');
+      desc.innerHTML = description; // NOTE: mainly for italics and bold
+      desc.className = "desc";
+      label.appendChild(desc);
+    }
+    container.appendChild(label);
+    options.appendChild(container);
   }
 }
 

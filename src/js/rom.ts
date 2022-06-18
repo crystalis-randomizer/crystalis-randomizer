@@ -137,6 +137,9 @@ export class Rom {
   // Whether mapdata has been compressed.
   compressedMapData: boolean;
 
+  // Allocated triggers
+  allocatedTriggers = new Map<Trigger.Custom, number>();
+
   constructor(rom: Uint8Array) {
     const prgSize = rom[4] * 0x4000;
     // NOTE: chrSize = rom[5] * 0x2000;
@@ -645,9 +648,11 @@ export class Rom {
     }
   }
 
-  nextFreeTrigger(): Trigger {
+  nextFreeTrigger(name?: Trigger.Custom): Trigger {
     for (const t of this.triggers) {
-      if (!t.used) return t;
+      if (t.used) continue;
+      if (name) this.allocatedTriggers.set(name, t.id);
+      return t;
     }
     throw new Error('Could not find an unused trigger.');
   }

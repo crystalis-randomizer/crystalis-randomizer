@@ -113,6 +113,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   // we track flag moves separately).
   addZombieWarp(rom);
 
+  removeWarpTriggers(rom);
   consolidateItemGrants(rom);
   addMezameTrigger(rom);
   normalizeSwords(rom, flags);
@@ -207,13 +208,41 @@ function consolidateItemGrants(rom: Rom): void {
 
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
 function addMezameTrigger(rom: Rom): void {
-  const trigger = rom.nextFreeTrigger();
+  const trigger = rom.nextFreeTrigger('mezame');
   trigger.used = true;
   trigger.conditions = [~rom.flags.AlwaysTrue.id];
   trigger.message = MessageId.of({action: 4});
   trigger.flags = [rom.flags.AlwaysTrue.id];
   const mezame = rom.locations.MezameShrine;
   mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: trigger.id}));
+}
+
+// The _WARP_FLAGS_TABLE asm option removes the need for explicit triggers
+// to set the warp point flags, and instead works by checking the new location
+// against the TownWarp table between loading the map and loading the NPCs.
+function removeWarpTriggers(rom: Rom): void {
+  const warpTriggers = new Set([
+    0x81, // enter shyron
+    0x8b, // enter joel
+    0x90, // enter amazones
+    // 0x92, // enter underground channel - NOTE: not a town warp...!
+    0x99, // enter leaf
+    0xa6, // enter brynmaer
+    0xa7, // enter nadare
+    0xa8, // enter portoa
+    0xa9, // enter swan
+    0xaa, // enter oak
+    0xab, // enter goa
+    0xac, // enter sahara
+    rom.allocatedTriggers.get('zombie warp'), // NOTE: may be undefined
+  ]);
+  for (const location of rom.locations) {
+    if (!location.used) continue;
+    location.spawns = location.spawns.filter(
+        // retain all non-triggers and all non-matching triggers
+        spawn => !spawn.isTrigger() || !warpTriggers.has(spawn.id));
+  }
+  // TODO: deallocate these triggers so they can be reassigned!
 }
 
 function normalizeSwords(rom: Rom, flags: FlagSet) {
@@ -631,16 +660,14 @@ function addZombieWarp(rom: Rom) {
   // Add a trigger to the entrance - there's already a spawn for 8a
   // but we can't reuse that since it's the same as the one outside
   // the main ESI entrance; so reuse a different one.
-  const trigger = rom.nextFreeTrigger();
+  const trigger = rom.nextFreeTrigger('zombie warp');
   trigger.used = true;
   trigger.conditions = [];
   trigger.message = MessageId.of({});
   trigger.flags = [WarpZombie.id]; // new warp point flag
   // Actually replace the trigger.
   for (const spawn of ZombieTown.spawns) {
-    if (spawn.isTrigger() && spawn.id === 0x8a) {
-      spawn.id = trigger.id;
-    }
+    if (spawn.isTrigger() && spawn.id === 0x8a) spawn.id = trigger.id;
   }
   // Insert into the warp table.
   rom.townWarp.locations.splice(7, 0, ZombieTown.id);

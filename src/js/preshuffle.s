@@ -1531,6 +1531,19 @@ CheckSwordCollisionPlane:
 + rts
 
 
+;;; Free a few bytes in NpcDataJump_4 by jumping earlier to avoid duplication.
+.org $e22c
+  jmp $e284
+  FREE_UNTIL $e239
+.org $e2a8
+  jmp $e284
+  FREE_UNTIL $e2b5
+.org $e3b8 ; NpcData_LoadTrigger
+  lda $2e
+  jmp $e284
+  FREE_UNTIL $e3c7
+
+
 .ifdef _TWELVTH_WARP_POINT
 ;;; Remove 11 (5-byte) lines from the nametable write table
 FREE "fe" [$c5b8, $c5ef)
@@ -1571,8 +1584,57 @@ WarpMenuNametableData:
 .assert * = $dd53
 
 .org $dd59
-  adc #$04  ; lower offset, start at 2f4 instead
+  adc #$04  ; lower offset, start at 2f4 instead of 2f5
+.endif ; _TWELFTH_WARP_POINT
+
+
+.ifdef _WARP_FLAGS_TABLE
+.pushseg "0a", "0b", "fe", "ff"
+;;; We remove the triggers that set the warp flags and instead
+;;; iterate over a simple table to find what flags should be set.
+;;; This could be made more general by (1) using a jump table or
+;;; address (with potential argument stored in A), (2) making a
+;;; general script that runs at all location changes, and/or
+;;; (3) leveraging the trigger table to get the effects.
+;;; Triggers are difficult to use, however, and we don't really
+;;; have any other use cases for now, so we'll go the easy route.
+
+.ifdef _TWELVTH_WARP_POINT
+.define FIRST_WARP_POINT $f4
+.else
+.define FIRST_WARP_POINT $f5
 .endif
+
+.org $e6ff
+  jmp @SetWarpFlagForLocation
+.reloc
+@SetWarpFlagForLocation:
+  ;; Iterate over the warp points to see if the new location is one
+  ldx #FIRST_WARP_POINT
+  ldy #$00
+-  lda $dc58,y ; TownWarp,y
+   cmp $6c
+   beq +
+   inx
+   iny
+  bcc -
+- jmp $e148 ; LoadNpcDataForCurrentLocation
+  ;; At this point, we need to set flag $200|x
++ txa
+  and #$07
+  tay
+  txa
+  lsr
+  lsr
+  lsr
+  tax
+  lda $64c0,x
+  ora PowersOfTwo,y
+  sta $64c0,x
+  bne - ; unconditional
+
+.popseg
+.endif ; _WARP_FLAGS_TABLE
 
 
 .ifdef _DISABLE_SWORD_CHARGE_GLITCH
@@ -1903,6 +1965,7 @@ ReloadLocationGraphicsAfterChest:
 ;;; We do use the 48 bytes at the end of the 142 screen for extra global data.
 FREE "0a" [$80c0, $8100)
 FREE "0a" [$81c0, $8200)
+
 
 .ifdef _EXTRA_EXTENDED_SCREENS
 .pushseg "0a", "fe", "ff"

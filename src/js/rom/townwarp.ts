@@ -30,5 +30,6 @@ export class TownWarp {
   }
 }
 
+// Location of the TownWarpTable in vanilla rom
 const ADDRESS = Address.of(Segment.$fe, 0xdc58);
 const COUNT = 12;

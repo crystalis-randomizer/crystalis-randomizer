@@ -14873,13 +14873,14 @@ RomBank_0c_Remainder            ; @@ $9201  -- NPCDATA_BANK
 ;;;       - 7f5 is pattern map for NPC bank 2
 ;;;   * byte 5..?: individual NPCs, in quads ($2c..$2f in TryNpcSpawn)
 ;;;       - $2c          $2d          $2e          $2f
-;;;       - YYYY yyyy    sXXX xxxx    0h00 0ttt    zzzz zzzz
+;;;       - YYYY yyyy    sXXX xxxx    ch00 0ttt    zzzz zzzz
 ;;;       - Usage:
 ;;;          YYYY: y-screen
 ;;;          yyyy: y-tile within screen
 ;;;           XXX: x-screen
 ;;;          xxxx: x-tile within screen
 ;;;             s: 1 if a timer spawn, 0 if an initial spawn
+;;;             c: Color palette selection
 ;;;             h: 1 for a half-tile horizontal shift
 ;;;           ttt: type of spawn (NpcDataJump index)
 ;;;                 * 0: enemy
@@ -23646,6 +23647,10 @@ Trigger_89
         $1e242              .byte $xx,$xx
 Trigger_8a
         ;; 8a try to enter evil spirit island (blocked until entered joel)
+        ;;   NOTE: This shows up both at the entrance in Angry Sea, as well as
+        ;;   right when you enter Zombie Town.  The latter is pointless, so we
+        ;;   repurpose that spawn (in addition to changing the condition to
+        ;;   check for riding the dolphin to enter the cave).
         $1e244              .byte $xx,$xx ; Condition: 2fb NOT warp:joel
         $1e246              .byte $xx,$xx ; Message 1d:10  Action: 19
         $1e248              .byte $xx,$xx
@@ -60707,7 +60712,7 @@ NpcDataJump_Finish
         $3e295  xx xx:        xxx $xx
         $3e297  xx xx xx:     xxx $xxxx,x
         $3e29a  xx xx:        xxx $xx
-        $3e29c  xx:          xxx ; Stack seems to last have been written at $3e2f0?
+        $3e29c  xx:          xxx ; Stack seems to last have been written at $3e20f?
         $3e29d  xx xx:       xxx $xx
         $3e29f  xx:         xxx
         $3e2a0  xx xx:      xxx $xx
@@ -61195,7 +61200,7 @@ ChangeLocation
         $3e62a  xx xx xx:   xxx BankSwitch16k
         $3e62d  xx xx:      xxx #$xx
         $3e62f  xx xx xx:   xxx LoadMapData_A  ; Load &MapData[$6c][0] into $10$11
-        $3e632  xx xx:      xxx ($xx),y ; y should be 0 here?
+        $3e632  xx xx:      xxx ($xx),y ; y is 0 here (set at end of LMD_A)
         $3e634  xx xx xx:   xxx StartAudioTrack ; destroys y
         $3e637  xx xx:      xxx #$xx
         $3e639  xx xx:      xxx ($xx),y ; y=1

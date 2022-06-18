@@ -832,7 +832,7 @@ export class Location extends Entity {
     a.org(0xbf00 | this.id);
     a.byte(+this.checkpoint << 7 | +this.saveable)
 
-    // wite mapdata
+    // write mapdata
     a.segment('0a', '0b');
     //const ext = new Set(this.screens.map(s => s >> 8));
     const screens = [];
@@ -842,6 +842,8 @@ export class Location extends Entity {
     const layout = this.rom.compressedMapData ? [
       this.bgm,
       // Compressed version: yx in one byte, ext+anim in one byte
+      // Note that plane is at most 3 bits, so we still have 3 bits
+      // of usable space in this byte.
       this.layoutHeight << 4 | this.layoutWidth,
       this.mapPlane() << 2 | this.animation, ...screens,
     ] : [

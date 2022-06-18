@@ -201,6 +201,7 @@ function defines(flags: FlagSet,
     _TWELVTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
     _UPDATE_HUD: flags.shouldUpdateHud(),
+    _WARP_FLAGS_TABLE: true,
     _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
   };
   return Object.keys(defines)

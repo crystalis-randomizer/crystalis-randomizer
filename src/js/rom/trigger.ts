@@ -10,6 +10,10 @@ const UNUSED_TRIGGERS = new Set([
   // NOTE: b3 is only unused after deterministic pre-parse deletes it.
 ]);
 
+export namespace Trigger {
+  export type Custom = 'mezame'|'zombie warp';
+}
+
 export class Trigger extends Entity {
 
   used: boolean;

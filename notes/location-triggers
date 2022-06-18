@@ -29,3 +29,51 @@ TriggerSquare (1c0e3, 16k page 07:1c..1f)
 Should be able to run right away instead of spawning some triggers?
  - CheckForNpcSpawn 3e19d seems to be doing something
     - where is the timer-spawn check???  can we repurpose that flag for triggers?
+    - maybe not - it bails out before getting to TryNpcSpawn
+    - instead repurpose higher bits on type byte $2e
+
+
+NpcData_LoadTrigger:  ; 3e3b8
+  lda $2e
+  bmi +
+   lda #$0e
+   jmp $3e2a8  ; consolidate with NpcDataJump_3
++ jmp ExecuteTriggerNow
+; 3 bytes to spare...?
+
+
+; 12 bytes - where to find them?
+; we could put all of NpcData_LoadTrigger in bank 7?
+ExecuteTriggerNow:
+  lda $2f
+  sta $23
+  lda #$07
+  jsr BankSwitch16k  ; $c40e
+  jmp TriggerSquare  ; $80e3
+
+
+There are 4 triggers with the timed bit set:
+  10 Zebu Cave - 8c: leaf abduction (if not abducted and talked to zebu)
+  a1 Tower 2 - 5a: tower message 1 (one-time)
+  a2 Tower 3 - 5b: tower message 2 (one-time)
+  c1 Swan Tavern - ef: enter tavern (set kensu gone if found kensu in tavern)
+
+Only c1:ef makes sense to have as an area trigger...
+Other area triggers we might want to consider:
+ - roll-up flags for generals?
+ - start game
+
+We could possibly remove these triggers from the spawn slot counter, since
+it will always be empty.  We could also add a new section of location triggers
+that fire on every location change?
+
+=======
+
+NOTE: The above approach causes problems.  Specifically, switching the banks
+in the middle of NPC loading seems to cause issues, and simply restoring them
+doesn't seem to be enough.  We should consider an alternative approach, such
+as repurposing something else in the NpcData table?  This could allow deleting
+a handful of no-longer-necessary spawns, and could even save a good deal of
+space.  We should also delete (or repurpose) the useless 0's at the front of
+the table.  A simple byte indicating which 2xx flag should be set on entry
+would get the job done...

@@ -8,24 +8,96 @@
       full shuffle is now standard, with "easy mode" flags `Et` to keep vanilla
       mimic locations and `Eu` to not shuffle consumables in with unique items.
     * Support for flag modifiers (e.g. `!`).
+    * Merged the `F` and `G` groups together.  By default, all glitches are
+      fixed (when possible).  The `Gx` flags reenable the glitch but also add
+      them to the logic.  The `G!x` flags enable them outside of logic.
+    * Grouped a handful of options to make the game more like vanilla into a new
+      `V` group.
     * Support for optional flags that don't affect the checksum (e.g. `As` to
       turn off the background music).  Note that some `A` flags are only
       optional without the `!` modifier.
     * Add "mystery flags" (`?` modifier) that are randomly either on or off, but
       the player does not know which.
-* Fixes to dolphin logic
+* Adds a new "GBC Cave" inspired by the cave on the east edge of Wind Valley in
+  the GBC version.  This cave has two checks and and two additional exits, one
+  of which is blocked by a (by default) rock wall.
+    * This introduces a 13th mimic into the game.
+    * Setting `Vm` or `V!m` will disable adding this map, in favor of either
+      adding no additional routes out of Leaf, or restoring the older version
+      of just a direct passage to Lime Tree Valley.
+* Tinking no longer damages enemies at all.
+    * `Ns` enables "tink mode", but will also potentially add tinking to logic.
+* Simpler Portoa Queen logic: added a new NPC guard in the throne room.  If
+  the queen goes into the back room before giving her first item, she will now
+  leave it with the guard, so back room access is not required.
+* New randomization options:
+    * `Wh` shuffles house entrances in towns.
+    * `Wa` shuffles connections between the various areas in the game.  This
+      also adds two chests to Mezame Shrine, in order to guarantee there are
+      sufficient "sphere zero" checks.  In this mode, Zebu's student again no
+      longer gives any item (though he's still required to talk to to spawn
+      sleeping in the cave), and the initial $100 cash is in the inventory from
+      the start.
+    * `Wg` shuffles the order of the floors in Goa fortress.
+* New glitch options:
+    * `Gr` allows skipping Rage via a damage boost to go directly to the
+      answering machine.
+    * `Gg` allows flight to be used to sneak past shooting statues.
+* Adds `Rb` "no bow mode", which provides a direct portal from Mezame to
+  Draygon 2, who no longer needs the Bow of Truth to fight.
+    * Note that this is independent from `Rs` (story mode), which would still
+      require swords and bosses for Draygon to spawn.
+* Improved map randomization some (but it's still incomplete).
+    * Added a handful of "missing" screens for several tilesets (swamp and river
+      cave).
+* Tracker no longer available (use EmoTracker instead).
+* Fixes to dolphin logic.
+    * In particular, the `Rd` flag selects between vanilla dolphin interactions
+      (where healing the dolphin and having the Shell Flute is required to spawn
+      the boat owner, and talking to Kensu in the beach house is required to
+      make the Shell Flute work) or "standard" dolphin interactions (where only
+      the Shell Flute is required to ride the dolphin, but trading in the Fog
+      Lamp is required to spawn Kensu in the beach house, who holds an item.
+    * Riding the dolphin is now required to get into Evil Spirit Island.  If
+      you're flying, you'll get a message that you can't get into the cave.
+* Revamp the HUD:
+    * Some text is compressed into smaller icons.
+    * EXP no longer shows a target.  Instead, experience counts down and the
+      next level happens when you reach zero.
+    * Two levels can be gained at the same time now, if scaling is high enough.
+* Sword is now colored based on the element, making it easy to follow on stream.
+* Flyers now spawn in a different random off-screen location every time.
+* Warp points are activated immediately upon loading an area, rather than
+    stepping on a specific trigger tile.
 * Minor bug fixes:
     * Fixed some graphical glitches.
-    * Fixed glitchy vampire dialog caused by Kensu boat house changes.
+    * Fixed glitchy vampire dialog caused by Kensu beach house changes.
+    * Fixed an issue with Angry Sea Wild Warp logic.
+    * Fixed issues from entrance order being switched (mixing up wild warp,
+      among other things).
+    * Fixed some issues around using the tower escalators to skip floors.
+    * Fixed bug allowing player to get free sword charge glitch from quick swap.
+    * Fixed an issue where seeds that rerolled in the middle could have some
+      communication from earlier attempts, making (for example) Akahana require
+      being Changed into a woman, rather than Aryllis.
+    * Fixed monster placement.
+    * Improve handling of overdumped input roms.
+    * White robots will no longer spawn directly underneath the player.
+    * Tomatoes and other non-flyers now respect the terrain.
 * Internal cleanups:
     * Rearrange passes into a strict order of (1) read bytes from ROM into an
       internal data structure, (2) shuffle the internal data structure,
       (3) write bytes from the internal representation back to the ROM image.
     * Implemented a relocating/patching macro assembler/linker to better utilize
       free space in the ROM.
+    * Significantly more changes are now done programmatically, rather than
+      through assembly.
     * Remove a handful of redundant flags and triggers.
     * Improve test infrastructure.
-
+    * Factored out metalocation, metascreen, metatileset (etc) types for dealing
+      with map edits more easily.
+    * Moved a number of screens' data into the expanded PRG ROM.
+    
 ## 1.2.4
 * Prevents randomized wild-warp into Mesia Shrine and Rage to avoid possible
   softlock from the Queen going away without any way to reach her.
@@ -74,7 +146,6 @@
    * Azteca cut-scene should no longer happen during Mado fight.
    * Improvements to dialog pagination.
    * Race seeds should again have the correct version number baked in.
-
 
 ## 1.2.1
 * Quick sword switch controls improved to feel more natural.

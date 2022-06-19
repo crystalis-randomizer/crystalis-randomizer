@@ -18,7 +18,7 @@ const MISSPELLINGS: ReadonlyMap<string, string[]> = new Map([
   ['Shield Ring', ['Sho Ring']],
   ['Deo\'s Pendant', ['Rabbit Necklace', 'Bunny Pendant']],
   ['Speed Boots', ['Hermes Sandals']],
-  ['Rabbit Boots', ['Deo\'s Boots', 'Jumping Boots']],
+  ['Rabbit Boots', ['Deo\'s Boots', 'Jumping Boots', 'Rabid Boots']],
   ['Alarm Flute', ['Pocket Rooster', 'Alarm Clock']],
   ['Shell Flute', ['Conch Shell']],
   ['Eye Glasses', ['3D Glasses', 'X-Ray Goggles']],

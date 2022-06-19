@@ -1,8 +1,8 @@
 var __VERSION__ = {
   'STATUS': 'unstable',
   'VERSION': 'latest',
-  'LABEL': 'latest 12aada1',
-  'HASH': '12aada1ad5026c19d68fcd6d161f28e3fd9be905',
-  'DATE': new Date(1655535756000),
+  'LABEL': 'latest 79b18ea',
+  'HASH': '79b18eaf556462ee3574af9f8940cd825c42c29c',
+  'DATE': new Date(1655600707000),
 };
 if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;

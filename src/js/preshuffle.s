@@ -1612,9 +1612,9 @@ WarpMenuNametableData:
 .reloc
 @SetWarpFlagForLocation:
   ;; Iterate over the warp points to see if the new location is one
+  lda $6c
   ldx #FIRST_WARP_POINT
--  lda $dc58-FIRST_WARP_POINT,x ; TownWarp entry
-   cmp $6c
+-  cmp $dc58-FIRST_WARP_POINT,x ; TownWarp entry
    beq +
    inx
   bne -

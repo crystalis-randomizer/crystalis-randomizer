@@ -1,5 +1,89 @@
 # Changes
 
+Jan 23 2020 Fix Thunder1 norm
+## 2.0.0-rc1
+* Revamped the flagset system:
+    * Many more options are now standard, significantly reducing the length of
+      typical flag strings.
+    * Removed some customization for categories of items to shuffle together:
+      full shuffle is now standard, with "easy mode" flags `Et` to keep vanilla
+      mimic locations and `Eu` to not shuffle consumables in with unique items.
+    * Support for flag modifiers (e.g. `!`) 
+    * Support for optional flags that don't affect the checksum (e.g. `As` to
+      turn off the background music).  Note that some `A` flags are only
+      optional without the `!` modifier.
+    * Add "mystery flags" (`?` modifier) that are randomly either on or off, but
+      the player does not know which.
+* Fixes to dolphin logic
+* Minor bug fixes:
+    * Fixed some graphical glitches.
+    * Fixed glitchy vampire dialog caused by Kensu boat house changes.
+* Internal cleanups:
+    * Rearrange passes into a strict order of (1) read bytes from ROM into an
+      internal data structure, (2) shuffle the internal data structure,
+      (3) write bytes from the internal representation back to the ROM image.
+    * Implemented a relocating/patching macro assembler/linker to better utilize
+      free space in the ROM.
+    * Remove a handful of redundant flags and triggers.
+    * Improve test infrastructure.
+
+## 1.2.4
+* Prevents randomized wild-warp into Mesia Shrine and Rage to avoid possible
+  softlock from the Queen going away without any way to reach her.
+* Fix Sword of Thunder level 1 shot normalization to do the same damage as
+  all other level 1 shots.
+
+## 1.2.3
+* Fixes `Gw` (assume wild warp) to not assume that wild warping to the front of
+  swamp will get you into Oak without a gas mask.
+* Adds an experimental voice-activated tracker, which may or may not actually
+  work.
+
+## 1.2.2
+* Adds a warp point for Zombie Town.
+* Adds a "beta" `Wm` flag for limited map shuffle.
+* `Tc` flag disables controller shortcuts.
+* Changes when `Tb` is enabled:
+   * Tornado magic moves slower
+   * Speed Boots no longer protect from spikes/marsh
+   * Gas Mask is now Hazmat Suit and does protect from spikes/marsh
+* Platforms are now randomly swapped with Crypt Platforms, which crumble when
+  you step off them.
+* Nerf mado slightly by having him stop a little more frequently.
+* Fix loopholes where stabbing while flying was effective (i.e. a few bosses):
+  now _nothing_ can be hit while you're flying, even if they can hit you.
+    * Also entirely removed Warrior Ring for `Hc` flag (charge shots only).
+* Leaf elder in Mt. Sabre prison heals you when you talk to him.
+* Buff Iron Necklace and Shield Ring to work without any equipped armor (the
+  bonus is now 2*level, on top of the normal cap).
+* Kensu slime no longer locks the screen before talking to him.
+* NPCs should no longer carry Opel Statues.
+* Kelbesque 2 skip should no longer work.
+* Bosses drop EXP again.
+* Kensu now asks for what he wants in Swan. 
+* Clean up presets:
+   * Clearer names.
+   * Add presets for the elimination phase flagsets.
+* Rearranged order of hints for fog lamp/kirisa plant cave:
+   * Bows get top priority, then swords/magic, and finally other unique items
+   * If multiple items have the same priority, it will prefer disclosing a
+     deeper item over a shallower one: back of fog lamp first, then kirisa back
+     to front, then the rest of fog lamp back to front.
+   * If no unique item is found, it will simply say "treasure".
+* Fixed some minor bugs:
+   * Fixed mosquito and flail graphics.
+   * Azteca cut-scene should no longer happen during Mado fight.
+   * Improvements to dialog pagination.
+   * Race seeds should again have the correct version number baked in.
+
+
+## 1.2.1
+* Quick sword switch controls improved to feel more natural.
+* Patch out warp boots reuse glitch (only when shop glitch is disabled, since
+  otherwise you can just steal them anyway).
+    * Also reduced warp boots price by 20% to compensate for not being able to
+      reuse them.
+
 ## 1.2.0
 (NOTE: this version is published as 1.1.4 on NPM since I accidentally
 unpublished 1.2.0)

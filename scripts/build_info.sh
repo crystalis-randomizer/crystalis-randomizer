@@ -59,17 +59,12 @@ esac
   echo "if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;"
 } >| "src/js/build_info.js"
 
-echo "status=$status" >| env
-echo "dir=$dir" >> env
-echo "label=$label" >> env
-echo "commit=$commit" >> env
-
 # Intended use: 'eval $(build_info.sh)'
 if [ -n "$GITHUB_ENV" ]; then
-  echo "dir='$dir'" >> "$GITHUB_ENV"
-  echo "status='$status'" >> "$GITHUB_ENV"
-  echo "label='$label'" >> "$GITHUB_ENV"
-  echo "commit='$commit'" >> "$GITHUB_ENV"
+  echo "dir=$dir" >> "$GITHUB_ENV"
+  echo "status=$status" >> "$GITHUB_ENV"
+  echo "label=$label" >> "$GITHUB_ENV"
+  echo "commit=$commit" >> "$GITHUB_ENV"
 else
   echo "export dir='$dir';"
   echo "export status='$status';"

@@ -1,6 +1,10 @@
 #!/bin/sh
 
 set -ex
+echo "dir=$dir"
+echo "status=$status"
+echo "label=$label"
+echo "commit=$commit"
 
 # Bail out if (1) there's a NO_DEPLOY file, or (2) the commit message
 # contains "NO_DEPLOY".
@@ -18,7 +22,6 @@ esac
 
 pages="index.html check.html track.html help.html"
 subdirs="js css images"
-. env
 
 # Clone the existing gh-pages repo
 git clone --depth=1 -b gh-pages "git@github.com:$GITHUB_REPOSITORY" deploy

@@ -198,7 +198,7 @@ function defines(flags: FlagSet,
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _TINK_MODE: !flags.guaranteeMatchingSword(),
     _TRAINER: flags.trainer(),
-    _TWELVTH_WARP_POINT: true, // zombie town warp
+    _TWELFTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
     _UPDATE_HUD: flags.shouldUpdateHud(),
     _WARP_FLAGS_TABLE: true,

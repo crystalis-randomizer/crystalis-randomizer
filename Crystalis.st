@@ -60461,13 +60461,23 @@ ClcIfObjectIsOnScreen
 +       $3e142  xx:         xxx
         $3e143  xx:         xxx
 ;;; --------------------------------
-;;; This function has two modes.
+;;; This function seems to have two modes, specified by $18 and controlled by
+;;; the entry point ($e144 or $e148).  The vanilla game seems to call the
+;;; earlier entry point ($e144, which stores 1 in $18) for _reloading_ the
+;;; NPCs, while it calls the later one ($e148, which stores 0 in $18) for the
+;;; _initial_ load.  But nothing actually _reads_ $18 anywhere in the routine,
+;;; so it appears to be irrelevant.  In randomizer, where it's possible to go
+;;; through dungeons backwards, we need to make sure a location's pattern tables
+;;; get reset correctly after a boss fight (which swaps the NPC pattern tables
+;;; out for the boss's patterns), so we've repurposed the second entry point
+;;; to instead just reload the patterns and exit.  All jumps to $e148 elsewhere
+;;; in this source have been changed to instead jump to $e144.
 ReloadNpcDataForCurrentLocation
         $3e144  xx xx:      xxx #$xx
         $3e146  xx xx:      xxx + ; $3e14a - unconditional
-        ;; This is an alternate entry point, from some trigger/item actions
-        ;; NOTE: this doesn't appear to actually ever be read!
-LoadNpcDataForCurrentLocation
+;;; SEE ABOVE NOTE: THIS ENTRY POINT IS REPURPOSED IN RANDOMIZER!
+LoadNpcDataForCurrentLocation ; NOTE: DO NOT USE - REPURPOSED!!!
+ReloadLocationGraphics ; Randomizer adds this entry point
         $3e148  xx xx:       xxx #$xx
 +       $3e14a  xx xx:      xxx $xx
         ;; Load the NpcData table for the current location
@@ -60574,6 +60584,7 @@ TryNpcSpawn                             ; TrySpawn
         $3e1c5  xx xx:      xxx ($xx),y
         $3e1c7  xx xx:      xxx $xx
         $3e1c9  xx:         xxx
+        ;; NOTE(randomizer): we inject `jsr RandomizeFlyerSpawnPosition` here
         ;; npc[0] is y-coordinate (shifted by a nibble)
         $3e1ca  xx xx:      xxx $xx
         $3e1cc  xx:         xxx

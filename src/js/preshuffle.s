@@ -1539,12 +1539,12 @@ CheckSwordCollisionPlane:
   jmp $e284
   FREE_UNTIL $e2b5
 .org $e3b8 ; NpcData_LoadTrigger
-  lda $2e
+  lda #$0e
   jmp $e284
   FREE_UNTIL $e3c7
 
 
-.ifdef _TWELVTH_WARP_POINT
+.ifdef _TWELFTH_WARP_POINT
 ;;; Remove 11 (5-byte) lines from the nametable write table
 FREE "fe" [$c5b8, $c5ef)
 
@@ -1599,10 +1599,12 @@ WarpMenuNametableData:
 ;;; Triggers are difficult to use, however, and we don't really
 ;;; have any other use cases for now, so we'll go the easy route.
 
-.ifdef _TWELVTH_WARP_POINT
+.ifdef _TWELFTH_WARP_POINT
 .define FIRST_WARP_POINT $f4
+;.define INITIAL_MASK $10
 .else
 .define FIRST_WARP_POINT $f5
+;.define INITIAL_MASK $20
 .endif
 
 .org $e6ff
@@ -1611,14 +1613,12 @@ WarpMenuNametableData:
 @SetWarpFlagForLocation:
   ;; Iterate over the warp points to see if the new location is one
   ldx #FIRST_WARP_POINT
-  ldy #$00
--  lda $dc58,y ; TownWarp,y
+-  lda $dc58-FIRST_WARP_POINT,x ; TownWarp entry
    cmp $6c
    beq +
    inx
-   iny
-  bcc -
-- jmp $e148 ; LoadNpcDataForCurrentLocation
+  bne -
+- jmp $e144 ; LoadNpcDataForCurrentLocation
   ;; At this point, we need to set flag $200|x
 + txa
   and #$07
@@ -1632,6 +1632,25 @@ WarpMenuNametableData:
   ora PowersOfTwo,y
   sta $64c0,x
   bne - ; unconditional
+
+;;; Alternative version: 37 bytes (2 more than previous)
+;;   ldx #$fe
+;;   lda #INITIAL_MASK
+;;   sta $10  ; overwritten in LoadNpcDataForCurrentLocation anyway
+;;   ldy #0
+;; -   lda $dc58,y
+;;     cmp $6c
+;;     beq @FoundLocation
+;;     asl $10
+;;    bcc -
+;;    rol $10
+;;    inx
+;;   bne -
+;; - jmp $e144
+;;   lda $63e0,x
+;;   ora $10
+;;   sta $63e0,x
+;;   bne -
 
 .popseg
 .endif ; _WARP_FLAGS_TABLE
@@ -2716,8 +2735,11 @@ CheckToRedisplayDifficulty:
 ;;; but this value is never read.  Start by changing all jumps to $3e148
 ;;; to instead jump to $3e144.  Then we grab some space and have a nonzero
 ;;; value in $18 return early.
+.ifndef _WARP_FLAGS_TABLE ; Note: _WARP_FLAGS_TABLE patches this differently.
 .org $e6ff
   jmp $e144
+.endif
+
 .org $d21a
   jmp $e144
 ;;; For these, just eliminate the indirection: update the jump table directly.
@@ -2725,6 +2747,13 @@ CheckToRedisplayDifficulty:
   .word ($e144)  ; ItemOrTriggerActionJumpTable[$06]
 .org $d585
   .word ($e144)  ; ItemOrTriggerActionJumpTable[$11]
+
+;;; TODO - we should free 3d6d5 and possibly move around the nearby routines
+;;; to make more contiguous blocks.  We should also be able to kill two
+;;; separate entries that just point to returns (04 and 00/03/05/12/1a).
+;;; We might also be able to move these into a less-valuable bank (or to an
+;;; expanded bank)?  Note that 04 is already repurposed for InitialAction,
+;;; but the `rts` at d653 is still unused.
 
 
 ;;; ================================================================

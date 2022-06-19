@@ -1,6 +1,5 @@
 # Changes
 
-Jan 23 2020 Fix Thunder1 norm
 ## 2.0.0-rc1
 * Revamped the flagset system:
     * Many more options are now standard, significantly reducing the length of
@@ -8,7 +7,7 @@ Jan 23 2020 Fix Thunder1 norm
     * Removed some customization for categories of items to shuffle together:
       full shuffle is now standard, with "easy mode" flags `Et` to keep vanilla
       mimic locations and `Eu` to not shuffle consumables in with unique items.
-    * Support for flag modifiers (e.g. `!`) 
+    * Support for flag modifiers (e.g. `!`).
     * Support for optional flags that don't affect the checksum (e.g. `As` to
       turn off the background music).  Note that some `A` flags are only
       optional without the `!` modifier.
@@ -60,7 +59,7 @@ Jan 23 2020 Fix Thunder1 norm
 * NPCs should no longer carry Opel Statues.
 * Kelbesque 2 skip should no longer work.
 * Bosses drop EXP again.
-* Kensu now asks for what he wants in Swan. 
+* Kensu now asks for what he wants in Swan.
 * Clean up presets:
    * Clearer names.
    * Add presets for the elimination phase flagsets.

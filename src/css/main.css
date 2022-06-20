@@ -385,6 +385,10 @@ progress {
   color: var(--dark);
   text-align: center;
 }
+.preset-flags.small {
+  /* smaller than default 118% */
+  font-size: 110%;
+}
 
 #error-text {
   font-family: monospace;

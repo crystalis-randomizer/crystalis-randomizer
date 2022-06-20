@@ -23,6 +23,7 @@ export function renderPresets(presets: HTMLElement) {
     apply.classList.add('button');
     apply.classList.add('preset-flags');
     apply.dataset['flags'] = flagString;
+    if (flagString.length > 48) apply.classList.add('small');
     if (first) apply.dataset['defaultPreset'] = 'true';
     first = false;
     presets.appendChild(apply);

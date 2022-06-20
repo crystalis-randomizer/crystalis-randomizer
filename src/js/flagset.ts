@@ -147,45 +147,6 @@ class Presets {
         DebugMode.SpoilerLog,
       ]);
 
-  readonly Hardcore = new Preset(this, 'Hardcore', `
-      Not for the faint of heart.  Good luck.`, [
-        NoGuarantees.Barrier,
-        NoGuarantees.BattleMagic,
-        HardMode.ExperienceScalesSlower,
-        HardMode.MaxScalingInTower,
-        HardMode.Permadeath,
-        Routing.OrbsNotRequired,
-        Routing.StoryMode,
-        World.RandomizeMaps,
-        World.ShuffleAreas,
-        World.ShuffleHouses,
-        World.RandomizeTrades,
-        World.RandomizeWallElements,
-        World.UnidentifiedKeyItems,
-      ]);
-
-  readonly FullStupid = new Preset(this, 'The Full Stupid', `
-      Only TheAxeMan has ever completed this.  Be sure to record this because
-      pics or it didn't happen.`, [ 
-        NoGuarantees.Barrier,
-        NoGuarantees.BattleMagic,
-        HardMode.Blackout,
-        HardMode.ExperienceScalesSlower,
-        HardMode.MaxScalingInTower,
-        HardMode.Permadeath,
-        Monsters.RandomizeWeaknesses,
-        Monsters.TowerRobots,
-        Routing.OrbsNotRequired,
-        Routing.StoryMode,
-        World.RandomizeMaps,
-        World.ShuffleAreas,
-        World.ShuffleHouses,
-        World.RandomizeTrades,
-        World.RandomizeWallElements,
-        World.ShuffleGoaFloors,
-        World.UnidentifiedKeyItems,
-      ]);
-
   readonly Mystery = new Preset(this, 'Mystery', `
       Even the options are random.`, [
         [World.ShuffleAreas, '?'],
@@ -221,6 +182,115 @@ class Presets {
         [Vanilla.BonusItems, '?'],
         [Vanilla.Maps, '?'],
         DebugMode.SpoilerLog,
+      ]);
+
+  readonly Hardcore = new Preset(this, 'Hardcore', `
+      Not for the faint of heart.  Good luck.`, [
+        NoGuarantees.Barrier,
+        NoGuarantees.BattleMagic,
+        HardMode.ExperienceScalesSlower,
+        HardMode.MaxScalingInTower,
+        HardMode.Permadeath,
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        World.RandomizeMaps,
+        World.ShuffleAreas,
+        World.ShuffleHouses,
+        World.RandomizeTrades,
+        World.RandomizeWallElements,
+        World.UnidentifiedKeyItems,
+      ]);
+
+  readonly FullStupid = new Preset(this, 'The Full Stupid', `
+      Only a few noble fools have ever completed this.  Be sure to record this
+      because pics or it didn't happen.`, [ 
+        NoGuarantees.Barrier,
+        NoGuarantees.BattleMagic,
+        HardMode.Blackout,
+        HardMode.ExperienceScalesSlower,
+        HardMode.MaxScalingInTower,
+        HardMode.Permadeath,
+        Monsters.RandomizeWeaknesses,
+        Monsters.TowerRobots,
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        World.RandomizeMaps,
+        World.ShuffleAreas,
+        World.ShuffleHouses,
+        World.RandomizeTrades,
+        World.RandomizeWallElements,
+        World.ShuffleGoaFloors,
+        World.UnidentifiedKeyItems,
+      ]);
+
+  readonly Tournament2022Early = new Preset(this, 'Tournament 2022 Early Rounds', `
+      Lots of potential complexity, but within reason.  Requires all swords and
+      bosses, as well as a few glitches, but guarantees a starting sword.`, [ 
+        EasyMode.GuaranteeStartingSword,
+        Glitches.StatueGlitch,
+        Glitches.StatueGauntletSkip,
+        [Monsters.RandomizeWeaknesses, '?'],
+        Routing.OrbsNotRequired,
+        Routing.StoryMode,
+        [Routing.VanillaDolphin, '?'],
+        [Routing.NoThunderSwordWarp, '?'],
+        [World.RandomizeWallElements, '?'],
+        [World.ShuffleGoaFloors, '?'],
+        [World.RandomizeSpriteColors, '?'],
+        [World.RandomizeTrades, '?'],
+        [World.UnidentifiedKeyItems, '?'],
+      ]);
+
+  readonly Tournament2022Mid = new Preset(this, 'Tournament 2022 Mid Rounds', `
+      Some additional challenges compared to the early rounds: some additional
+      mystery flags and glitches, as well as max difficulty scaling in the
+      tower.`, [ 
+        [EasyMode.GuaranteeStartingSword, '?'],
+        [Glitches.GhettoFlight, '?'],
+        [Glitches.StatueGlitch, '?'],
+        [Glitches.MtSabreRequirementSkip, '?'],
+        [Glitches.StatueGauntletSkip, '?'],
+        HardMode.MaxScalingInTower,
+        [HardMode.NoBuffMedicalHerb, '?'],
+        [Monsters.RandomizeWeaknesses, '?'],
+        [Monsters.TowerRobots, '?'],
+        [NoGuarantees.Barrier, '?'],
+        [NoGuarantees.BattleMagic, '?'],
+        Routing.StoryMode,
+        [Routing.VanillaDolphin, '?'],
+        [Routing.OrbsNotRequired, '?'],
+        [Routing.NoThunderSwordWarp, '?'],
+        [World.RandomizeWallElements, '?'],
+        [World.ShuffleGoaFloors, '?'],
+        [World.RandomizeSpriteColors, '?'],
+        [World.RandomizeTrades, '?'],
+        [World.UnidentifiedKeyItems, '?'],
+      ]);
+
+  readonly Tournament2022Finals = new Preset(this, 'Tournament 2022 Finals Round', `
+      Many of the more difficult mystery flags from the mid rounds are now
+      always on, plus entrance shuffle.`, [ 
+        [EasyMode.GuaranteeStartingSword, '?'],
+        Glitches.GhettoFlight,
+        Glitches.StatueGlitch,
+        Glitches.MtSabreRequirementSkip,
+        Glitches.StatueGauntletSkip,
+        HardMode.NoBuffMedicalHerb,
+        HardMode.MaxScalingInTower,
+        [Monsters.RandomizeWeaknesses, '?'],
+        [Monsters.TowerRobots, '?'],
+        NoGuarantees.Barrier,
+        NoGuarantees.BattleMagic,
+        Routing.StoryMode,
+        [Routing.VanillaDolphin, '?'],
+        [Routing.OrbsNotRequired, '?'],
+        [Routing.NoThunderSwordWarp, '?'],
+        World.ShuffleHouses,
+        [World.RandomizeWallElements, '?'],
+        [World.ShuffleGoaFloors, '?'],
+        [World.RandomizeSpriteColors, '?'],
+        [World.RandomizeTrades, '?'],
+        [World.UnidentifiedKeyItems, '?'],
       ]);
 }
 

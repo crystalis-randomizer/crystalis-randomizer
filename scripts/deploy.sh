@@ -1,10 +1,10 @@
 #!/bin/sh
 
-set -ex
 echo "dir=$dir"
 echo "status=$status"
 echo "label=$label"
 echo "commit=$commit"
+set -ex
 
 # Bail out if (1) there's a NO_DEPLOY file, or (2) the commit message
 # contains "NO_DEPLOY".

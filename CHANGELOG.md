@@ -1,6 +1,9 @@
 # Changes
 
-## 2.0.0-rc1
+## Latest
+* Added presets for the 2022 tournament rounds.
+
+## 2.0.0
 * Revamped the flagset system:
     * Many more options are now standard, significantly reducing the length of
       typical flag strings.
@@ -25,11 +28,27 @@
     * Setting `Vm` or `V!m` will disable adding this map, in favor of either
       adding no additional routes out of Leaf, or restoring the older version
       of just a direct passage to Lime Tree Valley.
+* Various logic changes:
+    * Entering Evil Spirit Island requires you to be riding the dolphin (flight
+      will trigger a message and reject entry, unless trigger skip is used).
+    * Added a new guard NPC in the Portoa throne room.  When Portoa Queen leaves
+      the throne room permanently (to go to Asina's back room), the guard will
+      have her item, instead of Asina.
+    * Statue of Gold is now added to the shuffle as a potential item that can
+      be found from any check.  Combining Glowing Lamp and Broken Statue now
+      provides a random item.
+    * Deo now always requires Telepathy (in addition to Change).
+* Fixes to dolphin logic.
+    * In particular, the `Rd` flag selects between vanilla dolphin interactions
+      (where healing the dolphin and having the Shell Flute is required to spawn
+      the boat owner, and talking to Kensu in the beach house is required to
+      make the Shell Flute work) or "standard" dolphin interactions (where only
+      the Shell Flute is required to ride the dolphin, but trading in the Fog
+      Lamp is required to spawn Kensu in the beach house, who holds an item.
+    * Riding the dolphin is now required to get into Evil Spirit Island.  If
+      you're flying, you'll get a message that you can't get into the cave.
 * Tinking no longer damages enemies at all.
     * `Ns` enables "tink mode", but will also potentially add tinking to logic.
-* Simpler Portoa Queen logic: added a new NPC guard in the throne room.  If
-  the queen goes into the back room before giving her first item, she will now
-  leave it with the guard, so back room access is not required.
 * New randomization options:
     * `Wh` shuffles house entrances in towns.
     * `Wa` shuffles connections between the various areas in the game.  This
@@ -51,15 +70,6 @@
     * Added a handful of "missing" screens for several tilesets (swamp and river
       cave).
 * Tracker no longer available (use EmoTracker instead).
-* Fixes to dolphin logic.
-    * In particular, the `Rd` flag selects between vanilla dolphin interactions
-      (where healing the dolphin and having the Shell Flute is required to spawn
-      the boat owner, and talking to Kensu in the beach house is required to
-      make the Shell Flute work) or "standard" dolphin interactions (where only
-      the Shell Flute is required to ride the dolphin, but trading in the Fog
-      Lamp is required to spawn Kensu in the beach house, who holds an item.
-    * Riding the dolphin is now required to get into Evil Spirit Island.  If
-      you're flying, you'll get a message that you can't get into the cave.
 * Revamp the HUD:
     * Some text is compressed into smaller icons.
     * EXP no longer shows a target.  Instead, experience counts down and the
@@ -68,7 +78,7 @@
 * Sword is now colored based on the element, making it easy to follow on stream.
 * Flyers now spawn in a different random off-screen location every time.
 * Warp points are activated immediately upon loading an area, rather than
-    stepping on a specific trigger tile.
+  stepping on a specific trigger tile.
 * Minor bug fixes:
     * Fixed some graphical glitches.
     * Fixed glitchy vampire dialog caused by Kensu beach house changes.
@@ -80,7 +90,7 @@
     * Fixed an issue where seeds that rerolled in the middle could have some
       communication from earlier attempts, making (for example) Akahana require
       being Changed into a woman, rather than Aryllis.
-    * Fixed monster placement.
+    * Fixed monster placement to not be inside walls.
     * Improve handling of overdumped input roms.
     * White robots will no longer spawn directly underneath the player.
     * Tomatoes and other non-flyers now respect the terrain.
@@ -97,7 +107,7 @@
     * Factored out metalocation, metascreen, metatileset (etc) types for dealing
       with map edits more easily.
     * Moved a number of screens' data into the expanded PRG ROM.
-    
+
 ## 1.2.4
 * Prevents randomized wild-warp into Mesia Shrine and Rage to avoid possible
   softlock from the Queen going away without any way to reach her.

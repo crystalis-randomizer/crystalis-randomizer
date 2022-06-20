@@ -355,9 +355,9 @@ class CustomTilesetMapping {
     // Hilt - is only in the page with mesia since its only used in the tower
     mapping.set(0xf8, [toAddr(8, 1, 0xed)]);
     // full length blade
-    mapping.set(0xf8, copyToAllWeaponPages(0x18));
-    // diagonal right
     mapping.set(0xf9, copyToAllWeaponPages(0x19));
+    // diagonal right
+    mapping.set(0xfa, copyToAllWeaponPages(0x1a));
 
     // Shields
     // Down

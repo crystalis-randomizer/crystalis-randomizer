@@ -156,7 +156,7 @@ class CustomTilesetMapping {
     // mid right
     mapping.set(0x45, [toAddr(8,0,0x17)]);
     // bot left
-    mapping.set(0x55, [toAddr(8,0,0x36)]);
+    mapping.set(0x54, [toAddr(8,0,0x36)]);
 
     ////////
     // Left attack
@@ -186,7 +186,7 @@ class CustomTilesetMapping {
     // mid right
     mapping.set(0x75, [toAddr(8,0,0x11)]);
     // bot right
-    mapping.set(0x86, [toAddr(8,0,0x31)]);
+    mapping.set(0x85, [toAddr(8,0,0x31)]);
 
     //////////
     // Down attack
@@ -326,11 +326,11 @@ class CustomTilesetMapping {
     // Each sword has their own page of sprites, so apply the change to all pages.
     let copyToAllWeaponPages = (tile: number) => {
       return [
-        toAddr(8, 0, tile + CHR_PAGE_OFFSET * 2),
-        toAddr(8, 0, tile + CHR_PAGE_OFFSET * 3),
+        toAddr(8, 0, tile) + CHR_PAGE_OFFSET * 2,
+        toAddr(8, 0, tile) + CHR_PAGE_OFFSET * 3,
         toAddr(8, 1, tile),
-        toAddr(8, 1, tile + CHR_PAGE_OFFSET),
-        toAddr(8, 1, tile + CHR_PAGE_OFFSET * 2),
+        toAddr(8, 1, tile) + CHR_PAGE_OFFSET,
+        toAddr(8, 1, tile) + CHR_PAGE_OFFSET * 2,
       ]
     }
     // Swords

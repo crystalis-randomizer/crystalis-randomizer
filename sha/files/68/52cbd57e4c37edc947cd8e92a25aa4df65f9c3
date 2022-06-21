@@ -1,0 +1,426 @@
+:root {
+  /*--light: #80c0ff;*/
+  --light: #a0d0ff;
+  /*--dark: #0070ec;*/
+  --dark: #0040bc;
+  --background-grey: #ddd;
+  --nav-height: 24px;
+  --nav-bg: var(--light);
+  --nav-fg: var(--dark);
+  --radius: 5px;
+  --hard-light: #f02828;
+  --hard-dark: #781414;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Basic flow control */
+.if-failure,
+.if-versioned,
+.if-release-candidate,
+.if-rom-uploaded,
+.if-rom-broken,
+.if-js-broken,
+.if-js-works,
+.if-spoiled,
+.if-shuffling {
+  display: none;
+}
+
+body.failure .if-failure,
+body.versioned .if-versioned,
+body.release-candidate .if-release-candidate,
+body.rom-uploaded .if-rom-uploaded,
+body.rom-broken .if-rom-broken,
+body.js-broken .if-js-broken,
+body.js-works .if-js-works,
+body.spoiled .if-spoiled,
+body.shuffling .if-shuffling {
+  /* Note: display: inherit has an interesting effect on the section
+     headings that I kind of like. */
+  display: block;
+}
+
+/* if-not-race is the only conditional that's allowed to stack. */
+body.debug-mode #race,
+body.race .if-not-race {
+  /* TODO - this is starting to not scale very well.
+     consider a JS-based solution where we querySelector
+     to get elements that match the given class. */     
+  display: none !important;
+}
+
+.warning {
+  background-color: #fee;
+  border-color: var(--hard-dark);
+}
+.warning > h1 {
+  background-color: #fbb;
+  color: var(--hard-dark);
+}
+
+body {
+  background: var(--background-grey);
+  margin: 0px;
+  padding: 0px;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+}
+
+.flex-row {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: flex-start;
+}
+
+nav a,
+a.button {
+  text-decoration: none;
+}
+
+.permalink .if-not-permalink {
+  display: none;
+}
+
+/* Nav Bar */
+nav {
+  position: fixed;
+  top: 0px;
+  height: var(--nav-height);
+  left: 0px;
+  width: 100%;
+  border-bottom: 1px solid #888;
+  margin: 0px;
+  background: var(--nav-bg);
+  opacity: 1;
+  color: var(--nav-fg);
+  z-index: 1;
+}
+nav > * {
+  font-size: 112%;
+  float: left;
+  margin: 0px;
+  height: var(--nav-height);
+  padding: 2px 12px;
+  vertical-align: top;
+}
+nav .img {
+  margin: 0;
+  padding: 0;
+  position: absolute;
+}
+nav .img + * {
+  /* make space for logo, which is out of the flow. */
+  margin-left: 24px;
+}
+nav > a:hover {
+  background: var(--dark);
+  color: var(--light);
+}
+nav > a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+#version {
+  font-style: italic;
+  font-size: 83%;
+  padding-top: 4px;
+}
+
+nav + div {
+  height: 0px;
+  width: 100%;
+}
+
+main {
+  /* see https://bit.ly/2GlCN8t re: position: fixed */
+  /* margin: calc(1em + var(--nav-height)) auto 0px; */
+  margin: 1em auto 1em;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: stretch;
+  max-width: 640px;
+}
+
+/* main area */
+section {
+  border: 1px solid var(--light);
+  background: white;
+  border-radius: var(--radius);
+  padding: 0px;
+  margin-top: 1em;
+  /*width: calc(100% - 40px);*/
+}
+
+/* TODO - consider a media query for a minimum margin?
+@media (mid-width: 700px) {
+  section {
+    margin: 20px auto;
+    width: 660px;
+  }
+}
+*/
+
+section.dark > h1 {
+  color: var(--light);
+  background: var(--dark);
+  border-radius: 0px;
+  padding-bottom: 10px;
+}
+section.dark > div {
+  background-color: var(--light);
+}
+section.dark {
+  border-color: var(--dark);
+  border-width: 8px;
+}
+
+section > h1 {
+  margin: 0;
+  background: var(--light);
+  color: var(--dark);
+  padding: 5px 10px;
+  font-size: 133%;
+  border-radius: 4px 4px 0px 0px;
+}
+section > div {
+  padding: 16px 32px;
+  margin: 0;
+}
+section > div > p:first-child {
+  margin: 0;
+  padding: 0;
+}
+section > div > p + p {
+  margin: 12px 0;
+  padding: 0;
+}
+
+/* inner headings */
+h2 {
+  margin-block-start: 1em;
+  margin-block-end: .4em;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  border-bottom: 4px dotted var(--dark);
+  color: var(--dark);
+}
+h2:first-child {
+  margin-block-start: 0px;
+}
+
+/* expandable sections */
+.expandable > h1 {
+  cursor: pointer;
+}
+.expandable > h1::after {
+  content: " (click to expand...)";
+}
+.expandable.expanded > h1::after {
+  content: "";
+}
+.expandable > div {
+  display: none;
+}
+.expandable.expanded > div {
+  display: block;
+}
+
+/* button */
+.button, select {
+  background: var(--light);
+  color: var(--dark);
+  border: 1px solid var(--dark);
+  cursor: pointer;
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  font-size: 1.2em;
+}
+.button:hover,
+select:hover {
+  background: var(--dark);
+  color: var(--light);
+}
+
+select {
+  color: var(--dark);
+  background-color: var(--light);
+  border: 0;
+  border: 1px solid var(--dark);
+  margin: 0.3em 0;
+  xwidth: 100%;
+  cursor: pointer;
+  border-radius: var(--radius);
+}
+
+input[type="text"] {
+  margin-right: .3em;
+  padding: .4em;
+  flex: 400px 1 0;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  font-size: 112%;
+  font-weight: bold;
+  border-radius: calc(var(--radius)/2);
+  border: 1px solid var(--dark);
+  background: var(--light);
+  color: var(--dark);
+}
+
+p + .flag-list {
+  margin-top: 0.7em;
+}
+
+.flag-list {
+  display: grid;
+  grid-gap: 1em;
+  grid-template-columns: auto 1fr;
+}
+
+.flag-list label {
+  cursor: pointer;
+}
+
+.flag-list > label {
+  padding: .1em .2em .3em;
+  border: 1px solid var(--dark);
+  font-size: 133%;
+  font-weight: bold;
+  text-align: center;
+  height: 1.5em;
+  width: 3.2em;
+  color: #aaa;
+}
+
+.flag-list > label.hard {
+  border-color: var(--hard-light);
+}
+.flag-list > div {
+  margin-top: .4em;
+}
+.flag-list > div > label {
+  font-size: 118%;
+  font-weight: bold;
+  color: #aaa;
+}
+
+.flag-list > input[type="checkbox"],
+.flag-list > input[type="checkbox"] + label + div > .flag-body {
+  display: none;
+}
+.race-summary .flag-list > input[type="checkbox"] + label,
+.flag-list > input[type="checkbox"]:checked + label {
+  background-color: var(--light);
+  color: var(--dark);
+}
+.race-summary .flag-list > input[type="checkbox"] + label.hard,
+.flag-list > input[type="checkbox"]:checked + label.hard {
+  background-color: var(--hard-light);
+  border-color: var(--hard-dark);
+  color: var(--hard-dark);
+}
+.race-summary .flag-list > input[type="checkbox"] + label + div > label,
+.flag-list > input[type="checkbox"]:checked + label + div > label {
+  color: var(--dark);
+}
+.race-summary .flag-list > input[type="checkbox"] + label + div > .flag-body,
+.flag-list > input[type="checkbox"]:checked + label + div > .flag-body {
+  display: block;
+  color: #555;
+}
+.race-summary label {
+  cursor: auto;
+}
+/* TODO - removing flags is disruptive, but we have a ton */
+.flag-list > .conflicted + label,
+.flag-list > .conflicted + label + div {
+  display: none;
+}
+
+#flagstring-out {
+  background-color: var(--light);
+  color: var(--dark);
+  font-size: 118%;
+}
+
+#generate, #share, #spoiler, #race {
+  margin-top: .5em;
+  margin-right: .5em;
+}
+#spoiler {
+  display: none;
+}
+.spoiled #spoiler {
+  display: inherit;
+}
+
+.empty-spoiler, .empty-spoiler + * {
+  display: none;
+}
+#spoiler-mazes > li {
+  white-space: pre;
+  font-family: Menlo, monospace;
+  font-size: 11px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid black;
+  margin-bottom: 4px;
+  list-style: none;
+}
+
+progress {
+  flex-grow: 1;
+  margin-top: 10px;
+}
+
+.preset-flags {
+  font-family: monospace;
+  flex-grow: 1;
+  margin-right: 2em;
+  padding: 1ex;
+  border: 1px solid var(--dark);
+  border-radius: var(--radius);
+  color: var(--dark);
+  text-align: center;
+}
+.preset-flags.small {
+  /* smaller than default 118% */
+  font-size: 110%;
+}
+
+#error-text {
+  font-family: monospace;
+  white-space: pre;
+}
+
+.sprite-replacement {
+  flex-grow: 1;
+  margin-right: 2em;
+  margin-bottom: .5em;
+  padding: 1ex;
+  border: 1px solid var(--dark);
+  border-radius: var(--radius);
+  color: var(--dark);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.sprite-replacement > .title {
+  font-size: 118%;
+  font-weight: bold;
+  color: var(--dark);
+}
+
+.sprite-replacement > .desc {
+  color: #555;
+}
+
+.sprite-replacement:hover {
+  border: 2px solid var(--dark);
+}
+
+input[type="radio"]:checked + label.sprite-replacement {
+  background-color: var(--light);
+} 

@@ -904,8 +904,8 @@ export class Flags {
     for (let flag = 0x280; flag < 0x300; flag++) {
       if (!this[flag]) {
         this[flag] = wallFlag(this, flag);
+        return flag;
       }
-      return flag;
     }
     throw new Error(`No free flags.`);
   }

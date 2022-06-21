@@ -1189,6 +1189,11 @@ export class Metalocation {
    */
   write() {
     const srcLoc = this.rom.locations[this.id];
+    // TODO: We need a better understanding of seamless partners for Cordel.
+    // Specifically, to ensure walls/bridges and exits are correctly synced
+    // across both maps in the pair.  For now, we just treat the two
+    // separately.  We could special-case it to be the same flag, but there's
+    // nothing to hang that on right now.
     //let seamlessPartner: Location|undefined;
     const seamlessPos = new Set<Pos>();
     for (const [srcPos, srcType, [destTile, destType]] of this._exits) {

@@ -4,13 +4,14 @@ const through2 = require('through2');
 
 const COMMON = [
   '6502.js',
+  'asm/*.js',
   'assert.js',
   'bits.js',
   'bits_array.js',
   'bits_base.js',
   'bits_bigint.js',
   'crc32.js',
-  'asm/*.js',
+  'characters.js',
   'data/*.js',
   'depgraph.js',
   'externs.js',

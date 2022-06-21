@@ -183,7 +183,7 @@ SelectedQuestItemIndex  = $642e
 .ifdef _EXTRA_PITY_MP
 PITY_MP_AMOUNT    = 34
 .else
-PITY_MP_AMOUNT    = 1
+PITY_MP_AMOUNT    = 2
 .endif        
 
 PITY_HP_AMOUNT    = 5

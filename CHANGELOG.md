@@ -1,7 +1,11 @@
 # Changes
 
 ## Latest
-* Added presets for the 2022 tournament rounds.
+* Add presets for the 2022 tournament rounds.
+* Rudimentary sprite swapping to allow playing as Mesia.
+* Increase pity MP to 2.
+* Bug fixes:
+    * Fixed internal flag allocation bug to not reuse flags on multiple maps.
 
 ## 2.0.0
 * Revamped the flagset system:

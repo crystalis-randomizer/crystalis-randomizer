@@ -14,9 +14,20 @@ import {Patterns} from '../rom/pattern.js';
 
 const [] = [hex]; // generally useful
 
-function write(arr: Uint8Array, start: number, ...data: number[]) {
-  for (let i = 0; i < data.length; i++) {
-    arr[start + i] = data[i];
+function write(arr: Uint8Array, start: number, ...data: (number|string)[]) {
+  let j = start;
+  let i = 0;
+  let value!: string|number;
+  while ((value = data[i++]) != null) {
+    if (typeof value === 'number') {
+      arr[j++] = value;
+    } else if (typeof value === 'string') {
+      for (const c of value) {
+        arr[j++] = c.charCodeAt(0);
+      }
+    } else {
+      throw new Error('bad data');
+    }
   }
 }
 
@@ -105,6 +116,9 @@ export function deterministicPreParse(prg: Uint8Array): void {
                       0x38865, 0x38885, 0x38889, 0x388a5]) {
     prg[addr] |= 1;
   }
+
+  // Rename the default name to "Simea".
+  write(prg, 0x2656e, "Simea", 0x10, 0, "     ", 0x10, 0);
 }
 
 export function deterministic(rom: Rom, flags: FlagSet): void {

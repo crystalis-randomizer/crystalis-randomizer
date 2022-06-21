@@ -1242,9 +1242,22 @@ Note: the following were read (preindexed) but never written in vanilla:
  - $63f4, $63f8, $63f9, $63ff
 
 
-$6400..$6427
+$6400..$640f
 ------------
 part of current game data?
+
+%6410..$6417
+------------
+??
+ - blank name (or continue) sets it to "      "
+ - non-blank name sets it to "   \r\r\r" (where
+   non-blank letters are space, blanks are $10)
+ - seems to be placeholders or some such? might have
+   been a secondary name at one point?
+
+$6418..$641d
+------------
+player name
 
 $6428..$642f
 ------------

@@ -32382,8 +32382,9 @@ DataTable_22b95
         $23ea0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23eb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23ec0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23ee0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23ed0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23ede              .byte "xxxxx"
+        $23ee3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23ef0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23f00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23f10              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -34046,14 +34047,15 @@ DataTable_264b1
         $264e2  xx:         xxx
 ;;; --------------------------------
         $264e3  xx xx:      xxx #$xx
-        $264e5  xx xx xx:   xxx $xxxx,x
-        $264e8  xx xx:      xxx #$xx
-        $264ea  xx xx:      xxx $xx
-        $264ec  xx:         xxx
-        $264ed  xx xx:      xxx $xx
+-       $264e5  xx xx xx:    xxx $xxxx,x
+        $264e8  xx xx:       xxx #$xx
+        $264ea  xx xx:        xxx + ; $264f2
+        $264ec  xx:          xxx
+        $264ed  xx xx:      xxx - ; $264e5
+        ;; Player name was empty
         $264ef  xx xx xx:   xxx $2653b
-;;; --------------------------------
-        $264f2  xx:         xxx
+        ;;                  ----------
++       $264f2  xx:         xxx
         $264f3  xx xx xx:   xxx $xxxx
         $264f6  xx xx xx:   xxx $xxxx
         $264f9  xx xx:      xxx #$xx
@@ -34087,6 +34089,9 @@ DataTable_264b1
         $26537  xx xx xx:   xxx $xxxx
         $2653a  xx:         xxx
 ;;; --------------------------------
+;;; This routine seems to run when the player name is empty.
+;;; It's also a bit wasteful, since these first indexed loads just
+;;; point to a single constant address.
         $2653b  xx xx:      xxx #$xx
         $2653d  xx xx xx:   xxx $2656c,y
         $26540  xx xx:      xxx $xx
@@ -34094,16 +34099,16 @@ DataTable_264b1
         $26545  xx xx:      xxx $xx
         $26547  xx xx:      xxx #$xx
         $26549  xx xx:      xxx #$xx
-        $2654b  xx xx:      xxx ($xx),y
-        $2654d  xx:         xxx
-        $2654e  xx:          xxx
-        $2654f  xx:         xxx
-        $26550  xx xx:      xxx $xx
-        $26552  xx xx xx:   xxx $xxxx,x
-        $26555  xx:         xxx
-        $26556  xx xx xx:   xxx $2654b
-;;; --------------------------------
-        $26559  xx xx:      xxx #$xx
+-       $2654b  xx xx:       xxx ($xx),y
+        $2654d  xx:          xxx
+        $2654e  xx:           xxx
+        $2654f  xx:          xxx
+        $26550  xx xx:        xxx + ; $26559
+        $26552  xx xx xx:    xxx $xxxx,x
+        $26555  xx:          xxx
+        $26556  xx xx xx:   xxx - ; $2654b
+        ;;;                 -----
++       $26559  xx xx:      xxx #$xx
         $2655b  xx xx:      xxx ($xx),y
         $2655d  xx:         xxx
         $2655e  xx:          xxx
@@ -34118,7 +34123,10 @@ DataTable_264b1
 DataTableAddress_2656e
         $2656c              .word (DataTable_2656e) ; $a56e
 DataTable_2656e 
-        $2656e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        ;; Default player name (stored in $6418)
+        $2656e              .byte "xxxxxx",$xx
+        ;; Secondary name or maybe placeholder (stored in $6410)
+        $26575              .byte "xxxxxx",$xx
 ;;; --------------------------------
         $2657c  xx xx xx:   xxx $242b3
         $2657f  xx xx xx:   xxx $24198

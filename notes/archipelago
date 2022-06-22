@@ -1,0 +1,30 @@
+Archipelago - (#future-game-design 6/9/2022 20:45 ET)
+
+so yeah in AP you can use the generate_output step and just call your patcher and you'll have full access to all the data for the seed
+
+https://github.com/PiotrDabkowski/Js2Py
+
+secret of evermore is python wrapped around C
+i think it only writes in the locations where if it doesn't put an item there everything breaks
+the rest it leaves as an empty "AP item" and if its their own item they just receive it from the server like any other item
+you cant have unfilled locations
+
+it's very possible you'll have spots you'll need to fill before generation. anything done before or in generate_basic is before the actual fill step
+the actual kind of "do this in this step" hasn't really been formalized yet but there's plenty of examples
+it is, read api.md
+i'd definitely recommend referencing both SoE and TS for your world though
+api.md just kind of covers what the different steps do but you don't really have to use them though probably should
+
+there's steps to help with stuff such as map generation but you should probably do that in generate_early so if you need to crash it's quick
+the item shuffle would be done by AP anyway, so only your special stuff really matters
+that's ok, but you should retry early
+as in realize no sphere 1 is reachable and retry; before AP goes into item placement
+because AP does that step once only
+and expects it to work then
+one idea would be to quickly verify with a single-world item placement
+yeah that has to be done before AP starts its filling
+you can make a state object with no items and check accessible locations
+you can just get reachable locations through AP and see if its 0
+since you need to encode it for AP anyway
+this will also allow you to check if there's a small number (<5 or such) available checks and force an early item
+

@@ -21,6 +21,8 @@ class Shuffle {
   shuffleBackgrounds() {
     const partitions = new DefaultMap<unknown, Location[]>(() => []);
     for (const l of this.rom.locations) {
+      // Skip blacked-out locations.
+      if (!l.tilePalettes.some(x => x !== 0x9a)) continue;
       partitions.get(l.colorGroup).push(l);
     }
 

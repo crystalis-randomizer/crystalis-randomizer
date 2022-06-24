@@ -172,11 +172,62 @@ export class Graph {
     this.unlocks = new Keyed(unlocks.map(spread));
   }
 
+  reportWeights() {
+    // Report on rough weights of the items and slots.
+    const itemWeights = Array.from({length: this.items.length}, (_, i) => [i, 0]);
+    const slotWeights = Array.from({length: this.slots.length}, (_, i) => [i, 0]);
+    const traverses = 10;
+    const random = new Random();
+    const progressionItems = [];
+    for (const [index, id] of this.items) {
+      if (id >= 0x200 && id < 0x280 && this.progression.has(id)) progressionItems.push(index);
+    }
+    for (let i = 0; i < traverses; i++) {
+      const items = random.shuffle([...progressionItems]);
+      let has = Bits.of();
+      let reachable = this.traverse((c) => c <= this.common ? c as any : undefined, has);
+      let step = 0;
+      for (const item of items) {
+        step++;
+        has = Bits.with(has, item);
+        const newReachable = this.traverse((c) => c <= this.common ? c as any : undefined, has);
+        let newCount = 0;
+        for (const slot of newReachable) {
+          if (reachable.has(slot)) continue;
+          slotWeights[slot][1] += step;
+          newCount++;
+        }
+        itemWeights[item][1] += newCount;
+        reachable = newReachable;
+      }
+    }
+    function itemName(id: number) {
+      const rom = (window as any).rom;
+      id &= 0xff;
+      if (rom && rom.items[id]) return rom.items[id].messageName;
+      return `$${id.toString(16).padStart(2, '0')}`;
+    }
+    itemWeights.sort((a, b) => b[1] - a[1]);
+    slotWeights.sort((a, b) => b[1] - a[1]);
+    for (const [index, weight] of itemWeights) {
+      if (index < this.common) continue;
+      const id = this.items.get(index as ItemIndex)!;
+      if (!this.progression.has(id)) continue;
+      console.log(`Item ${itemName(id)}: ${weight / traverses}`);
+    }
+    for (const [index, weight] of slotWeights) {
+      if (index < this.common) continue;
+      const id = this.slots.get(index as SlotIndex)!;
+      console.log(`Slot ${this.checkName(id)}: ${weight / traverses}`);
+    }
+  }
+
   async shuffle(flagset: FlagSet,
                 random: Random,
                 attempts = 200, // 0
                 progress?: ProgressTracker,
                 spoiler?: Spoiler): Promise<Map<SlotId, ItemId>|null> {
+    (window as any).graph = this;
     if (progress) progress.addTasks(Math.floor(attempts / 10));
     for (let attempt = 0; attempt < attempts; attempt++) {
       if (progress && (attempt % 10 === 9)) {

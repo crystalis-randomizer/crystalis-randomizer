@@ -3769,3 +3769,354 @@ PatchClearEnemyHPRam:
       pla
 +   jmp $972d ; AdHocSpawnObject
 .endif
+
+;; ScalingLevels = SCALING_LEVELS
+;; .export ScalingLevels
+
+
+.ifdef _BABY_ELEPHANT
+.segment "18", "19"
+
+SONG_INDEX = $0c
+.org $9f4c ; replace dragyon 2
+.word (SpecialSongSq1)
+.word (SpecialSongSq2)
+.word (SpecialSongTri)
+.word (SpecialSongNoise)
+FREE_UNTIL $a0e5
+
+;; take out and replace the boss music huehue
+.org $a5dc
+.word (SpecialSongSq1)
+.word (SpecialSongSq2)
+.word (SpecialSongTri)
+.word (SpecialSongNoise)
+FREE_UNTIL $a796
+
+;; remove dyna and replace it as well since the song doesn't fit in just draygon 2 spot
+.org $a7e8
+.word (SpecialSongSq1)
+.word (SpecialSongSq2)
+.word (SpecialSongTri)
+.word (SpecialSongNoise)
+FREE_UNTIL $a9a0
+
+;; remove tower as well for the memes
+.org $a9b0
+.word (SpecialSongSq1)
+.word (SpecialSongSq2)
+.word (SpecialSongTri)
+.word (SpecialSongNoise)
+FREE_UNTIL $ad3d
+
+
+; bpm = 120 (aka $20 frames a quarter note.)
+
+.reloc
+SpecialSongSq1:
+  .byte $95,$8d,$ee,$f3
+  ; rest for 4 measures or $60 * 5 + $20
+  .byte $68,$40,$40,$40,$40,$40,$6c,$40
+  ; main melody
+  .byte $a0
+  .word (@MainMelody)
+  .byte $6e,$34,$2b,$61,$35,$2c,$40,$68,$40
+  .byte $a0
+  .word (@MainMelody)
+  .byte $68,$2c,$61,$2d,$40,$51,$34,$2a,$77
+  .byte $61,$35,$2d,$40
+  .byte $34,$25,$64,$2a,$61,$2f,$40
+  .byte $58,$40
+  .byte $a0
+  .word (@MainMelody)
+  .byte $6e,$34,$2b,$61,$35,$2c,$40,$68,$40
+  ; Fs_G * 2
+  .byte $a1,$02
+    .byte $59,$24,$5b,$20
+  .byte $a4
+  .byte $59,$22,$62,$2e,$59,$2c,$40,$56,$40
+  ; E_F * 2
+  .byte $a1,$02
+    .byte $59,$2e,$5b,$2f
+  .byte $a4
+  .byte $61,$22,$2f,$22,$2c
+  .byte $6e,$34,$26,$25
+  ; Bb_B * 2
+  .byte $a1,$02
+    .byte $59,$26,$5b,$2b
+  .byte $a4
+  .byte $61,$26,$2b,$26,$25
+  .byte $6e,$2f,$2c,$22,$2f
+  ; end
+  .byte SONG_INDEX
+
+  @MainMelody:
+    .byte $64,$34,$2f,$59,$2a,$40,$6e,$35,$2c,$2f,$2a,$20,$61,$2f,$40,$2d,$40
+    .byte $a8 ;rts
+
+.reloc
+SpecialSongSq2:
+  .byte $91,$89,$ef,$f1
+
+  ; measure 1-6
+  .byte $a1, $03
+    .byte $a0
+    .word (@C_C_Arp)
+    .byte $a0
+    .word (@Ab_A_With_F_A_F_Blip)
+    .byte $a0
+    .word (@C_C_Arp)
+    .byte $a0
+    .word (@Ab_A_With_G_Eb_G_Blip)
+    .byte $a0
+    .word (@C_C_Arp)
+    .byte $a0
+    .word (@Ab_A)
+    .byte $a0
+    .word (@C_C_Arp)
+    .byte $a0
+    .word (@Ab_A)
+  .byte $a4
+
+  ; measure 7
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A_With_F_A_F_Blip)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A_With_G_Eb_G_Blip)
+  ; measure 8
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Db_D)
+  ; measure 9
+  .byte $a0
+  .word (@F_F_Arp)
+  .byte $a0
+  .word (@Db_D_With_Ab_D_Ab_Blip)
+  .byte $a0
+  .word (@F_F_Arp)
+  .byte $a0
+  .word (@Db_D_With_C_Ab_C_Blip)
+  ; measure 10
+  .byte $a0
+  .word (@F_F_Arp)
+  .byte $a0
+  .word (@Db_D)
+  .byte $a0
+  .word (@F_F_Arp)
+  .byte $a0
+  .word (@Db_D)
+  ; measure 11
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A_With_F_A_F_Blip)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A_With_G_Eb_G_Blip)
+  ; measure 12
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Eb_E)
+
+  ; measure 13
+  .byte $a0
+  .word (@G_G_Arp)
+  .byte $a0
+  .word (@Eb_E_With_C_E_C_Blip)
+  .byte $a0
+  .word (@G_G_Arp)
+  .byte $a0
+  .word (@Eb_E_With_D_Bb_D_Blip)
+
+  ; measure 14
+  .byte $a0
+  .word (@F_F_Arp)
+  .byte $a0
+  .word (@Db_D_With_Ab_D_Ab_Blip)
+  .byte $a0
+  .word (@F_F_Arp)
+  .byte $a0
+  .word (@Db_D_With_C_Ab_C_Blip)
+
+  ; measure 15-16
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A_With_F_A_F_Blip)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A_With_G_Eb_G_Blip)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A)
+  .byte $a0
+  .word (@C_C_Arp)
+  .byte $a0
+  .word (@Ab_A)
+  ; end
+  .byte SONG_INDEX
+
+.reloc
+  @C_C_Arp:
+    .byte $53,$32,$2f,$33,$2c,$32,$2f
+    .byte $60,$33,$2c,$40
+    .byte $53,$32,$2f,$33,$2c,$32,$2f
+    .byte $5c,$33,$2c,$40
+    .byte $a8 ; rts
+.reloc 
+  @F_F_Arp:
+    .byte $53,$32,$26,$33,$2f,$32,$26
+    .byte $60,$33,$2f,$40
+    .byte $53,$32,$26,$33,$2f,$32,$26
+    .byte $5c,$33,$2f,$40
+    .byte $a8 ; rts
+.reloc 
+  @G_G_Arp:
+    .byte $53,$33,$2c,$20,$2c
+    .byte $60,$20,$40
+    .byte $53,$2c,$20,$2c
+    .byte $5c,$20,$40
+    .byte $a8 ; rts
+.reloc
+  @Ab_A_With_F_A_F_Blip:
+    .byte $53,$32,$25,$34,$2f,$2a,$2f,$62,$32,$25
+    .byte $6e,$2a
+    .byte $a8 ; rts
+.reloc
+  @Db_D_With_Ab_D_Ab_Blip:
+    .byte $53,$33,$21,$34,$26,$35,$2d,$34,$26,$62,$33,$21
+    .byte $6e,$2d
+    .byte $a8 ; rts
+.reloc
+  @Eb_E_With_C_E_C_Blip:
+    .byte $53,$33,$22,$35,$2c,$2e,$2c,$62,$33,$22
+    .byte $6e,$2e
+    .byte $a8 ; rts
+.reloc
+  @Ab_A_With_G_Eb_G_Blip:
+    ; Ab
+    .byte $53,$32,$25,$34,$20,$22,$20,$62,$32,$25
+    ; A
+    .byte $53,$2a,$34,$20,$22,$20,$62,$32,$2a
+    .byte $a8 ; rts
+.reloc
+  @Db_D_With_C_Ab_C_Blip:
+    .byte $53,$33,$21,$35,$2c,$34,$25,$35,$2c,$62,$33,$21
+    .byte $53,$2d,$35,$2c,$34,$25,$35,$2c,$62,$33,$2d
+    .byte $a8 ; rts
+.reloc
+  @Eb_E_With_D_Bb_D_Blip:
+    .byte $53,$33,$22,$35,$2d,$34,$26,$35,$2d,$62,$33,$22
+    .byte $53,$2e,$35,$2d,$34,$26,$35,$2d,$62,$33,$2e
+    .byte $a8 ; rts
+.reloc
+  @Ab_A:
+    .byte $6e,$32,$25,$2a
+    .byte $a8 ; rts
+  @Db_D:
+    .byte $6e,$33,$21,$2d
+    .byte $a8 ; rts
+  @Eb_E:
+    .byte $6e,$33,$22,$2e
+    .byte $a8 ; rts
+
+.reloc
+SpecialSongTri:
+  .byte $98,$8f
+
+  .byte $a1,$04
+    .byte $a0
+    .word (@MainBassLine)
+  .byte $a4
+
+  ; measure 9
+  .byte $6c,$32,$26
+  ; Bb_D_Bb Blip
+  .byte $53,$34,$40,$26,$35,$2d,$34,$26
+  ; Bb
+  .byte $63,$40,$61,$32,$26,$40
+  ; F then C_Ab_C blip twice
+  .byte $6c,$2f,$35,$53,$40,$2c,$34,$24,$35,$2c
+  .byte $6f,$40,$53,$2c,$34,$24,$34,$2c,$6d,$40
+  ; measure 10
+  .byte $6c,$32,$26
+  .byte $6f,$40
+  .byte $61,$26,$40
+  .byte $6f,$2f,$77,$40,$5e,$40
+
+  ; measure 11-12
+  .byte $a0
+  .word (@MainBassLine)
+
+  ; measure 13
+  ; C
+  .byte $6c,$33,$2c
+  ; C_E_C Blip
+  .byte $53,$35,$40,$2c,$2e,$2c
+  ; C
+  .byte $63,$40,$61,$33,$2c,$40
+  ; G then D_Bb_D blip twice
+  .byte $6e,$32,$20,$77,$35,$53,$40,$2d,$34,$26,$35,$2d
+  .byte $6f,$40,$53,$2d,$34,$26,$35,$2d,$6d,$40
+
+  ; measure 14
+  ; Bb
+  .byte $6c,$32,$26
+  ; Bb_D_Bb Blip
+  .byte $53,$34,$40,$26,$35,$2d,$34,$26
+  ; Bb
+  .byte $63,$40,$61,$32,$26,$40
+  ; F then C_Ab_C blip twice
+  .byte $6e,$32,$2f,$77,$35,$53,$40,$2c,$34,$25,$35,$2c
+  .byte $6f,$40,$53,$2c,$34,$25,$35,$2c,$6d,$40
+
+  ; measure 15-16
+  .byte $a0
+  .word (@MainBassLine)
+
+  ; end
+  .byte SONG_INDEX
+
+  @MainBassLine:
+    .byte $6e,$33,$2f,$77
+    ; F_A_F Blip
+    .byte $53,$35,$40,$2f,$2a,$2f
+    ; F
+    .byte $63,$40,$61,$33,$2f,$40
+    ; c then eb_g_eb blip twice
+    .byte $6e,$2c,$77,$35,$53,$40,$22,$20,$22
+    .byte $6f,$40,$53,$22,$20,$22,$6d,$40
+    .byte $6e,$33,$2f,$77
+    .byte $6f,$40
+    .byte $61,$2f,$40
+    .byte $6f,$2c,$77,$40,$5e,$40
+    .byte $a8 ; rts
+
+.reloc
+; $22 hat $2a kick $24 ?? $28 ??
+SpecialSongNoise:
+  .byte $91,$e0
+  .byte $a1,$10
+    .byte $d0,$88,$6e,$2a,$22,$28,$22,$2a,$22,$28,$24
+  .byte $a4
+  ; end
+  .byte SONG_INDEX
+
+.endif ; _BABY_ELEPHANT

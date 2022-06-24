@@ -6,6 +6,16 @@ This indexes the SoundEffectData table (offset by $40) at $18000
 $f0:40 indicates not to continue?
 $0110 is new track to play
 $0112 is current sfx's priority
+$0114,x is hardware channel flags
+  - 0 0 0 0 0 0 0 p
+    | | | | | | | |- channel is playing SFX? (affected by 0X 1X)
+    | | | | | | |--- unused?
+    | | | | | |----- unused?
+    | | | | |------- unused?
+    | | | |--------- channel is silenced     (affected by 4X)
+    | | |----------- channel has pitch envelope
+    | |------------- channel has volume envelope
+    |--------------- channel is playing
 
 Then store #$0a into $fb, #4 into x
 jsr $30169 x2 (2nd time w/ y=3 instead of 1)  [x=4,5]
@@ -73,11 +83,14 @@ Looped in 30298 until f2 is nonzero (jump 2 does this)
 
 
 Audio commands:
- - 0 seems to be "done"?
- - 0/1 ??
+ - 00 seems to be "done"?
+ - 0x/1x Change to the song at this index.
  - 2 is maybe some sort of pause/wait?
    - a4 also seems like a light terminal?
    - 2X is change pitch and be done...?
+   - Note table:
+   -  1 2   4 5 6
+   - c d e f 0 a b
  - 3 sets octave
  - 4 is ???
    - ends commands for frame
@@ -85,8 +98,12 @@ Audio commands:
  - 5/6 seems to set some sort of duration?
  - 7 seems to affect the roll-off?
    - 3052e writes 4000,y with successive smaller values, who calls it?
- - 8 seems to set volume
- - 9 sets timbre
+ - 8 seems to set max note volume.
+     - The volume table is a 16x16 table, where one dimension is the value in `8x` 
+          and the other is the value of the current envelope `eX`
+     - 8x is stored
+ - 9 sets volume through some weird alternative volume table. Disables `eX` if this is even
+          for some reason. It seems more used on triangle.
      - may be samples from a table somewhere, too-long duration gets weird
      - seems to be doing stuff w/ the duty cycle...
 
@@ -106,7 +123,8 @@ Audio commands:
       if X is odd: read but ignore arg, disable sweep
  - dX on noise channels: plays DMC track X from 30bd8
       on melodic channels: plays pitch X with octave-dependent pitch bend
- - eX ??
+ - eX Sets the note volume envelope
+ - fX Sets the note pitch envelope
 
 Weirdly, the first sequence in Sfx21_Ch4 seems to affect the _end_ of the
 sound effect - not sure why.  It could be because the sfx is over by the

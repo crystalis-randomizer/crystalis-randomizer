@@ -490,6 +490,9 @@ FREE "13" [$bff2, $c000)
 ;;; Random unused data table
 FREE "14" [$8520, $8528)
 
+;; Unused table for dpcm samples
+FREE "18" [$8be0, $8c0c)
+
 ;;; NOTE: there's space here, but we glob it into the space
 ;;; recovered from defragging MapData... if we want it back
 ;;; we'll need to change the "end" address there.

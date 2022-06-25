@@ -9,6 +9,7 @@ const COMMON = [
   'bits_array.js',
   'bits_base.js',
   'bits_bigint.js',
+  'character.js',
   'crc32.js',
   'asm/*.js',
   'data/*.js',

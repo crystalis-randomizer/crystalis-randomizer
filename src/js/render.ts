@@ -63,15 +63,15 @@ export function renderOptions(options: HTMLElement) {
 }
 
 export function renderCharacters(options: HTMLElement) {
-  const semiaReplacements = CharacterSet.semia();
-  for (const {name, image, chr_data, description} of semiaReplacements.values()) {
+  const simeaReplacements = CharacterSet.simea();
+  for (const {name, image, chr_data, description} of simeaReplacements.values()) {
     const container = document.createElement('div');
     container.className = "flex-row";
     container.style.width = '100%';
     const input = document.createElement('input');
     input.type = 'radio';
-    input.name = 'semia-replacement'
-    input.id = `semia-replacement-${name}`;
+    input.name = 'simea-replacement'
+    input.id = `simea-replacement-${name}`;
     input.value = name;
     input.style.display = 'none';
     if (chr_data.length == 0) {
@@ -80,7 +80,7 @@ export function renderCharacters(options: HTMLElement) {
     container.appendChild(input);
     const label = document.createElement('label');
     label.className = "sprite-replacement";
-    label.htmlFor = `semia-replacement-${name}`;
+    label.htmlFor = `simea-replacement-${name}`;
     const img = document.createElement('img');
     img.src = image;
     img.style.float = "left";

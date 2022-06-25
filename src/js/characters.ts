@@ -29,16 +29,16 @@ export class Sprite {
 
 export class CharacterSet {
   private static instance: CharacterSet;
-  private readonly semiaReplacements = new Array<Sprite>();
+  private readonly simeaReplacements = new Array<Sprite>();
 
-  static semia(): Sprite[] {
+  static simea(): Sprite[] {
     if (!this.instance) this.instance = new CharacterSet();
-    return [...this.instance.semiaReplacements];
+    return [...this.instance.simeaReplacements];
   }
 
   constructor() {
-    this.semiaReplacements.push(new Sprite("Semia", CustomTilesetMapping.semia(), "images/semia.png", [], "The original main character of Crystalis"));
-    this.semiaReplacements.push(new Sprite("Mesia", CustomTilesetMapping.semia(), "images/mesia.png", mesia_patch_data, "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy"));
+    this.simeaReplacements.push(new Sprite("Simea", CustomTilesetMapping.simea(), "images/simea.png", [], "The original main character of Crystalis"));
+    this.simeaReplacements.push(new Sprite("Mesia", CustomTilesetMapping.simea(), "images/mesia.png", mesia_patch_data, "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy"));
   }
 }
 
@@ -50,18 +50,18 @@ function toAddr(chr_page: number, nametable: number, tile_number: number): numbe
 // Provides a lookup from the sample tileset to the CHRROM locations
 class CustomTilesetMapping {
   private static instance: CustomTilesetMapping;
-  private readonly semiaMapping: Map<number, number[]>;
+  private readonly simeaMapping: Map<number, number[]>;
 
-  static semia() : Map<number, number[]> {
+  static simea() : Map<number, number[]> {
     if (!this.instance) this.instance = new CustomTilesetMapping();
-    return this.instance.semiaMapping;
+    return this.instance.simeaMapping;
   }
 
   constructor() {
-    this.semiaMapping = this.generateSemiaMapping();
+    this.simeaMapping = this.generatesimeaMapping();
   }
 
-  private generateSemiaMapping() : Map<number, number[]> {
+  private generatesimeaMapping() : Map<number, number[]> {
     // For most of the mappings, there is only one location to write it to, but for some, its split across several CHRROM banks.
     // so thats why its a map of tileset number to a list of addresses
 

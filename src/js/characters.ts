@@ -300,27 +300,27 @@ class CustomTilesetMapping {
     // Telepathy
     // Frame 1
     // top left
-    mapping.set(0x66, [toAddr(11,1,0x24)]);
+    mapping.set(0x66, [toAddr(11,1,0x14)]);
     // top right
-    mapping.set(0x67, [toAddr(11,1,0x25)]);
+    mapping.set(0x67, [toAddr(11,1,0x15)]);
     // mid left
-    mapping.set(0x76, [toAddr(11,1,0x06)]);
+    mapping.set(0x76, [toAddr(11,1,0x08)]);
     // mid right
-    mapping.set(0x77, [toAddr(11,1,0x07)]);
+    mapping.set(0x77, [toAddr(11,1,0x09)]);
     // bot left
-    mapping.set(0x86, [toAddr(11,1,0x26)]);
+    mapping.set(0x86, [toAddr(11,1,0x28)]);
     // bot right
-    mapping.set(0x87, [toAddr(11,1,0x27)]);
+    mapping.set(0x87, [toAddr(11,1,0x29)]);
 
     // Frame 2
     // mid left
-    mapping.set(0xa6, [toAddr(11,1,0x06)]);
+    mapping.set(0xa6, [toAddr(11,1,0x0a)]);
     // mid right
-    mapping.set(0xa7, [toAddr(11,1,0x07)]);
+    mapping.set(0xa7, [toAddr(11,1,0x0b)]);
     // bot left
-    mapping.set(0xb6, [toAddr(11,1,0x26)]);
+    mapping.set(0xb6, [toAddr(11,1,0x2a)]);
     // bot right
-    mapping.set(0xb7, [toAddr(11,1,0x27)]);
+    mapping.set(0xb7, [toAddr(11,1,0x2b)]);
 
 
     //////////

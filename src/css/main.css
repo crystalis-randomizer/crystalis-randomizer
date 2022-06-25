@@ -418,7 +418,7 @@ progress {
 }
 
 .sprite-replacement:hover {
-  border: 2px solid var(--dark);
+  outline: 2px solid var(--dark);
 }
 
 input[type="radio"]:checked + label.sprite-replacement {

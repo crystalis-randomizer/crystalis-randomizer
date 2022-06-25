@@ -3,24 +3,31 @@ export class Sprite {
   readonly name: string;
   readonly converter: Map<number, number[]>;
   readonly image: string;
-  readonly chr_data: number[];
+  readonly chrData: number[];
   readonly description?: string;
-  constructor(name: string, converter: Map<number, number[]>, image: string, chr_data: number[], description?: string) {
+  constructor(name: string,
+              converter: Map<number, number[]>,
+              image: string,
+              chrData: number[],
+              description?: string) {
     this.name = name;
     this.converter = converter;
     this.image = image;
-    this.chr_data = chr_data;
+    this.chrData = chrData;
     this.description = description;
   }
 
-  public applyPatch(rom: Uint8Array) {
-    if (this.chr_data.length == 0) {
+  public isCustom = () => { return this.chrData.length != 0; }
+
+  public applyPatch(rom: Uint8Array, expandedPRG: Boolean) {
+    if (!this.isCustom()) {
       return;
     }
     for (let [src, dsts] of this.converter) {
       for (let dst of dsts) {
         for (let i=0; i<0x10; ++i) {
-          rom[dst + i] = this.chr_data[src * 0x10 + i];
+          const expandedOffset = expandedPRG ? 0x40000 : 0;
+          rom[dst + i + expandedOffset] = this.chrData[src * 0x10 + i];
         }
       }
     }

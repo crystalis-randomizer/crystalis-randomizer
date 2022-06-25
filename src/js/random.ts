@@ -116,6 +116,79 @@ export class Random {
     }
   }
 
+  /**
+   * Attempts to do a metropolis-ish weighted shuffle.  This adds only a
+   * log-time overhead to the shuffle.  There are a few choices we could
+   * consider: (1) pre-sort or not, (2) unconditionally swap to improve
+   * weight or not.  We opt to not sort and to maybe not swap (though this
+   * potentially scales the temperature by a factor of 2 one direction or
+   * the other).
+   */
+  * ishuffleMetropolis<T>(arr: Array<[number, T]>, temp: number):
+  IterableIterator<T> {
+    const a = [...arr]; // .sort((a, b) => a[0] - b[0]);
+    for (let i = a.length - 1; i >= 0; i--) {
+      // try to swap out log2(i) different items, using a shooting method
+      for (let j = 1; j < i; j <<= 1) {
+        const j1 = j >>> 1;
+        const k = (j1 ? this.nextInt(j1) : 0) + j1 + 1;
+        const delta = a[i][0] - a[i - k][0];
+        // If delta < 0 then definitely swap, otherwise use a boltzman factor
+        //const swap = delta < 0 || this.next() < Math.exp(-delta / temp);
+        const swap = delta < 0 ? 2 * this.next() > Math.exp(delta / temp) :
+                                 2 * this.next() < Math.exp(-delta / temp);
+        if (swap) {
+          const tmp = a[i];
+          a[i] = a[i - k];
+          a[i - k] = tmp;
+        }
+      }
+      yield a[i][1];
+    }    
+  }
+
+  // /**
+  //  * Shuffles a weighted list such that the higher weights _tend_ to come
+  //  * earlier, but uses a temperature-parametrized monte carlo algorithm to
+  //  * inject some randomness.  When temperature is zero then this is just a
+  //  * deterministic sort.  When temperature is infinite, then it's a
+  //  * completely random shuffle.  At in-between temperatures (on the order
+  //  * of magnitude of the weights), there is a transition.
+  //  */
+  // metropolisShuffle<T extends Array<[number, T]>>(arr: T, temp: number): T {
+  //   // Start at T=0 equilibrium, then heat it up.
+  //   arr.sort((a, b) => b[0] - a[0]);
+  //   if (temp <= 0) return arr;
+
+  //   // TODO - this probably doesn't work how we'd like - randomly swapping
+  //   // non-neighbors seems problematic, and I'm starting to question the
+  //   // scale - if we have weights from 0 to 15 then T=5 might mean that
+  //   // we'll see 10..15 at the front but very not likely others.
+  //   //   - maybe it's the same thing with a unitless scaling?
+  //   // We should also try N passes of non-random neighbor shuffles?
+  //   //   - if there's a big delta somewhere in the middle, it would be hard
+  //   //     to break through that?
+  //   //   ---> way too slow
+
+  //   const l = arr.length;
+  //   for (let i = l * l; i > 0; i--) {
+  //     const j2 = this.nextInt(l - 1) + 1;
+  //     const j1 = this.nextInt(j2);
+  //     const delta = arr[j1][0] - arr[j2][0];
+  //     // Goal: weight 1 should be greater than weight 2:
+  //     //   so delta < 0 means we should definitely swap
+  //     //   but delta > 0 means we might swap at higher temperatures
+  //     //                 (probability P=exp(-delta/temp))
+  //     const swap = delta < 0 || this.next() < Math.exp(-delta / temp);
+  //     if (swap) {
+  //       const tmp = arr[j1];
+  //       arr[j1] = arr[j2];
+  //       arr[j2] = tmp;
+  //     }
+  //   }
+  //   return arr;
+  // }
+
   pick<T>(arr: readonly T[]): T {
     if (!arr.length) throw new Error('empty array');
     return arr[this.nextInt(arr.length)];

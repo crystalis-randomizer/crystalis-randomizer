@@ -215,11 +215,10 @@ const shuffleRom = async (seed) => {
   let crc;
   const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
   const sprite = CharacterSet.simea().find((spr) => spr.name == selectedsimeaSprite);
-  const graphicsPatchedRom = patch.patchGraphics(orig, [sprite]);
   try {
     [shuffled, crc] =
         await patch.shuffle(
-          graphicsPatchedRom, seed, flagsClone, new FetchReader(), log, progressTracker);
+          orig, seed, flagsClone, new FetchReader(), [sprite], log, progressTracker);
   } catch (err) {
     document.body.classList.add('failure');
     const errorText = document.getElementById('error-text');

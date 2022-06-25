@@ -209,20 +209,20 @@ function defines(flags: FlagSet,
       .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
 }
 
-export function patchGraphics(rom: Uint8Array, sprites: Sprite[]): Uint8Array {
-  const patched = new Uint8Array(rom);
+function patchGraphics(rom: Uint8Array, sprites: Sprite[]) {
   for (let sprite of sprites) {
-    sprite.applyPatch(patched);
+    sprite.applyPatch(rom, EXPAND_PRG);
   }
-  return patched;
 }
 
 export async function shuffle(rom: Uint8Array,
                               seed: number,
                               originalFlags: FlagSet,
                               reader: Reader,
+                              spriteReplacements?: Sprite[],
                               log?: {spoiler?: Spoiler},
-                              progress?: ProgressTracker): Promise<readonly [Uint8Array, number]> {
+                              progress?: ProgressTracker,
+                            ): Promise<readonly [Uint8Array, number]> {
   // Trim overdumps (main.js already does this, but there are other entrypoints)
   const expectedSize =
       16 + (rom[6] & 4 ? 512 : 0) + (rom[4] << 14) + (rom[5] << 13);
@@ -244,10 +244,11 @@ export async function shuffle(rom: Uint8Array,
   const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(originalFlags.filterOptional())) >>> 0;
   const random = new Random(newSeed);
 
+  const sprites = spriteReplacements ? spriteReplacements : [];
   const attemptErrors = [];
   for (let i = 0; i < 5; i++) { // for now, we'll try 5 attempts
     try {
-      return await shuffleInternal(rom, originalFlags, seed, random, reader, log, progress);
+      return await shuffleInternal(rom, originalFlags, seed, random, reader, log, progress, sprites);
     } catch (error) {
       attemptErrors.push(error);
       console.error(`Attempt ${i + 1} failed: ${error.stack}`);
@@ -262,7 +263,8 @@ async function shuffleInternal(rom: Uint8Array,
                                random: Random,
                                reader: Reader,
                                log: {spoiler?: Spoiler}|undefined,
-                               progress: ProgressTracker|undefined
+                               progress: ProgressTracker|undefined,
+                               spriteReplacements: Sprite[],
                               ): Promise<readonly [Uint8Array, number]>  {
   const originalFlagString = String(originalFlags);
   const flags = originalFlags.filterRandom(random);
@@ -475,7 +477,10 @@ async function shuffleInternal(rom: Uint8Array,
 
   parsed.modules.push(await asm('late'));
 
-  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy);
+  const hasGraphics = spriteReplacements?.some((spr) => spr.isCustom()) || false;
+
+  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics);
+
 
   // Do optional randomization now...
   if (flags.randomizeMusic('late')) {
@@ -493,8 +498,9 @@ async function shuffleInternal(rom: Uint8Array,
   fixSkippableExits(parsed);
 
   parsed.writeData();
-  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
 
+  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
+  patchGraphics(rom, spriteReplacements);
   if (EXPAND_PRG) {
     const prg = rom.subarray(0x10);
     prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
@@ -743,7 +749,11 @@ const storyMode = (rom: Rom) => {
 };
 
 // Stamp the ROM
-export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flagString: string, early: Uint8Array): number {
+export function stampVersionSeedAndHash(rom: Uint8Array,
+                                        seed: number,
+                                        flagString: string,
+                                        early: Uint8Array,
+                                        hasGraphics: Boolean): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
@@ -754,9 +764,14 @@ export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flagStrin
       version.HASH.substring(0, 7).padStart(7, '0').toUpperCase() + '     ' :
       version.VERSION.substring(0, 12).padEnd(12, ' ');
   const seedStr = seed.toString(16).padStart(8, '0').toUpperCase();
-  const embed = (addr: number, text: string) => {
-    for (let i = 0; i < text.length; i++) {
-      rom[addr + 0x10 + i] = text.charCodeAt(i);
+  const embedStr = (addr: number, value: string) => {
+    for (let i = 0; i < value.length; i++) {
+      rom[addr + 0x10 + i] = value.charCodeAt(i);
+    }
+  };
+  const embedNum = (addr: number, value: number[]) => {
+    for (let i = 0; i < value.length; i++) {
+      rom[addr + 0x10 + i] = value[i];
     }
   };
   const intercalate = (s1: string, s2: string): string => {
@@ -768,7 +783,7 @@ export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flagStrin
     return out.join('');
   };
 
-  embed(0x277cf, intercalate('  VERSION     SEED      ',
+  embedStr(0x277cf, intercalate('  VERSION     SEED      ',
                              `  ${hash}${seedStr}`));
 
   // if (flagString.length > 36) flagString = flagString.replace(/ /g, '');
@@ -790,16 +805,19 @@ export function stampVersionSeedAndHash(rom: Uint8Array, seed: number, flagStrin
 
   flagString = flagString.padEnd(46, ' ');
 
-  embed(0x277ff, intercalate(flagString.substring(0, 23), flagString.substring(23)));
+  embedStr(0x277ff, intercalate(flagString.substring(0, 23), flagString.substring(23)));
   if (extraFlags) {
-    embed(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
+    embedStr(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
   }
-
-  embed(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
+  if (hasGraphics) {
+    // 7e is the SP char denoting a Sprite Pack was applied
+    embedNum(0x27883, [0x7e]);
+  }
+  embedStr(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
-  embed(0x25716, 'RANDOMIZER');
-  if (version.STATUS === 'unstable') embed(0x2573c, 'BETA');
+  embedStr(0x25716, 'RANDOMIZER');
+  if (version.STATUS === 'unstable') embedStr(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
   // page as well, but we'd need to replace the unused letters in bank
   // $1d with the missing numbers (J, Q, W, X), as well as the two

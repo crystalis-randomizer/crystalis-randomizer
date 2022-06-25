@@ -64,7 +64,7 @@ export function renderOptions(options: HTMLElement) {
 
 export function renderCharacters(options: HTMLElement) {
   const simeaReplacements = CharacterSet.simea();
-  for (const {name, image, chr_data, description} of simeaReplacements.values()) {
+  for (const {name, image, chrData, description} of simeaReplacements.values()) {
     const container = document.createElement('div');
     container.className = "flex-row";
     container.style.width = '100%';
@@ -74,7 +74,7 @@ export function renderCharacters(options: HTMLElement) {
     input.id = `simea-replacement-${name}`;
     input.value = name;
     input.style.display = 'none';
-    if (chr_data.length == 0) {
+    if (chrData.length == 0) {
       input.checked = true;
     }
     container.appendChild(input);

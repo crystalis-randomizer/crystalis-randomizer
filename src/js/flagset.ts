@@ -761,6 +761,12 @@ class Vanilla extends FlagSection {
     modes: '!',
     optional: NO_BANG,
   });
+
+  static readonly Quicksand = Vanilla.flag('Vq', {
+    name: 'Vanilla quicksand',
+    text: `By default, we remove the whirlpools in front of the desert cave,
+           pyramid, and crypt.  This flag restores them.`,
+  });
 }
 
 class Quality extends FlagSection {
@@ -1236,5 +1242,8 @@ export class FlagSet {
   }
   shouldUpdateHud(): boolean {
     return this.check(Vanilla.Hud, false);
+  }
+  removeDesertWhirlpools(): boolean {
+    return !this.check(Vanilla.Quicksand);
   }
 }

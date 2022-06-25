@@ -5,6 +5,7 @@ import {Flag, Spawn} from '../rom/locationtables.js';
 import {Location} from '../rom/location.js';
 import {Metalocation} from '../rom/metalocation.js';
 import {cloneArray} from '../rom/util.js';
+import {removeWhirlpools} from './removewhirlpools.js';
 
 type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
 
@@ -16,6 +17,7 @@ interface EastCaveOptions {
 interface Options {
   eastCave?: EastCaveOptions;
   classicLimeTreeToLeaf?: boolean;
+  removeWhirlpools?: boolean;
 }
 
 export function standardMapEdits(rom: Rom, opts: Options) {
@@ -33,6 +35,10 @@ export function standardMapEdits(rom: Rom, opts: Options) {
   splitSaberaPalace2(rom);
   //splitStyx2(rom); // don't actually do this one?
   // closeCaveEntrances(rom); // NOTE: after other map edits
+
+  if (opts.removeWhirlpools) {
+    removeWhirlpools(rom);
+  }
 }
 
 export namespace standardMapEdits {
@@ -46,6 +52,9 @@ export namespace standardMapEdits {
       options.eastCave.exit2 = random.pick(exits);
     } else if (flags.connectLimeTreeToLeaf()) {
       options.classicLimeTreeToLeaf = true;
+    }
+    if (flags.removeDesertWhirlpools()) {
+      options.removeWhirlpools = true;
     }
     return options;
   }

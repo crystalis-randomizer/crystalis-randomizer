@@ -518,7 +518,7 @@ export class Flags {
   FortressSaberaSoutheastChest = tracked(0x166); // fruit of repun
   KensuInCabin = tracked(0x167); // added by randomizer if fog lamp not needed
   // unused 168 magic ring chest
-  MtSabreWestNearKensuChest = tracked(0x169); // magic ring
+  MtSabreWestNearTornelChest = tracked(0x169); // magic ring
   MtSabreWestLeftChest = tracked(0x16a); // warp boots
   FortressMadoUpperBehindWallChest = tracked(0x16b); // magic ring
   PyramidChest = tracked(0x16c); // magic ring

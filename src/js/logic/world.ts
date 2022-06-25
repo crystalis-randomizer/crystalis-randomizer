@@ -1158,13 +1158,13 @@ export class World {
     const losable = itemget.isLosable();
     // TODO - refactor to just "can't be bought"?
     const preventLoss = unique || item === this.rom.items.OpelStatue;
-    let weight = 1;
-    if (item === this.rom.items.SwordOfWind) weight = 5;
-    if (item === this.rom.items.SwordOfFire) weight = 5;
-    if (item === this.rom.items.SwordOfWater) weight = 10;
-    if (item === this.rom.items.SwordOfThunder) weight = 15;
-    if (item === this.rom.items.Flight) weight = 15;
-    this.items.set(0x200 | itemget.id, {unique, losable, preventLoss, weight});
+    // let weight = 1;
+    // if (item === this.rom.items.SwordOfWind) weight = 5;
+    // if (item === this.rom.items.SwordOfFire) weight = 5;
+    // if (item === this.rom.items.SwordOfWater) weight = 10;
+    // if (item === this.rom.items.SwordOfThunder) weight = 15;
+    // if (item === this.rom.items.Flight) weight = 15;
+    this.items.set(0x200 | itemget.id, {unique, losable, preventLoss});
   }
 
   addCheckFromFlags(hitbox: Hitbox, requirement: Requirement, flags: number[]) {

@@ -27,6 +27,7 @@ function ga(cmd, ...args) {
 const initRace = () => {
   race = true;
   loadRomFromStorage();
+  loadSpriteSelectionsFromStorage();
   initializeStateFromHash(false);
   updateRaceDom();
   // Handle URL edits directly
@@ -60,6 +61,7 @@ const main = () => {
 
   // Check for a stored ROM.
   loadRomFromStorage();
+  loadSpriteSelectionsFromStorage();
   initializeStateFromHash(true);
 
   // Wire up the presets menu.
@@ -408,6 +410,20 @@ const loadRomFromStorage = () => {
   });
 };
 
+const loadSpriteSelectionsFromStorage = () => {
+  const simeaSprite = window['localStorage'].getItem('simea-replacement');
+  const simeaOptions = document.getElementsByName('simea-replacement');
+  for (const radio of simeaOptions) {
+    if (radio.value == simeaSprite) {
+      radio.checked = true;
+    }
+  }
+  simeaOptions.forEach( (radio) => {
+    radio.addEventListener('change', (event) => {
+      window['localStorage'].setItem('simea-replacement', event.target.value);
+    })
+  })
+}
 
 const download = (data, name) => {
   const a = document.createElement('a');

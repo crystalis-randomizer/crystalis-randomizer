@@ -56,7 +56,7 @@ const main = () => {
 
   render.renderPresets(document.getElementById('presets'));
   render.renderOptions(document.getElementById('select-options'));
-  render.renderCharacters(document.getElementById('semia-sprite-options'));
+  render.renderCharacters(document.getElementById('simea-sprite-options'));
 
   // Check for a stored ROM.
   loadRomFromStorage();
@@ -213,8 +213,8 @@ const shuffleRom = async (seed) => {
   showWork();
   let shuffled;
   let crc;
-  const selectedSemiaSprite = document.querySelector('input[name="semia-replacement"]:checked').value;
-  const sprite = CharacterSet.semia().find((spr) => spr.name == selectedSemiaSprite);
+  const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
+  const sprite = CharacterSet.simea().find((spr) => spr.name == selectedsimeaSprite);
   const graphicsPatchedRom = patch.patchGraphics(orig, [sprite]);
   try {
     [shuffled, crc] =

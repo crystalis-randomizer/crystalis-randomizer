@@ -401,6 +401,7 @@ const loadRomFromStorage = () => {
           16 + (raw[6] & 4 ? 512 : 0) + (raw[4] << 14) + (raw[5] << 13);
       const arr = raw.slice(0, expectedSize);
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
+      rom = arr;
       window['localStorage'].setItem('rom', str);
       window['localStorage'].setItem('name', file.name);
       checkCrc();

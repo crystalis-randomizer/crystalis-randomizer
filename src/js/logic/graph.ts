@@ -176,10 +176,9 @@ export class Graph {
    * Do one or more samples of an arbitrary-ordered item pickup to
    * measure roughly the weight of each item and slot.
    */
-  computeWeights(traverses = 1): Weights {
+  computeWeights(random = new Random(), traverses = 1): Weights {
     const itemWeights = Array.from({length: this.items.length}, () => 0);
     const slotWeights = Array.from({length: this.slots.length}, () => 0);
-    const random = new Random();
     const progressionItems = [];
     for (const [index, id] of this.items) {
       if (id >= 0x200 && id < 0x280 && this.progression.has(id)) progressionItems.push(index);
@@ -210,7 +209,7 @@ export class Graph {
   }
 
   reportWeights() {
-    const weights = this.computeWeights(10);
+    const weights = this.computeWeights(new Random(), 10);
     const itemWeights = weights.items.map((w, i) => [i, w] as [ItemIndex, number]);
     const slotWeights = weights.slots.map((w, i) => [i, w] as [SlotIndex, number]);
     function itemName(id: number) {
@@ -244,7 +243,7 @@ export class Graph {
                 spoiler?: Spoiler): Promise<Map<SlotId, ItemId>|null> {
     (window as any).graph = this;
     if (progress) progress.addTasks(Math.floor(attempts / 10));
-    const weights = this.computeWeights(100);
+    const weights = this.computeWeights(random, 1000);
     // const itemWeights = new Map(weights.items.map((w, i) => [i, w] as [ItemIndex, number]));
     // const slotWeights = new Map(weights.slots.map((w, i) => [i, w] as [SlotIndex, number]));
     for (let attempt = 0; attempt < attempts; attempt++) {

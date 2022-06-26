@@ -836,7 +836,7 @@ UpdateGlobalStepCounter:
   .byte $7b,$2b,$02,$00 ; copied from $34ee3
 .org $8ee3  ; 05 - was Max MP, now its Enemy Curr HP
   .word (RecentEnemyCurrHP)
-  .byte $6e,$2b,$02,$40
+  .byte $71,$2b,$02,$40
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
 .ifdef _UPDATE_HUD
@@ -1078,6 +1078,16 @@ Do16BitSubtractionForEXP:
   .byte $00
 .popseg
 
+
+.pushseg "fe", "ff"
+;; Add the Enemy Name to the precomputed write table.
+;; TODO: Is $45 unused? if there are no unused slots we may need to expand this.
+.org $c671 ; NametablePrecomputedHeaderTable @ #$45
+.byte $2b,$63,$0d,$80,$00
+.popseg
+
+;; Force this part to go into the $a000 page so we can bank $8000
+.pushseg "1b","fe","ff"
 ;;; ----------------------------------------------------
 ; [in] y - Offset for the current enemy we are displaying health for
 .reloc
@@ -1085,17 +1095,61 @@ UpdateEnemyHPDisplay:
   ; We scratch x so save it before running
   txa
   pha
-    lda ObjectHP, y
+    tya
+    pha
+      ; if the object id changed, update the name of the monster
+      lda ObjectNameId,y
+      cmp RecentEnemyObjectID
+      beq +
+      ; calculate the offset into the bank
+      ; todo do this faster?
+      sta $25
+      lda #$00
+      sta $26
+      asl $25
+      rol $26
+      asl $25
+      rol $26
+      asl $25
+      rol $26
+      asl $25
+      rol $26
+      lda $26
+      clc
+      adc #$80
+      sta $26
+
+      lda $6e
+      pha
+        lda #$3c
+        jsr BankSwitch8k_8000
+        ; copy the name into the staging buffer
+        ldy #$0d
+-         lda ($25),y
+          sta $6080,y
+          dey
+          bpl -
+      pla
+      ; restore the previous bank
+      jsr BankSwitch8k_8000
+      
+      ; call the function to blit it to the nametable
+      lda #$45
+      jsr StageNametableWriteFromTable
++   pla
+    tay
+    ; if the enemy health changed, update that as well.   
+    lda ObjectHP,y
     tax
-    lda ObjectDef, y
+    lda ObjectDef,y
     ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
     and #$01
     cpx RecentEnemyCurrHPLo
     bne +
     cmp RecentEnemyCurrHPHi
     beq @Exit ; unconditional
-+   ; A = enemy curr hp hi, x = enemy curr hp lo
-    sta RecentEnemyCurrHPHi
+    ; A = enemy curr hp hi, x = enemy curr hp lo
++   sta RecentEnemyCurrHPHi
     stx RecentEnemyCurrHPLo
     tya
     pha
@@ -1108,6 +1162,7 @@ UpdateEnemyHPDisplay:
   tax
   jmp EnableNMI
   ; implict rts
+.popseg
 
 ;;; Crystalis should have all elements, rather than none
 ;;; Since we now invert the handling for enemy immunity,
@@ -2105,7 +2160,7 @@ FREE_UNTIL $e652
   ;; note: the AND should no longer be necessary since it's zero already
   and #$3f    ; note: we only need the 20 bit if we expand the rom
   beq $ebef
-   jsr $c418  ; BankSwitch8k_8000
+   jsr BankSwitch8k_8000  ; BankSwitch8k_8000
 .assert * = $ebef
 
 .org $ef36
@@ -2298,7 +2353,7 @@ TrainerIncreaseLevel:
   lda $6e
   pha
    lda #$1a
-   jsr $c418
+   jsr BankSwitch8k_8000
    lda $8b7f,y
    sta $03c0
    sta $03c1
@@ -2318,7 +2373,7 @@ TrainerIncreaseLevel:
    jsr $8e46
    jsr $c008
   pla
-  jmp $c418
+  jmp BankSwitch8k_8000
 
 
 .org $e2ac ; normally loads object data for wall
@@ -2621,11 +2676,11 @@ TrainerStart:
   lda $6e ; NOTE: could just jmp $3d276 ?? but less hygeinic
   pha
    lda #$1a
-   jsr $c418 ; bank switch 8k 8000
+   jsr BankSwitch8k_8000 ; bank switch 8k 8000
    lda #$01
    jsr $8e46 ; display number internal
   pla
-  jmp $c418
+  jmp BankSwitch8k_8000
 
 .reloc
 TrainerData:
@@ -2886,7 +2941,7 @@ UseIvoryStatue:  ; Move bytes from $3d6ec
   jsr $e144 ; LoadNpcDataForCurrentLocation
   ldx #$0f
   lda #$1a
-  jsr $c418 ; BankSwitch8k_8000
+  jsr BankSwitch8k_8000 ; BankSwitch8k_8000
   jsr $98a8 ; ReadObjectCoordinatesInto_34_37
   ldx #$1e
   stx $10

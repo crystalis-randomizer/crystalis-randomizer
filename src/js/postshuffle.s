@@ -15,7 +15,7 @@
 ;; .org * + SCALING_LEVELS
 ;; DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
 ;; .org * + SCALING_LEVELS
-
+;;; $11 holds the original object ID
 ;;; $12 and $13 are free RAM at this point
 
 ;.org $1bdd0  ; Note: this follows immediately from the tables.
@@ -246,6 +246,9 @@ RescaleExp:   ; $1bcbd
 +    lda #$ff
 +++ sta ObjectExp,x
 RescaleDone:
+   ;; $11 contains the original object ID. We need this to get the name later
+   lda $11
+   sta ObjectNameId,x
    jmp $c2af
 
 ; .assert * <= $c000

@@ -182,9 +182,9 @@ SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
 
 ObjectNameId        = $6a10 ; 32 bytes from $10 - $2f used to look up this object's name.
-RecentEnemyFullName = $6a30 ; 10 bytes from $30 - $39
-RecentEnemyNameId   = $6a3a ; 1 byte. Used to determine if the name has changed since the previous enemy.
-RecentEnemyCurrHP   = $6a3b ; 2 bytes $3b and $3c
+; RecentEnemyFullName = $6a30 ; 13 bytes from $30 - $3c
+RecentEnemyObjectID   = $6a3d ; 1 byte. Used to determine if the name has changed since the previous enemy.
+RecentEnemyCurrHP   = $6a3e ; 2 bytes $3e and $3f
 RecentEnemyCurrHPLo = RecentEnemyCurrHP
 RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
 
@@ -281,6 +281,7 @@ SpawnMimic                 = $d3da
 MainLoopItemGet            = $d3ff
 WaitForNametableBufferAvailable = $c72b
 EnableNMI                  = $c436
+StageNametableWriteFromTable = $c482
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756

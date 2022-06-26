@@ -753,7 +753,7 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
                                         seed: number,
                                         flagString: string,
                                         early: Uint8Array,
-                                        hasGraphics: Boolean): number {
+                                        hasGraphics: boolean): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
@@ -764,14 +764,18 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
       version.HASH.substring(0, 7).padStart(7, '0').toUpperCase() + '     ' :
       version.VERSION.substring(0, 12).padEnd(12, ' ');
   const seedStr = seed.toString(16).padStart(8, '0').toUpperCase();
-  const embedStr = (addr: number, value: string) => {
-    for (let i = 0; i < value.length; i++) {
-      rom[addr + 0x10 + i] = value.charCodeAt(i);
-    }
-  };
-  const embedNum = (addr: number, value: number[]) => {
-    for (let i = 0; i < value.length; i++) {
-      rom[addr + 0x10 + i] = value[i];
+  const embed = (addr: number, ...values: (string|number)[]) => {
+    addr += 0x10;
+    for (const value of values) {
+      if (typeof value === 'string') {
+        for (const c of value) {
+          rom[addr++] = c.charCodeAt(0);
+        }
+      } else if (typeof value === 'number') {
+        rom[addr++] = value;
+      } else {
+        throw new Error(`Bad value: ${value}`);
+      }
     }
   };
   const intercalate = (s1: string, s2: string): string => {
@@ -783,7 +787,7 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
     return out.join('');
   };
 
-  embedStr(0x277cf, intercalate('  VERSION     SEED      ',
+  embed(0x277cf, intercalate('  VERSION     SEED      ',
                              `  ${hash}${seedStr}`));
 
   // if (flagString.length > 36) flagString = flagString.replace(/ /g, '');
@@ -805,19 +809,19 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
 
   flagString = flagString.padEnd(46, ' ');
 
-  embedStr(0x277ff, intercalate(flagString.substring(0, 23), flagString.substring(23)));
+  embed(0x277ff, intercalate(flagString.substring(0, 23), flagString.substring(23)));
   if (extraFlags) {
-    embedStr(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
+    embed(0x2782f, intercalate(extraFlags.substring(0, 23), extraFlags.substring(23)));
   }
   if (hasGraphics) {
     // 7e is the SP char denoting a Sprite Pack was applied
-    embedNum(0x27883, [0x7e]);
+    embed(0x27883, 0x7e);
   }
-  embedStr(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
+  embed(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
-  embedStr(0x25716, 'RANDOMIZER');
-  if (version.STATUS === 'unstable') embedStr(0x2573c, 'BETA');
+  embed(0x25716, 'RANDOMIZER');
+  if (version.STATUS === 'unstable') embed(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
   // page as well, but we'd need to replace the unused letters in bank
   // $1d with the missing numbers (J, Q, W, X), as well as the two

@@ -130,7 +130,7 @@ class CustomTilesetMapping {
     mapping.set(0x26, [toAddr(8,0,0x26)]);
     // Up bot right
     mapping.set(0x27, [toAddr(8,0,0x27)]);
-    
+
     //////////
     // Up attack
     // Frame 1

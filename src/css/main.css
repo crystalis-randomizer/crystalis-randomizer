@@ -423,4 +423,4 @@ progress {
 
 input[type="radio"]:checked + label.sprite-replacement {
   background-color: var(--light);
-} 
+}

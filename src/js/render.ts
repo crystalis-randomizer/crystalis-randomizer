@@ -90,7 +90,7 @@ export function renderCharacters(options: HTMLElement) {
     title.textContent = name;
     title.className = "title";
     label.appendChild(title);
-    
+
     if (description) {
       const desc = document.createElement('div');
       desc.innerHTML = description; // NOTE: mainly for italics and bold

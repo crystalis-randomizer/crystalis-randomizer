@@ -162,7 +162,7 @@ ObjectExp = $520
 ; starting at zero and counting up to ExpToNextLevel, it will start at ExpToNextLevel
 ; and count down.
 PlayerExp = $704
-LastAttackedEnemyOffset = $706 ; replaces PlayerMaxExp
+PlayerMaxExp = $706 ; unused
 PlayerMP = $708
 PlayerMaxMP = $709
 EquippedConsumableItem = $715
@@ -186,7 +186,7 @@ SelectedQuestItemIndex  = $642e
 ; These are offset by $0d since enemy objects only load from $0d - $1f
 ObjectNameId        = $6a10 - $0d ; 18 bytes from $10 - $22 used to look up this object's name.
 ObjectMaxHPLo       = $6a22 - $0d ; 18 bytes from $22 - $34
-ObjectMaxHPHi       = $6a34 - $0d ; 3 bytes from $34 - $37 (bit packed)
+ObjectMaxHPHi       = $6a34       ; 3 bytes from $34 - $37 (bit packed)
 RecentEnemyObjectID = $6a3b ; 1 byte. Used to determine if the name has changed since the previous enemy.
 RecentEnemyMaxHP    = $6a3c ; 2 bytes $3c and $3d
 RecentEnemyMaxHPLo = RecentEnemyMaxHP

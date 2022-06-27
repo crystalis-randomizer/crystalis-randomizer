@@ -132,6 +132,26 @@ export class Pattern extends Entity {
     |    x.x.|
     |     . .|
   `, {' ': 2, 'E': 1, 'x': 1, '.': 3});
+  public static readonly HUD_CLOSE_RIGHT = parsePattern(`
+    |________|
+    |____oooo|
+    |____o...|
+    |__ooo...|
+    |__o....o|
+    |__o....o|
+    |__o..oo |
+    |__o..o  |
+  `, {' ': 0, '.': 1, '_': 2, 'o': 3});
+  public static readonly HUD_CLOSE_LEFT = parsePattern(`
+    |________|
+    |oooo____|
+    |...o____|
+    |...ooo__|
+    |o....o__|
+    |o....o__|
+    | oo..o__|
+    |  o..o__|
+  `, {' ': 0, '.': 1, '_': 2, 'o': 3});
 }
 
 function parsePattern(data: String, key: Record<string, number>): number[] {

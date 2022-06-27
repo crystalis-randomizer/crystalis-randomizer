@@ -85,8 +85,12 @@ export class ObjectData extends Entity {
 
     // Add the name of the object to the rom in a spare bank
     a.segment('3c');
-    a.org(0x8000 + (this.id << 4), `${name}_Str`);
-    a.byte(...this.name.toUpperCase().substring(0,16).padEnd(16, ' '));
+    a.org(0x8000 + (this.id << 5), `${name}_Str`);
+    let objName = this.name.substring(0,27);
+    a.byte(...objName);
+    a.byte(0x9b); // Closing bracket for right side [
+    // fill the rest of the name with the spacer tile so it looks like 'NAME[===='
+    a.byte(...Array(28 - (objName.length + 1)).fill(0x1c));
 
     return [a.module()];
   }

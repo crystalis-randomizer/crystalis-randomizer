@@ -856,7 +856,7 @@ UpdateGlobalStepCounter:
 .pushseg "13", "fe", "ff"
 .org $baca
 InitializeStatusBarNametable:
-  lda #0 ; force clear the enemy HP Display
+  clc ; clear carry to signify there is no enemy
   jsr UpdateEnemyHPDisplay
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
@@ -973,16 +973,11 @@ ExitWithoutDrawingEXP:
 .reloc
 RemoveEnemyAndPlaySFX:
   ; the last attacked enemy is getting cleared out so we want to update the HP display
-  jsr RemoveEnemyHpDisplay
+  clc
+  jsr UpdateEnemyHPDisplay
   lda #SFX_MONSTER_HIT
-  jsr StartAudioTrack
-  rts
-
-.reloc
-RemoveEnemyHpDisplay:
-  ; zero out the enemy HP so that it draws correctly
-  lda #$00
-  jmp UpdateEnemyHPDisplay
+  jmp StartAudioTrack
+  ; implicit rts
 
 .org $8cc0
 UpdateHPDisplayInternal:
@@ -1082,24 +1077,37 @@ Do16BitSubtractionForEXP:
 
 .pushseg "fe", "ff"
 ;; Add the Enemy Name to the precomputed write table.
-;; TODO: Is $45 unused? if there are no unused slots we may need to expand this.
-.org $c671 ; NametablePrecomputedHeaderTable @ #$45
-.byte $2b,$82,$1c,$80,$00
+.org $c5b8 ; NametablePrecomputedHeaderTable @ #$20
+.byte $ab,$82,$1c,$00,$80
+
+.reloc
+UpdateEnemyHPDisplay:
+  lda $6f
+  pha
+    lda #$1b
+    jsr BankSwitch8k_a000
+    ; UpdateEnemyHP preserves x and y
+    jsr UpdateEnemyHPDisplayInternal
+  pla
+  jsr BankSwitch8k_a000
+  jmp EnableNMI
+  ; implicit rts
 .popseg
 
 ;; Force this part to go into the $a000 page so we can bank $8000
 .pushseg "1b","fe","ff"
 ;;; ----------------------------------------------------
-; [in] a - boolean 1 if the enemy is still alive, 0 if we are clearing.
+; [in] carry set if the enemy is still alive, 0 if we are clearing
 ; [in] y - Offset for the current enemy we are displaying health for
 .reloc
-UpdateEnemyHPDisplay:
-  bne @EnemyAlive
+
+UpdateEnemyHPDisplayInternal:
   ; Enemy is dead so clean out all the values.
   txa
   pha
     tya
     pha
+      bcs @EnemyAlive
       lda #0
       sta RecentEnemyCurrHPHi
       sta RecentEnemyCurrHPLo
@@ -1111,29 +1119,23 @@ UpdateEnemyHPDisplay:
       jsr DisplayNumberInternal
       lda #$1c
       ldy #$1c
--       sta $6080,y
+-       sta $6000,y
         dey
         bpl -
-      lda #$45
+      lda #$20
       jsr StageNametableWriteFromTable
     pla
     tay
   pla
   tax
-  jmp EnableNMI
-  ; implict rts
+  rts
 @EnemyAlive:
-  ; We scratch x so save it before running
-  txa
-  pha
-    tya
-    pha
       ; if the object id changed, update the name of the monster
       lda ObjectNameId,y
       cmp RecentEnemyObjectID
       beq @UpdateEnemyCurrentHP
+      sty RecentEnemyObjectID
       ; calculate the offset into the bank
-      ; todo do this faster?
       sta $25
       lda #$00
       sta $26
@@ -1158,12 +1160,12 @@ UpdateEnemyHPDisplay:
         jsr BankSwitch8k_8000
         ; copy the name into the staging buffer
         lda #$9a ; tile for left close ]
-        sta $6080
+        sta $6000
         ; lda #$9b ; tile for right close [
         ; sta $6092
         ldy #$1b
 -         lda ($25),y
-          sta $6081,y
+          sta $6001,y
           dey
           bpl -
       pla
@@ -1171,7 +1173,7 @@ UpdateEnemyHPDisplay:
       jsr BankSwitch8k_8000
       
       ; call the function to blit it to the nametable
-      lda #$45
+      lda #$20
       jsr StageNametableWriteFromTable
 @UpdateEnemyCurrentHP:
     pla
@@ -1227,8 +1229,7 @@ UpdateEnemyHPDisplay:
 @Exit:
   pla
   tax
-  jmp EnableNMI
-  ; implict rts
+  rts
 .popseg
 
 ;;; Crystalis should have all elements, rather than none
@@ -1306,8 +1307,7 @@ UpdateEnemyHP:
     lda $62
     rol
     sta ObjectDef,y
-    sty LastAttackedEnemyOffset
-    lda #$01 ; Flag that the enemy isn't dead yet
+    sec ; Set carry to signify the enemy is still alive
     jmp UpdateEnemyHPDisplay
     ;implicit rts
 

@@ -143,6 +143,8 @@ FREE "3d" [$a000, $c000)
 
 
 ;;; Various global definitions.
+PpuCtrlShadow = $00
+PpuMaskShadow = $01
 GameMode = $41
 ObjectRecoil = $340
 ObjectHP = $3c0
@@ -177,13 +179,18 @@ ItemFlagsStart = $64c0
 Difficulty = $648f         ; requires defrag! (flags 078 .. 07f)
 ShouldRedisplayDifficulty = $61ff
 
-        
+; .define _TRAINER 1
 SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
 
-ObjectNameId        = $6a10 ; 32 bytes from $10 - $2f used to look up this object's name.
-; RecentEnemyFullName = $6a30 ; 13 bytes from $30 - $3c
-RecentEnemyObjectID   = $6a3d ; 1 byte. Used to determine if the name has changed since the previous enemy.
+; These are offset by $0d since enemy objects only load from $0d - $1f
+ObjectNameId        = $6a10 - $0d ; 18 bytes from $10 - $22 used to look up this object's name.
+ObjectMaxHPLo       = $6a22 - $0d ; 18 bytes from $22 - $34
+ObjectMaxHPHi       = $6a34 - $0d ; 3 bytes from $34 - $37 (bit packed)
+RecentEnemyObjectID = $6a3b ; 1 byte. Used to determine if the name has changed since the previous enemy.
+RecentEnemyMaxHP    = $6a3c ; 2 bytes $3c and $3d
+RecentEnemyMaxHPLo = RecentEnemyMaxHP
+RecentEnemyMaxHPHi = RecentEnemyMaxHP+1
 RecentEnemyCurrHP   = $6a3e ; 2 bytes $3e and $3f
 RecentEnemyCurrHPLo = RecentEnemyCurrHP
 RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
@@ -205,7 +212,7 @@ DISPLAY_NUMBER_BUYCOST  = $0b
 DISPLAY_NUMBER_INNCOST  = $0c
 DISPLAY_NUMBER_PAWNVAL  = $0d
 DISPLAY_NUMBER_LEVEL2   = $0e ; Level in Menu replaces Unused
-DISPLAY_NUMBER_UNUSED   = $0f ; Unused
+DISPLAY_NUMBER_ENEMYMAX = $0f ; Replaces Unused
 DISPLAY_NUMBER_DEF2     = $10
 
 .ifdef _EXTRA_PITY_MP
@@ -231,6 +238,16 @@ ITEM_RABBIT_BOOTS    = $12
 ITEM_OPEL_STATUE     = $26
 SFX_MONSTER_HIT      = $21
 SFX_ATTACK_IMMUNE    = $3a
+
+PPUCTRL   = $2000
+PPUMASK   = $2001
+PPUSTATUS = $2002
+OAMADDR   = $2003
+OAMDATA   = $2004
+PPUSCROLL = $2005
+PPUADDR   = $2006
+PPUDATA   = $2007
+OAMDMA    = $4014
 
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read

@@ -796,10 +796,11 @@ UpdateGlobalStepCounter:
   .byte $20,$20,$1f     ;  _ _ |
 
 .org $bb1b
-  .byte $82             ; Ey
+  .byte $82,$20,$20,$20 ; Ey _ _ _
+  .byte $20,$9d         ;  _ /
 ; clear out the experience count thats there initially
 ; and make room for something like enemy name
-.repeat 11
+.repeat 6
   .byte $20 ;  _
 .endrep
   ; hold spots here for the enemy hp amount and name
@@ -836,7 +837,7 @@ UpdateGlobalStepCounter:
   .byte $7b,$2b,$02,$00 ; copied from $34ee3
 .org $8ee3  ; 05 - was Max MP, now its Enemy Curr HP
   .word (RecentEnemyCurrHP)
-  .byte $71,$2b,$02,$40
+  .byte $64,$2b,$02,$40
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
 .ifdef _UPDATE_HUD
@@ -848,11 +849,15 @@ UpdateGlobalStepCounter:
 .org $8f19  ; 0e - was unused, now it's LV(menu)
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
-
+.org $8f1f  ; 0e - was unused, now it's Enemy Max HP
+  .word (RecentEnemyMaxHP)
+  .byte $68,$2b,$02,$40 ; copied from $34ee9
 
 .pushseg "13", "fe", "ff"
 .org $baca
 InitializeStatusBarNametable:
+  lda #0 ; force clear the enemy HP Display
+  jsr UpdateEnemyHPDisplay
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
@@ -898,7 +903,6 @@ UpdateStatusBarDisplays:
 ;;; KillObject
 ;;; Recalculate PlayerEXP to count down from max instead of up
 ;;; NOTE: This is about 40 bytes more than vanilla.
-
 
 .org $9152
   ; Instead of calling AwardExperience immediately, just store the obj offset
@@ -962,13 +966,12 @@ UpdateCurrentEXPAndExit:
   lda #DISPLAY_NUMBER_EXP
   jsr DisplayNumberInternal
 ExitWithoutDrawingEXP:
-  jsr RemoveEnemyAndPlaySFX 
-  rts
+  jmp RemoveEnemyAndPlaySFX 
+  ; implicit rts
 .assert * <= $91fa ; StartMonsterDeathAnimation
 
 .reloc
 RemoveEnemyAndPlaySFX:
-
   ; the last attacked enemy is getting cleared out so we want to update the HP display
   jsr RemoveEnemyHpDisplay
   lda #SFX_MONSTER_HIT
@@ -979,8 +982,6 @@ RemoveEnemyAndPlaySFX:
 RemoveEnemyHpDisplay:
   ; zero out the enemy HP so that it draws correctly
   lda #$00
-  sta ObjectHP,y
-  sta ObjectDef,y
   jmp UpdateEnemyHPDisplay
 
 .org $8cc0
@@ -1083,15 +1084,45 @@ Do16BitSubtractionForEXP:
 ;; Add the Enemy Name to the precomputed write table.
 ;; TODO: Is $45 unused? if there are no unused slots we may need to expand this.
 .org $c671 ; NametablePrecomputedHeaderTable @ #$45
-.byte $2b,$63,$0d,$80,$00
+.byte $2b,$82,$1c,$80,$00
 .popseg
 
 ;; Force this part to go into the $a000 page so we can bank $8000
 .pushseg "1b","fe","ff"
 ;;; ----------------------------------------------------
+; [in] a - boolean 1 if the enemy is still alive, 0 if we are clearing.
 ; [in] y - Offset for the current enemy we are displaying health for
 .reloc
 UpdateEnemyHPDisplay:
+  bne @EnemyAlive
+  ; Enemy is dead so clean out all the values.
+  txa
+  pha
+    tya
+    pha
+      lda #0
+      sta RecentEnemyCurrHPHi
+      sta RecentEnemyCurrHPLo
+      sta RecentEnemyMaxHPLo
+      sta RecentEnemyMaxHPHi
+      lda #DISPLAY_NUMBER_ENEMYHP
+      jsr DisplayNumberInternal
+      lda #DISPLAY_NUMBER_ENEMYMAX
+      jsr DisplayNumberInternal
+      lda #$1c
+      ldy #$1c
+-       sta $6080,y
+        dey
+        bpl -
+      lda #$45
+      jsr StageNametableWriteFromTable
+    pla
+    tay
+  pla
+  tax
+  jmp EnableNMI
+  ; implict rts
+@EnemyAlive:
   ; We scratch x so save it before running
   txa
   pha
@@ -1100,12 +1131,14 @@ UpdateEnemyHPDisplay:
       ; if the object id changed, update the name of the monster
       lda ObjectNameId,y
       cmp RecentEnemyObjectID
-      beq +
+      beq @UpdateEnemyCurrentHP
       ; calculate the offset into the bank
       ; todo do this faster?
       sta $25
       lda #$00
       sta $26
+      asl $25
+      rol $26
       asl $25
       rol $26
       asl $25
@@ -1124,9 +1157,13 @@ UpdateEnemyHPDisplay:
         lda #$3c
         jsr BankSwitch8k_8000
         ; copy the name into the staging buffer
-        ldy #$0d
+        lda #$9a ; tile for left close ]
+        sta $6080
+        ; lda #$9b ; tile for right close [
+        ; sta $6092
+        ldy #$1b
 -         lda ($25),y
-          sta $6080,y
+          sta $6081,y
           dey
           bpl -
       pla
@@ -1136,7 +1173,8 @@ UpdateEnemyHPDisplay:
       ; call the function to blit it to the nametable
       lda #$45
       jsr StageNametableWriteFromTable
-+   pla
+@UpdateEnemyCurrentHP:
+    pla
     tay
     ; if the enemy health changed, update that as well.   
     lda ObjectHP,y
@@ -1147,13 +1185,42 @@ UpdateEnemyHPDisplay:
     cpx RecentEnemyCurrHPLo
     bne +
     cmp RecentEnemyCurrHPHi
-    beq @Exit ; unconditional
+    beq @UpdateEnemyMaxHP
     ; A = enemy curr hp hi, x = enemy curr hp lo
 +   sta RecentEnemyCurrHPHi
     stx RecentEnemyCurrHPLo
     tya
     pha
       lda #DISPLAY_NUMBER_ENEMYHP
+      jsr DisplayNumberInternal
+    pla
+    tay
+@UpdateEnemyMaxHP:
+    ; if the enemy max health changed, update that as well.
+    tya
+    ; divide the object id by 8 to find the slot the bit will be in
+    lsr
+    lsr
+    lsr
+    tax
+    lda ObjectMaxHPHi,x
+    sta $25 ; store the 8 bits of hp that contains this object slot
+    tya
+    and #$07
+    tax
+    lda PowersOfTwo,x
+    and $25
+    ; a now has the 1 bit for the max hp
+    ldx ObjectMaxHPLo,y ; keep EnemyMaxHPLo in x
+    cpx RecentEnemyMaxHPLo
+    bne +
+    cmp RecentEnemyMaxHPHi
+    beq @Exit
+    ; A = enemy curr hp hi, x = enemy curr hp lo
++   sta RecentEnemyMaxHPHi
+    stx RecentEnemyMaxHPLo
+    pha
+      lda #DISPLAY_NUMBER_ENEMYMAX
       jsr DisplayNumberInternal
     pla
     tay
@@ -1240,6 +1307,7 @@ UpdateEnemyHP:
     rol
     sta ObjectDef,y
     sty LastAttackedEnemyOffset
+    lda #$01 ; Flag that the enemy isn't dead yet
     jmp UpdateEnemyHPDisplay
     ;implicit rts
 
@@ -1673,9 +1741,6 @@ CheckSwordCollisionPlane:
 
 
 .ifdef _TWELFTH_WARP_POINT
-;;; Remove 11 (5-byte) lines from the nametable write table
-FREE "fe" [$c5b8, $c5ef)
-
 .reloc
 StageWarpMenuNametableWrite:
   ;; 20=a8, 21=DATA, 22=09, 23=00, 24=01
@@ -2765,7 +2830,7 @@ TrainerData_Shields:
   .byte $08,$04
   .byte $11,$12,$13,$14
 
-.endif  
+.endif
 
 .ifdef _DISABLE_TRIGGER_SKIP
 .reloc

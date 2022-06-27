@@ -212,6 +212,8 @@ function useNewStatusBarGraphics(rom: Rom): void {
   rom.patterns.set(page, 0x4, Patterns.HUD_DL);
   rom.patterns.set(page, 0x5, Patterns.HUD_MP);
   rom.patterns.set(page, 0x6, Patterns.HUD_EX);
+  rom.patterns.set(page, 0x1a, Patterns.HUD_CLOSE_LEFT);
+  rom.patterns.set(page, 0x1b, Patterns.HUD_CLOSE_RIGHT);
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation

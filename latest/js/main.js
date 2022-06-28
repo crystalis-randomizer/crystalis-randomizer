@@ -6,6 +6,7 @@ import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
 import {ProgressTracker} from './progress.js';
 import {FetchReader} from './fetchreader.js';
+import { CharacterSet } from './characters.js';
 
 // global state
 let flags;
@@ -26,6 +27,7 @@ function ga(cmd, ...args) {
 const initRace = () => {
   race = true;
   loadRomFromStorage();
+  loadSpriteSelectionsFromStorage();
   initializeStateFromHash(false);
   updateRaceDom();
   // Handle URL edits directly
@@ -55,9 +57,11 @@ const main = () => {
 
   render.renderPresets(document.getElementById('presets'));
   render.renderOptions(document.getElementById('select-options'));
+  render.renderCharacters(document.getElementById('simea-sprite-options'));
 
   // Check for a stored ROM.
   loadRomFromStorage();
+  loadSpriteSelectionsFromStorage();
   initializeStateFromHash(true);
 
   // Wire up the presets menu.
@@ -211,10 +215,12 @@ const shuffleRom = async (seed) => {
   showWork();
   let shuffled;
   let crc;
+  const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
+  const sprite = CharacterSet.simea().find((spr) => spr.name == selectedsimeaSprite);
   try {
     [shuffled, crc] =
         await patch.shuffle(
-            orig, seed, flagsClone, new FetchReader(), log, progressTracker);
+          orig, seed, flagsClone, new FetchReader(), [sprite], log, progressTracker);
   } catch (err) {
     document.body.classList.add('failure');
     const errorText = document.getElementById('error-text');
@@ -395,6 +401,7 @@ const loadRomFromStorage = () => {
           16 + (raw[6] & 4 ? 512 : 0) + (raw[4] << 14) + (raw[5] << 13);
       const arr = raw.slice(0, expectedSize);
       const str = Array.from(arr, x => x.toString(16).padStart(2, 0)).join('');
+      rom = arr;
       window['localStorage'].setItem('rom', str);
       window['localStorage'].setItem('name', file.name);
       checkCrc();
@@ -404,6 +411,20 @@ const loadRomFromStorage = () => {
   });
 };
 
+const loadSpriteSelectionsFromStorage = () => {
+  const simeaSprite = window['localStorage'].getItem('simea-replacement');
+  const simeaOptions = document.getElementsByName('simea-replacement');
+  for (const radio of simeaOptions) {
+    if (radio.value == simeaSprite) {
+      radio.checked = true;
+    }
+  }
+  simeaOptions.forEach( (radio) => {
+    radio.addEventListener('change', (event) => {
+      window['localStorage'].setItem('simea-replacement', event.target.value);
+    })
+  })
+}
 
 const download = (data, name) => {
   const a = document.createElement('a');

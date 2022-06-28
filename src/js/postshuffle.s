@@ -17,6 +17,8 @@
 ;; .org * + SCALING_LEVELS
 ;;; $11 holds the original object ID
 ;;; $12 and $13 are free RAM at this point
+;; [X] - holds the object ID
+;; [Y] - holds the scaling
 
 ;.org $1bdd0  ; Note: this follows immediately from the tables.
 .reloc
@@ -143,32 +145,9 @@ RescaleDefAndHP:
 +  rol ObjectDef,x
    sta ObjectHP,x
    sta ObjectMaxHPLo,x
-   ; Calculate a bitmask to store the maxHP into
-   txa
-   lsr
-   lsr
-   lsr
-   tay
-   sty $13
-   lda ObjectMaxHPHi,y
-   sta $12
-   txa
-   and #$07
-   tay
    lda ObjectDef,x
-   lsr
-   lda PowersOfTwo,y
-   bcc @NoMaxHPBit
-      ora $12
-      bne @SetMaxHPBit
-   @NoMaxHPBit:
-      eor #$ff ; invert the bitmask for setting
-      and $12
-      ; fallthrough
-@SetMaxHPBit:
-   ldy $13
-   sta ObjectMaxHPHi,y
-
+   and #$01
+   sta ObjectMaxHpHi,x
 RescaleAtk:   ; $1bc63
   ;; DiffDef = 4 * PDef
   ;; DiffHP = PHP

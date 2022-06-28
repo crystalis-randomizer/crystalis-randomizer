@@ -796,11 +796,9 @@ UpdateGlobalStepCounter:
   .byte $20,$20,$1f     ;  _ _ |
 
 .org $bb1b
-  .byte $82,$20,$20,$20 ; Ey _ _ _
-  .byte $20,$9d         ;  _ /
 ; clear out the experience count thats there initially
-; and make room for something like enemy name
-.repeat 6
+; and make room for other status updates
+.repeat 12
   .byte $20 ;  _
 .endrep
   ; hold spots here for the enemy hp amount and name
@@ -1198,21 +1196,7 @@ UpdateEnemyHPDisplayInternal:
     pla
     tay
 @UpdateEnemyMaxHP:
-    ; if the enemy max health changed, update that as well.
-    tya
-    ; divide the object id by 8 to find the slot the bit will be in
-    lsr
-    lsr
-    lsr
-    tax
-    lda ObjectMaxHPHi,x
-    sta $25 ; store the 8 bits of hp that contains this object slot
-    tya
-    and #$07
-    tax
-    lda PowersOfTwo,x
-    and $25
-    ; a now has the 1 bit for the max hp
+    lda ObjectMaxHpHi,x
     ldx ObjectMaxHPLo,y ; keep EnemyMaxHPLo in x
     cpx RecentEnemyMaxHPLo
     bne +

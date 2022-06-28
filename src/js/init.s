@@ -186,12 +186,12 @@ SelectedQuestItemIndex  = $642e
 ; These are offset by $0d since enemy objects only load from $0d - $1f
 ObjectNameId        = $6a10 - $0d ; 18 bytes from $10 - $22 used to look up this object's name.
 ObjectMaxHPLo       = $6a22 - $0d ; 18 bytes from $22 - $34
-ObjectMaxHPHi       = $6a34       ; 3 bytes from $34 - $37 (bit packed)
-RecentEnemyObjectID = $6a3b ; 1 byte. Used to determine if the name has changed since the previous enemy.
-RecentEnemyMaxHP    = $6a3c ; 2 bytes $3c and $3d
+ObjectMaxHPHi       = $6a34 - $0d ; 18 bytes from $34 - $46
+RecentEnemyObjectID = $6a47 ; 1 byte. Used to determine if the name has changed since the previous enemy.
+RecentEnemyMaxHP    = $6a48 ; 2 bytes
 RecentEnemyMaxHPLo = RecentEnemyMaxHP
 RecentEnemyMaxHPHi = RecentEnemyMaxHP+1
-RecentEnemyCurrHP   = $6a3e ; 2 bytes $3e and $3f
+RecentEnemyCurrHP   = $6a4a ; 2 bytes
 RecentEnemyCurrHPLo = RecentEnemyCurrHP
 RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
 

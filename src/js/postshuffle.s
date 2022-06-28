@@ -252,15 +252,13 @@ RescaleExp:   ; $1bcbd
 +    lda #$ff
 +++ sta ObjectExp,x
 RescaleDone:
-   ;; $11 contains the original object ID. We need this to get the name later
+   ;; $11 contains the original object ID.
    lda $11
    sta ObjectNameId,x
-   cmp RecentEnemyObjectID
-   bne +
-      ; The enemy displayed in the HP slot is now removed,
-      ; so clear out that spot
-      clc
-      jsr UpdateEnemyHPDisplay
+   ; The enemy displayed in the HP slot is now removed,
+   ; so clear out that spot
+   clc
+   jsr UpdateEnemyHPDisplay
 +  jmp $c2af
 
 ; .assert * <= $c000

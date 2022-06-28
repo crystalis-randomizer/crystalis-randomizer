@@ -953,7 +953,7 @@ StoreObjectExp:
   cmp PlayerExp
   lda NextLevelExpByLevel+3,y
   sbc PlayerExp+1
-  bcc @LevelUp; if unsigned NextLevel < PlayerExp
+  bcc @LevelUp ; if unsigned NextLevel < PlayerExp
 ++jsr UpdatePlayerMaxHPAndMPAfterLevelUp
   jsr UpdateDisplayAfterLevelUp
   jmp UpdateCurrentEXPAndExit
@@ -1178,10 +1178,13 @@ UpdateEnemyHPDisplayInternal:
     tay
     ; if the enemy health changed, update that as well.   
     lda ObjectHP,y
+    clc
+    adc #01
     tax
     lda ObjectDef,y
     ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
     and #$01
+    adc #$00 ; adds 1 only if the carry is set (from the previous adc)
     cpx RecentEnemyCurrHPLo
     bne +
     cmp RecentEnemyCurrHPHi
@@ -1196,13 +1199,17 @@ UpdateEnemyHPDisplayInternal:
     pla
     tay
 @UpdateEnemyMaxHP:
-    lda ObjectMaxHpHi,x
-    ldx ObjectMaxHPLo,y ; keep EnemyMaxHPLo in x
+    lda ObjectMaxHPLo,y
+    clc
+    adc #$01
+    tax
+    lda ObjectMaxHPHi,y
+    adc #$00 ; adds 1 only if the carry is set (because Max HP overflowed)
     cpx RecentEnemyMaxHPLo
     bne +
     cmp RecentEnemyMaxHPHi
     beq @Exit
-    ; A = enemy curr hp hi, x = enemy curr hp lo
+    ; A = enemy max hp hi, x = enemy max hp lo
 +   sta RecentEnemyMaxHPHi
     stx RecentEnemyMaxHPLo
     pha

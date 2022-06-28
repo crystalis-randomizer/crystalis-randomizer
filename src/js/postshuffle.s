@@ -147,7 +147,7 @@ RescaleDefAndHP:
    sta ObjectMaxHPLo,x
    lda ObjectDef,x
    and #$01
-   sta ObjectMaxHpHi,x
+   sta ObjectMaxHPHi,x
 RescaleAtk:   ; $1bc63
   ;; DiffDef = 4 * PDef
   ;; DiffHP = PHP

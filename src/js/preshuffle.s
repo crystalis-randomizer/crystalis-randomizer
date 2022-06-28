@@ -854,12 +854,24 @@ UpdateGlobalStepCounter:
 .pushseg "13", "fe", "ff"
 .org $baca
 InitializeStatusBarNametable:
+  jsr ClearEnemyHPRam
   clc ; clear carry to signify there is no enemy
   jsr UpdateEnemyHPDisplay
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
 FREE_UNTIL $bad9
+
+.reloc
+ClearEnemyHPRam:
+  ;; TODO find a better place to clear out the ram
+  ;; Clear out the SRAM that stores the enemy HP data
+  lda #$00
+  ldy RecentEnemyCurrHPHi - $6a10
+-   sta $6a10,y
+    dey
+    bpl -
+  rts
 .popseg
 
 .pushseg "1a", "fe", "ff"

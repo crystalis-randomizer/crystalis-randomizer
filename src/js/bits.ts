@@ -54,4 +54,6 @@ export const Bits = {
   empty: (x: bigint): boolean => !x,
 
   difference: (left: bigint, right: bigint): bigint => left & ~right,
+
+  union: (left: bigint, right: bigint): bigint => left | right,
 };

@@ -177,7 +177,14 @@ InvMagic = $6458
 SlotFlagsStart = $64a0
 ItemFlagsStart = $64c0
 Difficulty = $648f         ; requires defrag! (flags 078 .. 07f)
-ShouldRedisplayDifficulty = $61ff
+
+; 0000 0eed - Bit pattern for flags
+;       ||^-- Redisplay difficulty
+;       |^--- Update Enemy HP stats
+;       ^---- If 1 draw the data, if 0 clear the field.
+ShouldRedisplayUI = $61ff
+UPDATE_DIFFICULTY = %000000001
+DRAW_ENEMY_STATS  = %000000010
 
 ; .define _TRAINER 1
 SelectedConsumableIndex = $642c
@@ -187,11 +194,13 @@ SelectedQuestItemIndex  = $642e
 ObjectNameId        = $6a10 - $0d ; 18 bytes from $10 - $22 used to look up this object's name.
 ObjectMaxHPLo       = $6a22 - $0d ; 18 bytes from $22 - $34
 ObjectMaxHPHi       = $6a34 - $0d ; 18 bytes from $34 - $46
-RecentEnemyObjectID = $6a47 ; 1 byte. Used to determine if the name has changed since the previous enemy.
-RecentEnemyMaxHP    = $6a48 ; 2 bytes
-RecentEnemyMaxHPLo = RecentEnemyMaxHP
-RecentEnemyMaxHPHi = RecentEnemyMaxHP+1
-RecentEnemyCurrHP   = $6a4a ; 2 bytes
+CurrentEnemySlot    = $6a46 ; 1 byte. Stores the most recent attacked enemy (or zero if we need to clear)
+PreviousEnemySlot   = $6a47 ; 1 byte. Stores the previous attacked slot (to determine if the )
+RecentEnemyObjectId = $6a48 ; 1 byte. Used to determine if the name has changed since the previous enemy.
+RecentEnemyMaxHP    = $6a49 ; 2 bytes 49-4a
+RecentEnemyMaxHPLo  = RecentEnemyMaxHP
+RecentEnemyMaxHPHi  = RecentEnemyMaxHP+1
+RecentEnemyCurrHP   = $6a4b ; 2 bytes 4b-4c
 RecentEnemyCurrHPLo = RecentEnemyCurrHP
 RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
 

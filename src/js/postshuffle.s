@@ -255,10 +255,15 @@ RescaleDone:
    ;; $11 contains the original object ID.
    lda $11
    sta ObjectNameId,x
-   ; The enemy displayed in the HP slot is now removed,
-   ; so clear out that spot
-   clc
-   jsr UpdateEnemyHPDisplay
+   cpx CurrentEnemySlot
+   bne +
+      ; The enemy displayed in the HP slot is now removed,
+      ; so clear out that spot
+      lda #0
+      sta CurrentEnemySlot
+      lda ShouldRedisplayUI
+      ora #DRAW_ENEMY_STATS
+      sta ShouldRedisplayUI
 +  jmp $c2af
 
 ; .assert * <= $c000

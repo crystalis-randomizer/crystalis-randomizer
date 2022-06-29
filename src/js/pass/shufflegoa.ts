@@ -13,7 +13,7 @@ type Exit2 = [Metalocation, Pos, ConnectionType,
               ((e: Exit, r: Random) => void)?];
 
 function flipSaberaEntrance(exit: Exit) {
-  console.log(`flip sabera entrance`);
+  //console.log(`flip sabera entrance`);
   const loc = exit[0];
   loc.set2d(0x71, [[loc.rom.metascreens.deadEndE_upStair],
                    [loc.rom.metascreens.caveEmpty]]);
@@ -23,7 +23,7 @@ function flipSaberaEntrance(exit: Exit) {
 }
 
 function flipKarmineEntrance(exit: Exit, random: Random) {
-  console.log(`flip karmine entrance`);
+  //console.log(`flip karmine entrance`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
   loc.set2d(0x20, [[ms.caveEmpty, ms.hallNS],
@@ -34,7 +34,7 @@ function flipKarmineEntrance(exit: Exit, random: Random) {
 }
 
 function flipKarmineExit(exit: Exit) {
-  console.log(`flip karmine exit`);
+  //console.log(`flip karmine exit`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
   loc.set2d(0x01, [[ms.deadEndS_stairs, ms.caveEmpty]]);
@@ -44,7 +44,7 @@ function flipKarmineExit(exit: Exit) {
 }
 
 function flipExit(exit: Exit) {
-  console.log(`flip generic exit`);
+  //console.log(`flip generic exit`);
   const loc = exit[0];
   const ms = loc.rom.metascreens;
   if (loc.width < 2) loc.width = 2; // should alredy be filled w/ empty
@@ -87,9 +87,9 @@ export function shuffleGoa(rom: Rom, random: Random) {
   for (const f of floors) {
     const flexible = up || entrances[f][3] || a[a.length - 1][3];
     const reverse = flexible ? random.pick([false, true]) : true;
-    console.log(`FLOOR ${f}: up ${up} flexible ${!!flexible} reverse ${reverse}`);
+    //console.log(`FLOOR ${f}: up ${up} flexible ${!!flexible} reverse ${reverse}`);
     const lastB: Exit2 = reverse ? exits[f] : entrances[f];
-    console.log(`push b ${rom.locations[lastB[0].id].name}`);
+    //console.log(`push b ${rom.locations[lastB[0].id].name}`);
     b.push(lastB);
     if (up !== (lastB[2] === 'stair:down')) {
       if (lastB[3]) {
@@ -99,7 +99,7 @@ export function shuffleGoa(rom: Rom, random: Random) {
       }
     }
     a.push(lastA = reverse ? entrances[f] : exits[f]);
-    console.log(`push a ${rom.locations[lastA[0].id].name}`);
+    //console.log(`push a ${rom.locations[lastA[0].id].name}`);
     up = lastA[2] === 'stair:up';
   }
   if (up) flip(lastA, random); // NOTE: all entrances can be down, only some up

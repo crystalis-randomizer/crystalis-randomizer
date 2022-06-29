@@ -138,7 +138,7 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
       queue.add(entrance[2]);
     }
   }
-  console.log(`From ${loc}: ${out.map(x=>x.toString(16))}`);;
+  //console.log(`From ${loc}: ${out.map(x=>x.toString(16))}`);;
   return out;
 }
 

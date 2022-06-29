@@ -50,6 +50,8 @@ export const BitsBigInt: BitsNamespace<bigint> = {
   empty: (x) => !x,
 
   difference: (left, right) => left & ~right,
+
+  union: (left, right) => left | right,
 };
 
 export const BIGINT_OK =

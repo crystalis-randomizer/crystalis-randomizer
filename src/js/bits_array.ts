@@ -32,6 +32,14 @@ export const BitsArray: BitsNamespace<number[]> = {
     return out;
   },
 
+  union: (left, right) => {
+    const out = new Array(Math.max(left.length, right.length));
+    for (let i = Math.max(left.length, right.length) - 1; i >= 0; i--) {
+      out[i] = (left[i] || 0) | (right[i] || 0);
+    }
+    return out;
+  },
+
   with: (bits: number[], num) => {
     bits = [...bits];
     bits[num >>> 5] = (bits[num >>> 5] || 0) | (1 << num);

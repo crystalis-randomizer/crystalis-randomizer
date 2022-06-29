@@ -28,4 +28,7 @@ export interface BitsNamespace<B> {
 
   /** Returns a Bits with elements in `left` but not in `right`. */
   difference(left: B, right: B): B;
+
+  /** Returns the union. */
+  union(left: B, right: B): B;
 }

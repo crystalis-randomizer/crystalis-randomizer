@@ -276,11 +276,9 @@ HandleTreasureChest_TooManyItems:
 .segment "0e", "0f", "fe", "ff"
 .reloc
 ItemGetRedisplayDifficulty:
-.ifndef _DISPLAY_DIFFICULTY ; TODO - just remove the path?
-  rts
-.endif
-  lda #$01
-  sta ShouldRedisplayDifficulty
+  lda ShouldRedisplayUI
+  ora #UPDATE_DIFFICULTY
+  sta ShouldRedisplayUI
   rts
 
 ;;; Exported by rom/item.ts
@@ -661,7 +659,7 @@ FREE_UNTIL $b91c
 .endif
 
 
-.ifdef _DISPLAY_DIFFICULTY
+.ifdef _UPDATE_HUD
 ;;; Start the loop at 6 instead of 5 to also show the difficulty
 .org $baca
   ldx #$06
@@ -855,8 +853,6 @@ UpdateGlobalStepCounter:
 .org $baca
 InitializeStatusBarNametable:
   jsr ClearEnemyHPRam
-  clc ; clear carry to signify there is no enemy
-  jsr UpdateEnemyHPDisplay
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
@@ -866,7 +862,11 @@ FREE_UNTIL $bad9
 ClearEnemyHPRam:
   ;; TODO find a better place to clear out the ram
   ;; Clear out the SRAM that stores the enemy HP data
-  lda #$00
+  lda ShouldRedisplayUI
+  ora #DRAW_ENEMY_STATS
+  sta ShouldRedisplayUI
+  lda #0
+  sta CurrentEnemySlot
   ldy RecentEnemyCurrHPHi - $6a10
 -   sta $6a10,y
     dey
@@ -983,8 +983,11 @@ ExitWithoutDrawingEXP:
 .reloc
 RemoveEnemyAndPlaySFX:
   ; the last attacked enemy is getting cleared out so we want to update the HP display
-  clc
-  jsr UpdateEnemyHPDisplay
+  lda #0
+  sta CurrentEnemySlot
+  lda ShouldRedisplayUI
+  ora #DRAW_ENEMY_STATS
+  sta ShouldRedisplayUI
   lda #SFX_MONSTER_HIT
   jmp StartAudioTrack
   ; implicit rts
@@ -1087,25 +1090,37 @@ Do16BitSubtractionForEXP:
 
 .pushseg "fe", "ff"
 ;; Add the Enemy Name to the precomputed write table.
-.org $c5b8 ; NametablePrecomputedHeaderTable @ #$20
-.byte $ab,$82,$1c,$00,$80
-
+.org $c5b8
+ENEMY_HP_VRAM_BUFFER_OFFSET = $60
+ENEMY_HP_VRAM_UPDATE = $20
+ENEMY_NAME_VRAM_BUFFER_OFFSET = $80
+ENEMY_NAME_VRAM_UPDATE = $21
+; Used to set/clear the enemy HP (NametablePrecomputedHeaderTable @ #$20)
+.byte $ab,$62,$09,ENEMY_HP_VRAM_BUFFER_OFFSET,$80
+; Used to draw the enemy name (NametablePrecomputedHeaderTable @ #$21)
+.byte $ab,$82,$1c,ENEMY_NAME_VRAM_BUFFER_OFFSET,$80
 .reloc
 UpdateEnemyHPDisplay:
-  lda $6f
+  lda $6e
   pha
-    lda #$1b
+    lda #$1a
+    jsr BankSwitch8k_8000
+    lda $6f
+    pha
+      lda #$3d
+      jsr BankSwitch8k_a000
+      ; UpdateEnemyHP preserves x and y
+      jsr UpdateEnemyHPDisplayInternal
+    pla
     jsr BankSwitch8k_a000
-    ; UpdateEnemyHP preserves x and y
-    jsr UpdateEnemyHPDisplayInternal
   pla
-  jsr BankSwitch8k_a000
+  jsr BankSwitch8k_8000
   jmp EnableNMI
   ; implicit rts
 .popseg
 
-;; Force this part to go into the $a000 page so we can bank $8000
-.pushseg "1b","fe","ff"
+;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
+.pushseg "3d","fe","ff"
 ;;; ----------------------------------------------------
 ; [in] carry set if the enemy is still alive, 0 if we are clearing
 ; [in] y - Offset for the current enemy we are displaying health for
@@ -1117,119 +1132,126 @@ UpdateEnemyHPDisplayInternal:
   pha
     tya
     pha
-      bcs @EnemyAlive
-      lda #0
-      sta RecentEnemyCurrHPHi
-      sta RecentEnemyCurrHPLo
-      sta RecentEnemyMaxHPLo
-      sta RecentEnemyMaxHPHi
-      lda #DISPLAY_NUMBER_ENEMYHP
-      jsr DisplayNumberInternal
-      lda #DISPLAY_NUMBER_ENEMYMAX
-      jsr DisplayNumberInternal
+      ldy CurrentEnemySlot
+      bne @EnemyAlive
+      sty PreviousEnemySlot
+      sty RecentEnemyCurrHPHi
+      sty RecentEnemyCurrHPLo
+      sty RecentEnemyMaxHPLo
+      sty RecentEnemyMaxHPHi
+      sty RecentEnemyObjectId
+      
       lda #$1c
       ldy #$1c
--       sta $6000,y
+-       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
         dey
         bpl -
-      lda #$20
+      lda #$20 ; space tile
+      ldy #$09
+-       sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
+        dey
+        bpl -
+      lda #ENEMY_HP_VRAM_UPDATE
+      jsr StageNametableWriteFromTable
+      lda #ENEMY_NAME_VRAM_UPDATE
       jsr StageNametableWriteFromTable
     pla
     tay
   pla
   tax
   rts
-@EnemyAlive:
+  @EnemyAlive:
+      lda PreviousEnemySlot
+      bne @UpdateName
+      ; if the previous enemy was slot 0, then we need to draw the Ey and /
+      sty PreviousEnemySlot
+      lda #$82 ; Ey
+      sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET
+      lda #$20 ; Space
+      sta $6001 + ENEMY_HP_VRAM_BUFFER_OFFSET
+      lda #$9d ; /
+      sta $6005 + ENEMY_HP_VRAM_BUFFER_OFFSET
+      lda #ENEMY_HP_VRAM_UPDATE
+      jsr StageNametableWriteFromTable
+  @UpdateName:
+      ldy CurrentEnemySlot
       ; if the object id changed, update the name of the monster
       lda ObjectNameId,y
-      cmp RecentEnemyObjectID
-      beq @UpdateEnemyCurrentHP
-      sty RecentEnemyObjectID
+      cmp RecentEnemyObjectId
+      beq @CurrentHP
+      sta RecentEnemyObjectId
       ; calculate the offset into the bank
-      sta $25
+      sta $61
       lda #$00
-      sta $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      lda $26
+      sta $62
+      asl $61
+      rol $62
+      asl $61
+      rol $62
+      asl $61
+      rol $62
+      asl $61
+      rol $62
+      asl $61
+      rol $62
+      lda $62
       clc
-      adc #$80
-      sta $26
+      adc #$a0
+      sta $62
 
-      lda $6e
-      pha
-        lda #$3c
-        jsr BankSwitch8k_8000
-        ; copy the name into the staging buffer
-        lda #$9a ; tile for left close ]
-        sta $6000
-        ; lda #$9b ; tile for right close [
-        ; sta $6092
-        ldy #$1b
--         lda ($25),y
-          sta $6001,y
-          dey
-          bpl -
-      pla
-      ; restore the previous bank
-      jsr BankSwitch8k_8000
+      ; copy the name into the staging buffer
+      lda #$9a ; tile for left close ]
+      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET
+      ; lda #$9b ; tile for right close [
+      ; sta $6092
+      ldy #$1b
+-       lda ($61),y
+        sta $6001 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
+        dey
+        bpl -
       
       ; call the function to blit it to the nametable
-      lda #$20
+      lda #ENEMY_NAME_VRAM_UPDATE
       jsr StageNametableWriteFromTable
-@UpdateEnemyCurrentHP:
-    pla
-    tay
-    ; if the enemy health changed, update that as well.   
-    lda ObjectHP,y
-    clc
-    adc #01
-    tax
-    lda ObjectDef,y
-    ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
-    and #$01
-    adc #$00 ; adds 1 only if the carry is set (from the previous adc)
-    cpx RecentEnemyCurrHPLo
-    bne +
-    cmp RecentEnemyCurrHPHi
-    beq @UpdateEnemyMaxHP
-    ; A = enemy curr hp hi, x = enemy curr hp lo
-+   sta RecentEnemyCurrHPHi
-    stx RecentEnemyCurrHPLo
-    tya
-    pha
+  @CurrentHP:
+      ldy CurrentEnemySlot
+      lda ObjectHP,y
+      clc
+      adc #01
+      tax
+      lda ObjectDef,y
+      ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
+      and #$01
+      adc #$00 ; adds 1 only if the carry is set (from the previous adc)
+      cpx RecentEnemyCurrHPLo
+      bne +
+      cmp RecentEnemyCurrHPHi
+      beq @MaxHP        
+      ; A = enemy curr hp hi, x = enemy curr hp lo
++     sta RecentEnemyCurrHPHi
+      stx RecentEnemyCurrHPLo
       lda #DISPLAY_NUMBER_ENEMYHP
       jsr DisplayNumberInternal
-    pla
-    tay
-@UpdateEnemyMaxHP:
-    lda ObjectMaxHPLo,y
-    clc
-    adc #$01
-    tax
-    lda ObjectMaxHPHi,y
-    adc #$00 ; adds 1 only if the carry is set (because Max HP overflowed)
-    cpx RecentEnemyMaxHPLo
-    bne +
-    cmp RecentEnemyMaxHPHi
-    beq @Exit
-    ; A = enemy max hp hi, x = enemy max hp lo
-+   sta RecentEnemyMaxHPHi
-    stx RecentEnemyMaxHPLo
-    pha
+  @MaxHP:
+      ldy CurrentEnemySlot
+      lda ObjectMaxHPLo,y
+      clc
+      adc #$01
+      tax
+      lda ObjectMaxHPHi,y
+      adc #$00 ; adds 1 only if the carry is set (because Max HP overflowed)
+      cpx RecentEnemyMaxHPLo
+      bne +
+      cmp RecentEnemyMaxHPHi
+      bne @Exit
+      ; A = enemy max hp hi, x = enemy max hp lo
+  +   sta RecentEnemyMaxHPHi
+      stx RecentEnemyMaxHPLo
       lda #DISPLAY_NUMBER_ENEMYMAX
       jsr DisplayNumberInternal
+@Exit:
     pla
     tay
-@Exit:
   pla
   tax
   rts
@@ -1307,12 +1329,14 @@ FREE_UNTIL $9152
 
 .reloc
 UpdateEnemyHP:
-    lda $62
-    rol
-    sta ObjectDef,y
-    sec ; Set carry to signify the enemy is still alive
-    jmp UpdateEnemyHPDisplay
-    ;implicit rts
+  lda $62
+  rol
+  sta ObjectDef,y
+  sty CurrentEnemySlot
+  lda ShouldRedisplayUI
+  ora #DRAW_ENEMY_STATS
+  sta ShouldRedisplayUI
+  rts
 
 ;;; Change sacred shield to block curse instead of paralysis
 .org $92ce
@@ -1744,6 +1768,9 @@ CheckSwordCollisionPlane:
 
 
 .ifdef _TWELFTH_WARP_POINT
+;;; Remove 9 (5-byte) lines from the nametable write table
+FREE "fe" [$c5c2, $c5ef)
+
 .reloc
 StageWarpMenuNametableWrite:
   ;; 20=a8, 21=DATA, 22=09, 23=00, 24=01
@@ -1896,9 +1923,9 @@ CheckFlag0:
 .endif ; _CHECK_FLAG0
 
 
-.ifdef _DISPLAY_DIFFICULTY
+.ifdef _UPDATE_HUD
 .org $cb65  ; inside GameModeJump_08_Normal
-  jsr CheckToRedisplayDifficulty ; was jsr CheckForPlayerDeath
+  jsr CheckToRedisplayUI ; was jsr CheckForPlayerDeath
 .endif
 
 
@@ -2405,8 +2432,9 @@ TrainerIncreaseScaling:
   bcc +
    lda #$2f
 + sta Difficulty
-  lda #$01
-  sta ShouldRedisplayDifficulty
+  lda ShouldRedisplayUI
+  ora #UPDATE_DIFFICULTY
+  sta ShouldRedisplayUI
   rts
 
 .reloc
@@ -2915,16 +2943,21 @@ ComputeDefense:
    adc $62    ; add 2*level
 + rts
 
-
+.ifdef _UPDATE_HUD
 .reloc
-CheckToRedisplayDifficulty:
-  lda ShouldRedisplayDifficulty
-  beq +
-   lsr ShouldRedisplayDifficulty
-   lda #$06
-   jsr DisplayNumber
-+ jmp CheckForPlayerDeath
-
+CheckToRedisplayUI:
+  lda ShouldRedisplayUI
+  beq @Exit
+  lsr ShouldRedisplayUI
+  bcc +
+    lda #$06
+    jsr DisplayNumber
++ lsr ShouldRedisplayUI
+  bcc @Exit
+    jsr UpdateEnemyHPDisplay
+@Exit:
+  jmp CheckForPlayerDeath
+.endif
 
 ;;; Repurpose $3e148 to skip loading NPCs and just reset pattern table.
 ;;; The only difference from $3e144 is that $18 gets set to 1 instead of 0,

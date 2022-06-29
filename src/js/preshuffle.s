@@ -1120,7 +1120,7 @@ UpdateEnemyHPDisplay:
 .popseg
 
 ;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
-.pushseg "3d","fe","ff"
+.pushseg "3d"
 ;;; ----------------------------------------------------
 ; [in] carry set if the enemy is still alive, 0 if we are clearing
 ; [in] y - Offset for the current enemy we are displaying health for

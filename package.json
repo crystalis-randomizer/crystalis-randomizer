@@ -15,8 +15,9 @@
     "merge": "sh scripts/update.sh merge"
   },
   "bin": {
-    "cryr": "target/release/bin/cryr",
-    "js65": "target/release/bin/js65"
+    "analyze": "dist/js/analyze.js",
+    "js65": "target/release/bin/js65",
+    "cryr": "target/release/bin/cryr"
   },
   "repository": {
     "type": "git",

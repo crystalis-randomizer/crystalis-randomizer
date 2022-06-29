@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "crystalis-randomizer",
   "version": "0.0.0",
   "main": "target/debug/js/patch.js",
@@ -15,8 +16,9 @@
     "merge": "sh scripts/update.sh merge"
   },
   "bin": {
-    "cryr": "target/release/bin/cryr",
-    "js65": "target/release/bin/js65"
+    "analyze": "dist/js/analyze.js",
+    "js65": "target/release/bin/js65",
+    "cryr": "target/release/bin/cryr"
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,7 @@
     "esbuild": "^0.15.14",
     "esbuild-plugin-brotli": "^0.2.0",
     "mocha": "^10.1.0",
+    "node-esm-loader": "^0.0.1",
     "nodemon": "^2.0.20",
     "source-map-support": "^0.5.21",
     "ts-node": "^10.9.1",

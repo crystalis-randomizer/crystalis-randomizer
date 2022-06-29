@@ -12,9 +12,11 @@ const MISSPELLINGS: ReadonlyMap<string, string[]> = new Map([
   ['Sacred Shield', ['Scared Shield']],
   ['Bow of Truth', ['Bow of Strewth']],
   ['Statue of Onyx', ['Statue of Onxy']],
-  ['Fog Lamp', ['Frog Lamp', 'Smog Lamp', 'Dog Lamp']],
+  ['Ivory Statue', ['Ivory Statute']],
+  ['Fog Lamp', ['Frog Lamp', 'Smog Lamp', 'Dog Lamp', 'Bog Lamp', 'Fog Lump']],
+  ['Glowing Lamp', ['Glowing Lump']],
   ['Key to Stxy', ['Key to Styx']],
-  ['Insect Flute', ['Bug Flute']],
+  ['Insect Flute', ['Bug Flute', 'Bug Whistle']],
   ['Flute of Lime', ['Flute of Grime']],
   ['Iron Necklace', ['I Ron Necklace']],
   ['Shield Ring', ['Sho Ring']],
@@ -22,17 +24,17 @@ const MISSPELLINGS: ReadonlyMap<string, string[]> = new Map([
   ['Speed Boots', ['Hermes Sandals']],
   ['Rabbit Boots', ['Deo\'s Boots', 'Jumping Boots', 'Rabid Boots']],
   ['Alarm Flute', ['Pocket Rooster', 'Alarm Clock']],
-  ['Shell Flute', ['Conch Shell']],
+  ['Shell Flute', ['Conch Shell', 'Dolphin Flute']],
   ['Eye Glasses', ['3D Glasses', 'X-Ray Goggles']],
   ['Kirisa Plant', ['Kilika Plant']],
-  ['Refresh', ['Cure', 'Cura', 'Curaga']],
-  ['Recover', ['Esuna']],
-  ['Paralysis', ['Stop', 'Pew Pew']],
-  ['Telepathy', ['Clairvoyance', 'ESP', 'Head Talk']],
-  ['Teleport', ['Warp', 'Go Place Fast']],
-  ['Change', ['Transform', 'Disguise']],
-  ['Barrier', ['Protect', 'Wall', 'Shield']],
-  ['Flight', ['Blight', 'Super Jump']],
+  ['Refresh', ['Refresherize', 'Cure', 'Cura', 'Curaga']],
+  ['Recover', ['Recoverize', 'Esuna']],
+  ['Paralysis', ['Paralycize', 'Stop', 'Pew Pew']],
+  ['Telepathy', ['Telepathize', 'Clairvoyance', 'ESP', 'Head Talk']],
+  ['Teleport', ['Teleportate', 'Warp', 'Go']],
+  ['Change', ['Changeify', 'Transform', 'Disguise']],
+  ['Barrier', ['Barrierize', 'Protect', 'Wall', 'Shield']],
+  ['Flight', ['Flyify', 'Blight', 'Super Jump']],
   ['Fruit of Lime', ['Fruit of Crime', 'Gold Needle', 'Soft']],
   ['Medical Herb', ['Potion', 'Hi Potion']],
   ['Fruit of Repun', ['Anti-Slime Pill', 'Maiden\'s Kiss']],
@@ -40,29 +42,33 @@ const MISSPELLINGS: ReadonlyMap<string, string[]> = new Map([
 
 export function misspellItems(rom: Rom, flags: FlagSet, random: Random) {
   if (flags.unidentifiedItems()) return;
-  // Pick a single item to misspell.
-  const item = rom.items[random.nextInt(0x48)];
-  if (!item) return;
-  const newName = MISSPELLINGS.get(item.messageName) || [];
-  // Use custom misspelling 3x more often than a random one
-  const index = Math.floor(random.nextInt(3 * newName.length + 1) / 3);
-  if (index < newName.length) {
-    // Use one of the custom misspellings
-    item.messageName = item.menuName = newName[index];
-  } else if (item.messageName === item.menuName) {
-    // Make a random error by swapping two letters or deleting one letter.
-    const name = item.messageName.split('');
-    const pos = random.nextInt(name.length - 1);
-    if (name[pos] === ' ' || name[pos + 1] === ' ') {
-      // Not much we can do with a space, so just give up.
-      return;
-    } else if (name[pos].toUpperCase() === name[pos]) {
-      // Don't swap uppercase letters with the one after: instead delete next
-      name.splice(pos + 1, 1);
-    } else {
-      // Swap two adjacent letters
-      [name[pos], name[pos + 1]] = [name[pos + 1], name[pos]];
+  if ('sphereAnalysis' in globalThis) return; // skip this when analyzing
+  // Pick a single item to misspell.  5% chance of misspelling _everything_.
+  const items = random.next() < 0.05 ? rom.items :
+      [rom.items[random.nextInt(0x48)]];
+  for (const item of items) {
+    if (!item) continue;
+    const newName = MISSPELLINGS.get(item.messageName) || [];
+    // Use custom misspelling 3x more often than a random one
+    const index = Math.floor(random.nextInt(3 * newName.length + 1) / 3);
+    if (index < newName.length) {
+      // Use one of the custom misspellings
+      item.messageName = item.menuName = newName[index];
+    } else if (item.messageName === item.menuName) {
+      // Make a random error by swapping two letters or deleting one letter.
+      const name = item.messageName.split('');
+      const pos = random.nextInt(name.length - 1);
+      if (name[pos] === ' ' || name[pos + 1] === ' ') {
+        // Not much we can do with a space, so just give up.
+        return;
+      } else if (name[pos].toUpperCase() === name[pos]) {
+        // Don't swap uppercase letters with the one after: instead delete next
+        name.splice(pos + 1, 1);
+      } else {
+        // Swap two adjacent letters
+        [name[pos], name[pos + 1]] = [name[pos + 1], name[pos]];
+      }
+      item.messageName = item.menuName = name.join('');
     }
-    item.messageName = item.menuName = name.join('');
   }
 }

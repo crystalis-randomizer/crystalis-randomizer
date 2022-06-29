@@ -796,16 +796,11 @@ UpdateGlobalStepCounter:
   .byte $20,$20,$1f     ;  _ _ |
 
 .org $bb1b
-  .byte $82,$20,$20,$20 ; Ey _ _ _
-  .byte $20,$9d         ;  _ /
-; clear out the experience count thats there initially
-; and make room for something like enemy name
-.repeat 6
+  .byte $20             ;  _
+.org $bb1f ; clear out the experience count thats there initially
+.repeat 16
   .byte $20 ;  _
 .endrep
-  ; hold spots here for the enemy hp amount and name
-  .byte $20,$20,$20,$20 ; _ _ _ _
-  .byte $20,$20,$20,$20 ; _ _ _ _
   .byte $85,$20,$20,$20 ; Mp _ _ _
   .byte $9d,$20,$20,$20 ;  / _ _ _
 
@@ -831,13 +826,13 @@ UpdateGlobalStepCounter:
   .byte $5a,$2b
 .endif ; _UPDATE_HUD
 
-;;; NumericDisplays
+;;; Numeric displays
 .org $8ed7  ; 03 - was Exp Left, now its Max MP
   .word (PlayerMaxMP)
   .byte $7b,$2b,$02,$00 ; copied from $34ee3
-.org $8ee3  ; 05 - was Max MP, now its Enemy Curr HP
-  .word (RecentEnemyCurrHP)
-  .byte $64,$2b,$02,$40
+
+.org $8ee3  ; 05 - was Max MP, now its unused
+
 .org $8ee9  ; 06 - was LV(menu) but now it's difficulty
   .word (Difficulty)
 .ifdef _UPDATE_HUD
@@ -849,15 +844,11 @@ UpdateGlobalStepCounter:
 .org $8f19  ; 0e - was unused, now it's LV(menu)
   .word (PlayerLevel)
   .byte $29,$29,$03,$00 ; copied from $34ee9
-.org $8f1f  ; 0e - was unused, now it's Enemy Max HP
-  .word (RecentEnemyMaxHP)
-  .byte $68,$2b,$02,$40 ; copied from $34ee9
+
 
 .pushseg "13", "fe", "ff"
 .org $baca
 InitializeStatusBarNametable:
-  clc ; clear carry to signify there is no enemy
-  jsr UpdateEnemyHPDisplay
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
@@ -874,7 +865,7 @@ FREE_UNTIL $bad9
 ;; 2 - Exp
 ;; 3 - Max MP
 ;; 4 - MP
-;; 5 - Enemy HP
+;; 5 - (currently unused)
 ;; 6 - Difficulty
 .reloc
 UpdateStatusBarDisplays:
@@ -904,6 +895,7 @@ UpdateStatusBarDisplays:
 ;;; Recalculate PlayerEXP to count down from max instead of up
 ;;; NOTE: This is about 40 bytes more than vanilla.
 
+
 .org $9152
   ; Instead of calling AwardExperience immediately, just store the obj offset
   ; and push it onto the stack for use later. The code needs to check for an
@@ -925,59 +917,35 @@ StoreObjectExp:
     jmp ExitWithoutDrawingEXP
 + jsr AwardExperiencePoints
   ; carry clear means we leveled up
-  bcc @LevelUp
+  bcc LevelUp
   ; but it doesn't check if we were exactly at zero EXP so check for that now
   lda PlayerExp
   ora PlayerExp+1
-  beq @LevelUp
-    jmp UpdateCurrentEXPAndExit
-@LevelUp:
+  cmp #$00
+  beq LevelUp
+  jmp UpdateCurrentEXPAndExit
+LevelUp:
+  ; double check here that we aren't already max level
   inc PlayerLevel
   lda PlayerLevel
-  asl ; note: clears carry
+  asl  ; note: clears carry
   tay
   lda PlayerExp
-  adc NextLevelExpByLevel,y
+  adc $8b9e,y      ; NextLevelExpByLevel
   sta PlayerExp
   lda PlayerExp+1
-  adc NextLevelExpByLevel+1,y
+  adc $8b9f,y
   sta PlayerExp+1
-  ; Now that we leveled, its possible that we have enough exp to level again
-  ; first double check here that we aren't already max level
-  lda PlayerLevel
-  and #$f0
-  beq +
-    bne ++ ; unconditional (since A != 0 checked above)
-  ; If u16 PlayerExp > u16 NextLevelExpByLevel,y+2 (+2 since 16 bit)
-  ; then we need to loop again since its a double level
-  ; a = playerexp hi; y = current level slot (after the first level up)
-+ lda NextLevelExpByLevel+2,y
-  cmp PlayerExp
-  lda NextLevelExpByLevel+3,y
-  sbc PlayerExp+1
-  bcc @LevelUp; if unsigned NextLevel < PlayerExp
-++jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+  jsr UpdatePlayerMaxHPAndMPAfterLevelUp
   jsr UpdateDisplayAfterLevelUp
   jmp UpdateCurrentEXPAndExit
 FREE_UNTIL $91ef
 
 .org $91ef
 UpdateCurrentEXPAndExit:
-  lda #DISPLAY_NUMBER_EXP
-  jsr DisplayNumberInternal
-ExitWithoutDrawingEXP:
-  jmp RemoveEnemyAndPlaySFX 
-  ; implicit rts
-.assert * <= $91fa ; StartMonsterDeathAnimation
 
-.reloc
-RemoveEnemyAndPlaySFX:
-  ; the last attacked enemy is getting cleared out so we want to update the HP display
-  clc
-  jsr UpdateEnemyHPDisplay
-  lda #SFX_MONSTER_HIT
-  jmp StartAudioTrack
-  ; implicit rts
+.org $91f4
+ExitWithoutDrawingEXP:
 
 .org $8cc0
 UpdateHPDisplayInternal:
@@ -1075,163 +1043,6 @@ Do16BitSubtractionForEXP:
 .popseg
 
 
-.pushseg "fe", "ff"
-;; Add the Enemy Name to the precomputed write table.
-.org $c5b8 ; NametablePrecomputedHeaderTable @ #$20
-.byte $ab,$82,$1c,$00,$80
-
-.reloc
-UpdateEnemyHPDisplay:
-  lda $6f
-  pha
-    lda #$1b
-    jsr BankSwitch8k_a000
-    ; UpdateEnemyHP preserves x and y
-    jsr UpdateEnemyHPDisplayInternal
-  pla
-  jsr BankSwitch8k_a000
-  jmp EnableNMI
-  ; implicit rts
-.popseg
-
-;; Force this part to go into the $a000 page so we can bank $8000
-.pushseg "1b","fe","ff"
-;;; ----------------------------------------------------
-; [in] carry set if the enemy is still alive, 0 if we are clearing
-; [in] y - Offset for the current enemy we are displaying health for
-.reloc
-
-UpdateEnemyHPDisplayInternal:
-  ; Enemy is dead so clean out all the values.
-  txa
-  pha
-    tya
-    pha
-      bcs @EnemyAlive
-      lda #0
-      sta RecentEnemyCurrHPHi
-      sta RecentEnemyCurrHPLo
-      sta RecentEnemyMaxHPLo
-      sta RecentEnemyMaxHPHi
-      lda #DISPLAY_NUMBER_ENEMYHP
-      jsr DisplayNumberInternal
-      lda #DISPLAY_NUMBER_ENEMYMAX
-      jsr DisplayNumberInternal
-      lda #$1c
-      ldy #$1c
--       sta $6000,y
-        dey
-        bpl -
-      lda #$20
-      jsr StageNametableWriteFromTable
-    pla
-    tay
-  pla
-  tax
-  rts
-@EnemyAlive:
-      ; if the object id changed, update the name of the monster
-      lda ObjectNameId,y
-      cmp RecentEnemyObjectID
-      beq @UpdateEnemyCurrentHP
-      sty RecentEnemyObjectID
-      ; calculate the offset into the bank
-      sta $25
-      lda #$00
-      sta $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      asl $25
-      rol $26
-      lda $26
-      clc
-      adc #$80
-      sta $26
-
-      lda $6e
-      pha
-        lda #$3c
-        jsr BankSwitch8k_8000
-        ; copy the name into the staging buffer
-        lda #$9a ; tile for left close ]
-        sta $6000
-        ; lda #$9b ; tile for right close [
-        ; sta $6092
-        ldy #$1b
--         lda ($25),y
-          sta $6001,y
-          dey
-          bpl -
-      pla
-      ; restore the previous bank
-      jsr BankSwitch8k_8000
-      
-      ; call the function to blit it to the nametable
-      lda #$20
-      jsr StageNametableWriteFromTable
-@UpdateEnemyCurrentHP:
-    pla
-    tay
-    ; if the enemy health changed, update that as well.   
-    lda ObjectHP,y
-    tax
-    lda ObjectDef,y
-    ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
-    and #$01
-    cpx RecentEnemyCurrHPLo
-    bne +
-    cmp RecentEnemyCurrHPHi
-    beq @UpdateEnemyMaxHP
-    ; A = enemy curr hp hi, x = enemy curr hp lo
-+   sta RecentEnemyCurrHPHi
-    stx RecentEnemyCurrHPLo
-    tya
-    pha
-      lda #DISPLAY_NUMBER_ENEMYHP
-      jsr DisplayNumberInternal
-    pla
-    tay
-@UpdateEnemyMaxHP:
-    ; if the enemy max health changed, update that as well.
-    tya
-    ; divide the object id by 8 to find the slot the bit will be in
-    lsr
-    lsr
-    lsr
-    tax
-    lda ObjectMaxHPHi,x
-    sta $25 ; store the 8 bits of hp that contains this object slot
-    tya
-    and #$07
-    tax
-    lda PowersOfTwo,x
-    and $25
-    ; a now has the 1 bit for the max hp
-    ldx ObjectMaxHPLo,y ; keep EnemyMaxHPLo in x
-    cpx RecentEnemyMaxHPLo
-    bne +
-    cmp RecentEnemyMaxHPHi
-    beq @Exit
-    ; A = enemy curr hp hi, x = enemy curr hp lo
-+   sta RecentEnemyMaxHPHi
-    stx RecentEnemyMaxHPLo
-    pha
-      lda #DISPLAY_NUMBER_ENEMYMAX
-      jsr DisplayNumberInternal
-    pla
-    tay
-@Exit:
-  pla
-  tax
-  rts
-.popseg
-
 ;;; Crystalis should have all elements, rather than none
 ;;; Since we now invert the handling for enemy immunity,
 ;;; this aligns enemies and walls nicely, Crystalis will
@@ -1297,19 +1108,12 @@ UpdateEnemyHPDisplayInternal:
     jsr SubtractEnemyHP
      bcc KillObject
     lsr
-    jmp UpdateEnemyHP
-    ;implicit rts
-;;; NOTE: must finish before 35152
-FREE_UNTIL $9152
-
-.reloc
-UpdateEnemyHP:
     lda $62
     rol
     sta ObjectDef,y
-    sec ; Set carry to signify the enemy is still alive
-    jmp UpdateEnemyHPDisplay
-    ;implicit rts
+    rts
+;;; NOTE: must finish before 35152
+FREE_UNTIL $9152
 
 ;;; Change sacred shield to block curse instead of paralysis
 .org $92ce
@@ -1741,6 +1545,9 @@ CheckSwordCollisionPlane:
 
 
 .ifdef _TWELFTH_WARP_POINT
+;;; Remove 11 (5-byte) lines from the nametable write table
+FREE "fe" [$c5b8, $c5ef)
+
 .reloc
 StageWarpMenuNametableWrite:
   ;; 20=a8, 21=DATA, 22=09, 23=00, 24=01
@@ -2225,7 +2032,7 @@ FREE_UNTIL $e652
   ;; note: the AND should no longer be necessary since it's zero already
   and #$3f    ; note: we only need the 20 bit if we expand the rom
   beq $ebef
-   jsr BankSwitch8k_8000  ; BankSwitch8k_8000
+   jsr $c418  ; BankSwitch8k_8000
 .assert * = $ebef
 
 .org $ef36
@@ -2418,7 +2225,7 @@ TrainerIncreaseLevel:
   lda $6e
   pha
    lda #$1a
-   jsr BankSwitch8k_8000
+   jsr $c418
    lda $8b7f,y
    sta $03c0
    sta $03c1
@@ -2438,7 +2245,7 @@ TrainerIncreaseLevel:
    jsr $8e46
    jsr $c008
   pla
-  jmp BankSwitch8k_8000
+  jmp $c418
 
 
 .org $e2ac ; normally loads object data for wall
@@ -2741,11 +2548,11 @@ TrainerStart:
   lda $6e ; NOTE: could just jmp $3d276 ?? but less hygeinic
   pha
    lda #$1a
-   jsr BankSwitch8k_8000 ; bank switch 8k 8000
+   jsr $c418 ; bank switch 8k 8000
    lda #$01
    jsr $8e46 ; display number internal
   pla
-  jmp BankSwitch8k_8000
+  jmp $c418
 
 .reloc
 TrainerData:
@@ -2830,7 +2637,7 @@ TrainerData_Shields:
   .byte $08,$04
   .byte $11,$12,$13,$14
 
-.endif
+.endif  
 
 .ifdef _DISABLE_TRIGGER_SKIP
 .reloc
@@ -3006,7 +2813,7 @@ UseIvoryStatue:  ; Move bytes from $3d6ec
   jsr $e144 ; LoadNpcDataForCurrentLocation
   ldx #$0f
   lda #$1a
-  jsr BankSwitch8k_8000 ; BankSwitch8k_8000
+  jsr $c418 ; BankSwitch8k_8000
   jsr $98a8 ; ReadObjectCoordinatesInto_34_37
   ldx #$1e
   stx $10

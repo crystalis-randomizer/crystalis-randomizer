@@ -287,7 +287,7 @@ async function shuffleInternal(rom: Uint8Array,
   // parsed.moveScreens(parsed.metatilesets.dolphinCave, 4);
   // parsed.moveScreens(parsed.metatilesets.lime, 4);
   // parsed.moveScreens(parsed.metatilesets.shrine, 4);
-  if (typeof window == 'object') (window as any).rom = parsed;
+  if (typeof globalThis == 'object') (globalThis as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) log.spoiler = parsed.spoiler;
   if (actualFlagString !== originalFlagString) {

@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "crystalis-randomizer",
   "version": "0.0.0",
   "main": "dist/js/patch.js",
@@ -17,7 +18,8 @@
     "buildchr": "sh scripts/buildchr.sh"
   },
   "bin": {
-    "cryr": "dist/js/cli.js"
+    "cryr": "dist/js/cli.js",
+    "analyze": "dist/js/analyze.js"
   },
   "repository": {
     "type": "git",
@@ -36,6 +38,7 @@
     "esm": "^3.2.25",
     "lorem-ipsum": "^2.0.3",
     "module-alias": "^2.2.2",
+    "node-esm-loader": "^0.0.1",
     "ts-node": "^8.6.2"
   },
   "devDependencies": {

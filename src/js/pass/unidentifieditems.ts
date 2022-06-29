@@ -20,6 +20,7 @@ const KEY_NAMES = [
   '!Magic Key',
   '!Backdoor Key',
   '!Skeleton Key',
+  'Unidentified Key',
   'Piano Key',
   'Encryption Key',
   'Private Key',
@@ -113,6 +114,7 @@ const LAMP_NAMES = [
   '!Oil Lamp',
   '!Magic Lamp',
   'Genie Lamp',
+  'Unidentified Lamp',
   'Dull Lamp',
   'Desk Lamp',
   'Shimmering Lamp',
@@ -142,6 +144,7 @@ const STATUE_NAMES = [
   '!Random Statue',
   '!Rusty Statue',
   '!Forbidden Statue',
+  'Unidentified Idol',
   'Golden Idol',
   '!Strange Statue',
   '!Glass Statue',
@@ -172,6 +175,7 @@ const STATUE_NAMES = [
 // TODO - set up combinations that should appear together
 const BOW_NAMES = [
   '!Random Bow',
+  'Unidentified Bow',
   'Crossbow',
   'Autocrossbow',
   'Long Bow',

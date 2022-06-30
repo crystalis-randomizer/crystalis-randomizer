@@ -9,6 +9,7 @@ export interface MonsterData {
   difficulty?: number;
   class?: string;
   type?: 'boss' | 'projectile'; // or default: monster
+  displayName?: string;
 }
 
 type DifficultyFactor = number & {__difficulty__: never};

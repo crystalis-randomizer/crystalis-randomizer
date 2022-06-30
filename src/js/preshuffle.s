@@ -852,12 +852,15 @@ UpdateGlobalStepCounter:
 .pushseg "13", "fe", "ff"
 .org $baca
 InitializeStatusBarNametable:
+.ifdef _ENEMY_HP
   jsr ClearEnemyHPRam
+.endif ; _ENEMY_HP
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
   jmp $c676 ; WaitForNametableFlush
 FREE_UNTIL $bad9
 
+.ifdef _ENEMY_HP
 .reloc
 ClearEnemyHPRam:
   ;; TODO find a better place to clear out the ram
@@ -872,6 +875,7 @@ ClearEnemyHPRam:
     dey
     bpl -
   rts
+.endif ; _ENEMY_HP
 .popseg
 
 .pushseg "1a", "fe", "ff"
@@ -976,7 +980,12 @@ UpdateCurrentEXPAndExit:
   lda #DISPLAY_NUMBER_EXP
   jsr DisplayNumberInternal
 ExitWithoutDrawingEXP:
+.ifdef _ENEMY_HP
   jmp RemoveEnemyAndPlaySFX 
+.else
+  lda #SFX_MONSTER_HIT
+  jmp StartAudioTrack
+.endif ; _ENEMY_HP
   ; implicit rts
 .assert * <= $91fa ; StartMonsterDeathAnimation
 
@@ -1087,7 +1096,7 @@ Do16BitSubtractionForEXP:
   .byte $00
 .popseg
 
-
+.ifdef _ENEMY_HP
 .pushseg "fe", "ff"
 ;; Add the Enemy Name to the precomputed write table.
 .org $c5b8
@@ -1257,6 +1266,9 @@ UpdateEnemyHPDisplayInternal:
   rts
 .popseg
 
+.endif ; _ENEMY_HP
+
+
 ;;; Crystalis should have all elements, rather than none
 ;;; Since we now invert the handling for enemy immunity,
 ;;; this aligns enemies and walls nicely, Crystalis will
@@ -1322,11 +1334,19 @@ UpdateEnemyHPDisplayInternal:
     jsr SubtractEnemyHP
      bcc KillObject
     lsr
+.ifdef _ENEMY_HP
     jmp UpdateEnemyHP
+.else
+    lda $62
+    rol
+    sta ObjectDef,y
+    rts
+.endif ; _ENEMY_HP
     ;implicit rts
 ;;; NOTE: must finish before 35152
 FREE_UNTIL $9152
 
+.ifdef _ENEMY_HP
 .reloc
 UpdateEnemyHP:
   lda $62
@@ -1337,6 +1357,7 @@ UpdateEnemyHP:
   ora #DRAW_ENEMY_STATS
   sta ShouldRedisplayUI
   rts
+.endif ; _ENEMY_HP
 
 ;;; Change sacred shield to block curse instead of paralysis
 .org $92ce
@@ -2952,9 +2973,12 @@ CheckToRedisplayUI:
   bcc +
     lda #$06
     jsr DisplayNumber
-+ lsr ShouldRedisplayUI
++ 
+.ifdef _ENEMY_HP
+  lsr ShouldRedisplayUI
   bcc @Exit
     jsr UpdateEnemyHPDisplay
+.endif ; _ENEMY_HP
 @Exit:
   jmp CheckForPlayerDeath
 .endif

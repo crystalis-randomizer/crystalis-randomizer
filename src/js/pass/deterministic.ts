@@ -181,6 +181,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.hardcoreMode()) hardcoreMode(rom);
 
   if (flags.shouldUpdateHud()) useNewStatusBarGraphics(rom);
+  if (flags.shouldHaveEnemyHP()) addEnemyNames(rom);
   if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
 }
 
@@ -214,6 +215,23 @@ function useNewStatusBarGraphics(rom: Rom): void {
   rom.patterns.set(page, 0x6, Patterns.HUD_EX);
   rom.patterns.set(page, 0x1a, Patterns.HUD_CLOSE_LEFT);
   rom.patterns.set(page, 0x1b, Patterns.HUD_CLOSE_RIGHT);
+}
+
+function addEnemyNames(rom: Rom): void {
+  const a = rom.assembler();
+  for (var o of rom.objects) {
+    // Add the name of the object to the rom in a spare bank
+    if (o.name != '') {
+      a.segment('3d');
+      a.org(0xa000 + (o.id << 5), `${o.name}_Str`);
+      let objName = o.name.substring(0,27);
+      a.byte(...objName);
+      a.byte(0x9b); // Closing bracket for right side [
+      // fill the rest of the name with the spacer tile so it looks like 'NAME[===='
+      a.byte(...Array(28 - (objName.length + 1)).fill(0x1c));
+    }
+  }
+  rom.modules.push(...[a.module()]);
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation

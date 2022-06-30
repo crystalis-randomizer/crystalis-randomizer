@@ -255,6 +255,7 @@ RescaleDone:
    ;; $11 contains the original object ID.
    lda $11
    sta ObjectNameId,x
+.ifdef _ENEMY_HP
    cpx CurrentEnemySlot
    bne +
       ; The enemy displayed in the HP slot is now removed,
@@ -264,6 +265,7 @@ RescaleDone:
       lda ShouldRedisplayUI
       ora #DRAW_ENEMY_STATS
       sta ShouldRedisplayUI
+.endif ; _ENEMY_HP
 +  jmp $c2af
 
 ; .assert * <= $c000

@@ -989,6 +989,7 @@ ExitWithoutDrawingEXP:
   ; implicit rts
 .assert * <= $91fa ; StartMonsterDeathAnimation
 
+.ifdef _ENEMY_HP
 .reloc
 RemoveEnemyAndPlaySFX:
   ; the last attacked enemy is getting cleared out so we want to update the HP display
@@ -1000,6 +1001,7 @@ RemoveEnemyAndPlaySFX:
   lda #SFX_MONSTER_HIT
   jmp StartAudioTrack
   ; implicit rts
+.endif ; _ENEMY_HP
 
 .org $8cc0
 UpdateHPDisplayInternal:
@@ -1108,6 +1110,7 @@ ENEMY_NAME_VRAM_UPDATE = $21
 .byte $ab,$62,$09,ENEMY_HP_VRAM_BUFFER_OFFSET,$80
 ; Used to draw the enemy name (NametablePrecomputedHeaderTable @ #$21)
 .byte $ab,$82,$1c,ENEMY_NAME_VRAM_BUFFER_OFFSET,$80
+
 .reloc
 UpdateEnemyHPDisplay:
   lda $6e
@@ -2968,17 +2971,32 @@ ComputeDefense:
 .reloc
 CheckToRedisplayUI:
   lda ShouldRedisplayUI
-  beq @Exit
+  beq @CheckEnemyDespawned
   lsr ShouldRedisplayUI
   bcc +
     lda #$06
     jsr DisplayNumber
 + 
+
 .ifdef _ENEMY_HP
   lsr ShouldRedisplayUI
-  bcc @Exit
+  bcc @CheckEnemyDespawned
     jsr UpdateEnemyHPDisplay
+    bne @Exit ; unconditional (no need to check enemy despawn)
 .endif ; _ENEMY_HP
+
+; Check to see if the current enemy slot is nonzero, but the action script
+; is zero, if so, then its despawned and we can delete it.
+@CheckEnemyDespawned:
+.ifdef _ENEMY_HP
+  ldx CurrentEnemySlot
+  beq @Exit
+    lda ObjectActionScript,x
+    bne @Exit
+      sta CurrentEnemySlot
+      jsr UpdateEnemyHPDisplay
+.endif ; _ENEMY_HP
+
 @Exit:
   jmp CheckForPlayerDeath
 .endif

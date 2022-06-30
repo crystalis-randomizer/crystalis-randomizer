@@ -558,6 +558,14 @@ class Monsters extends FlagSection {
            point, normal monsters may be shuffled into the tower as well.`,
     hard: true,
   });
+
+  static readonly NoEnemyHPBar = Monsters.flag('Mh', {
+    name: 'Disable Enemy HP UI',
+    text: `Alongside the reorganized UI, the most recently attacked enemy's HP and
+           name will be displayed at the bottom of the screen where the Experience
+           used to be. Disabling this option will leave that area empty.`,
+    optional: NO_BANG,
+  });
 }
 
 class EasyMode extends FlagSection {
@@ -1210,5 +1218,8 @@ export class FlagSet {
   }
   shouldUpdateHud(): boolean {
     return true;
+  }
+  shouldHaveEnemyHP(): boolean {
+    return !this.check(Monsters.NoEnemyHPBar);
   }
 }

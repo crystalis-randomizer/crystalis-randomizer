@@ -3,6 +3,8 @@ import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
 const MISSPELLINGS: ReadonlyMap<string, string[]> = new Map([
+  ['Sword of Wind', ['Sord of Wind', 'Sowrd of Wind', 'Sword of Wien']],
+  ['Sword of Fire', ['Sword of Frirer']],
   ['Sword of Water', ['Horde of Otters']],
   ['Sword of Thunder', ['Sorg of Chunker']],
   ['Flame Bracelet', ['Fame Bracelet']],

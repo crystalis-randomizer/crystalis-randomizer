@@ -863,7 +863,6 @@ FREE_UNTIL $bad9
 .ifdef _ENEMY_HP
 .reloc
 ClearEnemyHPRam:
-  ;; TODO find a better place to clear out the ram
   ;; Clear out the SRAM that stores the enemy HP data
   lda ShouldRedisplayUI
   ora #DRAW_ENEMY_STATS
@@ -1102,6 +1101,10 @@ Do16BitSubtractionForEXP:
 .pushseg "fe", "ff"
 ;; Add the Enemy Name to the precomputed write table.
 .org $c5b8
+
+.import ENEMY_NAME_FIRST_ID, ENEMY_NAME_LAST_ID, ENEMY_NAME_LENGTH
+.import EnemyNameTable, EnemyNameTableHi, EnemyNameTableLo
+
 ENEMY_HP_VRAM_BUFFER_OFFSET = $60
 ENEMY_HP_VRAM_UPDATE = $20
 ENEMY_NAME_VRAM_BUFFER_OFFSET = $80
@@ -1109,7 +1112,7 @@ ENEMY_NAME_VRAM_UPDATE = $21
 ; Used to set/clear the enemy HP (NametablePrecomputedHeaderTable @ #$20)
 .byte $ab,$62,$09,ENEMY_HP_VRAM_BUFFER_OFFSET,$80
 ; Used to draw the enemy name (NametablePrecomputedHeaderTable @ #$21)
-.byte $ab,$82,$1c,ENEMY_NAME_VRAM_BUFFER_OFFSET,$80
+.byte $ab,$82,ENEMY_NAME_LENGTH,ENEMY_NAME_VRAM_BUFFER_OFFSET,$80
 
 .reloc
 UpdateEnemyHPDisplay:
@@ -1153,8 +1156,8 @@ UpdateEnemyHPDisplayInternal:
       sty RecentEnemyMaxHPHi
       sty RecentEnemyObjectId
       
-      lda #$1c
-      ldy #$1c
+      lda #$1c ; [=] bar character
+      ldy #ENEMY_NAME_LENGTH
 -       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
         dey
         bpl -
@@ -1167,14 +1170,64 @@ UpdateEnemyHPDisplayInternal:
       jsr StageNametableWriteFromTable
       lda #ENEMY_NAME_VRAM_UPDATE
       jsr StageNametableWriteFromTable
+  @EarlyExit:
     pla
     tay
   pla
   tax
   rts
   @EnemyAlive:
+  @UpdateName:
+      ldy CurrentEnemySlot
+      ; if the object id changed, update the name of the monster
+      lda ObjectNameId,y
+      cmp RecentEnemyObjectId
+      beq @DrawStandardTilesIfMissing
+      sta RecentEnemyObjectId
+
+      ; Load the pointer to the enemy name len (one byte) and enemy name (len bytes)
+      tax
+      lda EnemyNameTableLo,x
+      sta $61
+      lda EnemyNameTableHi,x
+      sta $62
+
+      lda #$9a ; tile for left close ]
+      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET
+
+      ; read the length of the name into x and store it for later use
+      ldy #0
+      lda ($61),y
+      pha
+        tax
+        iny
+        ; copy the name into the staging buffer
+-         lda ($61),y
+          sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
+          iny
+          dex
+          bne -
+      pla
+      tax
+      inx
+      lda #$9b ; tile for right close [ ( $6001 to account for starting '']' )
+      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
+      inx
+      ; check if we need to fill the rest with the border
+      cpx #ENEMY_NAME_LENGTH
+      bpl +
+      ; fill the rest of the buffer with #$1c the bar character
+      lda #$1c
+-       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
+        inx
+        cpx #ENEMY_NAME_LENGTH
+        bmi -
++     ; call the function to blit it to the nametable
+      lda #ENEMY_NAME_VRAM_UPDATE
+      jsr StageNametableWriteFromTable
+  @DrawStandardTilesIfMissing:
       lda PreviousEnemySlot
-      bne @UpdateName
+      bne @CurrentHP
       ; if the previous enemy was slot 0, then we need to draw the Ey and /
       sty PreviousEnemySlot
       lda #$82 ; Ey
@@ -1184,46 +1237,6 @@ UpdateEnemyHPDisplayInternal:
       lda #$9d ; /
       sta $6005 + ENEMY_HP_VRAM_BUFFER_OFFSET
       lda #ENEMY_HP_VRAM_UPDATE
-      jsr StageNametableWriteFromTable
-  @UpdateName:
-      ldy CurrentEnemySlot
-      ; if the object id changed, update the name of the monster
-      lda ObjectNameId,y
-      cmp RecentEnemyObjectId
-      beq @CurrentHP
-      sta RecentEnemyObjectId
-      ; calculate the offset into the bank
-      sta $61
-      lda #$00
-      sta $62
-      asl $61
-      rol $62
-      asl $61
-      rol $62
-      asl $61
-      rol $62
-      asl $61
-      rol $62
-      asl $61
-      rol $62
-      lda $62
-      clc
-      adc #$a0
-      sta $62
-
-      ; copy the name into the staging buffer
-      lda #$9a ; tile for left close ]
-      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET
-      ; lda #$9b ; tile for right close [
-      ; sta $6092
-      ldy #$1b
--       lda ($61),y
-        sta $6001 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
-        dey
-        bpl -
-      
-      ; call the function to blit it to the nametable
-      lda #ENEMY_NAME_VRAM_UPDATE
       jsr StageNametableWriteFromTable
   @CurrentHP:
       ldy CurrentEnemySlot
@@ -1350,16 +1363,23 @@ UpdateEnemyHPDisplayInternal:
 FREE_UNTIL $9152
 
 .ifdef _ENEMY_HP
+.import EnemyNameTableHi
 .reloc
 UpdateEnemyHP:
   lda $62
   rol
   sta ObjectDef,y
-  sty CurrentEnemySlot
-  lda ShouldRedisplayUI
-  ora #DRAW_ENEMY_STATS
-  sta ShouldRedisplayUI
-  rts
+  ; Check to see if the monster we attacked is on the blocklist
+  ; by looking to see if it has a name. If the name table hi addr is $00
+  ; then we don't want to display it (even if it does have HP)
+  ldx ObjectNameId,y
+  lda EnemyNameTableHi,x
+  beq +
+    sty CurrentEnemySlot
+    lda ShouldRedisplayUI
+    ora #DRAW_ENEMY_STATS
+    sta ShouldRedisplayUI
++ rts
 .endif ; _ENEMY_HP
 
 ;;; Change sacred shield to block curse instead of paralysis

@@ -1109,10 +1109,11 @@ ENEMY_HP_VRAM_BUFFER_OFFSET = $60
 ENEMY_HP_VRAM_UPDATE = $20
 ENEMY_NAME_VRAM_BUFFER_OFFSET = $80
 ENEMY_NAME_VRAM_UPDATE = $21
+ENEMY_NAME_BUFFER_SIZE = ENEMY_NAME_LENGTH + 2
 ; Used to set/clear the enemy HP (NametablePrecomputedHeaderTable @ #$20)
 .byte $ab,$62,$09,ENEMY_HP_VRAM_BUFFER_OFFSET,$80
 ; Used to draw the enemy name (NametablePrecomputedHeaderTable @ #$21)
-.byte $ab,$82,ENEMY_NAME_LENGTH,ENEMY_NAME_VRAM_BUFFER_OFFSET,$80
+.byte $ab,$82,ENEMY_NAME_BUFFER_SIZE,ENEMY_NAME_VRAM_BUFFER_OFFSET,$80
 
 .reloc
 UpdateEnemyHPDisplay:
@@ -1157,7 +1158,7 @@ UpdateEnemyHPDisplayInternal:
       sty RecentEnemyObjectId
       
       lda #$1c ; [=] bar character
-      ldy #ENEMY_NAME_LENGTH
+      ldy #ENEMY_NAME_BUFFER_SIZE - 1
 -       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
         dey
         bpl -
@@ -1210,17 +1211,17 @@ UpdateEnemyHPDisplayInternal:
       pla
       tax
       inx
-      lda #$9b ; tile for right close [ ( $6001 to account for starting '']' )
+      lda #$9b ; tile for right close [
       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
       inx
       ; check if we need to fill the rest with the border
-      cpx #ENEMY_NAME_LENGTH
+      cpx #ENEMY_NAME_BUFFER_SIZE
       bpl +
       ; fill the rest of the buffer with #$1c the bar character
       lda #$1c
 -       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
         inx
-        cpx #ENEMY_NAME_LENGTH
+        cpx #ENEMY_NAME_BUFFER_SIZE
         bmi -
 +     ; call the function to blit it to the nametable
       lda #ENEMY_NAME_VRAM_UPDATE

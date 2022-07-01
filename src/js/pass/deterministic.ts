@@ -230,7 +230,7 @@ function addEnemyNames(rom: Rom): void {
       Crystalis HUD can't comfortably fit that many letters.`);
   }
 
-  a.assign('ENEMY_NAME_LENGTH', longestName+1);
+  a.assign('ENEMY_NAME_LENGTH', longestName);
   a.export('ENEMY_NAME_LENGTH');
   a.segment('3d');
   for (const o of objs) {

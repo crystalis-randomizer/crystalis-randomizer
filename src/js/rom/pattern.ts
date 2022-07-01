@@ -83,22 +83,22 @@ export class Pattern extends Entity {
     |   . .  |
   `, {' ': 2, 'P': 1, 'w': 1, '.': 3});
   public static readonly HUD_EY = parsePattern(`
-    |EEE   ..|
-    |E..   .#|
-    |EE Y.Y.#|
-    |E..Y.Y.#|
-    |EEE.Y..#|
-    |... Y..#|
-    |    Y...|
+    |EEE     |
+    |E...    |
+    |EEE Y.Y.|
+    |E...Y.Y.|
+    |EEE  Y. |
+    | ... Y. |
+    |     Y. |
     |        |
   `, {' ': 2, 'E': 1, 'Y': 1, '#': 1, '.': 3});
   public static readonly HUD_LV = parsePattern(`
     |        |
     |L       |
     |L.      |
-    |L. v. v.|
-    |L. v. v.|
-    |LLL vv. |
+    |L.  v.v.|
+    |L.  v.v.|
+    |LLL  v. |
     | ... v. |
     |     .  |
   `, {' ': 2, 'L': 1, 'v': 1, '.': 3});
@@ -132,6 +132,26 @@ export class Pattern extends Entity {
     |    x.x.|
     |     . .|
   `, {' ': 2, 'E': 1, 'x': 1, '.': 3});
+  public static readonly HUD_CLOSE_RIGHT = parsePattern(`
+    |________|
+    |____oooo|
+    |____o...|
+    |__ooo...|
+    |__o....o|
+    |__o....o|
+    |__o..oo |
+    |__o..o  |
+  `, {' ': 0, '.': 1, '_': 2, 'o': 3});
+  public static readonly HUD_CLOSE_LEFT = parsePattern(`
+    |________|
+    |oooo____|
+    |...o____|
+    |...ooo__|
+    |o....o__|
+    |o....o__|
+    | oo..o__|
+    |  o..o__|
+  `, {' ': 0, '.': 1, '_': 2, 'o': 3});
 }
 
 function parsePattern(data: String, key: Record<string, number>): number[] {

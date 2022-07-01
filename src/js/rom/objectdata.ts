@@ -10,6 +10,7 @@ export class ObjectData extends Entity {
 
   used: boolean;
   name: string;
+  displayName: string;
 
   base: number;
 
@@ -18,11 +19,12 @@ export class ObjectData extends Entity {
 
   constraint: Constraint = Constraint.ALL;
 
-  constructor(parent: Objects, id: number) {
+  constructor(parent: Objects, id: number, displayName: string='') {
     super(parent.rom, id);
     parent[id] = this;
     this.used = true;
     this.name = '';
+    this.displayName = displayName;
     this.base = readLittleEndian(this.rom.prg, this.pointer) + 0x10000;
     this.sfx = this.rom.prg[this.base];
     this.data = [];

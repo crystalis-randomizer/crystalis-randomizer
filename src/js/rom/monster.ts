@@ -9,6 +9,7 @@ export interface MonsterData {
   difficulty?: number;
   class?: string;
   type?: 'boss' | 'projectile'; // or default: monster
+  displayName?: string;
 }
 
 type DifficultyFactor = number & {__difficulty__: never};
@@ -41,7 +42,7 @@ export class Monster extends ObjectData {
   monsterClass?: string;
 
   constructor(parent: Objects, data: MonsterData) {
-    super(parent, data.id);
+    super(parent, data.id, data.displayName);
 
     // Make the scaling calculations here
     // First derive values corresponding to vanilla.

@@ -26,6 +26,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x4b,
     scaling: 24,
     class: 'wraith',
+    displayName: 'Wraith',
   });
   paralysisPowderSource = new Monster(this, {
     id: 0x4d,
@@ -36,213 +37,258 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x4f,
     scaling: 28,
     class: 'wraith',
+    displayName: 'Wraith',
   });
   blueSlime = new Monster(this, {
     id: 0x50,
     scaling: 1,
     class: 'slime',
+    displayName: 'Slime',
   });
   weretiger = new Monster(this, {
     id: 0x51,
     scaling: 1,
+    displayName: 'Weretiger',
   });
   greenJelly = new Monster(this, {
     id: 0x52,
     scaling: 4,
     class: 'jelly',
+    displayName: 'Slug',
   });
   redSlime = new Monster(this, {
     id: 0x53,
     scaling: 4,
     class: 'slime',
+    displayName: 'Poison Slime',
   });
   rockGolem = new Monster(this, {
     id: 0x54,
     scaling: 4,
     class: 'golem',
+    displayName: 'Mud Golem',
   });
   blueBat = new Monster(this, {
     id: 0x55,
     scaling: 4,
+    displayName: 'Blue Bat',
   });
   greenWyvern = new Monster(this, {
     id: 0x56,
     scaling: 4,
     class: 'wyvern',
+    displayName: 'Wyvern',
   });
   vampire1 = new Monster(this, {
     id: 0x57,
     scaling: 5,
     type: 'boss',
+    displayName: 'Vampire',
   });
   orc = new Monster(this, {
     id: 0x58,
     scaling: 6,
+    displayName: 'Axe Wereboar',
   });
   redMosquito = new Monster(this, {
     id: 0x59,
     scaling: 10,
     class: 'mosquito',
+    displayName: 'Mosquito',
   });
   blueMushroom = new Monster(this, {
     id: 0x5a,
     scaling: 10,
     class: 'mushroom',
+    displayName: 'Mushroom',
   });
   swampTomato = new Monster(this, {
     id: 0x5b,
-    scaling: 10.
+    scaling: 10.,
+    displayName: 'Pillbug',
   });
   blueMosquito = new Monster(this, {
     id: 0x5c,
     scaling: 23,
     class: 'mosquito',
+    displayName: 'Mosquito',
   });
   swampPlant = new Monster(this, {
     id: 0x5d,
     scaling: 10,
+    displayName: 'Swamp Dandelion',
   });
   giantInsect = new Monster(this, {
     id: 0x5e,
     scaling: 11,
     type: 'boss',
+    displayName: 'Giant Insect',
   });
   largeBlueSlime = new Monster(this, {
     id: 0x5f,
     scaling: 11,
     class: 'slime',
+    displayName: 'Large Slime',
   });
   iceZombie = new Monster(this, {
     id: 0x60,
     scaling: 12,
     class: 'zombie',
+    displayName: 'Ice Zombie',
   });
   greenBrain = new Monster(this, {
     id: 0x61,
     scaling: 12,
     class: 'brain',
+    displayName: 'Brain',
   });
   greenSpider = new Monster(this, {
     id: 0x62,
     scaling: 12,
     class: 'spider',
+    displayName: 'Spider',
   });
   redWyvern = new Monster(this, { // also purple?
     id: 0x63,
     scaling: 12,
     class: 'wyvern',
+    displayName: 'Wyvern',
   });
   soldier = new Monster(this, {
     id: 0x64,
     scaling: 14,
     class: 'soldier',
+    displayName: 'Draygonia Soldier',
   });
   iceEntity = new Monster(this, {
     id: 0x65,
     scaling: 14,
     class: 'entity',
+    displayName: 'Ice Plant',
   });
   redBrain = new Monster(this, {
     id: 0x66,
     scaling: 14,
     class: 'brain',
+    displayName: 'Brain',
   });
   iceGolem = new Monster(this, {
     id: 0x67,
     scaling: 14,
     class: 'golem',
+    displayName: 'Ice Golem',
   });
   kelbesque1 = new Monster(this, {
     id: 0x68,
     scaling: 15,
     type: 'boss',
+    displayName: 'General Kelbesque',
   });
   largeRedSlime = new Monster(this, {
     id: 0x69,
     scaling: 18,
     class: 'slime',
+    displayName: 'Large Slime',
   });
   troll = new Monster(this, {
     id: 0x6a,
     scaling: 18,
+    displayName: 'Troll',
   });
   redJelly = new Monster(this, {
     id: 0x6b,
     scaling: 18,
     class: 'jelly',
+    displayName: 'Jelly',
   });
   medusa = new Monster(this, {
     id: 0x6c,
     scaling: 19,
+    displayName: 'Medusa',
   });
   crab = new Monster(this, {
     id: 0x6d,
     scaling: 19,
+    displayName: 'Crab',
   });
   medusaHead = new Monster(this, {
     id: 0x6e,
     scaling: 20,
+    displayName: 'Flying Plant',
   });
   bird = new Monster(this, {
     id: 0x6f,
     scaling: 20,
     class: 'bird',
+    displayName: 'Bird',
   });
   redMushroom = new Monster(this, { // also purple
     id: 0x71,
     scaling: 21,
     class: 'mushroom',
+    displayName: 'Mushroom',
   });
   earthEntity = new Monster(this, {
     id: 0x72,
     scaling: 22,
     class: 'entity',
+    displayName: 'Plant',
   });
   mimic = new Monster(this, {
     id: 0x73,
     scaling: 22,
+    displayName: 'Treasure Mimic',
   });
   redSpider = new Monster(this, {
     id: 0x74,
     scaling: 22,
     class: 'spider',
+    displayName: 'Spider',
   });
   fishman = new Monster(this, {
     id: 0x75,
     scaling: 25,
+    displayName: 'Mutant Fish',
   });
   jellyfish = new Monster(this, {
     id: 0x76,
     scaling: 25,
+    displayName: 'Jellyfish',
   });
   kraken = new Monster(this, {
     id: 0x77,
     scaling: 25,
+    displayName: 'Kraken',
   });
   darkGreenWyvern = new Monster(this, {
     id: 0x78,
     scaling: 27,
     class: 'wyvern',
+    displayName: 'Wyvern Mage',
   });
   sandZombie = new Monster(this, {
     id: 0x79,
     scaling: 38,
     class: 'zombie',
+    displayName: 'Sand Zombie',
   });
   wraithShadow1 = new Monster(this, {
     id: 0x7b,
     scaling: 28,
     class: 'wraith',
+    displayName: 'Shadow',
   });
   moth = new Monster(this, {
     id: 0x7c,
     scaling: 28,
     difficulty: 3,
+    displayName: 'Butterfly',
   });
   sabera1 = new Monster(this, {
     id: 0x7d,
     scaling: 29,
     type: 'boss',
+    displayName: 'General Sabera',
   });
   verticalPlatform = new ObjectData(this, 0x7e); // scaling: 28 ?
   horizotalPlatform = new ObjectData(this, 0x7f); // scaling: 28 ?
@@ -250,56 +296,68 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x80,
     scaling: 33,
     class: 'soldier',
+    displayName: 'Draygonia Archer',
   });
   bomberBird = new Monster(this, {
     id: 0x81,
     scaling: 33,
     class: 'bird',
+    displayName: 'Bomber Bird',
   });
   lavaBlob = new Monster(this, {
     id: 0x82,
     scaling: 37,
     class: 'puddle',
+    displayName: 'Lava Blob',
   });
   flailGuy = new Monster(this, { // lizard man
     id: 0x84,
     scaling: 37,
+    displayName: 'Flail Guy',
   });
   blueEye = new Monster(this, {
     id: 0x85,
     scaling: 37,
     class: 'eye',
+    displayName: 'Beholder',
   });
   salamander = new Monster(this, {
     id: 0x86,
     scaling: 37,
+    displayName: 'Salamander',
   });
   sorceror = new Monster(this, { // burt
     id: 0x87,
     scaling: 37,
+    displayName: 'Burt',
   });
   mado1 = new Monster(this, {
     id: 0x88,
     scaling: 37,
+    displayName: 'General Mado',
   });
   knight = new Monster(this, {
     id: 0x89,
     scaling: 41,
     difficulty: 1,
+    displayName: 'Ninja',
   });
   devil = new Monster(this, {
     id: 0x8a,
     scaling: 41,
+    displayName: 'Devil Bat',
   });
   kelbesque2 = new Monster(this, {
     id: 0x8b,
     scaling: 41,
     type: 'boss',
+    displayName: 'General Kelbesque',
   });
   wraithShadow2 = new Monster(this, {
     id: 0x8c,
     scaling: 41,
     class: 'wraith',
+    displayName: 'Shadow',
   });
   glitch1 = new ObjectData(this, 0x8d); // scaling: 41 ?
   glitch2 = new ObjectData(this, 0x8e); // scaling: 41 ?
@@ -308,55 +366,67 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x90,
     scaling: 41,
     type: 'boss',
+    displayName: 'General Sabera',
   });
   tarantula = new Monster(this, {
     id: 0x91,
     scaling: 41,
+    displayName: 'Tarantula',
   });
   skeleton = new Monster(this, {
     id: 0x92,
     scaling: 41,
+    displayName: 'Skeleton',
   });
   mado2 = new Monster(this, {
     id: 0x93,
     scaling: 41,
     type: 'boss',
+    displayName: 'General Mado',
   });
   purpleEye = new Monster(this, {
     id: 0x94,
     scaling: 41,
     class: 'eye',
+    displayName: 'Beholder',
   });
   flailKnight = new Monster(this, {
     id: 0x95,
     scaling: 41,
+    displayName: 'Flail Knight',
   });
   scorpion = new Monster(this, {
     id: 0x96,
     scaling: 41,
+    displayName: 'Scorpion',
   });
   karmine = new Monster(this, {
     id: 0x97,
     scaling: 41,
     type: 'boss',
+    displayName: 'General Karmine',
   });
   sandBlob = new Monster(this, {
     id: 0x98,
     scaling: 44,
     class: 'puddle',
+    displayName: 'Sand Blob',
   });
   mummy = new Monster(this, {
     id: 0x99,
     scaling: 44,
+    displayName: 'Mummy',
   });
   warlock = new Monster(this, {
     id: 0x9a,
     scaling: 46,
+    displayName: 'Warlock',
   });
   draygon1 = new Monster(this, {
     id: 0x9b,
     scaling: 45,
     type: 'boss',
+    displayName: 'Emporer Draygon',
   });
   statueOfSun = new ObjectData(this, 0x9c); // scaling: 47 ?
   statueOfMoon = new ObjectData(this, 0x9d); // scaling: 47 ?
@@ -364,40 +434,48 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x9e,
     scaling: 47,
     type: 'boss',
+    displayName: 'Draygon',
   });
   crumblingVerticalPlatform = new ObjectData(this, 0x9f); // scaling: 47 ?
   brownRobot = new Monster(this, {
     id: 0xa0,
     scaling: 47,
     difficulty: 1,
+    displayName: 'Robot Sentry',
   });
   whiteRobot = new Monster(this, {
     id: 0xa1,
     scaling: 47,
+    displayName: 'Robot Enforcer',
   });
   towerSentinel = new Monster(this, {
     id: 0xa2,
     scaling: 47,
+    displayName: 'Tower Sentinel',
   });
   helicopter = new Monster(this, {
     id: 0xa3,
     scaling: 47,
+    displayName: 'Robocopter',
   });
   dyna = new Monster(this, {
     id: 0xa4,
     scaling: 47,
     type: 'boss',
+    displayName: 'DYNA',
   });
   vampire2 = new Monster(this, {
     id: 0xa5,
     scaling: 28,
     type: 'boss',
+    displayName: 'Vampire',
   });
   glitch3 = new ObjectData(this, 0xa6); // scaling: 41 ?
   dynaPod = new Monster(this, {
     id: 0xb4,
     scaling: 47,
     type: 'boss',
+    displayName: 'DYNA Defense Pod',
   });
   dynaCounter = new Monster(this, {
     id: 0xb8,
@@ -443,6 +521,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0xc4,
     scaling: 11,
     //type: 'projectile', // of sorts
+    displayName: 'Mosquito',
   });
   kelbesque1Rock = new Monster(this, {
     id: 0xc5,

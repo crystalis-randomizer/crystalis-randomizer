@@ -39,7 +39,7 @@ if [ -z "$rom" ]; then
 fi
 
 if [ ! -f "$rom" ]; then
-  echo "Could not find valid rom image" >& 2
+  echo "Could not find valid rom image with rom $rom" >& 2
   exit 2
 fi
 

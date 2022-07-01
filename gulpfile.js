@@ -64,17 +64,16 @@ gulp.task('buildchr', function() {
             let concatted = arr
               .map((num) => { switch (num) {
                 default:
-                case 0: return '.'
-                case 1: return '+'
-                case 2: return 'x'
+                case 0: return ' '
+                case 1: return 'x'
+                case 2: return '.'
                 case 3: return 'o'
               }})
               .join('')
               .match(/.{1,8}/g)
               .join('\n  ');
-
-
-            out += `public static readonly ${file.stem}_tile${start} = parsePattern(\`\n  ${concatted}\n\`);\n`;
+            const tile_as_hex = Number(start).toString(16).padStart(2, '0')
+            out += `public static readonly ${file.stem}_tile${tile_as_hex} = parsePattern(\`\n  ${concatted}\n\`);\n`;
             ++start;
           }
         }

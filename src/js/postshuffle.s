@@ -15,8 +15,10 @@
 ;; .org * + SCALING_LEVELS
 ;; DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
 ;; .org * + SCALING_LEVELS
-
+;;; $11 holds the original object ID
 ;;; $12 and $13 are free RAM at this point
+;; [X] - holds the object ID
+;; [Y] - holds the scaling
 
 ;.org $1bdd0  ; Note: this follows immediately from the tables.
 .reloc
@@ -142,6 +144,10 @@ RescaleDefAndHP:
     sec
 +  rol ObjectDef,x
    sta ObjectHP,x
+   sta ObjectMaxHPLo,x
+   lda ObjectDef,x
+   and #$01
+   sta ObjectMaxHPHi,x
 RescaleAtk:   ; $1bc63
   ;; DiffDef = 4 * PDef
   ;; DiffHP = PHP
@@ -246,7 +252,21 @@ RescaleExp:   ; $1bcbd
 +    lda #$ff
 +++ sta ObjectExp,x
 RescaleDone:
-   jmp $c2af
+   ;; $11 contains the original object ID.
+   lda $11
+   sta ObjectNameId,x
+.ifdef _ENEMY_HP
+   cpx CurrentEnemySlot
+   bne +
+      ; The enemy displayed in the HP slot is now removed,
+      ; so clear out that spot
+      lda #0
+      sta CurrentEnemySlot
+      lda ShouldRedisplayUI
+      ora #DRAW_ENEMY_STATS
+      sta ShouldRedisplayUI
+.endif ; _ENEMY_HP
++  jmp $c2af
 
 ; .assert * <= $c000
 ;.assert < $1bff0

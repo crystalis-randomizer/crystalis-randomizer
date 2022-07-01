@@ -43753,6 +43753,8 @@ LoadPalettesForLocation
         ;; Prepares a write of palettes indexed by $7e0..$7e7.
         $34c0e  xx xx:      xxx #$xx
         $34c10  xx xx:      xxx $xx
+LoadPalettesForCustomLocation
+        ;; When changing screens, some will set $11 before jmping straight to this location
         $34c12  xx xx:      xxx $xx
         $34c14  xx:         xxx
         $34c15  xx:          xxx
@@ -43795,8 +43797,8 @@ LoadPalettesForLocation
         $34c55  xx xx:      xxx $xx
 -       $34c57  xx xx:      xxx $xx
         $34c59  xx:         xxx
-        $34c5a  xx xx xx:   xxx $3c176
-        $34c5d  xx xx xx:   xxx $34c12
+        $34c5a  xx xx xx:   xxx WaitForMultipleOAMDMA
+        $34c5d  xx xx xx:   xxx LoadPalettesForCustomLocation
         $34c60  xx xx:      xxx $xx
         $34c62  xx:         xxx
         $34c63  xx xx:      xxx $xx
@@ -44528,20 +44530,20 @@ KillObject
         $35186  xx xx:       xxx + ; $351ef
         $35188  xx xx xx:     xxx PlayerLevel
         $3518b  xx xx xx:     xxx PlayerLevel
-        $3518e  xx xx xx:     xxx $34b7f,y
+        $3518e  xx xx xx:     xxx MaxHPByLevel,y
         $35191  xx xx xx:     xxx PlayerMaxHP
-        $35194  xx xx xx:     xxx $34b8f,y
+        $35194  xx xx xx:     xxx MaxMPByLevel,y
         $35197  xx xx xx:     xxx PlayerMaxMP
         ;; Add the delta of the max HP/MP to the current
         $3519a  xx:           xxx
-        $3519b  xx xx xx:     xxx $34b7f,y
-        $3519e  xx xx xx:     xxx $34b7e,y
+        $3519b  xx xx xx:     xxx MaxHPByLevel,y
+        $3519e  xx xx xx:     xxx MaxHPByLevel-1,y
         $351a1  xx:           xxx
         $351a2  xx xx xx:     xxx PlayerHP
         $351a5  xx xx xx:     xxx PlayerHP
         $351a8  xx:           xxx
-        $351a9  xx xx xx:     xxx $34b8f,y
-        $351ac  xx xx xx:     xxx $34b8e,y
+        $351a9  xx xx xx:     xxx MaxMPByLevel,y
+        $351ac  xx xx xx:     xxx MaxMPByLevel-1,y
         $351af  xx:           xxx
         $351b0  xx xx xx:     xxx PlayerMP
         $351b3  xx xx xx:     xxx PlayerMP
@@ -44549,9 +44551,9 @@ KillObject
         $351b6  xx xx xx:     xxx PlayerLevel
         $351b9  xx:           xxx
         $351ba  xx:           xxx
-        $351bb  xx xx xx:     xxx $34b9e,y               ; NextLevelExpByLevel
+        $351bb  xx xx xx:     xxx NextLevelExpByLevel-1,y
         $351be  xx xx xx:     xxx PlayerExpToNextLevel
-        $351c1  xx xx xx:     xxx $34b9f,y
+        $351c1  xx xx xx:     xxx NextLevelExpByLevel,y
         $351c4  xx xx xx:     xxx PlayerExpToNextLevel+1
         ;; Update the display
         $351c7  xx xx xx:     xxx UpdateHPDisplayInternal
@@ -61197,13 +61199,16 @@ FallIntoPit
         $3e60c  xx xx:      xxx #$xx
         $3e60e  xx xx xx:   xxx $34c49
 ;;; --------------------------------
+ClearAllObjectsOnLocationChange
         $3e611  xx xx:      xxx #$xx ; 34000 -> 8000
         $3e613  xx xx xx:   xxx BankSwitch8k_8000
+        ;; This seems to load a specific palette?
         $3e616  xx xx:      xxx #$xx
         $3e618  xx xx xx:   xxx $34c3d
+        ;; Loops through all the objects and writes 0 to the ObjectActionScript
         $3e61b  xx xx:      xxx #$xx
         $3e61d  xx xx:      xxx #$xx
--       $3e61f  xx xx xx:   xxx $xxxx,x
+-       $3e61f  xx xx xx:   xxx ObjectActionScript,x
         $3e622  xx:         xxx
         $3e623  xx xx:      xxx #$xx
         $3e625  xx xx:      xxx - ; $3e61f

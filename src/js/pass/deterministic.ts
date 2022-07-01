@@ -11,6 +11,7 @@ import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
 import {Monster} from '../rom/monster.js';
 import {Patterns} from '../rom/pattern.js';
+import { Expr } from '../asm/expr.js';
 
 const [] = [hex]; // generally useful
 
@@ -219,18 +220,35 @@ function useNewStatusBarGraphics(rom: Rom): void {
 
 function addEnemyNames(rom: Rom): void {
   const a = rom.assembler();
-  for (var o of rom.objects) {
-    // Add the name of the object to the rom in a spare bank
-    if (o.name != '') {
-      a.segment('3d');
-      a.org(0xa000 + (o.id << 5), `${o.name}_Str`);
-      let objName = o.name.substring(0,27);
-      a.byte(...objName);
-      a.byte(0x9b); // Closing bracket for right side [
-      // fill the rest of the name with the spacer tile so it looks like 'NAME[===='
-      a.byte(...Array(28 - (objName.length + 1)).fill(0x1c));
-    }
+  const objs = rom.objects.filter((o) => o.displayName != '');
+  const objsAddrs: Expr[] = new Array(256).fill(null);
+  const longestName = Math.max(...(objs.map(o => o.displayName.length)));
+  const MAX_LENGTH = 27;
+
+  if (longestName > MAX_LENGTH) {
+    throw new Error(`Longest displayName length is greater than ${MAX_LENGTH}. (${longestName} > ${MAX_LENGTH})
+      Crystalis HUD can't comfortably fit that many letters.`);
   }
+
+  a.assign('ENEMY_NAME_LENGTH', longestName+1);
+  a.export('ENEMY_NAME_LENGTH');
+  a.segment('3d');
+  for (const o of objs) {
+    // Add the name of the object to the rom in a spare bank
+    a.reloc(`${o.name}_Str`);
+    const addr = a.pc();
+    a.byte(o.displayName.length);
+    a.byte(...o.displayName);
+    objsAddrs[o.id] = addr;
+  }
+  a.org(0xa000, 'EnemyNameTableLo');
+  a.label('EnemyNameTableLo');
+  a.export('EnemyNameTableLo');
+  objsAddrs.forEach(o => (o == null) ? a.byte(0x00) : a.byte( {op: '<', args: [o]} ));
+  a.org(0xa100, 'EnemyNameTableLo');
+  a.label('EnemyNameTableHi');
+  a.export('EnemyNameTableHi');
+  objsAddrs.forEach(o => (o == null) ? a.byte(0x00) : a.byte( {op: '>', args: [o]} ));
   rom.modules.push(...[a.module()]);
 }
 

@@ -42,7 +42,7 @@ export class Monster extends ObjectData {
   monsterClass?: string;
 
   constructor(parent: Objects, data: MonsterData) {
-    super(parent, data.id);
+    super(parent, data.id, data.displayName);
 
     // Make the scaling calculations here
     // First derive values corresponding to vanilla.

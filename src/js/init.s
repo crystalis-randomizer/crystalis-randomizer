@@ -141,11 +141,33 @@ FREE "3d" [$a000, $c000)
 ;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
 ;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 
+VromPalettes = $3f00
+PPUCTRL   = $2000
+PPUMASK   = $2001
+PPUSTATUS = $2002
+OAMADDR   = $2003
+OAMDATA   = $2004
+PPUSCROLL = $2005
+PPUADDR   = $2006
+PPUDATA   = $2007
+OAMDMA    = $4014
+
+; Workaround compiler issue that forces values set using `=`
+; to use absolute addressing instead of zp by using .define
+.define PpuCtrlShadow $00
+.define PpuMaskShadow $01
+
+.define NmiDisable $06 ; Set to 1 to disable NMI processing
+.define NmiSkipped $07 ; Set to $06 if NMI was skipped
+.define OamDisable $09 ; Set to $00 to have OAM run
+
+.define NmtBufReadOffset  $0a
+.define NmtBufWriteOffset $0b
+.define NmtBufTempValue   $0c
 
 ;;; Various global definitions.
-PpuCtrlShadow = $00
-PpuMaskShadow = $01
-GameMode = $41
+.define GameMode   $41
+.define ScreenMode $51
 ObjectRecoil = $340
 ObjectHP = $3c0
 PlayerHP = $3c1
@@ -314,6 +336,7 @@ StageNametableWriteFromTable = $c482
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
+ExecuteScreenMode             = $f6ad
 ReadControllersWithDirections = $fe80
 DisplayNumber                 = $ffa9
 
@@ -392,7 +415,6 @@ FREE "fe" [$d654, $d659)
 ;;; Recovered from other item/trigger jumps (06/11, 0b, 0c, 0d, 0e, 0f,
 FREE "fe" [$d6d5, $d746)
 
-FREE "ff" [$f9ba, $fa00) ; first byte of DMC sample actually matters
 FREE "ff" [$fa01, $fe00) ; rts at 3fe00 is important
 FREE "ff" [$fe01, $fe16)
 FREE "ff" [$fe18, $fe78) ;; NOTE: 3fe2e might be safer than 3fe18

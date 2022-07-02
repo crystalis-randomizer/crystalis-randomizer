@@ -69,9 +69,9 @@ JmpSeg38:
 ;;; Clear out some space in segment 13
 .segment "12", "13"
 
-RELOCATE_SEG38 [$aa16, $aa30) $a7d4 $a7d6
-RELOCATE [$abb4, $abea) $a054
-RELOCATE [$abea, $ac07) $a056
+; RELOCATE_SEG38 [$aa16, $aa30) $a7d4 $a7d6
+; RELOCATE [$abb4, $abea) $a054
+; RELOCATE [$abea, $ac07) $a056
 
 ;;; TODO - this does not work?
 ;; RELOCATE_SEG38 [$d659, $d6a8) $d575

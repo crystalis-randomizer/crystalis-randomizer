@@ -10,13 +10,27 @@ export interface Expr {
   //        - probably not...?
   op: string;
   args?: Expr[];
-  num?: number;
+  num?: number; // only used when op === 'num'
   meta?: Expr.Meta;
-  sym?: string;
+  sym?: string; // only used when op === 'sym'
   source?: SourceInfo;
 }
 
 export namespace Expr {
+
+  function jsSource(e: Expr): {source?: SourceInfo} {
+    return e.source ?
+        {source: {parent: e.source, file: 'js', line: 0, column: 0}} : {};
+  }
+
+  /** Given an Expr, returns a new Expr for the low byte. */
+  export function loByte(e: Expr) {
+    return {op: '<', args: [e], ...jsSource(e)};
+  }
+  /** Given an Expr, returns a new Expr for the high byte. */
+  export function hiByte(e: Expr) {
+    return {op: '>', args: [e], ...jsSource(e)};
+  }
 
   /** Extra information for 'num' values. */
   export interface Meta {

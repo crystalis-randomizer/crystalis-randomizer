@@ -604,7 +604,7 @@ ReloadInventoryAfterLoad:
 
 
 ;;; Rewrite the page boundary to avoid code crossing it.
-.segment "12"
+.segment "12", "13"
 .org $9fef
   ;; Need to fit this in 17 bytes
   sta $09     ; 85 09
@@ -615,9 +615,6 @@ ReloadInventoryAfterLoad:
   bpl -       ; 10 f7
   jmp $a005   ; 4c 05 a0
 FREE_UNTIL $a000
-
-
-.segment "13"
 .org $a000
 FREE_UNTIL $a005
 
@@ -656,13 +653,6 @@ CheckOpelStatue:
   ldx #$07
   jmp CheckOpelStatue
 FREE_UNTIL $b91c
-.endif
-
-
-.ifdef _UPDATE_HUD
-;;; Start the loop at 6 instead of 5 to also show the difficulty
-.org $baca
-  ldx #$06
 .endif
 
 
@@ -796,9 +786,7 @@ UpdateGlobalStepCounter:
 .org $bb1b
 ; clear out the experience count thats there initially
 ; and make room for other status updates
-.repeat 12
-  .byte $20 ;  _
-.endrep
+  .res 12, $20          ; 12 blanks
   ; hold spots here for the enemy hp amount and name
   .byte $20,$20,$20,$20 ; _ _ _ _
   .byte $20,$20,$20,$20 ; _ _ _ _
@@ -877,6 +865,14 @@ ClearEnemyHPRam:
 .endif ; _ENEMY_HP
 .popseg
 
+
+.pushseg "13"
+;;; Start the loop at 6 instead of 5 to also show the difficulty
+.org $baca
+  ldx #$06
+.popseg
+
+
 .pushseg "1a", "fe", "ff"
 ;;; Calls DisplayNumberInternal for each of the bits in A as follows:
 ;; [in] A - bit mask for the different displays to update
@@ -932,46 +928,46 @@ StoreObjectExp:
 
 ;; Update the level up check
 .org $916a
-  lda PlayerLevel
-  and #$f0
-  beq +
-    jmp ExitWithoutDrawingEXP
-+ jsr AwardExperiencePoints
-  ; carry clear means we leveled up
-  bcc @LevelUp
-  ; but it doesn't check if we were exactly at zero EXP so check for that now
-  lda PlayerExp
-  ora PlayerExp+1
-  beq @LevelUp
-    jmp UpdateCurrentEXPAndExit
+    lda PlayerLevel
+    and #$f0
+    beq +
+     jmp ExitWithoutDrawingEXP ; (this is just a few bytes too far for a bne)
++   jsr AwardExperiencePoints
+    ;; carry clear means we leveled up
+    bcc @LevelUp
+    ;; but it doesn't check if we were exactly at zero EXP so check for that now
+    lda PlayerExp
+    ora PlayerExp+1
+    beq @LevelUp
+     jmp UpdateCurrentEXPAndExit
 @LevelUp:
-  inc PlayerLevel
-  lda PlayerLevel
-  asl ; note: clears carry
-  tay
-  lda PlayerExp
-  adc NextLevelExpByLevel,y
-  sta PlayerExp
-  lda PlayerExp+1
-  adc NextLevelExpByLevel+1,y
-  sta PlayerExp+1
-  ; Now that we leveled, its possible that we have enough exp to level again
-  ; first double check here that we aren't already max level
-  lda PlayerLevel
-  and #$f0
-  beq +
-    bne ++ ; unconditional (since A != 0 checked above)
-  ; If u16 PlayerExp > u16 NextLevelExpByLevel,y+2 (+2 since 16 bit)
-  ; then we need to loop again since its a double level
-  ; a = playerexp hi; y = current level slot (after the first level up)
-+ lda NextLevelExpByLevel+2,y
-  cmp PlayerExp
-  lda NextLevelExpByLevel+3,y
-  sbc PlayerExp+1
-  bcc @LevelUp ; if unsigned NextLevel < PlayerExp
-++jsr UpdatePlayerMaxHPAndMPAfterLevelUp
-  jsr UpdateDisplayAfterLevelUp
-  jmp UpdateCurrentEXPAndExit
+    inc PlayerLevel
+    lda PlayerLevel
+    asl ; note: clears carry
+    tay
+    lda PlayerExp
+    adc NextLevelExpByLevel,y
+    sta PlayerExp
+    lda PlayerExp+1
+    adc NextLevelExpByLevel+1,y
+    sta PlayerExp+1
+    ;; Now that we leveled, it's possible that we have enough exp to level again
+    ;; first double check here that we aren't already max level
+    lda PlayerLevel
+    and #$f0
+    beq +
+     bne ++ ; unconditional (since A != 0 checked above)
+    ; If u16 PlayerExp > u16 NextLevelExpByLevel,y+2 (+2 since 16 bit)
+    ; then we need to loop again since its a double level
+    ; a = playerexp hi; y = current level slot (after the first level up)
++   lda NextLevelExpByLevel+2,y
+    cmp PlayerExp
+    lda NextLevelExpByLevel+3,y
+    sbc PlayerExp+1
+    bcc @LevelUp ; if unsigned NextLevel < PlayerExp
+++  jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+    jsr UpdateDisplayAfterLevelUp
+    jmp UpdateCurrentEXPAndExit
 FREE_UNTIL $91ef
 
 .org $91ef
@@ -980,12 +976,12 @@ UpdateCurrentEXPAndExit:
   jsr DisplayNumberInternal
 ExitWithoutDrawingEXP:
 .ifdef _ENEMY_HP
-  jmp RemoveEnemyAndPlaySFX 
+  jmp RemoveEnemyAndPlaySFX
 .else
   lda #SFX_MONSTER_HIT
   jmp StartAudioTrack
 .endif ; _ENEMY_HP
-  ; implicit rts
+  ; implicit rts (note that space is very tight here)
 .assert * <= $91fa ; StartMonsterDeathAnimation
 
 .ifdef _ENEMY_HP
@@ -1141,10 +1137,9 @@ UpdateEnemyHPDisplay:
 ;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
 .pushseg "3d"
 ;;; ----------------------------------------------------
+.reloc
 ; [in] carry set if the enemy is still alive, 0 if we are clearing
 ; [in] y - Offset for the current enemy we are displaying health for
-.reloc
-
 UpdateEnemyHPDisplayInternal:
   ; Enemy is dead so clean out all the values.
   txa
@@ -1153,27 +1148,28 @@ UpdateEnemyHPDisplayInternal:
     pha
       ldy CurrentEnemySlot
       bne @EnemyAlive
-      sty PreviousEnemySlot
-      sty RecentEnemyCurrHPHi
-      sty RecentEnemyCurrHPLo
-      sty RecentEnemyMaxHPLo
-      sty RecentEnemyMaxHPHi
-      sty RecentEnemyObjectId
-      
-      lda #$1c ; [=] bar character
-      ldy #ENEMY_NAME_BUFFER_SIZE - 1
--       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
-        dey
+        ;; y is 0 at this point - zero everything out
+        sty PreviousEnemySlot
+        sty RecentEnemyCurrHPHi
+        sty RecentEnemyCurrHPLo
+        sty RecentEnemyMaxHPLo
+        sty RecentEnemyMaxHPHi
+        sty RecentEnemyObjectId
+
+        lda #$1c ; [=] bar character
+        ldy #ENEMY_NAME_BUFFER_SIZE - 1
+-         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
+          dey
         bpl -
-      lda #$20 ; space tile
-      ldy #$09
--       sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
-        dey
+        lda #$20 ; space tile
+        ldy #$09
+-         sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
+          dey
         bpl -
-      lda #ENEMY_HP_VRAM_UPDATE
-      jsr StageNametableWriteFromTable
-      lda #ENEMY_NAME_VRAM_UPDATE
-      jsr StageNametableWriteFromTable
+        lda #ENEMY_HP_VRAM_UPDATE
+        jsr StageNametableWriteFromTable
+        lda #ENEMY_NAME_VRAM_UPDATE
+        jsr StageNametableWriteFromTable
   @EarlyExit:
     pla
     tay
@@ -1210,7 +1206,7 @@ UpdateEnemyHPDisplayInternal:
           sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
           iny
           dex
-          bne -
+        bne -
       pla
       tax
       inx
@@ -1220,16 +1216,16 @@ UpdateEnemyHPDisplayInternal:
       ; check if we need to fill the rest with the border
       cpx #ENEMY_NAME_BUFFER_SIZE
       bpl +
-      ; fill the rest of the buffer with #$1c the bar character
-      lda #$1c
--       sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
-        inx
-        cpx #ENEMY_NAME_BUFFER_SIZE
+        ; fill the rest of the buffer with #$1c the bar character
+        lda #$1c
+-         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
+          inx
+          cpx #ENEMY_NAME_BUFFER_SIZE
         bmi -
 +     ; call the function to blit it to the nametable
       lda #ENEMY_NAME_VRAM_UPDATE
       jsr StageNametableWriteFromTable
-  @DrawStandardTilesIfMissing:
+@DrawStandardTilesIfMissing:
       lda PreviousEnemySlot
       bne @CurrentHP
       ; if the previous enemy was slot 0, then we need to draw the Ey and /
@@ -1242,7 +1238,7 @@ UpdateEnemyHPDisplayInternal:
       sta $6005 + ENEMY_HP_VRAM_BUFFER_OFFSET
       lda #ENEMY_HP_VRAM_UPDATE
       jsr StageNametableWriteFromTable
-  @CurrentHP:
+@CurrentHP:
       ldy CurrentEnemySlot
       lda ObjectHP,y
       clc
@@ -1255,13 +1251,13 @@ UpdateEnemyHPDisplayInternal:
       cpx RecentEnemyCurrHPLo
       bne +
       cmp RecentEnemyCurrHPHi
-      beq @MaxHP        
+      beq @MaxHP
       ; A = enemy curr hp hi, x = enemy curr hp lo
 +     sta RecentEnemyCurrHPHi
       stx RecentEnemyCurrHPLo
       lda #DISPLAY_NUMBER_ENEMYHP
       jsr DisplayNumberInternal
-  @MaxHP:
+@MaxHP:
       ldy CurrentEnemySlot
       lda ObjectMaxHPLo,y
       clc
@@ -1271,10 +1267,10 @@ UpdateEnemyHPDisplayInternal:
       adc #$00 ; adds 1 only if the carry is set (because Max HP overflowed)
       cpx RecentEnemyMaxHPLo
       bne +
-      cmp RecentEnemyMaxHPHi
-      bne @Exit
+        cmp RecentEnemyMaxHPHi
+        bne @Exit
       ; A = enemy max hp hi, x = enemy max hp lo
-  +   sta RecentEnemyMaxHPHi
++     sta RecentEnemyMaxHPHi
       stx RecentEnemyMaxHPLo
       lda #DISPLAY_NUMBER_ENEMYMAX
       jsr DisplayNumberInternal
@@ -1356,33 +1352,33 @@ UpdateEnemyHPDisplayInternal:
     lsr
 .ifdef _ENEMY_HP
     jmp UpdateEnemyHP
+    ; implicit rts
 .else
     lda $62
     rol
     sta ObjectDef,y
     rts
 .endif ; _ENEMY_HP
-    ;implicit rts
 ;;; NOTE: must finish before 35152
 FREE_UNTIL $9152
 
 .ifdef _ENEMY_HP
 .reloc
 UpdateEnemyHP:
-  lda $62
-  rol
-  sta ObjectDef,y
-  ; Check to see if the monster we attacked is on the blocklist
-  ; by looking to see if it has a name. If the name table hi addr is $00
-  ; then we don't want to display it (even if it does have HP)
-  ldx ObjectNameId,y
-  lda EnemyNameTableHi,x
-  beq +
-    sty CurrentEnemySlot
-    lda ShouldRedisplayUI
-    ora #DRAW_ENEMY_STATS
-    sta ShouldRedisplayUI
-+ rts
+    lda $62
+    rol
+    sta ObjectDef,y
+    ; Check to see if the monster we attacked is on the blocklist
+    ; by looking to see if it has a name. If the name table hi addr is $00
+    ; then we don't want to display it (even if it does have HP)
+    ldx ObjectNameId,y
+    lda EnemyNameTableHi,x
+    beq +
+      sty CurrentEnemySlot
+      lda ShouldRedisplayUI
+      ora #DRAW_ENEMY_STATS
+      sta ShouldRedisplayUI
++   rts
 .endif ; _ENEMY_HP
 
 ;;; Change sacred shield to block curse instead of paralysis

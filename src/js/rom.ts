@@ -42,6 +42,9 @@ import {UnionFind} from './unionfind.js';
 
 const {$0e, $0f, $10} = Segment;
 
+export type ModuleId = symbol & {__moduleId__: never};
+export const ModuleId = (name: string) => Symbol(name) as ModuleId;
+
 // A known location for data about structural changes we've made to the rom.
 // The trick is to find a suitable region of ROM that's both unused *and*
 // is not particularly *usable* for our purposes.  The bottom 3 rows of the
@@ -109,7 +112,7 @@ export class Rom {
   readonly telepathy: Telepathy;
   readonly messages: Messages;
 
-  readonly modules: Module[] = [];
+  readonly modules = new Map<ModuleId, Module>();
 
   spoiler?: Spoiler;
 
@@ -381,7 +384,7 @@ export class Rom {
     //   writer.alloc(0x1da4c, 0x1db00); // existing main table is here.
     // }
 
-    const modules = [...this.modules, a.module()];
+    const modules = [...this.modules.values(), a.module()];
     const writeAll = (writables: Iterable<{write(): Module[]}>) => {
       for (const w of writables) {
         modules.push(...w.write());

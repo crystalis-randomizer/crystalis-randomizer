@@ -33,7 +33,7 @@ import { unidentifiedItems } from './pass/unidentifieditems.js';
 import { misspellItems } from './pass/misspellitems.js';
 import { writeLocationsFromMeta } from './pass/writelocationsfrommeta.js';
 import { Random } from './random.js';
-import { Rom } from './rom.js';
+import { Rom, ModuleId } from './rom.js';
 import { Area } from './rom/area.js';
 import { Location, Spawn } from './rom/location.js';
 import { fixTilesets } from './rom/screenfix.js';
@@ -47,6 +47,7 @@ import { checkTriggers } from './pass/checktriggers.js';
 import { Sprite } from './characters.js';
 
 const EXPAND_PRG: boolean = true;
+const ASM = ModuleId('asm');
 
 // (window as any).CaveShuffle = CaveShuffle;
 // function shuffleCave(seed: number, params: any, num = 1000) {
@@ -471,11 +472,9 @@ async function shuffleInternal(rom: Uint8Array,
   parsed.messages.compress(); // pull this out to make writeData a pure function
   const prgCopy = rom.slice(16);
 
-  parsed.modules.push(await asm('early'));
+  parsed.modules.set(ASM, await asm('early'));
   parsed.writeData(prgCopy);
-  parsed.modules.pop();
-
-  parsed.modules.push(await asm('late'));
+  parsed.modules.set(ASM, await asm('late'));
 
   const hasGraphics = spriteReplacements?.some((spr) => spr.isCustom()) || false;
 

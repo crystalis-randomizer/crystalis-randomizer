@@ -1103,7 +1103,10 @@ Do16BitSubtractionForEXP:
 .org $c5b8
 
 .import ENEMY_NAME_FIRST_ID, ENEMY_NAME_LAST_ID, ENEMY_NAME_LENGTH
-.import EnemyNameTable, EnemyNameTableHi, EnemyNameTableLo
+;.import EnemyNameTable, EnemyNameTableHi, EnemyNameTableLo ;
+EnemyNameTable = $a000
+EnemyNameTableLo = $a000
+EnemyNameTableHi = $a100
 
 ENEMY_HP_VRAM_BUFFER_OFFSET = $60
 ENEMY_HP_VRAM_UPDATE = $20
@@ -1364,7 +1367,6 @@ UpdateEnemyHPDisplayInternal:
 FREE_UNTIL $9152
 
 .ifdef _ENEMY_HP
-.import EnemyNameTableHi
 .reloc
 UpdateEnemyHP:
   lda $62

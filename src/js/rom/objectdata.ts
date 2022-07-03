@@ -1,9 +1,10 @@
 import { Module } from '../asm/module.js';
 import { Entity } from './entity.js';
 import { Location } from './location.js';
-import { readLittleEndian } from './util.js';
+import { readLittleEndian, readLengthDelimitedString } from './util.js';
 import { Constraint } from './constraint.js';
 import type { Objects } from './objects.js';
+import { Expr } from '../asm/expr.js';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {
@@ -19,12 +20,19 @@ export class ObjectData extends Entity {
 
   constraint: Constraint = Constraint.ALL;
 
-  constructor(parent: Objects, id: number, displayName: string='') {
+  constructor(parent: Objects, id: number, defaultDisplayName: string='') {
     super(parent.rom, id);
     parent[id] = this;
     this.used = true;
     this.name = '';
-    this.displayName = displayName;
+    if (parent.rom.writeMonsterNames) {
+      const addr = this.rom.prg[0x7a000 | id] |
+          (this.rom.prg[0x7a100 | id] << 8) |
+          0x70000;
+      this.displayName = readLengthDelimitedString(this.rom.prg, addr);
+    } else {
+      this.displayName = defaultDisplayName;
+    }
     this.base = readLittleEndian(this.rom.prg, this.pointer) + 0x10000;
     this.sfx = this.rom.prg[this.base];
     this.data = [];
@@ -83,6 +91,22 @@ export class ObjectData extends Entity {
       a.segment('1a');
       a.org(0x922d); // $3522d
       a.byte(b);
+    }
+
+    if (this.rom.writeMonsterNames) {
+      a.segment('3d');
+      let addr!: Expr|undefined; 
+      if (this.displayName) {
+        const name = `${this.name}_Str`;
+        a.reloc(name);
+        addr = a.pc();
+        a.byte(this.displayName.length);
+        a.byte(...this.displayName);
+      }
+      a.org(0xa000 | this.id); // EnemyNameTableLo
+      a.byte(addr != null ? Expr.loByte(addr) : 0);
+      a.org(0xa100 | this.id); // EnemyNameTableHi
+      a.byte(addr != null ? Expr.hiByte(addr) : 0);
     }
 
     return [a.module()];

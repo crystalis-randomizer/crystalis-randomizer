@@ -306,7 +306,7 @@ export abstract class FlagSection {
     FlagSection.sections.add(
         this.instance || (this.instance = new (this as any)()));
     const flag = new Flag(name, opts);
-    if (!name.startsWith(this.instance.prefix)) throw new Error(`bad flag`);
+    if (!name.startsWith(this.instance.prefix)) throw new Error(`bad flag ${name} ${opts}`);
     this.instance.flags.set(name, flag);
     return flag;
   }
@@ -558,14 +558,6 @@ class Monsters extends FlagSection {
            point, normal monsters may be shuffled into the tower as well.`,
     hard: true,
   });
-
-  static readonly NoEnemyHPBar = Monsters.flag('Mh', {
-    name: 'Disable Enemy HP UI',
-    text: `Alongside the reorganized UI, the most recently attacked enemy's HP and
-           name will be displayed at the bottom of the screen where the Experience
-           used to be. Disabling this option will leave that area empty.`,
-    optional: NO_BANG,
-  });
 }
 
 class EasyMode extends FlagSection {
@@ -756,6 +748,18 @@ class Vanilla extends FlagSection {
            This flag restores it to work like normal.  Note that this will put
            all wild warp locations in logic unless the flag is set as (V!w).`,
     modes: '!',
+  });
+
+  static readonly Hud = Vanilla.flag('Vh', {
+    name: 'Vanilla HUD',
+    text: `By default, the blue status bar (HUD) at the bottom of the screen
+           is reorganized a bit, including displaying enemies' names and HP.
+           This can be set either as Vh (which will optionally disable the
+           changes, and will produce the same seed as not setting Vh) or as
+           V!h (which requires all players to disable it to get the same
+            seed).`,
+    modes: '!',
+    optional: NO_BANG,
   });
 }
 
@@ -1217,9 +1221,6 @@ export class FlagSet {
     return true;
   }
   shouldUpdateHud(): boolean {
-    return true;
-  }
-  shouldHaveEnemyHP(): boolean {
-    return !this.check(Monsters.NoEnemyHPBar);
+    return this.check(Vanilla.Hud, false);
   }
 }

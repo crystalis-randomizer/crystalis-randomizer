@@ -63,6 +63,7 @@ export class Rom {
   static readonly OMIT_ITEM_GET_DATA_SUFFIX    = RomOption.bit(0x142c0, 0);
   static readonly OMIT_LOCAL_DIALOG_SUFFIX     = RomOption.bit(0x142c0, 1);
   static readonly COMPRESSED_MAPDATA           = RomOption.bit(0x142c0, 2);
+  static readonly WRITE_MONSTER_NAMES          = RomOption.bit(0x142c0, 3);
   static readonly SHOP_COUNT                   = RomOption.byte(0x142c1);
   static readonly SCALING_LEVELS               = RomOption.byte(0x142c2);
   static readonly UNIQUE_ITEM_TABLE            = RomOption.address(0x142d0);
@@ -136,6 +137,8 @@ export class Rom {
   omitLocalDialogSuffix: boolean;
   // Whether mapdata has been compressed.
   compressedMapData: boolean;
+  // Whether monster names are stored in the expanded PRG.
+  writeMonsterNames: boolean;
 
   // Allocated triggers
   allocatedTriggers = new Map<Trigger.Custom, number>();
@@ -156,6 +159,7 @@ export class Rom {
     this.omitItemGetDataSuffix = Rom.OMIT_ITEM_GET_DATA_SUFFIX.get(rom);
     this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
     this.compressedMapData = Rom.COMPRESSED_MAPDATA.get(rom);
+    this.writeMonsterNames = Rom.WRITE_MONSTER_NAMES.get(rom);
 
     // if (crc32(rom) === EXPECTED_CRC32) {
     for (const [address, old, value] of ADJUSTMENTS) {
@@ -384,7 +388,7 @@ export class Rom {
       }
     };
     modules.push(...this.locations.write());
-    writeAll(this.objects);
+    modules.push(...this.objects.write());
     writeAll(this.hitboxes);
     writeAll(this.triggers);
     modules.push(...this.npcs.write());
@@ -433,6 +437,7 @@ export class Rom {
     Rom.OMIT_ITEM_GET_DATA_SUFFIX.set(this.prg, this.omitItemGetDataSuffix);
     Rom.OMIT_LOCAL_DIALOG_SUFFIX.set(this.prg, this.omitLocalDialogSuffix);
     Rom.COMPRESSED_MAPDATA.set(this.prg, this.compressedMapData);
+    Rom.WRITE_MONSTER_NAMES.set(this.prg, this.writeMonsterNames);
   }
 
   analyzeTiles() {

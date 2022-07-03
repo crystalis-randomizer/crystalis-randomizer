@@ -143,6 +143,11 @@ export function readString(arr: Data<number>, address: number, end: number = 0):
   return String.fromCharCode(...bytes);
 }
 
+export function readLengthDelimitedString(arr: Data<number>, address: number): string {
+  const length = arr[address];
+  return String.fromCharCode(...arr.slice(address + 1, address + 1 + length));
+}
+
 export function writeLittleEndian(data: Data<number>, offset: number, value: number) {
   data[offset] = value & 0xff;
   data[offset + 1] = value >>> 8;

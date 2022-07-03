@@ -200,7 +200,7 @@ function defines(flags: FlagSet,
     _TRAINER: flags.trainer(),
     _TWELFTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
-    _ENEMY_HP: flags.shouldUpdateHud() && flags.shouldHaveEnemyHP(),
+    _ENEMY_HP: flags.shouldUpdateHud(),
     _UPDATE_HUD: flags.shouldUpdateHud(),
     _WARP_FLAGS_TABLE: true,
     _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),

@@ -11,7 +11,6 @@ import {hex} from '../rom/util.js';
 import {assert} from '../util.js';
 import {Monster} from '../rom/monster.js';
 import {Patterns} from '../rom/pattern.js';
-import { Expr } from '../asm/expr.js';
 
 const [] = [hex]; // generally useful
 
@@ -181,8 +180,10 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   if (flags.hardcoreMode()) hardcoreMode(rom);
 
-  if (flags.shouldUpdateHud()) useNewStatusBarGraphics(rom);
-  if (flags.shouldHaveEnemyHP()) addEnemyNames(rom);
+  if (flags.shouldUpdateHud()) {
+    useNewStatusBarGraphics(rom);
+    rom.writeMonsterNames = true;
+  }
   if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
 }
 
@@ -216,40 +217,6 @@ function useNewStatusBarGraphics(rom: Rom): void {
   rom.patterns.set(page, 0x6, Patterns.HUD_EX);
   rom.patterns.set(page, 0x1a, Patterns.HUD_CLOSE_LEFT);
   rom.patterns.set(page, 0x1b, Patterns.HUD_CLOSE_RIGHT);
-}
-
-function addEnemyNames(rom: Rom): void {
-  const a = rom.assembler();
-  const objs = rom.objects.filter((o) => o.displayName != '');
-  const objsAddrs: Expr[] = new Array(256).fill(null);
-  const longestName = Math.max(...(objs.map(o => o.displayName.length)));
-  const MAX_LENGTH = 27;
-
-  if (longestName > MAX_LENGTH) {
-    throw new Error(`Longest displayName length is greater than ${MAX_LENGTH}. (${longestName} > ${MAX_LENGTH})
-      Crystalis HUD can't comfortably fit that many letters.`);
-  }
-
-  a.assign('ENEMY_NAME_LENGTH', longestName);
-  a.export('ENEMY_NAME_LENGTH');
-  a.segment('3d');
-  for (const o of objs) {
-    // Add the name of the object to the rom in a spare bank
-    a.reloc(`${o.name}_Str`);
-    const addr = a.pc();
-    a.byte(o.displayName.length);
-    a.byte(...o.displayName);
-    objsAddrs[o.id] = addr;
-  }
-  a.org(0xa000, 'EnemyNameTableLo');
-  a.label('EnemyNameTableLo');
-  a.export('EnemyNameTableLo');
-  objsAddrs.forEach(o => (o == null) ? a.byte(0x00) : a.byte( {op: '<', args: [o]} ));
-  a.org(0xa100, 'EnemyNameTableLo');
-  a.label('EnemyNameTableHi');
-  a.export('EnemyNameTableHi');
-  objsAddrs.forEach(o => (o == null) ? a.byte(0x00) : a.byte( {op: '>', args: [o]} ));
-  rom.modules.push(...[a.module()]);
 }
 
 // Updates a few itemuse and trigger actions in light of consolidation

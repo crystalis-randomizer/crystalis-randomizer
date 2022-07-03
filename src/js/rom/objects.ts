@@ -5,6 +5,7 @@ import { ObjectData } from './objectdata.js';
 import { Monster } from './monster.js';
 import { lowerCamelToSpaces } from './util.js';
 import { EntityArray } from './entity.js';
+import { Module } from '../asm/module.js';
 
 // Manual data about monsters.  Every monster needs at least an ID-to-name mapping,
 // We also can't expect to get the difficulty mapping automatically, so that's
@@ -727,6 +728,30 @@ export class Objects extends EntityArray<ObjectData> {
         this[i] = new ObjectData(this, i);
       }
     }
+  }
+
+  write(): Module[] {
+    const modules: Module[] = [];
+    for (const obj of this) {
+      modules.push(...obj.write());
+    }
+    // If we're storing the monster names then we need to initialize the buffer
+    // length.
+    if (this.rom.writeMonsterNames) {
+      const a = this.rom.assembler();
+      const longestName = Math.max(...(this.map(o => o.displayName.length)));
+      const MAX_LENGTH = 27;
+
+      if (longestName > MAX_LENGTH) {
+        throw new Error(`Longest displayName length is greater than ${MAX_LENGTH
+            }. (${longestName} > ${MAX_LENGTH
+            })\nCrystalis HUD can't comfortably fit that many characters.`);
+      }
+      a.assign('ENEMY_NAME_LENGTH', longestName);
+      a.export('ENEMY_NAME_LENGTH');
+      modules.push(a.module());
+    }
+    return modules;
   }
 }
 

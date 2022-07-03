@@ -1259,6 +1259,10 @@ $6418..$641d
 ------------
 player name
 
+$6427
+-----
+Currently selected shop item index
+
 $6428..$642f
 ------------
 ??
@@ -1266,6 +1270,10 @@ $6428..$642f
 $6430..$645f
 ------------
 Inventory
+
+$6460..$647f
+------------
+Temporary shop data? (6460..6469 seems completely unused)
 
 
 $6480..$64df

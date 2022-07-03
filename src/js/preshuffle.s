@@ -852,24 +852,22 @@ FREE_UNTIL $bad9
 .reloc
 ClearEnemyHPRam:
   ;; Clear out the SRAM that stores the enemy HP data
-  lda ShouldRedisplayUI
-  ora #DRAW_ENEMY_STATS
-  sta ShouldRedisplayUI
-  lda #0
-  sta CurrentEnemySlot
   ldy RecentEnemyCurrHPHi - $6a10
 -   sta $6a10,y
     dey
-    bpl -
+  bpl -
+  jmp ClearCurrentEnemyHPSlot
+
+.segment "fe", "ff"  ; needs to be accessible from multiple banks
+.reloc
+ClearCurrentEnemyHPSlot:
+  lda #0
+  sta CurrentEnemySlot
+  lda ShouldRedisplayUI
+  ora #DRAW_ENEMY_STATS
+  sta ShouldRedisplayUI
   rts
 .endif ; _ENEMY_HP
-.popseg
-
-
-.pushseg "13"
-;;; Start the loop at 6 instead of 5 to also show the difficulty
-.org $baca
-  ldx #$06
 .popseg
 
 
@@ -987,12 +985,8 @@ ExitWithoutDrawingEXP:
 .ifdef _ENEMY_HP
 .reloc
 RemoveEnemyAndPlaySFX:
-  ; the last attacked enemy is getting cleared out so we want to update the HP display
-  lda #0
-  sta CurrentEnemySlot
-  lda ShouldRedisplayUI
-  ora #DRAW_ENEMY_STATS
-  sta ShouldRedisplayUI
+  ;; the last attacked enemy is getting cleared out so we want to update the HP display
+  jsr ClearCurrentEnemyHPSlot
   lda #SFX_MONSTER_HIT
   jmp StartAudioTrack
   ; implicit rts

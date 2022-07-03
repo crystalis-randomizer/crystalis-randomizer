@@ -267,17 +267,51 @@ ImmediateWriteNametableDataToPpu:
   rts
 
 ;;--------------------------------
-;; Remove custom NMI disable (Note that this one didn't write to the shadow reg)
-.pushseg "10"
+;; Remove custom NMI en/disables
+
+; (Note that this one didn't write to the shadow reg)
+.pushseg "10", "11"
+.org $8ab0
+  jsr DisableNMI
 .org $8ad7
   jsr WriteNametableDataToPpu
 .org $8ada
   jmp EnableNMI
 FREE_UNTIL $8aed
 
-.org $8ab0
+.org $a720 ; DisableNMI_altbank11
+  brk ; TODO remove
+
+.org $a239
   jsr DisableNMI
-.popseg ; "10"
+.org $a301
+  jsr EnableNMI
+.org $a41f
+  jsr DisableNMI
+.org $a463
+  jsr EnableNMI
+.org $a756
+  jsr DisableNMI
+.org $a784
+  jmp EnableNMI
+.org $a7d9
+  jsr DisableNMI
+.org $a8d4
+  jsr EnableNMI
+.org $a811
+  jsr EnableNMI
+.org $a87c
+  jsr DisableNMI
+.org $a8ee
+  jsr DisableNMI
+.org $a911
+  jsr EnableNMI
+.org $ab5a
+  jsr DisableNMI
+.org $ab8a
+  jsr EnableNMI
+
+.popseg ; "10", "11"
 
 .pushseg "12", "13"
 ; WaitForOAMDMA_alt2
@@ -358,6 +392,20 @@ FREE_UNTIL $8184
   brk ; TODO remove after all are surely gone
 FREE_UNTIL $81a1
 .popseg ; "12", "13"
+
+.pushseg "14", "15"
+.org $8836
+  jsr DisableNMI
+.org $8857
+  jsr EnableNMI
+
+.org $8869 ; EnableNMI_alt
+  brk ; TODO remove
+FREE_UNTIL $8870
+.org $8871 ; DisableNMI_alt
+  brk ; TODO remove
+FREE_UNTIL $8878
+.popseg ; "14", "15"
 
 .pushseg "1a", "1b"
 

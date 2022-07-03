@@ -30916,7 +30916,7 @@ DataTable_22166
         $22233  xx xx:      xxx #$xx
         $22235  xx xx:      xxx $xx
         $22237  xx xx:      xxx $xx
-        $22239  xx xx xx:   xxx $22720
+        $22239  xx xx xx:   xxx DisableNMI_altbank11
         $2223c  xx xx:      xxx $xx
         $2223e  xx xx:      xxx $xx
         $22240  xx xx:      xxx #$xx
@@ -31014,7 +31014,7 @@ DataTable_22166
         $222fb  xx xx:      xxx #$xx
         $222fd  xx xx:      xxx #$xx
         $222ff  xx xx:      xxx $xx
-        $22301  xx xx xx:   xxx $22728
+        $22301  xx xx xx:   xxx EnableNMI_altbank11
         $22304  xx xx xx:   xxx $xxxx
         $22307  xx xx xx:   xxx $xxxx
         $2230a  xx xx:      xxx #$xx
@@ -31148,7 +31148,7 @@ DataTable_22166
         $22419  xx:         xxx
         $2241a  xx xx:      xxx $xx
         $2241c  xx xx xx:   xxx $22744
-        $2241f  xx xx xx:   xxx $22720
+        $2241f  xx xx xx:   xxx DisableNMI_altbank11
         $22422  xx xx:      xxx $xx
         $22424  xx xx:      xxx #$xx
         $22426  xx xx xx:   xxx $xxxx,x
@@ -31180,7 +31180,7 @@ DataTable_22166
         $2245d  xx xx:      xxx #$xx
         $2245f  xx xx:      xxx #$xx
         $22461  xx xx:      xxx $xx
-        $22463  xx xx xx:   xxx $22728
+        $22463  xx xx xx:   xxx EnableNMI_altbank11
         $22466  xx xx xx:   xxx $22744
         $22469  xx xx xx:   xxx $22a61
         $2246c  xx xx:      xxx #$xx
@@ -31484,11 +31484,14 @@ DataTable_2271c
         $2271c              .byte $xx,$xx
 ;;; --------------------------------
         $2271e  xx xx:      xxx $xx
+;;; --------------------------------
+DisableNMI_altbank11
         $22720  xx xx:      xxx $xx
         $22722  xx xx:      xxx #$xx
         $22724  xx xx xx:   xxx $xxxx
         $22727  xx:         xxx
 ;;; --------------------------------
+EnableNMI_altbank11
         $22728  xx xx:      xxx $xx
         $2272a  xx xx:      xxx #$xx
         $2272c  xx xx xx:   xxx $xxxx
@@ -31517,7 +31520,7 @@ DataTable_2271c
         $22751  xx xx:      xxx $xx
         $22753  xx xx:      xxx $xx
         $22755  xx:         xxx
-        $22756  xx xx xx:    xxx $22720
+        $22756  xx xx xx:    xxx DisableNMI_altbank11
         $22759  xx xx xx:    xxx $22730
         $2275c  xx:         xxx
         $2275d  xx xx xx:   xxx $xxxx
@@ -31538,7 +31541,7 @@ DataTable_2271c
         $2277e  xx:         xxx
         $2277f  xx xx:      xxx $xx
         $22781  xx xx xx:   xxx $2273a
-        $22784  xx xx xx:   xxx $22728
+        $22784  xx xx xx:   xxx EnableNMI_altbank11
         $22787  xx:         xxx
 ;;; --------------------------------
         $22788  xx xx:      xxx #$xx
@@ -31587,7 +31590,7 @@ DataTable_2271c
         $227d3  xx xx:      xxx #$xx
         $227d5  xx xx:      xxx $xx
         $227d7  xx xx:      xxx $xx
-        $227d9  xx xx xx:   xxx $22720
+        $227d9  xx xx xx:   xxx DisableNMI_altbank11
         $227dc  xx xx:      xxx $xx
         $227de  xx xx:      xxx $xx
         $227e0  xx xx xx:   xxx $xxxx
@@ -31613,7 +31616,7 @@ DataTable_2271c
         $2280b  xx xx:      xxx #$xx
         $2280d  xx xx:      xxx $xx
         $2280f  xx xx:      xxx $xx
-        $22811  xx xx xx:   xxx $22728
+        $22811  xx xx xx:   xxx EnableNMI_altbank11
         $22814  xx xx xx:   xxx $22744
         $22817  xx xx:      xxx $xx
         $22819  xx xx:      xxx $xx
@@ -31665,7 +31668,7 @@ DataTable_2271c
         $22876  xx xx:      xxx #$xx
         $22878  xx xx:      xxx $xx
         $2287a  xx xx:      xxx $xx
-        $2287c  xx xx xx:   xxx $22720
+        $2287c  xx xx xx:   xxx DisableNMI_altbank11
         $2287f  xx xx:      xxx $xx
         $22881  xx xx:      xxx $xx
         $22883  xx xx:      xxx #$xx
@@ -31708,7 +31711,7 @@ DataTable_2271c
         $228ce  xx xx:      xxx #$xx
         $228d0  xx xx:      xxx #$xx
         $228d2  xx xx:      xxx $xx
-        $228d4  xx xx xx:   xxx $22728
+        $228d4  xx xx xx:   xxx EnableNMI_altbank11
         $228d7  xx xx xx:   xxx $22744
         $228da  xx xx:      xxx $xx
         $228dc  xx xx:      xxx $xx
@@ -31721,7 +31724,7 @@ DataTable_2271c
         $228ea  xx:         xxx
         $228eb  xx:         xxx
         $228ec  xx xx:      xxx $xx
-        $228ee  xx xx xx:   xxx $22720
+        $228ee  xx xx xx:   xxx DisableNMI_altbank11
         $228f1  xx xx:      xxx $xx
         $228f3  xx xx:      xxx $xx
         $228f5  xx xx:      xxx #$xx
@@ -31737,7 +31740,7 @@ DataTable_2271c
         $2290b  xx xx:      xxx #$xx
         $2290d  xx xx:      xxx #$xx
         $2290f  xx xx:      xxx $xx
-        $22911  xx xx xx:   xxx $22728
+        $22911  xx xx xx:   xxx EnableNMI_altbank11
         $22914  xx xx xx:   xxx $22744
         $22917  xx xx:      xxx #$xx
         $22919  xx xx:      xxx ($xx),y
@@ -32049,7 +32052,7 @@ DataTable_22aed
         $22b54  xx xx:       xxx #$xx
         $22b56  xx xx:       xxx $xx
         $22b58  xx xx:       xxx $xx
-        $22b5a  xx xx xx:    xxx $22720
+        $22b5a  xx xx xx:    xxx DisableNMI_altbank11
         $22b5d  xx xx:       xxx $xx
         $22b5f  xx xx:       xxx $xx
         $22b61  xx xx xx:    xxx $xxxx
@@ -32072,7 +32075,7 @@ DataTable_22aed
         $22b84  xx xx:      xxx #$xx
         $22b86  xx xx:      xxx $xx
         $22b88  xx xx:      xxx $xx
-        $22b8a  xx xx xx:   xxx $22728
+        $22b8a  xx xx xx:   xxx EnableNMI_altbank11
         $22b8d  xx xx xx:   xxx $22744
         $22b90  xx xx:      xxx $xx
         $22b92  xx xx:      xxx $xx

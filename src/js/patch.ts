@@ -442,6 +442,7 @@ async function shuffleInternal(rom: Uint8Array,
         new Tokenizer(flagFile, 'flags.s'),
         await tokenizer('init.s'),
         await tokenizer('alloc.s'),
+        await tokenizer('cleanup.s'),
         await tokenizer('preshuffle.s'),
         await tokenizer('postparse.s'),
         await tokenizer('postshuffle.s')));

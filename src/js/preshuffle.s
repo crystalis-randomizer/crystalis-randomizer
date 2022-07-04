@@ -1086,11 +1086,8 @@ Do16BitSubtractionForEXP:
 
 .ifdef _ENEMY_HP
 .pushseg "fe", "ff"
-;; Add the Enemy Name to the precomputed write table.
-.org $c5b8
 
 .import ENEMY_NAME_FIRST_ID, ENEMY_NAME_LAST_ID, ENEMY_NAME_LENGTH
-;.import EnemyNameTable, EnemyNameTableHi, EnemyNameTableLo ;
 EnemyNameTable = $a000
 EnemyNameTableLo = $a000
 EnemyNameTableHi = $a100
@@ -1100,6 +1097,9 @@ ENEMY_HP_VRAM_UPDATE = $20
 ENEMY_NAME_VRAM_BUFFER_OFFSET = $80
 ENEMY_NAME_VRAM_UPDATE = $21
 ENEMY_NAME_BUFFER_SIZE = ENEMY_NAME_LENGTH + 2
+
+;; Add the Enemy Name to the precomputed write table.
+.org $c5b8
 ; Used to set/clear the enemy HP (NametablePrecomputedHeaderTable @ #$20)
 .byte $ab,$62,$09,ENEMY_HP_VRAM_BUFFER_OFFSET,$80
 ; Used to draw the enemy name (NametablePrecomputedHeaderTable @ #$21)

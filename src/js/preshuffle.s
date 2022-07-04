@@ -936,8 +936,11 @@ StoreObjectExp:
     ;; but it doesn't check if we were exactly at zero EXP so check for that now
     lda PlayerExp
     ora PlayerExp+1
-    beq @LevelUp
-     jmp UpdateCurrentEXPAndExit
+     bne UpdateCurrentEXPAndExit
+    ;; Give 1 free EXP point here to avoid dealing with the zero case below
+    ;; (i.e. ensure that carry will always be set after leveling is done).
+    dec PlayerExp+1
+    dec PlayerExp
 @LevelUp:
     inc PlayerLevel
     lda PlayerLevel
@@ -953,17 +956,11 @@ StoreObjectExp:
     ;; first double check here that we aren't already max level
     lda PlayerLevel
     and #$f0
-    beq +
-     bne ++ ; unconditional (since A != 0 checked above)
-    ; If u16 PlayerExp > u16 NextLevelExpByLevel,y+2 (+2 since 16 bit)
-    ; then we need to loop again since its a double level
-    ; a = playerexp hi; y = current level slot (after the first level up)
-+   lda NextLevelExpByLevel+2,y
-    cmp PlayerExp
-    lda NextLevelExpByLevel+3,y
-    sbc PlayerExp+1
-    bcc @LevelUp ; if unsigned NextLevel < PlayerExp
-++  jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+    bne +
+     ;; Adding the PlayerExp hi byte will have set carry if we're back to being
+     ;; "positive".  If we _didn't_ carry then we need to add a second level.
+     bcc @LevelUp
++   jsr UpdatePlayerMaxHPAndMPAfterLevelUp
     jsr UpdateDisplayAfterLevelUp
     jmp UpdateCurrentEXPAndExit
 FREE_UNTIL $91ef

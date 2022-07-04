@@ -35,9 +35,7 @@ FREE_UNTIL $fa00
 ;;; HandleNMI
 ; Changes from Vanilla NMI handler
 ; - Removes $60 as a flag. Just uses $06 as the NMI flag
-; - Uses freed zp ram to shave off extra cycles.
-;   - pha + pla = 7 cycles for a and 11 cycles for x,y. ld|st a/x/y is constant 6 cycles each.
-;     saves a total of 11 cycles every NMI
+; - Uses a very small fast path for NMI disabled without pushing registers
 ; - Reworked the NMI disable path to be as fast as possible
 ; - Removes the double scroll write on Draygon/Insect fights
 .org $f3b6
@@ -45,91 +43,88 @@ FREE_UNTIL $f424
 .reloc
 NMIHandler:
 
-  .define NMI_A $0d ; Freed up from rewriting WriteNametableDataToPpu
-  .define NMI_X $60 ; Freed up from rewriting HandleNMI
-  .define NMI_Y $42 ; Probably unused?
-
   bit NmiDisable
   bpl @ContinueNMI
     inc NmiSkipped
     rti
 @ContinueNMI:
-  sta NMI_A
-  stx NMI_X
-  sty NMI_Y
+  pha
+    txa
+    pha
+      tya
+      pha
+        lda PPUSTATUS
+        lda OamDisable
+        bne @SkipOAMDMA
+          ;; Do an OAM DMA
+          sta OAMADDR
+          lda #$02
+          sta OAMDMA
 
-  lda PPUSTATUS
-  lda OamDisable
-  bne @SkipOAMDMA
-    ;; Do an OAM DMA
-    sta OAMADDR
-    lda #$02
-    sta OAMDMA
-
-    ;; If ScreenMode is 7 or 9, then copy $[8ace]3 into $07d[89ab] instead.
-    ;; This is the map position of object $13, likely the background boss
-    lda ScreenMode
-    cmp #$09
-    beq @CopyFromObjCoords
-    cmp #$07
-    bne @CopyFromStandardScroll
-      ; fallthrough
+          ;; If ScreenMode is 7 or 9, then copy $[8ace]3 into $07d[89ab] instead.
+          ;; This is the map position of object $13, likely the background boss
+          lda ScreenMode
+          cmp #$09
+          beq @CopyFromObjCoords
+          cmp #$07
+          bne @CopyFromStandardScroll
+            ; fallthrough
 @CopyFromObjCoords:
-      lda $83
-      sta $07d8
-      lda $a3
-      sta $07d9
-      lda $c3
-      sta $07da
-      lda $e3
-      sta $07db
-      jmp @SkipOAMDMA
+            lda $83
+            sta $07d8
+            lda $a3
+            sta $07d9
+            lda $c3
+            sta $07da
+            lda $e3
+            sta $07db
+            jmp @SkipOAMDMA
 @CopyFromStandardScroll:
-      lda $02
-      sta $07d8
-      lda $03
-      sta $07d9
-      lda $04
-      sta $07da
-      lda $05
-      sta $07db
-      ; fallthrough
+            lda $02
+            sta $07d8
+            lda $03
+            sta $07d9
+            lda $04
+            sta $07da
+            lda $05
+            sta $07db
+            ; fallthrough
 @SkipOAMDMA:
-  ;; Back to the main line - always write nametables and palettes.
-  jsr WriteNametableDataToPpu
-  ; Inlined WritePaletteDataToPpu since it was only called from here.
-  ; Check if bit 7 is set, and skip palette update if it is
-  bit ScreenMode
-  bpl +
-    jmp @AfterPaletteUpdate
+        ;; Back to the main line - always write nametables and palettes.
+        jsr WriteNametableDataToPpu
+        ; Inlined WritePaletteDataToPpu since it was only called from here.
+        ; Check if bit 7 is set, and skip palette update if it is
+        bit ScreenMode
+        bpl +
+          jmp @AfterPaletteUpdate
 +
-  lda #$00
-  sta PPUMASK
-  lda PpuCtrlShadow
-  and #%11111011 ; #$fb
-  sta PPUCTRL
-  lda PPUSTATUS
-  lda #>VromPalettes ; $3f
-  sta PPUADDR
-  lda #<VromPalettes ; $00
-  sta PPUADDR
-  .repeat $20, i
-    lda $6140 + i
-    sta PPUDATA
-  .endrepeat
-  ; clear the latch just in case?
-  ; lda PPUSTATUS
+        lda #$00
+        sta PPUMASK
+        lda PpuCtrlShadow
+        and #%11111011 ; #$fb
+        sta PPUCTRL
+        lda PPUSTATUS
+        lda #>VromPalettes ; $3f
+        sta PPUADDR
+        lda #<VromPalettes ; $00
+        sta PPUADDR
+        .repeat $20, i
+          lda $6140 + i
+          sta PPUDATA
+        .endrepeat
 @AfterPaletteUpdate:
-  ;; Write PPUMASK from $01
-  lda PpuMaskShadow
-  sta PPUMASK
-  jsr ExecuteScreenMode
-  inc OamDisable ; flag OAMDMA complete by disabling it
+        ;; Write PPUMASK from $01
+        lda PpuMaskShadow
+        sta PPUMASK
+        jsr ExecuteScreenMode
+        inc OamDisable ; flag OAMDMA complete by disabling it
 
-  ; Reload the register values and return
-  ldy NMI_Y
-  ldx NMI_X
-  lda NMI_A
+        ; Reload the register values and return
+      pla
+      tay
+    pla
+    tax
+  pla
   rti
 
 

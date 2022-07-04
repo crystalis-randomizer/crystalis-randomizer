@@ -1128,8 +1128,29 @@ UpdateEnemyHPDisplay:
   ; implicit rts
 .popseg
 
+
+;; ;;; Change the page of the 01 game mode to 1e (3c/3d).
+;; .pushseg "fe", "ff"
+;; .org $cb2f
+;;   .byte $1e
+;; .org $cae0
+;;   .word (LocationChangeInitialHook)
+;; .popseg
+
+
 ;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
 .pushseg "3d"
+
+
+;; ;;; New version of GameMode_01, in the expanded PRG
+;; .reloc
+;; LocationChangeInitialHook:
+;;     .ifdef _ENEMY_HP
+;;   jsr ClearCurrentEnemyHPSlot
+;;     .endif
+;;   jmp $ca2e ; MainGameModeJump_01_LocationChange
+
+
 ;;; ----------------------------------------------------
 .reloc
 ; [in] carry set if the enemy is still alive, 0 if we are clearing
@@ -1848,6 +1869,19 @@ WarpMenuNametableData:
 .endif ; _TWELFTH_WARP_POINT
 
 
+.segment "fe", "ff" ; not actually a change...?
+.reloc
+;;; Code to run on new location just before spawning NPCs
+LocationChangePreSpawnHook:
+    .ifdef _WARP_FLAGS_TABLE
+  jsr SetWarpFlagForLocation
+    .endif
+     .ifdef _ENEMY_HP
+  jsr ClearCurrentEnemyHPSlot
+  jsr UpdateEnemyHPDisplay
+    .endif
+  jmp $e144 ; LoadNpcDataForCurrentLocation
+
 .ifdef _WARP_FLAGS_TABLE
 .pushseg "0a", "0b", "fe", "ff"
 ;;; We remove the triggers that set the warp flags and instead
@@ -1868,9 +1902,9 @@ WarpMenuNametableData:
 .endif
 
 .org $e6ff
-  jmp @SetWarpFlagForLocation
+  jmp LocationChangePreSpawnHook
 .reloc
-@SetWarpFlagForLocation:
+SetWarpFlagForLocation:
   ;; Iterate over the warp points to see if the new location is one
   lda $6c
   ldx #FIRST_WARP_POINT
@@ -1878,7 +1912,7 @@ WarpMenuNametableData:
    beq +
    inx
   bne -
-- jmp $e144 ; LoadNpcDataForCurrentLocation
+- rts
   ;; At this point, we need to set flag $200|x
 + txa
   and #$07

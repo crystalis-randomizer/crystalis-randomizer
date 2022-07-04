@@ -261,13 +261,10 @@ ComputeEnemyStats:
    ;; clear it out.
    cpx CurrentEnemySlot
    bne +
-      ; The enemy displayed in the HP slot is now removed,
-      ; so clear out that spot
-      lda #0
-      sta CurrentEnemySlot
-      lda ShouldRedisplayUI
-      ora #DRAW_ENEMY_STATS
-      sta ShouldRedisplayUI
+    ;; The enemy displayed in the HP slot is now removed,
+    ;; so clear the display.
+    jsr ClearCurrentEnemyHPSlot
+
 .endif ; _ENEMY_HP
 +  jmp $c2af
 

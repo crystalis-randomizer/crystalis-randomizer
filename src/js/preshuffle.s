@@ -1182,14 +1182,9 @@ UpdateEnemyHPDisplayInternal:
         jsr StageNametableWriteFromTable
         lda #ENEMY_NAME_VRAM_UPDATE
         jsr StageNametableWriteFromTable
-  @EarlyExit:
-    pla
-    tay
-  pla
-  tax
-  rts
-  @EnemyAlive:
-  @UpdateName:
+        jmp @Exit ; early exit
+
+@EnemyAlive: ; (so update name)
       ldy CurrentEnemySlot
       ; if the object id changed, update the name of the monster
       lda ObjectNameId,y

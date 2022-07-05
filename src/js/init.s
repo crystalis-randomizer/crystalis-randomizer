@@ -266,6 +266,45 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
+.ifdef _STATS_TRACKING
+;;;-------------
+; layout of the stats SRAM is as follows
+
+;; The follow stats are NOT checkpointed because they persist between reloads
+StatTrackingBase  = $7010
+
+StatTimer   = StatTrackingBase
+StatTimerLo = StatTimer
+StatTimerMd = StatTimer + 1
+StatTimerHi = StatTimer + 2
+; number of deaths
+StatsDeaths = StatTimer + 3
+; number of soft resets
+StatsResets = StatsDeaths + 1
+
+;; marks the start of the data that should be checkpointed
+;; Anything below will be copied into a duplicate when a checkpoint is made
+;; and loaded from the duplicate when the game is reloaded from checkpoint
+CheckpointBase    = StatsResets + 1
+; number of event timestamps
+TimestampCount    = CheckpointBase
+; array of each event ordered by when they happen
+TimestampTypeList = TimestampCount + 1
+TimestampTypeListEnd = TimestampTypeList + TS_COUNT
+; Timestamp of each event, this is indexed by the order of events above
+TimestampList     = TimestampTypeListEnd + 1
+TimestampListEnd  = TimestampList + TS_COUNT * 3
+; number of checks made
+StatsChecks = TimestampListEnd + 1
+; number of mimics encountered
+StatsMimics = StatsChecks + 1
+
+PERMANENT_LENGTH  = CheckpointBase - StatTrackingBase
+CHECKPOINT_LENGTH = (StatsMimics - CheckpointBase)
+CHECKPOINT = CHECKPOINT_LENGTH
+
+.endif
+
 ;;; Constants
 GAME_MODE_STATUS_MSG = $10
 ITEM_RABBIT_BOOTS    = $12

@@ -43,6 +43,15 @@ FREE_UNTIL $f424
 .reloc
 NMIHandler:
 
+.ifdef _STATS_TRACKING
+  inc StatTimerLo
+    bne @CheckIfNMIEnabled
+    inc StatTimerMd
+      bne @CheckIfNMIEnabled
+      inc StatTimerHi
+@CheckIfNMIEnabled:
+.endif ; _STATS_TRACKING
+
   bit NmiDisable
   bpl @ContinueNMI
     inc NmiSkipped

@@ -220,20 +220,26 @@ PatchStartItemGet:
   bcc +
    ;; spawn mimic instead - need to back out of 3 layers of calls
    ;; TODO - keep track of which mimic so we can set the flag?
-   pla
-   pla
-   pla
-   pla
-   pla
-   pla
-   jmp SpawnMimic
+    pla
+    pla
+    pla
+    pla
+    pla
+    pla
+.ifdef _STATS_TRACKING
+    inc StatsMimics
+.endif
+    jmp SpawnMimic
 + cmp #$49
   bcc +
    lda OriginalItemGetTable,y  ; NOTE: y>=$49, so this is really [$9daf...)
 + sta $29
   sta $07dc   ; TODO - can we ditch the table at 3d45c now?
+.ifdef _STATS_TRACKING
+  jmp CheckForStatTrackedItems
+.else
   rts         ;      - what about other writes to 07dc?
-
+.endif ; _STATS_TRACKING
 ;; TODO - why is this here?
 
 .org $d3f6              ; Within game mode jump 07 (trigger / chest)
@@ -3455,6 +3461,260 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 .assert * <= $cbd3
 .endif
 
+.ifdef _STATS_TRACKING
+
+; Make sure the stats doesn't bleed into the checksum for save files
+.assert StatTrackingBase + PERMANENT_LENGTH + CHECKPOINT_LENGTH * 2 < $70f0
+
+; All Timestamp types listed below for reference
+; Bosses
+TsVamp1        = $00
+TsInsect       = $01
+TsKelbesque1   = $02
+TsSabera1      = $04
+TsMado1        = $05
+TsKelbesque2   = $06
+TsSabera2      = $07
+TsMado2        = $08
+TsKarmine      = $09
+TsDraygon1     = $0a
+TsDraygon2     = $0b
+TsVampire2     = $0c
+TsDyna         = $0d
+; Items
+TsFlight       = $03
+TsBowMoon      = $0e
+TsBowSun       = $0f
+TsBowTruth     = $10
+TsWindSword    = $11
+TsFireSword    = $12
+TsWaterSword   = $13
+TsThunderSword = $14
+TsCrystalis    = $15
+; Other
+TsComplete     = $16
+TS_COUNT       = $17
+
+.pushseg "0e", "0f"
+
+; Added this to PatchStartItemGet
+; Registers do NOT need to be preserved as they are all reloaded afterwards
+.reloc
+CheckForStatTrackedItems:
+  ; [in] a - current item id (also stored in $29).
+  inc StatsChecks
+  lda $29 ; reload the item to restore the minus flag (set by a cmp earlier)
+  bmi @Exit
+  cmp #$05 ; check to see if its a sword (items $00 - $04) are wind - crystalis
+  bmi @Sword
+  cmp #$48
+  beq @Flight
+  ; in range bow of moon - truth
+  sec
+  sbc #$3e
+  sbc #$40 - $3e + 1
+  bcc @Bow
+@Exit:
+  rts
+@Sword:
+  clc
+  adc #TsWindSword
+  tay
+  jmp AddTimestamp
+  ; implicit rts
+@Flight:
+  ldy #TsFlight
+  jmp AddTimestamp
+  ; implicit rts
+@Bow:
+  ; carry already clear
+  adc #TsBowMoon
+  tay
+  jmp AddTimestamp
+  ; implicit rts
+
+; Patch ObjectActionJump_6f (boss death) to add a timestamp for their death
+.org $b825
+  jsr SetBossDeathTimestamp
+
+.reloc
+SetBossDeathTimestamp:
+  ; do the original action at the place we patched
+  sta $0600,x
+  ; A = Y, x is obj index, y is the boss id
+  ; A = Y so we don't need to preserve A
+  pha
+    txa
+    pha
+      jsr AddTimestamp
+    pla
+    tax
+  pla
+  tay
+  rts
+
+;;;
+; Writes the current timestamp to SRAM.
+; [In y] - index of the type of timestamp to write
+; Notice this does NOT preserve registers!
+.reloc
+AddTimestamp:
+  ; double read the timestamp. this prevents an issue where reading is interrupted by NMI
+  ; keep the lo value in X so we can check if it changed and read again if it does
+  ldx TimestampCount
+  ; a = y since we just pushed it to the stack
+  sta TimestampTypeList,x
+  txa
+  asl ; clears carry
+  adc TimestampCount
+  tax
+-   ldy StatTimerLo
+    tya
+    sta TimestampList,x
+    lda StatTimerMd
+    sta TimestampList + 1,x
+    lda StatTimerHi
+    sta TimestampList + 2,x
+    cpy StatTimerLo
+  bne -
+  inc TimestampCount
+  rts
+.popseg ; "0e", "0f"
+
+.pushseg "10", "11"
+
+
+; At this point, all of the objects are gone, so we are free to use
+; RAM for whatever we want
+TsAddr = $90
+DisplayX = $92
+DisplayY = $93
+ConvertTmp = $94 ; and $95
+.reloc
+ConvertTimestampToAscii:
+  
+
+Remainder = $a0
+Dividend  = $a3
+Divisor   = $a6
+DivTmp    = $a9
+.reloc
+LongDivision24bitBy8Bit:
+  lda #0              ;preset remainder to 0
+  sta Remainder
+  sta Remainder+1
+  sta Remainder+2
+  ldx #24             ;repeat for each bit: ...
+@Loop:
+    asl Dividend      ;dividend lb & hb*2, msb -> Carry
+    rol Dividend+1
+    rol Dividend+2
+    rol Remainder     ;remainder lb & hb * 2 + msb from carry
+    rol Remainder+1
+    rol Remainder+2
+    lda Remainder
+    sec
+    sbc Divisor       ;substract divisor to see if it fits in
+    tay               ;lb result -> Y, for we may need it later
+    lda Remainder+1
+    sbc Divisor+1
+    sta DivTmp
+    lda Remainder+2
+    sbc Divisor+2
+    bcc @Skip         ;if carry=0 then divisor didn't fit in yet
+
+    sta Remainder+2   ;else save substraction result as new remainder,
+    lda DivTmp
+    sta Remainder+1
+    sty Remainder	
+    inc Dividend      ;and INCrement result cause divisor fit in 1 times
+@Skip:
+  dex
+  bne @Loop
+  rts
+
+.popseg ; "10", "11"
+
+.pushseg "17"
+ComputeChecksumForCheckpoint = $bd92
+CopyExtraStateFromCheckpoint = $bd60
+
+.org $bc60
+  jsr SaveStatsToCheckpoint
+
+.org $bcc5
+  jsr LoadStatsFromCheckpoint
+
+.reloc
+SaveStatsToCheckpoint:
+  ldx #CHECKPOINT_LENGTH
+-   lda CheckpointBase,x
+    sta CheckpointBase+CHECKPOINT,x
+    dex
+    bpl -
+  jmp ComputeChecksumForCheckpoint
+
+.reloc
+LoadStatsFromCheckpoint:
+  ldx #CHECKPOINT_LENGTH
+-   lda CheckpointBase+CHECKPOINT,x
+    sta CheckpointBase,x
+    dex
+    bpl -
+  jmp CopyExtraStateFromCheckpoint
+
+.popseg ; "2e"
+
+.pushseg "fe", "ff"
+
+;; On continue with a new game, we need to reset the NMI counter
+;; TODO - I removed this code because it has weird interations with loading from a save file
+;;    after continuing from a different save. Just too much of a headache
+;; We can use the fact that if a save file was reset, the game sets $7001 to $ff
+;; It later overwrites this, but we can just store that in another spot
+; ValidateSaveFiles = $f0a4
+; .org $f39f
+;   jsr ValidateSaveFilesAndSetFlag
+
+; .reloc
+; ValidateSaveFilesAndSetFlag:
+;   lda #0
+;   sta $7000
+;   jsr ValidateSaveFiles
+;   lda $7001
+;   sta $7000
+;   rts
+
+; .org $c9da
+;   jsr CheckForResetSavefile
+
+; .reloc
+; CheckForResetSavefile:
+;   lda $7000
+;   bpl +
+;     ; If the checkpoint file was reset, then we want to reset the timer as its a new game
+; + jmp PopulateInitialObjects
+
+;; Reset the saved stats tracking if the checkpoint is invalid
+FinishSaveFileValidations = $f1c7
+.org $f23a
+  jmp ResetStatsCheckpoint
+
+.reloc
+ResetStatsCheckpoint:
+  ; Deal with an off by one error from bne
+  ; by adding one to the length and copying to minus one
+  ldx #CHECKPOINT_LENGTH * 2 + 1
+  lda #$00
+-   sta CheckpointBase-1,x
+    dex
+    bne -
+  jmp FinishSaveFileValidations
+
+.popseg ; "fe", "ff"
+
+.endif ; _STATS_TRACKING
+
 ;;; TODO - quick select items
 ;; .org $3cb62
 ;;   jsr ReadControllersAndUpdateStart
@@ -3581,11 +3841,11 @@ PrepareGameInitialDataTable:
   ;; Various values in the 700 block
   .byte 8
   .word ($0702)
-  .ifdef _MONEY_AT_START
+.ifdef _MONEY_AT_START
     .byte 100
-  .else
+.else
     .byte 0
-  .endif
+.endif
   .byte $00,$1e,$00,$00,$00,$22,$22
   ;; A few more values in 7xx
   .byte 11
@@ -3604,6 +3864,16 @@ PrepareGameInitialDataTable:
   .byte 1
   .word ($0051)
   .byte $00
+.ifdef _STATS_TRACKING
+  ; We need to write these stats twice to prevent NMI shenanigans
+.repeat 2
+  .byte PERMANENT_LENGTH
+  .word (StatTrackingBase)
+  .repeat 5
+    .byte $00
+  .endrepeat
+.endrepeat
+.endif ; _STATS_TRACKING
   .byte 0
 .ifdef _MONEY_AT_START
 .pushseg "17"

@@ -30170,14 +30170,14 @@ LoadGame
         $21bbd  xx xx:      xxx #$xx
         $21bbf  xx xx:      xxx + ; $21bd1
         $21bc1  xx xx:      xxx #$xx
-        $21bc3  xx xx xx:   xxx $21ce0
+        $21bc3  xx xx xx:   xxx CopyThreePagesOfBytesByLookup
         $21bc6  xx xx xx:   xxx $2fc03
         $21bc9  xx xx:      xxx #$xx
         $21bcb  xx xx xx:   xxx $xxxx
         $21bce  xx xx xx:   xxx $21c7a
 ;;; --------------------------------
 +       $21bd1  xx xx:      xxx #$xx
-        $21bd3  xx xx xx:   xxx $21ce0
+        $21bd3  xx xx xx:   xxx CopyThreePagesOfBytesByLookup
         $21bd6  xx xx xx:   xxx $2fc03
         $21bd9  xx xx:      xxx #$xx
         $21bdb  xx xx xx:   xxx $xxxx
@@ -30234,9 +30234,9 @@ SaveGame
         $21c49  xx xx:      xxx $xx
         $21c4b  xx xx xx:   xxx MaybeSetCheckpoint
         $21c4e  xx xx:      xxx #$xx
-        $21c50  xx xx xx:   xxx $21ce0
+        $21c50  xx xx xx:   xxx CopyThreePagesOfBytesByLookup
         $21c53  xx xx:      xxx #$xx
-        $21c55  xx xx xx:   xxx $21ce0
+        $21c55  xx xx xx:   xxx CopyThreePagesOfBytesByLookup
         $21c58  xx xx xx:   xxx $xxxx
         $21c5b  xx xx xx:   xxx $xxxx
         $21c5e  xx xx xx:   xxx $xxxx
@@ -30244,9 +30244,9 @@ SaveGame
 ;;; --------------------------------
         $21c64  xx xx xx:   xxx MaybeSetCheckpoint
         $21c67  xx xx:      xxx #$xx
-        $21c69  xx xx xx:   xxx $21ce0
+        $21c69  xx xx xx:   xxx CopyThreePagesOfBytesByLookup
         $21c6c  xx xx:      xxx #$xx
-        $21c6e  xx xx xx:   xxx $21ce0
+        $21c6e  xx xx xx:   xxx CopyThreePagesOfBytesByLookup
         $21c71  xx xx xx:   xxx $xxxx
         $21c74  xx xx xx:   xxx $xxxx
         $21c77  xx xx xx:   xxx $xxxx
@@ -30295,24 +30295,28 @@ SaveGame
 DataTable_21cde
         $21cde              .byte $xx,$xx
 ;;; --------------------------------
+CopyThreePagesOfBytesByLookup
+; Copies three pages of bytes from src to dst.
+; a - index into the list at $21d32
         $21ce0  xx:         xxx
         $21ce1  xx xx:      xxx #$xx
-        $21ce3  xx xx:      xxx $xx,x
+        ; Save values in $10-$15
+-       $21ce3  xx xx:      xxx $xx,x
         $21ce5  xx xx xx:   xxx $xxxx,x
         $21ce8  xx:         xxx
         $21ce9  xx xx:      xxx #$xx
-        $21ceb  xx xx:      xxx $xx
+        $21ceb  xx xx:      xxx -
         $21ced  xx:         xxx
         $21cee  xx:         xxx
         $21cef  xx:         xxx
         $21cf0  xx:         xxx
         $21cf1  xx xx:      xxx #$xx
-        $21cf3  xx xx xx:   xxx $21d32,x
+-       $21cf3  xx xx xx:   xxx CopyPageBytesTable,x
         $21cf6  xx xx xx:   xxx $xxxx,y
         $21cf9  xx:         xxx
         $21cfa  xx:         xxx
         $21cfb  xx xx:      xxx #$xx
-        $21cfd  xx xx:      xxx $xx
+        $21cfd  xx xx:      xxx -
         $21cff  xx xx:      xxx #$xx
         $21d01  xx xx:      xxx $xx
         $21d03  xx xx:      xxx #$xx
@@ -30332,17 +30336,25 @@ DataTable_21cde
         $21d1f  xx xx:      xxx $xx
         $21d21  xx xx:      xxx #$xx
         $21d23  xx xx:      xxx - ; $21d09
+        ; Restore the previous values in $10-$15
         $21d25  xx xx:      xxx #$xx
-        $21d27  xx xx xx:   xxx $xxxx,x
+-       $21d27  xx xx xx:   xxx $xxxx,x
         $21d2a  xx xx:      xxx $xx,x
         $21d2c  xx:         xxx
         $21d2d  xx xx:      xxx #$xx
-        $21d2f  xx xx:      xxx $xx
+        $21d2f  xx xx:      xxx -
         $21d31  xx:         xxx
 ;;; --------------------------------
-DataTable_21d32
-        $21d32              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $21d42              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+CopyPageBytesTable
+; list of .word(srcbytes) .word(destbytes)
+        $21d32              .byte $xx,$xx,$xx,$xx
+        $21d36              .byte $xx,$xx,$xx,$xx
+        $21d3a              .byte $xx,$xx,$xx,$xx
+        $21d3e              .byte $xx,$xx,$xx,$xx
+        $21d42              .byte $xx,$xx,$xx,$xx
+        $21d46              .byte $xx,$xx,$xx,$xx
+        $21d4a              .byte $xx,$xx,$xx,$xx
+        $21d4e              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
 ClearInventoryMenuScreen
         ;; Overwrites the data in the nametable with a blank inventory screen
@@ -30770,19 +30782,21 @@ MainLoop_PrepareEndingSequence
         $220e8  xx xx:      xxx $xx
         $220ea  xx:         xxx
 ;;; --------------------------------
+CreditsWaitForTimer
         ; Countdown for ending credits
         $220eb  xx xx xx:   xxx $xxxx
-        $220ee  xx xx:      xxx $xx
+        $220ee  xx xx:      xxx + ; $220f1
         $220f0  xx:         xxx
 ;;; --------------------------------
-        $220f1  xx xx:      xxx #$xx
-        $220f3  xx xx xx:   xxx $xxxx
+CreditsDecrementSeconds
++       $220f1  xx xx:      xxx #$xx
+        $220f3  xx xx xx:   xxx $xxxx ; 604 stores frames, 605 stores seconds
         $220f6  xx xx xx:   xxx $xxxx
-        $220f9  xx xx:      xxx $xx
+        $220f9  xx xx:      xxx +
         $220fb  xx:         xxx
 ;;; --------------------------------
-        ; $0600 seems to store the stage of the credits. $1c is "THE END" appears?
-        $220fc  xx xx xx:   xxx $xxxx
+CreditsContinueToNextScene
++       $220fc  xx xx xx:   xxx $xxxx
         $220ff  xx:         xxx
 ;;; --------------------------------
 MainLoop_EndingSequence
@@ -30792,14 +30806,16 @@ MainLoop_EndingSequence
         $22106  xx xx xx:   xxx $xxxx
         $22109  xx:         xxx
         $2210a  xx:         xxx
-        $2210b  xx xx xx:   xxx $2211a,y
+        $2210b  xx xx xx:   xxx CreditsModeTable,y
         $2210e  xx xx xx:   xxx $xxxx
-        $22111  xx xx xx:   xxx $2211b,y
+        $22111  xx xx xx:   xxx CreditsModeTable+1,y
         $22114  xx xx xx:   xxx $xxxx
         $22117  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_2211a 
-        $2211a              .byte $xx,$xx,$xx,$xx,$xx,$xx
+CreditsModeTable 
+        $2211a              .word (CreditsMode_00)
+        $2211c              .word (CreditsMode_01)
+        $2211e              .word (CreditsMode_02)
 ;;; --------------------------------
         $22120  xx xx:      xxx $xx
         $22122  xx xx:      xxx #$xx
@@ -30820,6 +30836,7 @@ DataTable_2211a
 DataTable_22140
         $22140              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+CreditsModeRunScene
         $2214a  xx xx xx:   xxx $xxxx
         $2214d  xx xx:      xxx $xx
         $2214f  xx xx xx:   xxx $22120
@@ -30827,18 +30844,43 @@ DataTable_22140
         $22152  xx xx xx:   xxx $xxxx
         $22155  xx:         xxx
         $22156  xx:         xxx
-        $22157  xx xx xx:   xxx $22166,y
+        $22157  xx xx xx:   xxx EndCreditsSceneTable,y
         $2215a  xx xx xx:   xxx $xxxx
-        $2215d  xx xx xx:   xxx $22167,y
+        $2215d  xx xx xx:   xxx EndCreditsSceneTable+1,y
         $22160  xx xx xx:   xxx $xxxx
         $22163  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
-DataTable_22166
-        $22166              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $22170              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $22180              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $22190              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $221a0              .byte $xx,$xx
+EndCreditsSceneTable
+        $22166              .word (CreditScene_00)
+        $22168              .word (CreditsWaitForTimer)
+        $2216a              .word (CreditScene_02)
+        $2216c              .word (CreditScene_03)
+        $2216e              .word (CreditsWaitForTimer)
+        $22170              .word (CreditScene_05)
+        $22172              .word (CreditsWaitForTimer)
+        $22174              .word (CreditScene_07)
+        $22176              .word (CreditScene_08)
+        $22178              .word (CreditsWaitForTimer)
+        $2217a              .word (CreditScene_0a)
+        $2217c              .word (CreditScene_0b)
+        $2217e              .word (CreditsWaitForTimer)
+        $22180              .word (CreditScene_0d)
+        $22182              .word (CreditScene_0e)
+        $22184              .word (CreditScene_0f)
+        $22186              .word (CreditsWaitForTimer)
+        $22188              .word (CreditScene_11)
+        $2218a              .word (CreditScene_12)
+        $2218c              .word (CreditScene_13)
+        $2218e              .word (CreditsWaitForTimer)
+        $22190              .word (CreditScene_15)
+        $22192              .word (CreditScene_16)
+        $22194              .word (CreditsWaitForTimer)
+        $22196              .word (CreditScene_18)
+        $22198              .word (CreditScene_19)
+        $2219a              .word (CreditScene_1a)
+        $2219c              .word (CreditsWaitForTimer)
+        $2219e              .word (CreditsDisplayTheEND)
+        $221a0              .word (EndingCreditsFinished)
 ;;; --------------------------------
         $221a2  xx xx:      xxx #$xx
         $221a4  xx xx xx:   xxx $221ab
@@ -30853,6 +30895,7 @@ DataTable_22166
         $221b8  xx xx xx:   xxx $xxxx
         $221bb  xx:         xxx
 ;;; --------------------------------
+CreditScene_00
         $221bc  xx xx:      xxx #$xx
         $221be  xx xx:      xxx $xx
         $221c0  xx xx:      xxx #$xx
@@ -30861,7 +30904,7 @@ DataTable_22166
         $221c7  xx xx:      xxx $xx
         $221c9  xx xx xx:   xxx $22bda
         $221cc  xx xx:      xxx $xx
-        $221ce  xx xx xx:   xxx $2281c
+        $221ce  xx xx xx:   xxx CreditWriteNametable
         $221d1  xx xx xx:   xxx $23854
         $221d4  xx xx:      xxx $xx
         $221d6  xx xx xx:   xxx $23855
@@ -30888,11 +30931,13 @@ DataTable_22166
         $22205  xx xx xx:   xxx $xxxx
         $22208  xx:         xxx
 ;;; --------------------------------
+CreditScene_02
         $22209  xx xx:      xxx #$xx
         $2220b  xx xx xx:   xxx $221ab
         $2220e  xx xx xx:   xxx $xxxx
         $22211  xx:         xxx
 ;;; --------------------------------
+CreditScene_03
         $22212  xx xx:      xxx #$xx
         $22214  xx xx:      xxx ($xx),y
         $22216  xx xx:      xxx $xx
@@ -31039,7 +31084,7 @@ DataTable_22166
         $2232d  xx xx:      xxx $xx
         $2232f  xx xx:      xxx $xx
         $22331  xx xx:      xxx $xx
-        $22333  xx xx xx:   xxx $2294b
+        $22333  xx xx xx:   xxx CreditsAnimateSpriteFromTable
         $22336  xx:         xxx
 ;;; --------------------------------
         $22337  xx xx xx:   xxx $23854
@@ -31053,7 +31098,7 @@ DataTable_22166
 ;;; --------------------------------
         $2234b  xx xx:      xxx #$xx
         $2234d  xx xx:      xxx $xx
-        $2234f  xx xx xx:   xxx $22aa7
+        $2234f  xx xx xx:   xxx CreditsChangeToMode2
         $22352  xx xx:      xxx #$xx
         $22354  xx xx xx:   xxx $xxxx
         $22357  xx xx xx:   xxx $xxxx
@@ -31079,8 +31124,9 @@ DataTable_22166
         $2238b  xx xx xx:   xxx $xxxx
         $2238e  xx:         xxx
 ;;; --------------------------------
+CreditScene_05
         $2238f  xx xx:      xxx #$xx
-        $22391  xx xx xx:   xxx $2294b
+        $22391  xx xx xx:   xxx CreditsAnimateSpriteFromTable
         $22394  xx xx:      xxx $xx
         $22396  xx xx:      xxx #$xx
         $22398  xx xx:      xxx $xx
@@ -31112,6 +31158,7 @@ DataTable_22166
         $223c7  xx xx xx:   xxx $xxxx
         $223ca  xx:         xxx
 ;;; --------------------------------
+CreditScene_07
         $223cb  xx xx:      xxx #$xx
         $223cd  xx xx xx:   xxx $xxxx
         $223d0  xx xx:      xxx #$xx
@@ -31190,11 +31237,13 @@ DataTable_22166
         $22476  xx xx xx:   xxx $xxxx
         $22479  xx:         xxx
 ;;; --------------------------------
+CreditScene_08
         $2247a  xx xx:      xxx #$xx
         $2247c  xx xx xx:   xxx $221ab
         $2247f  xx xx xx:   xxx $xxxx
         $22482  xx:         xxx
 ;;; --------------------------------
+CreditScene_0b
         $22483  xx xx:      xxx #$xx
         $22485  xx xx:      xxx #$xx
         $22487  xx xx:      xxx #$xx
@@ -31212,10 +31261,13 @@ DataTable_22166
         $224a4  xx xx xx:   xxx $xxxx
         $224a7  xx:         xxx
 ;;; --------------------------------
-        $224a8  xx xx xx:   xxx $22aa7
+CreditScene_0a
+CreditScene_0d
+        $224a8  xx xx xx:   xxx CreditsChangeToMode2
         $224ab  xx xx xx:   xxx $xxxx
         $224ae  xx:         xxx
 ;;; --------------------------------
+CreditScene_0e
         $224af  xx xx:      xxx #$xx
         $224b1  xx xx xx:   xxx $xxxx
         $224b4  xx xx:      xxx #$xx
@@ -31242,10 +31294,12 @@ DataTable_22166
 DataTable_224e3
         $224e3              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-        $224ec  xx xx xx:   xxx $22aa7
+CreditScene_11
+        $224ec  xx xx xx:   xxx CreditsChangeToMode2
         $224ef  xx xx xx:   xxx $xxxx
         $224f2  xx:         xxx
 ;;; --------------------------------
+CreditScene_12
         $224f3  xx xx:      xxx #$xx
         $224f5  xx xx:      xxx #$xx
         $224f7  xx xx:      xxx #$xx
@@ -31309,11 +31363,13 @@ DataTable_2257a
         $2257a              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2258a              .byte $xx,$xx,$xx,$xx
 ;;; --------------------------------
+CreditScene_0f
         $2258e  xx xx:      xxx #$xx
         $22590  xx xx xx:   xxx $221ab
         $22593  xx xx xx:   xxx $xxxx
         $22596  xx:         xxx
 ;;; --------------------------------
+CreditScene_13
         $22597  xx xx:      xxx $xx
         $22599  xx xx:      xxx $xx
         $2259b  xx xx xx:   xxx $2265e,y
@@ -31323,11 +31379,11 @@ DataTable_2257a
         $225a4  xx xx:      xxx $xx
         $225a6  xx xx:      xxx #$xx
         $225a8  xx xx:      xxx $xx
-        $225aa  xx xx xx:   xxx $2281c
+        $225aa  xx xx xx:   xxx CreditWriteNametable
         $225ad  xx xx:      xxx $xx
         $225af  xx xx:      xxx $xx
         $225b1  xx xx xx:   xxx $2265e,y
-        $225b4  xx xx xx:   xxx $229d7
+        $225b4  xx xx xx:   xxx WriteOAMDataFromTable
         $225b7  xx xx xx:   xxx $22597
 ;;; --------------------------------
         $225ba  xx:         xxx
@@ -31363,11 +31419,12 @@ DataTable_2257a
         $225f6  xx xx xx:   xxx $xxxx
         $225f9  xx:         xxx
 ;;; --------------------------------
-        $225fa  xx xx xx:   xxx $22aa7
+        $225fa  xx xx xx:   xxx CreditsChangeToMode2
         $225fd  xx xx:      xxx #$xx
         $225ff  xx xx xx:   xxx $xxxx
         $22602  xx:         xxx
 ;;; --------------------------------
+CreditScene_15
         $22603  xx xx:      xxx $xx
         $22605  xx xx:      xxx $xx
         $22607  xx xx xx:   xxx $2265e,y
@@ -31376,6 +31433,7 @@ DataTable_2257a
         $2260f  xx xx xx:   xxx $xxxx
         $22612  xx:         xxx
 ;;; --------------------------------
+CreditScene_16
         $22613  xx xx xx:   xxx $22a17
         $22616  xx xx:      xxx #$xx
         $22618  xx xx:      xxx #$xx
@@ -31406,7 +31464,8 @@ DataTable_2257a
         $22653  xx xx xx:   xxx $xxxx
         $22656  xx:         xxx
 ;;; --------------------------------
-        $22657  xx xx xx:   xxx $22aa7
+CreditScene_18
+        $22657  xx xx xx:   xxx CreditsChangeToMode2
         $2265a  xx xx xx:   xxx $xxxx
         $2265d  xx:         xxx
 ;;; --------------------------------
@@ -31416,6 +31475,7 @@ DataTable_2265e
         $2267e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $2268e              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
+CreditScene_19
         $22696  xx xx xx:   xxx $23304
         $22699  xx xx:      xxx $xx
         $2269b  xx xx xx:   xxx $23305
@@ -31424,13 +31484,13 @@ DataTable_2265e
         $226a2  xx xx:      xxx $xx
         $226a4  xx xx:      xxx #$xx
         $226a6  xx xx:      xxx $xx
-        $226a8  xx xx xx:   xxx $2281c
+        $226a8  xx xx xx:   xxx CreditWriteNametable
         $226ab  xx xx:      xxx #$xx
-        $226ad  xx xx xx:   xxx $229d7
+        $226ad  xx xx xx:   xxx WriteOAMDataFromTable
         $226b0  xx xx:      xxx #$xx
         $226b2  xx xx xx:   xxx $xxxx
         $226b5  xx xx:      xxx #$xx
-        $226b7  xx xx xx:   xxx $229d7
+        $226b7  xx xx xx:   xxx WriteOAMDataFromTable
         $226ba  xx xx:      xxx #$xx
         $226bc  xx xx xx:   xxx $xxxx
         $226bf  xx xx:      xxx #$xx
@@ -31440,13 +31500,14 @@ DataTable_2265e
         $226c7  xx xx:      xxx #$xx
         $226c9  xx xx xx:   xxx $xxxx
         $226cc  xx xx:      xxx #$xx
-        $226ce  xx xx xx:   xxx $2294b
+        $226ce  xx xx xx:   xxx CreditsAnimateSpriteFromTable
         $226d1  xx xx xx:   xxx $22a61
         $226d4  xx xx xx:   xxx $xxxx
         $226d7  xx:         xxx
 ;;; --------------------------------
+CreditScene_1a
         $226d8  xx xx:      xxx #$xx
-        $226da  xx xx xx:   xxx $2294b
+        $226da  xx xx xx:   xxx CreditsAnimateSpriteFromTable
         $226dd  xx xx:      xxx $xx
         $226df  xx xx:      xxx #$xx
         $226e1  xx xx:      xxx $xx
@@ -31463,6 +31524,7 @@ DataTable_2265e
         $226f7  xx xx xx:   xxx $xxxx
         $226fa  xx:         xxx
 ;;; --------------------------------
+CreditsDisplayTheEND
         $226fb  xx xx:      xxx #$xx
         $226fd  xx xx xx:   xxx $xxxx
         $22700  xx xx:      xxx #$xx
@@ -31473,7 +31535,7 @@ DataTable_2265e
         $2270d  xx xx:      xxx #$xx
         $2270f  xx xx xx:   xxx $xxxx
         $22712  xx xx:      xxx #$xx
-        $22714  xx xx xx:   xxx $229d7
+        $22714  xx xx xx:   xxx WriteOAMDataFromTable
         $22717  xx xx xx:   xxx $xxxx
         $2271a  xx:         xxx
 ;;; --------------------------------
@@ -31622,6 +31684,15 @@ EnableNMI_altbank11
         $22819  xx xx:      xxx $xx
         $2281b  xx:         xxx
 ;;; --------------------------------
+CreditWriteNametable
+; Writes the data to the name table with the following parameters 
+; $88-$89 address to read the stored data from. Format of the data is below
+; $8a-$8b nametable address to write to
+;
+; Internal variables:
+; $84-$85 copy of the read address
+; $80-$81 address of the tiles to read from
+; 
         $2281c  xx xx:      xxx $xx
         $2281e  xx xx:      xxx $xx
         $22820  xx xx:      xxx $xx
@@ -31772,35 +31843,37 @@ EnableNMI_altbank11
         $22948  xx xx:      xxx $xx
         $2294a  xx:         xxx
 ;;; --------------------------------
+CreditsAnimateSpriteFromTable
         $2294b  xx:         xxx
         $2294c  xx:         xxx
         $2294d  xx xx:      xxx #$xx
         $2294f  xx xx xx:   xxx $xxxx
-        $22952  xx xx xx:   xxx $xxxx,x
+-       $22952  xx xx xx:   xxx $xxxx,x
         $22955  xx:         xxx
-        $22956  xx xx:      xxx $xx
-        $22958  xx xx xx:   xxx $2345e,y
+        $22956  xx xx:      xxx - ; $22952
+        $22958  xx xx xx:   xxx OAMWriteTable,y
         $2295b  xx xx:      xxx $xx
-        $2295d  xx xx xx:   xxx $2345f,y
+        $2295d  xx xx xx:   xxx OAMWriteTable+1,y
         $22960  xx xx:      xxx $xx
         $22962  xx xx:      xxx #$xx
         $22964  xx xx xx:   xxx $xxxx
+CreditsLoadSpriteUntilFF
         $22967  xx xx:      xxx $xx
         $22969  xx xx:      xxx ($xx),y
         $2296b  xx xx:      xxx #$xx
-        $2296d  xx xx:      xxx $xx
+        $2296d  xx xx:      xxx + ; $22970
         $2296f  xx:         xxx
 ;;; --------------------------------
-        $22970  xx xx xx:   xxx $xxxx,x
++       $22970  xx xx xx:   xxx $xxxx,x
         $22973  xx:         xxx
         $22974  xx xx:      xxx ($xx),y
-        $22976  xx xx:      xxx $xx
+        $22976  xx xx:      xxx + ; $22980
         $22978  xx:         xxx
         $22979  xx xx:      xxx $xx
-        $2297b  xx xx:      xxx $xx
+        $2297b  xx xx:      xxx ++ ; $22990
         $2297d  xx xx xx:   xxx $229c9
 ;;; --------------------------------
-        $22980  xx xx:      xxx #$xx
++       $22980  xx xx:      xxx #$xx
         $22982  xx xx:      xxx $xx
         $22984  xx xx:      xxx $xx
         $22986  xx:         xxx
@@ -31809,7 +31882,7 @@ EnableNMI_altbank11
         $2298b  xx xx:      xxx $xx
         $2298d  xx xx xx:   xxx $229c9
 ;;; --------------------------------
-        $22990  xx xx xx:   xxx $xxxx,x
+++      $22990  xx xx xx:   xxx $xxxx,x
         $22993  xx:         xxx
         $22994  xx xx:      xxx ($xx),y
         $22996  xx xx:      xxx $xx
@@ -31840,7 +31913,7 @@ EnableNMI_altbank11
         $229c3  xx:         xxx
         $229c4  xx:         xxx
         $229c5  xx:         xxx
-        $229c6  xx xx xx:   xxx $22967
+        $229c6  xx xx xx:   xxx CreditsLoadSpriteUntilFF
 ;;; --------------------------------
         $229c9  xx xx:      xxx $xx
         $229cb  xx:         xxx
@@ -31849,28 +31922,29 @@ EnableNMI_altbank11
         $229ce  xx:         xxx
         $229cf  xx xx:      xxx #$xx
         $229d1  xx xx xx:   xxx $xxxx,x
-        $229d4  xx xx xx:   xxx $22967
+        $229d4  xx xx xx:   xxx CreditsLoadSpriteUntilFF
 ;;; --------------------------------
-WriteTheEndOAMData
+WriteOAMDataFromTable
         $229d7  xx:         xxx
         $229d8  xx:         xxx
+        ; Clear out OAM before writing
         $229d9  xx xx:      xxx #$xx
         $229db  xx xx xx:   xxx $xxxx
-        $229de  xx xx xx:   xxx $xxxx,x
+-       $229de  xx xx xx:   xxx $xxxx,x
         $229e1  xx:         xxx
-        $229e2  xx xx:      xxx $xx
-        $229e4  xx xx xx:   xxx $2345e,y
+        $229e2  xx xx:      xxx - ; $229de
+        $229e4  xx xx xx:   xxx OAMWriteTable,y
         $229e7  xx xx:      xxx $xx
-        $229e9  xx xx xx:   xxx $2345f,y
+        $229e9  xx xx xx:   xxx OAMWriteTable+1,y
         $229ec  xx xx:      xxx $xx
         $229ee  xx xx:      xxx #$xx
         $229f0  xx xx xx:   xxx $xxxx
         $229f3  xx xx:      xxx ($xx),y
         $229f5  xx xx:      xxx #$xx
-        $229f7  xx xx:      xxx $xx
+        $229f7  xx xx:      xxx WriteOAMDataCopyLoop
         $229f9  xx:         xxx
 ;;; --------------------------------
-WriteTheEndOAMDataCopyLoop
+WriteOAMDataCopyLoop
         $229fa  xx xx xx:   xxx $xxxx,x
         $229fd  xx:         xxx
         $229fe  xx xx:      xxx ($xx),y
@@ -31935,15 +32009,18 @@ WriteTheEndOAMDataCopyLoop
         $22a60  xx:         xxx
 ;;; --------------------------------
         $22a61  xx xx:      xxx #$xx
-        $22a63  xx xx xx:   xxx $xxxx,x
+-       $22a63  xx xx xx:   xxx $xxxx,x
         $22a66  xx xx:      xxx #$xx
         $22a68  xx xx xx:   xxx $xxxx,x
         $22a6b  xx:         xxx
-        $22a6c  xx xx:      xxx $xx
+        $22a6c  xx xx:      xxx - ; $22a63
         $22a6e  xx xx:      xxx #$xx
         $22a70  xx xx xx:   xxx $xxxx
         $22a73  xx:         xxx
 ;;; --------------------------------
+CreditsMode_01
+;; This appears to be the fade out mode
+;; since its writing to the palette every 8 frames
         $22a74  xx xx:      xxx $xx
         $22a76  xx xx:      xxx #$xx
         $22a78  xx xx:      xxx $xx
@@ -31968,14 +32045,19 @@ WriteTheEndOAMDataCopyLoop
         $22a9e  xx xx:      xxx $xx
         $22aa0  xx:         xxx
 ;;; --------------------------------
+CreditsChangeToMode0
         $22aa1  xx xx:      xxx #$xx
         $22aa3  xx xx xx:   xxx $xxxx
         $22aa6  xx:         xxx
 ;;; --------------------------------
+CreditsChangeToMode2
         $22aa7  xx xx:      xxx #$xx
         $22aa9  xx xx xx:   xxx $xxxx
         $22aac  xx:         xxx
 ;;; --------------------------------
+CreditsMode_02
+;; This appears to be a fade in mode that updates the palette.
+;; $6140 - $615f is the address range used for palette updates
         $22aad  xx xx:      xxx $xx
         $22aaf  xx xx:      xxx #$xx
         $22ab1  xx xx:      xxx $xx
@@ -32086,7 +32168,8 @@ DataTable_22b95
         $22ba0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22bb0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22bc0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $22bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $22bd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $22bd9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22be0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22bf0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22c00              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32153,7 +32236,8 @@ DataTable_22b95
         $22fd0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22fe0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $22ff0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23000              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23000              .byte $xx,$xx,$xx,$xx
+        $23004              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23010              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23020              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23030              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32201,7 +32285,9 @@ DataTable_22b95
         $232d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $232e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $232f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23300              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23300              .byte $xx,$xx,$xx,$xx
+;----------------------
+        $23304              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23310              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23320              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23330              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32222,9 +32308,22 @@ DataTable_22b95
         $23420              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23430              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23440              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23450              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23460              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23470              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23450              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,
+OAMWriteTable
+        ;; Each entry is a pointer to a complete OAM update. The order is Byte 2, 3, 0, 1
+        $2345e              .word (OAMWriteTable_00)
+        $23460              .word (OAMWriteTable_01)
+        $23462              .word (OAMWriteTable_02)
+        $23464              .word (OAMWriteTable_03)
+        $23466              .word (OAMWriteTable_00)
+        $23468              .word (OAMWriteTable_05)
+        $2346a              .word (OAMWriteTable_06)
+        $2346c              .word (OAMWriteTable_07)
+        $2346e              .word (OAMWriteTable_08)
+        $23470              .word (OAMWriteTable_09)
+;----------------
+OAMWriteTable_00
+        $23472              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23480              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23490              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $234a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32237,6 +32336,7 @@ DataTable_22b95
         $23510              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23520              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23530              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+OAMWriteTable_01
         $23540              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23550              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23560              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32244,15 +32344,21 @@ DataTable_22b95
         $23580              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23590              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $235a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $235b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $235b0              .byte $xx
+OAMWriteTable_02
+        $235b1              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $235c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $235d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $235e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $235f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23600              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23600              .byte $xx,$xx
+OAMWriteTable_03
+        $23602              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23610              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23620              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23630              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23630              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+OAMWriteTable_05
+        $2363f              .byte $xx
         $23640              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23650              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23660              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32261,15 +32367,20 @@ DataTable_22b95
         $23690              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $236a0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $236b0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+OAMWriteTable_06
         $236c0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $236d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $236d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+OAMWriteTable_07
+        $236d9              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx
         $236e0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $236f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23700              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23710              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23720              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23730              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23740              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23740              .byte $xx,$xx,$xx,$xx,$xx,$xx
+OAMWriteTable_08
+        $23746              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23750              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23760              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23770              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -32283,10 +32394,14 @@ DataTable_22b95
         $237f0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23800              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23810              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23820              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+OAMWriteTable_09
+        $2382f              .byte $xx
         $23830              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23840              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
-        $23850              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+        $23850              .byte $xx,$xx,$xx,$xx
+;--------------------
+        $23854              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23860              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23870              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $23880              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
@@ -40533,7 +40648,7 @@ MaybeSetCheckpoint
         $2fc45  xx xx:            xxx $xx
         $2fc47  xx:               xxx
         $2fc48  xx xx:            xxx #$xx
--       $2fc4a  xx xx xx:          xxx $2fdc0,y
+-       $2fc4a  xx xx xx:          xxx CopyMemoryToCheckpointTable,y
         $2fc4d  xx xx:             xxx $xx,x
         $2fc4f  xx:                xxx
         $2fc50  xx:                xxx
@@ -40544,7 +40659,8 @@ MaybeSetCheckpoint
         $2fc5a  xx xx:            xxx $xx
         $2fc5c  xx xx:            xxx #$xx
         $2fc5e  xx xx:           xxx -- ; $2fc3e
-        $2fc60  xx xx xx:        xxx $2fd92 ; compute checksum => 70f4
+        $2fc60  xx xx xx:        xxx ComputeChecksumForCheckpoint ; compute checksum => 70f4
+        ;; Copy checkpoint from main location to backup
         $2fc63  xx xx:           xxx #$xx
 + -     $2fc65  xx xx xx:         xxx $xxxx,x
         $2fc68  xx xx xx:         xxx $xxxx,x
@@ -40589,7 +40705,7 @@ MaybeSetCheckpoint
         $2fcaa  xx xx:          xxx $xx
         $2fcac  xx:             xxx
         $2fcad  xx xx:          xxx #$xx
--       $2fcaf  xx xx xx:        xxx $2fdde,y
+-       $2fcaf  xx xx xx:        xxx CopyCheckpointToMemoryTable,y
         $2fcb2  xx xx:           xxx $xx,x
         $2fcb4  xx:              xxx
         $2fcb5  xx:              xxx
@@ -40600,7 +40716,7 @@ MaybeSetCheckpoint
         $2fcbf  xx xx:          xxx $xx
         $2fcc1  xx xx:          xxx #$xx
         $2fcc3  xx xx:         xxx -- ; $2fca3
-        $2fcc5  xx xx xx:      xxx $2fd60
+        $2fcc5  xx xx xx:      xxx CopyExtraStateFromCheckpoint
         $2fcc8  xx xx:         xxx #$xx
 -       $2fcca  xx xx xx:       xxx $xxxx,x
         $2fccd  xx xx:          xxx $xx,x
@@ -40685,6 +40801,7 @@ StageGameDataForSave_7df0
         $2fd5f  xx:         xxx
 ;;; --------------------------------
         ;; Copy relevant state from the savegame
+CopyExtraStateFromCheckpoint
         $2fd60  xx xx xx:   xxx $xxxx
         $2fd63  xx xx:      xxx $xx
         $2fd65  xx xx xx:   xxx $xxxx
@@ -40705,6 +40822,7 @@ StageGameDataForSave_7df0
         $2fd8e  xx xx xx:   xxx $xxxx
         $2fd91  xx:         xxx
 ;;; --------------------------------
+ComputeChecksumForCheckpoint
         ;; Compute a checksum of the save data??
         ;; TODO - this is really inefficient, we could get back several
         ;; bytes if we just used zero-page addresses here.
@@ -40729,15 +40847,16 @@ StageGameDataForSave_7df0
         $2fdbd  xx xx:      xxx - ; $2fd9b
         $2fdbf  xx:         xxx
 ;;; --------------------------------
-DataTable_2fdc0
+CopyMemoryToCheckpointTable
         ;; Memory copy data for checkpointing
+        ; .word (src), .word (dest), .word(length)
         $2fdc0              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2fdc6              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2fdcc              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2fdd2              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2fdd8              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-DataTable_2fdde 
+CopyCheckpointToMemoryTable
         ;; Memory copy data for loading
         $2fdde              .byte $xx,$xx,$xx,$xx,$xx,$xx
         $2fde4              .byte $xx,$xx,$xx,$xx,$xx,$xx
@@ -57513,7 +57632,7 @@ MainLoopJump_08_ContinueGame
         $3c9e8  xx xx xx:   xxx $3c008
         $3c9eb  xx xx:      xxx #$xx ; 8000 -> 24000
         $3c9ed  xx xx xx:   xxx BankSwitch16k
-        $3c9f0  xx xx xx:   xxx $2fa65
+        $3c9f0  xx xx xx:   xxx $27a65
         $3c9f3  xx xx:      xxx #MAIN_LOOP_GAME ; Also GAME_MODE_CHANGE_LOCATION
         $3c9f5  xx xx:      xxx MainLoopMode
         $3c9f7  xx xx:      xxx GameMode

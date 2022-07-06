@@ -24389,7 +24389,7 @@ BossPatternJump_08              ; Insect 0
         $1e6f1  xx xx:       xxx #$xx
         $1e6f3  xx xx:       xxx $xx
         $1e6f5  xx xx xx:    xxx $3ff8c
-        $1e6f8  xx xx xx:    xxx $3c676
+        $1e6f8  xx xx xx:    xxx WaitForNametableFlush
         $1e6fb  xx xx:       xxx #$xx
         $1e6fd  xx xx xx:    xxx $1e77c,x
         $1e700  xx xx xx:    xxx $xxxx,x
@@ -25824,7 +25824,7 @@ BossPatternJump_2b              ; Draygon2 0
         $1f338  xx xx xx:   xxx $xxxx
         $1f33b  xx xx:      xxx #$xx
         $1f33d  xx xx xx:   xxx $xxxx
-        $1f340  xx xx xx:   xxx $3c676
+        $1f340  xx xx xx:   xxx WaitForNametableFlush
         $1f343  xx xx:      xxx #$xx
         $1f345  xx xx xx:   xxx $1f2f8
         $1f348  xx xx:      xxx #$xx
@@ -26120,7 +26120,7 @@ BossPatternJump_30              ; Draygon2 5 - shoot laser
         $1f5bb  xx xx xx:   xxx $xxxx,x
         $1f5be  xx xx:      xxx #$xx
         $1f5c0  xx xx:      xxx $xx
-        $1f5c2  xx xx xx:   xxx $3c676
+        $1f5c2  xx xx xx:   xxx WaitForNametableFlush
         $1f5c5  xx xx xx:   xxx $xxxx,x
         $1f5c8  xx:         xxx
         $1f5c9  xx:         xxx
@@ -27041,7 +27041,7 @@ MainGameModeJump_0d
         $1fdf5  xx xx:      xxx $xx
         $1fdf7  xx xx:      xxx #$xx
         $1fdf9  xx xx xx:   xxx StageNametableWriteFromTable
-        $1fdfc  xx xx xx:   xxx $3c676
+        $1fdfc  xx xx xx:   xxx WaitForNametableFlush
         $1fdff  xx xx xx:   xxx $3c008
         $1fe02  xx xx:      xxx #$xx
         $1fe04  xx xx xx:   xxx $xxxx
@@ -28144,7 +28144,7 @@ Menu_UpdateSprite
         $2071c  xx xx:      xxx - ; $206ef
         $2071e  xx:         xxx
 ;;; --------------------------------
-        $2071f  xx xx xx:   xxx $3c676
+        $2071f  xx xx xx:   xxx WaitForNametableFlush
         $20722  xx xx:      xxx #$xx
         $20724  xx xx xx:   xxx $20afd,x
         $20727  xx xx:      xxx $xx,x
@@ -28165,7 +28165,7 @@ Menu_UpdateSprite
         $20744  xx xx:      xxx $xx
         $20746  xx xx:      xxx $xx
         $20748  xx xx:      xxx $xx
-        $2074a  xx xx xx:   xxx $3c676
+        $2074a  xx xx xx:   xxx WaitForNametableFlush
         $2074d  xx xx:      xxx #$xx
         $2074f  xx xx:      xxx $xx
         $20751  xx xx xx:   xxx $xxxx
@@ -28205,12 +28205,12 @@ Menu_UpdateSprite
 ;;; --------------------------------
         $20795  xx xx:      xxx #$xx
         $20797  xx xx:      xxx $xx
-        $20799  xx xx xx:   xxx $3c676
+        $20799  xx xx xx:   xxx WaitForNametableFlush
         $2079c  xx xx:      xxx ScreenMode
         $2079e  xx xx:      xxx #$xx
         $207a0  xx xx:      xxx ScreenMode
         $207a2  xx xx xx:   xxx WriteHeaderToNametableQueue
-        $207a5  xx xx xx:   xxx $3c676
+        $207a5  xx xx xx:   xxx WaitForNametableFlush
         $207a8  xx:         xxx
         $207a9  xx xx:      xxx $xx
         $207ab  xx xx:      xxx #$xx
@@ -28412,7 +28412,7 @@ Shop_DrawItemBackground
         $208d1  xx xx:      xxx $xx
         $208d3  xx xx xx:   xxx $208d9
         $208d6  xx xx xx:   xxx $208d9
-        $208d9  xx xx xx:   xxx $3c676
+        $208d9  xx xx xx:   xxx WaitForNametableFlush
         $208dc  xx xx:      xxx #$xx
         $208de  xx xx:      xxx $xx
         $208e0  xx xx xx:   xxx $xxxx,x
@@ -28434,7 +28434,7 @@ Shop_DrawItemBackground
         $208fd  xx xx:      xxx $xx
         $208ff  xx xx xx:   xxx $20905
         $20902  xx xx xx:   xxx $20905
-        $20905  xx xx xx:   xxx $3c676
+        $20905  xx xx xx:   xxx WaitForNametableFlush
         $20908  xx xx:      xxx #$xx
         $2090a  xx xx:      xxx $xx
         $2090c  xx xx xx:   xxx $2092a,y
@@ -29833,7 +29833,7 @@ InitializeToolShop
         $21930  xx xx:      xxx $xx
         $21932  xx xx:      xxx #$xx
         $21934  xx xx xx:   xxx $20864
-        $21937  xx xx xx:   xxx $3c676
+        $21937  xx xx xx:   xxx WaitForNametableFlush
         $2193a  xx xx:      xxx #$xx
         $2193c  xx xx:      xxx #$xx
         $2193e  xx xx xx:   xxx $xxxx,x
@@ -36216,7 +36216,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e65  xx xx:      xxx $xx
         $27e67  xx xx:      xxx #$xx
         $27e69  xx xx xx:   xxx StageNametableWriteFromTable
-        $27e6c  xx xx xx:   xxx $3c676
+        $27e6c  xx xx xx:   xxx WaitForNametableFlush
         $27e6f  xx xx:      xxx #$xx
         $27e71  xx xx xx:   xxx $3c418
         $27e74  xx xx xx:   xxx $xxxx
@@ -57757,7 +57757,7 @@ MainGameModeJump_1c_ErrorMessage
         $3cc4c  xx:         xxx
 ;;; --------------------------------
 MainGameModeJump_1f_DynaAppears
-        $3cc4d  xx xx xx:   xxx $3c676
+        $3cc4d  xx xx xx:   xxx WaitForNametableFlush
         $3cc50  xx xx:      xxx $xx
         $3cc52  xx xx:      xxx #$xx
         $3cc54  xx xx:      xxx $xx
@@ -57921,7 +57921,7 @@ MainGameModeJump_1f_DynaAppears
         $3cd8a  xx xx xx:   xxx $3cdd5
         $3cd8d  xx:         xxx
         $3cd8e  xx:         xxx
-        $3cd8f  xx xx xx:    xxx $3c676
+        $3cd8f  xx xx xx:    xxx WaitForNametableFlush
         $3cd92  xx xx xx:    xxx $3ce07
         $3cd95  xx xx:       xxx $xx
         $3cd97  xx:          xxx
@@ -60155,7 +60155,7 @@ MainGameModeJump_17_ChangeMagicMenu
         $3deda  xx xx:       xxx #$xx
         $3dedc  xx xx:       xxx $xx
         $3dede  xx xx xx:    xxx $xxxx
-        $3dee1  xx xx xx:    xxx $3c676
+        $3dee1  xx xx xx:    xxx WaitForNametableFlush
 JumpTable_3df0e_04
 JumpTable_3df0e_05
         $3dee4  xx xx xx:    xxx $3ddcd
@@ -60240,7 +60240,7 @@ JumpTable_3df0e_00
 ;;; --------------------------------
         $3df8f  xx xx:      xxx #$xx
         $3df91  xx xx xx:   xxx $xxxx
-        $3df94  xx xx xx:   xxx $3c676
+        $3df94  xx xx xx:   xxx WaitForNametableFlush
         $3df97  xx xx:      xxx #$xx
         $3df99  xx xx xx:   xxx BankSwitch8k_8000
         $3df9c  xx xx xx:   xxx DrawMessageBoxBackground
@@ -60267,7 +60267,7 @@ JumpTable_3df0e_00
         $3dfcb  xx xx:      xxx $xx
         $3dfcd  xx:         xxx
 ;;; --------------------------------
-        $3dfce  xx xx xx:   xxx $3c676
+        $3dfce  xx xx xx:   xxx WaitForNametableFlush
         $3dfd1  xx xx xx:   xxx $3dffd
         $3dfd4  xx xx:      xxx #$xx
         $3dfd6  xx xx xx:   xxx $3e088,x
@@ -60908,7 +60908,7 @@ BankSwitch16k_Bank6
         $3e3d4  xx xx:      xxx #$xx
         $3e3d6  xx xx xx:   xxx BankSwitch16k
 ;;; --------------------------------
-ExitTypeJump
+ExitTypeJumpTable
         $3e3d9              .word ($xxxx) ; 0x - normal exit
         $3e3db              .word ($xxxx) ; 20 - large map split
         $3e3dd              .word ($xxxx) ; 40 - warp
@@ -60918,7 +60918,7 @@ ExitTypeJump
         $3e3e5              .word ($xxxx)
         $3e3e7              .word ($xxxx) ; e0 - ???
 ;;; --------------------------------
-        $3e3e9  xx xx xx:   xxx DrawAllObjectSprites ; probably sth about sprites
+        $3e3e9  xx xx xx:   xxx DrawAllObjectSprites
         $3e3ec  xx xx xx:   xxx WaitForNametableFlush
         $3e3ef  xx xx:      xxx #SCREEN_MODE_NORMAL
         $3e3f1  xx xx:      xxx ScreenMode
@@ -60928,7 +60928,7 @@ ExitTypeJump
         $3e3fb  xx xx xx:   xxx BankSwitch8k_8000
         $3e3fe  xx xx xx:   xxx $xxxx
         $3e401  xx xx:      xxx + ; $3e406
-        $3e403  xx xx xx:   xxx LoadPalettesForLocation
+        $3e403  xx xx xx:    xxx LoadPalettesForLocation
         ;; the high 3 bytes of the entrance triggers a jump table?
 +       $3e406  xx xx:      xxx $xx
         $3e408  xx xx:      xxx #$xx
@@ -60937,9 +60937,9 @@ ExitTypeJump
         $3e40c  xx:         xxx
         $3e40d  xx:         xxx
         $3e40e  xx:         xxx
-        $3e40f  xx xx xx:   xxx $3e3d9,y
+        $3e40f  xx xx xx:   xxx ExitTypeJumpTable,y ; $3e3d9
         $3e412  xx xx:      xxx $xx
-        $3e414  xx xx xx:   xxx $3e3da,y
+        $3e414  xx xx xx:   xxx ExitTypeJumpTable+1,y ; $3e3da
         $3e417  xx xx:      xxx $xx
         $3e419  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
@@ -60949,22 +60949,32 @@ ExitTypeJump_7
         $3e41f  xx xx xx:   xxx + ; $3e439
 ;;; --------------------------------
 ExitTypeJump_0_Normal
-        $3e422  xx xx xx:   xxx $3e611
+        $3e422  xx xx xx:   xxx ClearAllObjectsOnLocationChange
+        ;; Remove slime status
         $3e425  xx xx xx:   xxx PlayerStatus
         $3e428  xx xx:      xxx #$xx
         $3e42a  xx xx:      xxx #$xx
         $3e42c  xx xx:      xxx + ; $3e439
-        $3e42e  xx xx xx:   xxx PlayerStatus
-        $3e431  xx xx:      xxx #$xx
-        $3e433  xx xx xx:   xxx PlayerStatus
-        $3e436  xx xx xx:   xxx $3c008
-+       $3e439  xx xx xx:   xxx $3e628
+        $3e42e  xx xx xx:    xxx PlayerStatus
+        $3e431  xx xx:       xxx #$xx
+        $3e433  xx xx xx:    xxx PlayerStatus
+        $3e436  xx xx xx:    xxx UpdateEquipmentAndStatus
+        ;; Read map data from new location, etc.  Note that this also
+        ;; sets 34..37 from the entrance coordinates.
++       $3e439  xx xx xx:   xxx ChangeLocation
+        ;; Set location of object slots 0 and 1 (player and shadow)
+        ;; from the entrance coordinates.
         $3e43c  xx xx:      xxx #$xx
         $3e43e  xx xx xx:   xxx BankSwitch16k
         $3e441  xx xx:      xxx #$xx
         $3e443  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
         $3e446  xx:         xxx
         $3e447  xx xx xx:   xxx WriteObjectCoordinatesFrom_34_37
+        ;; Do a handful of location-specific checks.  We might want to
+        ;; consider moving this into a location-based lookup table, or
+        ;; else building a jump destination into the mapdata table.
+        ;; NOTE: these all depend on page 0d being loaded because they
+        ;;       call WriteObjectCoordinates and/or AddDisplacementVector.
         $3e44a  xx xx xx:   xxx CheckForRidingDolphin
         $3e44d  xx xx xx:   xxx CheckForDwarfChild
         $3e450  xx xx xx:   xxx CheckForShyronMassacre
@@ -60978,7 +60988,7 @@ ExitTypeJump_0_Normal
         $3e461  xx xx:      xxx #$xx
         $3e463  xx xx xx:   xxx BankSwitch16k
         $3e466  xx xx xx:   xxx AddDisplacementVectorLong
-        $3e469  xx xx xx:   xxx $3ea72
+        $3e469  xx xx xx:   xxx ClampScreenPosition
         $3e46c  xx xx:      xxx #$xx
 -       $3e46e  xx xx:      xxx $xx,x
         $3e470  xx xx:      xxx $xx,x
@@ -60993,10 +61003,12 @@ ExitTypeJump_0_Normal
         $3e481  xx xx xx:   xxx BankSwitch16k
         $3e484  xx xx:      xxx #$xx
         $3e486  xx xx xx:   xxx $35cef
+        ;; Clear out the nametable write buffer (note that any
+        ;; unfinished writes will be lost).
 +       $3e489  xx xx:      xxx #$xx
         $3e48b  xx xx:      xxx #$xx
--       $3e48d  xx xx xx:   xxx $xxxx,x
-        $3e490  xx:         xxx
+-       $3e48d  xx xx xx:    xxx $xxxx,x
+        $3e490  xx:          xxx
         $3e491  xx xx:      xxx - ; $3e48d
         $3e493  xx xx xx:   xxx $3e8f6
         $3e496  xx xx:      xxx #$xx
@@ -61068,7 +61080,7 @@ ExitTypeJump_1_Seamless
         $3e523  xx:         xxx
         $3e524  xx xx:      xxx #$xx
         $3e526  xx xx:      xxx - ; $3e520
-        $3e528  xx xx xx:   xxx $3e628
+        $3e528  xx xx xx:   xxx ChangeLocation
         $3e52b  xx xx:      xxx #$xx ; 34000 -> 8000
         $3e52d  xx xx xx:   xxx BankSwitch8k_8000
         $3e530  xx xx xx:   xxx $34c0e
@@ -61605,12 +61617,12 @@ DataTable_3e8b6
         $3e8f0              .byte $xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
         $3e8f6  xx xx xx:   xxx $xxxx
-        $3e8f9  xx xx:      xxx $xx
-        $3e8fb  xx xx:      xxx $xx
-        $3e8fd  xx xx xx:   xxx $xxxx
-        $3e900  xx xx xx:   xxx $3eadf
-;;; --------------------------------
-        $3e903  xx xx xx:   xxx $3e90a
+        $3e8f9  xx xx:      xxx + ; $3e903
+        $3e8fb  xx xx:      xxx + ; $3e903
+        $3e8fd  xx xx xx:    xxx $xxxx
+        $3e900  xx xx xx:    xxx $3eadf
+        ;;;                  ----------
++       $3e903  xx xx xx:   xxx $3e90a
         $3e906  xx xx xx:   xxx FindExit
         $3e909  xx:         xxx
 ;;; --------------------------------
@@ -61686,6 +61698,11 @@ DataTable_3e8b6
         $3e98e  xx xx:       xxx $xx,x
         $3e990  xx:          xxx
         $3e991  xx xx:      xxx - ; $3e98a
+Unknown_3e993
+        ;; This seems to be reusing AddDisplacementVectorLong
+        ;; to move the screen coordinates.  This is done while
+        ;; the screen is faded to black in between maps to
+        ;; redraw the screen a few rows at a time.
         $3e993  xx xx:      xxx $xx
         $3e995  xx xx:      xxx $xx
         $3e997  xx xx:      xxx $xx
@@ -61894,12 +61911,12 @@ ClampScreenPosition
 +       $3eade  xx:         xxx
 ;;; --------------------------------
         $3eadf  xx xx xx:   xxx $xxxx
-        $3eae2  xx xx:      xxx >>rts ; $3eb04
+        $3eae2  xx xx:       xxx >>rts ; $3eb04
         $3eae4  xx xx xx:   xxx $xxxx
         $3eae7  xx xx:      xxx + ; $3eaee
-        $3eae9  xx xx:      xxx #$xx
-        $3eaeb  xx xx:      xxx $xx
-        $3eaed  xx:         xxx
+        $3eae9  xx xx:       xxx #$xx
+        $3eaeb  xx xx:       xxx $xx
+        $3eaed  xx:          xxx
         ;; --------------------------------
 +       $3eaee  xx xx:      xxx $xx
         $3eaf0  xx xx:      xxx #$xx
@@ -61911,7 +61928,7 @@ ClampScreenPosition
         $3eafc  xx xx:      xxx $xx,x
         $3eafe  xx:         xxx
         $3eaff  xx xx:      xxx - ; $3eafa
-        $3eb01  xx xx xx:   xxx $3e993
+        $3eb01  xx xx xx:   xxx Unknown_3e993
         ;; --------------------------------
         $3eb04  xx:         xxx
 ;;; --------------------------------

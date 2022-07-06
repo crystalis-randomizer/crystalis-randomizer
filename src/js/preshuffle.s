@@ -1126,51 +1126,46 @@ UpdateEnemyHPDisplay:
 .popseg
 
 
-;;; Change the page of the 01 game mode to 1e (3c/3d).
-.pushseg "fe", "ff"
-.org $cb2f
-  .byte $1e
-.org $cae0
-  .word (LocationChangeInitialHook)
-.popseg
-
-
 ;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
 .pushseg "3d"
 
 
-;;; New version of GameMode_01, in the expanded PRG
-.reloc
-LocationChangeInitialHook:
-    .ifdef _ENEMY_HP
-  jsr ClearCurrentEnemyHPSlotAndRedraw
-    .endif
-  jmp $ca2e ; MainGameModeJump_01_LocationChange
+;; ;;; New version of GameMode_01, in the expanded PRG
+;; .pushseg "3d", "fe", "ff"
+;; .reloc
+;; LocationChangeInitialHook:
+;;     .ifdef _ENEMY_HP
+;;   jsr ClearCurrentEnemyHPSlotAndRedraw
+;;   jsr $c676 ; WaitForNametableFlush
+;;     .endif
+;;   jmp $ca2e ; MainGameModeJump_01_LocationChange
+
+;; ;;; Change the page of the 01 game mode to 1e (3c/3d).
+;; .org $cb2f
+;;   .byte $1e ; page 3d
+;; .org $cae0
+;;   .word (LocationChangeInitialHook)
+;; .popseg
 
 
+;;; Call ClearCurrentEnemyHPSlotAndRedraw from ExitTypeJump_0_Normal.
+;;; This ensures the enemy HP is erased while the screen is faded out,
+;;; rather than a frame after it fades in (which is a little jarring).
+.pushseg "3d", "fe", "ff"
+.org $e453
+@StartReplace:
+  lda #$3d
+  jsr $c427 ; BankSwitch8k_A000
+  jsr @ClearCurrentEnemyHPSlotAndRedraw
+@EndReplace:
 .reloc
-ClearCurrentEnemyHPSlotAndRedraw:
+@ClearCurrentEnemyHPSlotAndRedraw:
   jsr $c72b ; WaitForNametableBufferAvailable
-  ;; Write 30 copies of $1c at y=$1c, x=$01 (nt1): PPU$2781
-  ldx #$1e
-  lda #$1c
--  sta $6000,x
-   dex
-  bpl -
-  ;; Stage the write
-  ldx $0b
-  lda #$27
-  sta $6200,x
-  lda #$81
-  sta $6201,x
-  lda #$1e
-  sta $6202,x
-  lda #0
-  sta $6203,x
-  ; jsr $c67d ; WriteNametableDataToPpu
-  jsr $cb82 ; ImmediateWriteNametableDataToPpu
-
-  jmp ClearCurrentEnemyHPSlot
+  jsr ClearCurrentEnemyHPSlot
+  jsr UpdateEnemyHPDisplayInternal
+  .move @EndReplace - @StartReplace, @StartReplace
+  rts
+.popseg
 
 
 ;;; ----------------------------------------------------

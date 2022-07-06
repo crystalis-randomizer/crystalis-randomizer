@@ -185,6 +185,120 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
     rom.writeMonsterNames = true;
   }
   if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
+
+  if (flags.hasStatTracking()) updateGraphicsForStatTracking(rom);
+}
+
+function updateGraphicsForStatTracking(rom: Rom): void {
+  // Change the bottom right 16x16 square of the rabbit hopping through the field
+  // in the credits to use a different square. The original had a custom grass
+  // graphic that uses 4 tiles and frankly is hard to notice at all.
+  // Changing this frees up those 4 tiles so we can reuse them as background tiles
+  // in the final scene
+  rom.prg[0x22eea] = 0x28;
+
+  // Change those 4 freed up tiles to be clear background tiles (one for each color in the palette)
+  const page = 0x54 << 6;
+  const tileOffset = 0x29;
+  for (let i = 0; i < 4; i++) {
+    rom.patterns.set(page, tileOffset + i, Patterns.BLANK_TILES[i]);
+  }
+
+  // now replace any of the $29-$2c tiles in $23004 - $23304 with the new color tiles
+  const startAddr = 0x23004;
+  const endAddr = 0x23304;
+  // the original color tiles are $2a-$2d, so we need to offset by one.
+  const blankOffset = 0x80 - 1;
+  for (let addr = startAddr; addr < endAddr; addr++) {
+    
+    if (rom.prg[addr] >= 0x29 && rom.prg[addr] <= 0x2c) {
+      rom.prg[addr] += blankOffset;
+    }
+  }
+
+  // now the goofy part. This ruins Draygon2 fight scene because the same tile offsets are drawn
+  // whether the game has the draygon 2 bank active or the credits bank active,
+  // and so the tile sets are no longer matching between the two.
+  // we can fix this adding some new squares to the end of the 16x16 square lookup table
+  // that uses the original tile addresses, and relocate the tiles that this scene draws
+  // to use the newly created offsets.
+
+  // Create a new blank BG tile at 0xa0
+  const origBlankSquare = 0x2a;
+  const newBlankOffset = 0xa0;
+  for (let addr = startAddr; addr < endAddr; addr += 0xc0) {
+    rom.prg[addr + newBlankOffset] = origBlankSquare;
+  }
+  // have draygon two fight use the new blank tile offset
+  const newTileOffsetMapping = new Map<number, number>([
+    [0x42,newBlankOffset],
+  ])
+  const draygon2StartAddr = 0x22c85;
+  const draygon2EndAddr = 0x22cd2;
+  for (let addr = draygon2StartAddr; addr < draygon2EndAddr; addr++) {
+    if (newTileOffsetMapping.has(rom.prg[addr]))
+      rom.prg[addr] = newTileOffsetMapping.get(rom.prg[addr])!;
+  }
+  // patch up the offsets 0x7b - 0x7f which are only used by draygon 2
+  // so that they also use the original blank
+  for (let addr = startAddr; addr < endAddr; addr += 0xc0) {
+    for (let offset = 0x7b; offset <= 0x7f; offset++)
+      if (rom.prg[addr + offset] == origBlankSquare + blankOffset)
+        rom.prg[addr + offset] = origBlankSquare;
+  }
+
+  // Now we need to clear up some room for the HUD palette.
+  // The final screen has a mostly unused palette thats super close to another,
+  // so just replace them no one will notice :^)
+
+  // update the attributes for the nametable to replace any that use palette 2
+  const replacePalette = 0x3;
+  const withPalette = 0x2;
+  const theendAttrOffset = 0x233f8;
+  const theendAttrEnd = 0x23438;
+  for (let addr = theendAttrOffset; addr < theendAttrEnd; addr++) {
+    let newAttr = rom.prg[addr];
+    for (let j = 0; j < 8; j += 2) {
+      const oldPal = replacePalette << j;
+      const newPal = withPalette << j;
+      if ((newAttr & oldPal) == oldPal) {
+        // unset the previous palette for this attr and or in the new one
+        newAttr = (newAttr & (0xff ^ (0b11 << j))) | newPal;
+      }
+    }
+    rom.prg[addr] = newAttr;
+  }
+
+  const theendPaletteOffset = 0x23438;
+  const replacedPaletteAddr = 0x4 * replacePalette;
+  const hudPalette = [0x0f, 0x30, 0x11, 0x0f];
+  for (let i = 0; i< hudPalette.length; i++) {
+    rom.prg[theendPaletteOffset + replacedPaletteAddr + i] = hudPalette[i];
+  }
+
+  // Replace the 3rd color in the rock palette color with the one used in the replaced palette.
+  // This brown color bleeds into the trees above the rocks, but its much
+  // more green/brown than the original, so its easier on the eyes.
+  // The end result is theres a slightly less vibrant brown used on the left side of the rocks
+  // which is almost unnoticable unless you put the two side by side
+  rom.prg[theendPaletteOffset + withPalette * 4 + 0x3] = 0x8;
+
+  // Last but not least, move THE END sprite over to the right side so it doesn't block the stats
+  const theendSpriteXStartAddr = 0x236da;
+  const theendSpriteEndAddr = 0x23746;
+  // just add 0x80 to each of the individual sprites x position
+  for (let addr = theendSpriteXStartAddr; addr < theendSpriteEndAddr; addr+=4) {
+    rom.prg[addr] += 0x80;
+  }
+
+  // And now we have the entire end credits mixed around such that we have
+  // - the HUD palette in index 3
+  // - THE END sprite moved to the right
+  // - attributes cleaned up to use only 3 palettes on the cliff side view scene
+  // - draygon 2 cleaned up to use the original blank tile
+  // - all other tiles used from the IntroMovie bank replaced into the Credits bank
+  //   (leaving us free to bank switch that CHR for the HUD bank)
+
 }
 
 function useElementSwordColors(rom: Rom): void {

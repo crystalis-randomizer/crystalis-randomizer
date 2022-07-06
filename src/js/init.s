@@ -303,6 +303,35 @@ PERMANENT_LENGTH  = CheckpointBase - StatTrackingBase
 CHECKPOINT_LENGTH = (StatsMimics - CheckpointBase)
 CHECKPOINT = CHECKPOINT_LENGTH
 
+; All Timestamp types listed below for reference
+; Bosses
+TsVamp1        = $00
+TsInsect       = $01
+TsKelbesque1   = $02
+TsSabera1      = $04
+TsMado1        = $05
+TsKelbesque2   = $06
+TsSabera2      = $07
+TsMado2        = $08
+TsKarmine      = $09
+TsDraygon1     = $0a
+TsDraygon2     = $0b
+TsVampire2     = $0c
+TsDyna         = $0d
+; Items
+TsFlight       = $03
+TsBowMoon      = $0e
+TsBowSun       = $0f
+TsBowTruth     = $10
+TsWindSword    = $11
+TsFireSword    = $12
+TsWaterSword   = $13
+TsThunderSword = $14
+TsCrystalis    = $15
+; Other
+TsComplete     = $16
+TS_COUNT       = $17
+
 .endif
 
 ;;; Constants

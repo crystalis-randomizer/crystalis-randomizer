@@ -3466,34 +3466,6 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 ; Make sure the stats doesn't bleed into the checksum for save files
 .assert StatTrackingBase + PERMANENT_LENGTH + CHECKPOINT_LENGTH * 2 < $70f0
 
-; All Timestamp types listed below for reference
-; Bosses
-TsVamp1        = $00
-TsInsect       = $01
-TsKelbesque1   = $02
-TsSabera1      = $04
-TsMado1        = $05
-TsKelbesque2   = $06
-TsSabera2      = $07
-TsMado2        = $08
-TsKarmine      = $09
-TsDraygon1     = $0a
-TsDraygon2     = $0b
-TsVampire2     = $0c
-TsDyna         = $0d
-; Items
-TsFlight       = $03
-TsBowMoon      = $0e
-TsBowSun       = $0f
-TsBowTruth     = $10
-TsWindSword    = $11
-TsFireSword    = $12
-TsWaterSword   = $13
-TsThunderSword = $14
-TsCrystalis    = $15
-; Other
-TsComplete     = $16
-TS_COUNT       = $17
 
 .pushseg "0e", "0f"
 
@@ -3583,7 +3555,30 @@ AddTimestamp:
 
 .pushseg "10", "11"
 
+CreditWriteNametable = $a81c
+.org $a19c
+  .word (DrawStatsToNMT2)
 
+.reloc
+;; Instead of just waiting for the timer, redraw the background into a second nametable\
+DrawStatsToNMT2:
+  ; start by drawing the the same background in CreditScene_19
+  lda $b304
+  sta $88
+  lda $b305
+  sta $89
+  lda #$00
+  sta $8a
+  lda #$28
+  sta $8b
+  jsr CreditWriteNametable
+  ; go ahead and do some bank switching to add the letters to the CHR tile bank
+
+  inc $0600
+  rts ; TODO rest of the owl
+
+
+.pushseg "3c"
 ; At this point, all of the objects are gone, so we are free to use
 ; RAM for whatever we want
 TsAddr = $90
@@ -3592,14 +3587,22 @@ DisplayY = $93
 ConvertTmp = $94 ; and $95
 .reloc
 ConvertTimestampToAscii:
-  
+  lda #0
+  sta Divisor + 1
+  sta Divisor + 2
+  lda #180
+  sta Divisor
 
+
+;; Long division routine copied from here:
+;; https://codebase64.org/doku.php?id=base:24bit_division_24-bit_result
+;; I could shave off bytes/cycles if I made it a 8 bit divisor, but lazy
 Remainder = $a0
 Dividend  = $a3
 Divisor   = $a6
 DivTmp    = $a9
 .reloc
-LongDivision24bitBy8Bit:
+LongDivision24bit:
   lda #0              ;preset remainder to 0
   sta Remainder
   sta Remainder+1
@@ -3633,6 +3636,8 @@ LongDivision24bitBy8Bit:
   bne @Loop
   rts
 
+.popseg ; "3c"
+
 .popseg ; "10", "11"
 
 .pushseg "17"
@@ -3663,7 +3668,7 @@ LoadStatsFromCheckpoint:
     bpl -
   jmp CopyExtraStateFromCheckpoint
 
-.popseg ; "2e"
+.popseg ; "17"
 
 .pushseg "fe", "ff"
 

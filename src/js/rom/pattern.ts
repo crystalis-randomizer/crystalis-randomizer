@@ -152,6 +152,22 @@ export class Pattern extends Entity {
     | oo..o__|
     |  o..o__|
   `, {' ': 0, '.': 1, '_': 2, 'o': 3});
+  private static readonly BLANK_TILE_TEMPLATE = `
+    |        |
+    |        |
+    |        |
+    |        |
+    |        |
+    |        |
+    |        |
+    |        |
+  `;
+  public static readonly BLANK_TILES = [
+    parsePattern(Patterns.BLANK_TILE_TEMPLATE, {' ': 0}),
+    parsePattern(Patterns.BLANK_TILE_TEMPLATE, {' ': 1}),
+    parsePattern(Patterns.BLANK_TILE_TEMPLATE, {' ': 2}),
+    parsePattern(Patterns.BLANK_TILE_TEMPLATE, {' ': 3}),
+  ];
 }
 
 function parsePattern(data: String, key: Record<string, number>): number[] {

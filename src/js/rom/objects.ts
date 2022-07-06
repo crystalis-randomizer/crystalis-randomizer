@@ -171,7 +171,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x66,
     scaling: 14,
     class: 'brain',
-    displayName: 'Brain',
+    displayName: 'Poison Brain',
   });
   iceGolem = new Monster(this, {
     id: 0x67,
@@ -189,7 +189,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x69,
     scaling: 18,
     class: 'slime',
-    displayName: 'Large Slime',
+    displayName: 'Large Poison Slime',
   });
   troll = new Monster(this, {
     id: 0x6a,
@@ -200,7 +200,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x6b,
     scaling: 18,
     class: 'jelly',
-    displayName: 'Jelly',
+    displayName: 'Poison Jelly',
   });
   medusa = new Monster(this, {
     id: 0x6c,
@@ -227,13 +227,13 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x71,
     scaling: 21,
     class: 'mushroom',
-    displayName: 'Mushroom',
+    displayName: 'Poison Mushroom',
   });
   earthEntity = new Monster(this, {
     id: 0x72,
     scaling: 22,
     class: 'entity',
-    displayName: 'Plant',
+    displayName: 'Poison Plant',
   });
   mimic = new Monster(this, {
     id: 0x73,
@@ -244,7 +244,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x74,
     scaling: 22,
     class: 'spider',
-    displayName: 'Spider',
+    displayName: 'Paralyzing Spider',
   });
   fishman = new Monster(this, {
     id: 0x75,

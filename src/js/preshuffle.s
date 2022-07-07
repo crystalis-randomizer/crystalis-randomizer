@@ -3481,27 +3481,34 @@ CheckForStatTrackedItems:
   bmi @Sword
   cmp #$48
   beq @Flight
-  ; in range bow of moon - truth
-  sec
-  sbc #$3e
-  sbc #$40 - $3e + 1
-  bcc @Bow
+  cmp #$3e
+  beq @BowOfMoon
+  cmp #$3f
+  beq @BowOfSun
+  cmp #$40
+  beq @BowOfTruth
 @Exit:
   rts
 @Sword:
   clc
   adc #TsWindSword
   tay
-  jmp AddTimestamp
+  bmi @AddTimestampAndExit
   ; implicit rts
 @Flight:
   ldy #TsFlight
-  jmp AddTimestamp
+  bmi @AddTimestampAndExit
   ; implicit rts
-@Bow:
-  ; carry already clear
-  adc #TsBowMoon
-  tay
+@BowOfSun:
+  ldy #TsBowSun
+  bmi @AddTimestampAndExit
+@BowOfMoon:
+  ldy #TsBowMoon
+  bmi @AddTimestampAndExit
+@BowOfTruth:
+  ldy #TsBowTruth
+  ; fallthrough
+@AddTimestampAndExit:
   jmp AddTimestamp
   ; implicit rts
 
@@ -3513,6 +3520,13 @@ CheckForStatTrackedItems:
 SetBossDeathTimestamp:
   ; do the original action at the place we patched
   sta $0600,x
+  ; Check if its one of the bosses we do not track (and replaced with bows)
+  cpx #TsBowMoon
+  beq @Exit
+  cpx #TsBowSun
+  beq @Exit
+  cpx #TsBowTruth
+  beq @Exit
   ; A = Y, x is obj index, y is the boss id
   ; A = Y so we don't need to preserve A
   pha
@@ -3523,11 +3537,12 @@ SetBossDeathTimestamp:
     tax
   pla
   tay
+@Exit:
   rts
 
 ;;;
 ; Writes the current timestamp to SRAM.
-; [In y] - index of the type of timestamp to write
+; [In a=y] - index of the type of timestamp to write
 ; Notice this does NOT preserve registers!
 .reloc
 AddTimestamp:
@@ -3552,6 +3567,9 @@ AddTimestamp:
   inc TimestampCount
   rts
 .popseg ; "0e", "0f"
+
+;;; -----------------------
+; THE END Credits scene drawing
 
 .pushseg "10", "11"
 
@@ -3642,6 +3660,11 @@ UpdateAttributeTable:
 DrawAllStats:
   ; Start by drawing the border and background
   jsr DrawBox
+  jsr FlushNametableDataWrite
+  jsr DrawBasicStats
+  jsr FlushNametableDataWrite
+  jsr DrawTimestamps
+  jsr FlushNametableDataWrite
   rts
 
 .reloc
@@ -3737,9 +3760,9 @@ DrawBox:
   adc #4
   and #$1f
   tax
-  lda #$20
+  lda #$23
   sta $6200,x
-  lda #$00
+  lda #$a0
   sta $6201,x
   lda #$12
   sta $6202,x
@@ -3779,23 +3802,10 @@ DrawBox:
   ldy #$00
   sta $6000, y
 
-
   ldx #25 ; loop counter we have 26 rows to draw
 @UpdateBuffer:
-    jsr DisableNMI
-    ; wait until the next nmt slot is available
-    ; if next next one isn't available, when we bump the pointer at the end
-    ; then Write == Read and nmi buffer doesn't run since it thinks theres no updates
-    lda NmtBufWriteOffset
-    adc #4
-    and #$1f
-    cmp NmtBufReadOffset
-    bne +
-      jsr EnableNMI
-      ; wait for nmi
-      jsr FlushNametableDataWrite
-      jsr DisableNMI
-+   ldy NmtBufWriteOffset
+    jsr WaitForNMTSlot
+    ldy NmtBufWriteOffset
     lda $a1
     sta $6200,y
     lda $a0
@@ -3824,13 +3834,262 @@ DrawBox:
   ; and done!
   rts
 
+.define Hex0    $b0
+.define DecOnes $b1
+.define DecTens $b2
+.define DecHundreds $b3
+.reloc
+HexToDecimal8Bit:
+;Given: Hex value in Hex0
+;Returns decimal value in DecOnes, DecTens, and DecHundreds.
+; copied from https://www.nesdev.org/wiki/HexToDecimal.8
+  lda #$00
+  sta DecOnes
+  sta DecTens
+  sta DecHundreds
+  lda Hex0
+  and #$0F
+  tax
+  lda @HexDigit00Table,x
+  sta DecOnes
+  lda @HexDigit01Table,x
+  sta DecTens
+  lda Hex0
+  lsr a
+  lsr a
+  lsr a
+  lsr a
+  tax
+  lda @HexDigit10Table,x
+  clc
+  adc DecOnes
+  sta DecOnes
+  lda @HexDigit11Table,x
+  adc DecTens
+  sta DecTens
+  lda @HexDigit12Table,x
+  sta DecHundreds
+  clc
+  ldx DecOnes
+  lda @DecimalSumsLow,x
+  sta DecOnes
+  lda @DecimalSumsHigh,x
+  adc DecTens
+  tax
+  lda @DecimalSumsLow,x
+  sta DecTens
+  lda @DecimalSumsHigh,x
+  adc DecHundreds
+  tax
+  lda @DecimalSumsLow,x
+  sta DecHundreds     ;118
+  rts
+
+@HexDigit00Table:
+@DecimalSumsLow:
+;55 bytes
+	.byte $0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$0,$1,$2,$3,$4,$5
+	.byte $6,$7,$8,$9,$0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$0,$1
+	.byte $2,$3,$4,$5,$6,$7,$8,$9,$0,$1,$2,$3,$4,$5,$6,$7
+	.byte $8,$9,$0,$1,$2,$3,$4
+@HexDigit01Table:
+@DecimalSumsHigh:
+;55 bytes
+	.byte $0,$0,$0,$0,$0,$0,$0,$0,$0,$0,$1,$1,$1,$1,$1,$1
+	.byte $1,$1,$1,$1,$2,$2,$2,$2,$2,$2,$2,$2,$2,$2,$3,$3
+	.byte $3,$3,$3,$3,$3,$3,$3,$3,$4,$4,$4,$4,$4,$4,$4,$4
+	.byte $4,$4,$5,$5,$5,$5,$5
+@HexDigit10Table:
+  .byte $0,$6,$2,$8,$4,$0,$6,$2,$8,$4,$0,$6,$2,$8,$4,$0
+@HexDigit11Table:
+	.byte $0,$1,$3,$4,$6,$8,$9,$1,$2,$4,$6,$7,$9,$0,$2,$4
+@HexDigit12Table:
+	.byte $0,$0,$0,$0,$0,$0,$0,$1,$1,$1,$1,$1,$1,$2,$2,$2
+
+.reloc
+;; We have a box to draw to thats 15 wide and 26 tall
+DrawBasicStats:
+  jsr ClearBufferRAMForBox
+
+  ; Start by writing player name
+  ldx #$05
+-   lda $6400,x
+    sta $6000,x
+    dex
+    bpl -
+  
+  ldx #VictoryLen
+-   lda @Victory,x
+    sta $6000 + 6,x
+    dex
+    bpl -
+  
+  ldx #ChecksLen-1
+-   lda @Checks,x
+    sta $6020,x
+    dex
+    bpl -
+
+  lda StatsChecks
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecHundreds
+  beq +
+  sta $6028
++ lda DecTens
+  beq +
+  sta $6029
++ lda DecOnes
+  sta $602a
+  lda #$2d ; '-'
+  sta $602b
+
+  ldx #MimicsLen-1
+-   lda @Mimics,x
+    sta $6040,x
+    dex
+    bpl -
+  
+  ldx #DeathsLen-1
+-   lda @Deaths,x
+    sta $6060,x
+    dex
+    bpl -
+  
+  ldx #ResetsLen-1
+-   lda @Resets,x
+    sta $6080,x
+    dex
+    bpl -
+
+  jsr DisableNMI
+  ; The NMT buffer is flushed between writes, so we can just write from slot zero
+  lda #0
+  sta NmtBufReadOffset
+  lda #20
+  sta NmtBufWriteOffset
+  lda #$20
+.repeat 5, I
+  sta $6200 + I * 4
+.endrepeat
+.repeat 5, I
+  lda #$42  + I * $20
+  sta $6201 + I * 4
+.endrepeat
+  lda #$0f
+.repeat 5, I
+  sta $6202 + I * 4
+.endrepeat
+.repeat 5, I
+  lda #$00  + I * $20
+  sta $6203 + I * 4
+.endrepeat
+  jsr EnableNMI
+
+  rts
+  ; extra data to write
+@Victory:
+.byte " victory!"
+VictoryLen = * - @Victory
+@Checks:
+.byte "Checks:"
+ChecksLen = * - @Checks
+@Mimics:
+.byte "Mimics:"
+MimicsLen = * - @Mimics
+@Deaths:
+.byte "Deaths:"
+DeathsLen = * - @Deaths
+@Resets:
+.byte "Resets:"
+ResetsLen = * - @Resets
+
+
+.reloc
+DrawTimestamps:
+  jsr ClearBufferRAMForBox
+  rts
+; All timestamp names have to be 7 Chars or shorter to fit timestamps
+; example: `namehre h:mm:ss`
+@TsNameStart:
+@BowMoon:
+.byte "BowMoon"
+@BowSun:
+.byte "BowSun "
+@Kelbesque1:
+.byte "Kelbes1"
+@Flight:
+.byte "Flight "
+@Sabera1:
+.byte "Sabera1"
+@Mado1:
+.byte "Mado 1 "
+@Kelbesque2:
+.byte "Kelbes2"
+@Sabera2:
+.byte "Sabera2"
+@Mado2:
+.byte "Mado 2 "
+@Karmine:
+.byte "Karmine"
+@Draygon1:
+.byte "Draygn1"
+@Draygon2:
+.byte "Draygn2"
+@Dyna:
+.byte "DYNA   "
+@BowTruth:
+.byte "BowTrut"
+@WindSword:
+.byte "Wind", $0a, $0b, $0c
+@FireSword:
+.byte "Fire", $0a, $0b, $0c
+@WaterSword:
+.byte "Watr", $0a, $0b, $0c
+@ThunderSword:
+.byte "Thun", $0a, $0b, $0c
+@Crystalis:
+.byte "Crys", $0a, $0b, $0c
+TsNameLen = * - @TsNameStart
+; Verify that all the names are 7 characters long
+.assert (TS_COUNT * 7) = TsNameLen
+
+.reloc
+ClearBufferRAMForBox:
+  lda #$20
+  ldx #15
+@Loop:
+.repeat 7, I
+    sta $6000 + I * $20,x
+.endrepeat
+    dex
+    bpl @Loop
+  rts
+
+.reloc
+WaitForNMTSlot:
+  jsr DisableNMI
+  ; wait until the next nmt slot is available
+  ; if next next one isn't available, when we bump the pointer at the end
+  ; then Write == Read and nmi buffer doesn't run since it thinks theres no updates
+  lda NmtBufWriteOffset
+  adc #4
+  and #$1f
+  cmp NmtBufReadOffset
+  bne +
+    jsr EnableNMI
+    ; wait for nmi
+    jsr FlushNametableDataWrite
+    jsr DisableNMI
++ rts
 
 ; At this point, all of the objects are gone, so we are free to use
 ; RAM for whatever we want
-TsAddr = $90
-DisplayX = $92
-DisplayY = $93
-ConvertTmp = $94 ; and $95
+.define TsAddr     $90
+.define DisplayX   $92
+.define DisplayY   $93
+.define ConvertTmp $94
+; and $95
 .reloc
 ConvertTimestampToAscii:
   lda #0

@@ -210,8 +210,8 @@ function updateGraphicsForStatTracking(rom: Rom): void {
   // the original color tiles are $2a-$2d, so we need to offset by one.
   const blankOffset = 0x80 - 1;
   for (let addr = startAddr; addr < endAddr; addr++) {
-    
-    if (rom.prg[addr] >= 0x29 && rom.prg[addr] <= 0x2c) {
+    if (rom.prg[addr] >= 0x29 && rom.prg[addr] <= 0x2d) {
+      // console.log(`updated: ${addr.toString(16)} from ${rom.prg[addr].toString(16)} to ${(rom.prg[addr] + blankOffset).toString(16)}`)
       rom.prg[addr] += blankOffset;
     }
   }

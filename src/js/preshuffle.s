@@ -3548,7 +3548,7 @@ AddTimestamp:
     lda StatTimerHi
     sta TimestampList + 2,x
     cpy StatTimerLo
-  bne -
+    bne -
   inc TimestampCount
   rts
 .popseg ; "0e", "0f"
@@ -3559,8 +3559,19 @@ CreditWriteNametable = $a81c
 .org $a19c
   .word (DrawStatsToNMT2)
 
+; TODO Remove this debugging code to skip to the last part of the credits
+.org $a166
+  .word (SkipToTheGoodPart)
 .reloc
-;; Instead of just waiting for the timer, redraw the background into a second nametable\
+SkipToTheGoodPart:
+  lda #$18
+  sta $0600
+  rts
+
+; Force this part to be in $8000 bank so we can reuse $3d that store enemy name info
+.pushseg "10"
+.reloc
+;; Instead of just waiting for the timer, redraw the background into a second nametable
 DrawStatsToNMT2:
   ; start by drawing the the same background in CreditScene_19
   lda $b304
@@ -3572,13 +3583,248 @@ DrawStatsToNMT2:
   lda #$28
   sta $8b
   jsr CreditWriteNametable
+  jsr FlushNametableDataWrite
   ; go ahead and do some bank switching to add the letters to the CHR tile bank
+  lda #$3c ; Menu/HUD CHR bank
+  sta $07f0
+  jsr UpdateAttributeTable
+  ; switch to a spare code bank to store the bulk of the code to use
+  lda $6f
+  pha
+    lda #$3d
+    jsr BankSwitch8k_a000
+    jsr DrawAllStats
+  pla
+  sta $6f
+  jsr BankSwitch8k_a000
 
   inc $0600
-  rts ; TODO rest of the owl
+  rts
+
+.reloc
+; This has to happen while "11" is in the A000 bank so we can read the original attribute data
+; We will add the update header later in DrawAllStats
+UpdateAttributeTable:
+  ldx #$40
+- txa
+  and #$07
+  cmp #$04
+  bmi @SetToFF
+  beq @SetTox3x3
+  ; Otherwise just store the original byte
+  lda $b3f8,x
+  sta $6040,x
+  dex
+  bpl -
+  rts
+@SetTox3x3:
+  ; if we are on a boundary attribute (between the hud and the tiles)
+  ; then we need to load the original value and OR it with $33
+  ; (set the left two quadrantss to palette 3)
+  lda $b3f8,x
+  ora #$33
+  sta $6040,x
+  dex
+  bpl -
+  rts
+@SetToFF:
+  lda #$ff
+  sta $6040,x
+  dex
+  bpl -
+  rts
+
+.popseg ; "10"
+
+.pushseg "3d"
+
+.reloc
+DrawAllStats:
+  ; Start by drawing the border and background
+  jsr DrawBox
+  rts
+
+.reloc
+DrawBox:
+  ; draw top and bottom of the HUD
+  ldx #$11 - 2
+- lda #$19 ; top
+    sta $6002,x
+    dex
+    bpl -
+  lda #$18 ; top left
+  sta $6001
+  lda #$a9 ; clear tile
+  sta $6000
+  lda #$1a ; top right
+  sta $6011
+
+  ldx #$11 - 2
+- lda #$1c ; bot
+    sta $6022,x
+    dex
+    bpl -
+  lda #$1b ; bot left
+  sta $6021
+  lda #$a9 ; clear tile
+  sta $6020
+  lda #$1d ; bot right
+  sta $6031
+
+  ; clear out the area in overscan just in case emu is showing it
+  ldx #$12
+- lda #$a9 ; bot
+    sta $6080,x
+    dex
+    bpl -
+
+  ; write box top box bot and attribute headers
+  jsr DisableNMI
+  ldx NmtBufWriteOffset
+  ; top box line
+  lda #$20
+  sta $6200,x
+  lda #$20
+  sta $6201,x
+  lda #$12
+  sta $6202,x
+  lda #$00
+  sta $6203,x
+  txa
+  clc
+  adc #4
+  and #$1f
+  tax
+  ; bottom box line
+  lda #$23
+  sta $6200,x
+  lda #$80
+  sta $6201,x
+  lda #$12
+  sta $6202,x
+  lda #$20
+  sta $6203,x
+  txa
+  clc
+  adc #4
+  and #$1f
+  tax
+  ; write attribute table header that was drawn earlier
+  lda #$23
+  sta $6200,x
+  lda #$c0
+  sta $6201,x
+  lda #$40
+  sta $6202,x
+  lda #$40
+  sta $6203,x
+  txa
+  clc
+  adc #4
+  and #$1f
+  tax
+  ; clear out the overscan
+  lda #$20
+  sta $6200,x
+  lda #$00
+  sta $6201,x
+  lda #$12
+  sta $6202,x
+  lda #$80
+  sta $6203,x
+  txa
+  clc
+  adc #4
+  and #$1f
+  tax
+  lda #$20
+  sta $6200,x
+  lda #$00
+  sta $6201,x
+  lda #$12
+  sta $6202,x
+  lda #$80
+  sta $6203,x
+  txa
+  clc
+  adc #4
+  and #$1f
+  tax
+  stx NmtBufWriteOffset
+  jsr EnableNMI
+
+  jsr FlushNametableDataWrite
+
+  ; now spam the rest of the border
+  ; draw 26 lines of the same stuff
+  ; write to slots in $6000
+  lda #$40
+  sta $a0
+  lda #$20
+  sta $a1
+
+  lda #$20
+  ldy #$12
+@DrawWallLoop:
+    sta $6000, y
+    dey
+    bpl @DrawWallLoop
+  lda #$1e ; left wall
+  ldy #$01
+  sta $6000, y
+  lda #$1f ; right wall
+  ldy #$11
+  sta $6000, y
+  lda #$a9 ; background color
+  ldy #$00
+  sta $6000, y
 
 
-.pushseg "3c"
+  ldx #25 ; loop counter we have 26 rows to draw
+@UpdateBuffer:
+    jsr DisableNMI
+    ; wait until the next nmt slot is available
+    ; if next next one isn't available, when we bump the pointer at the end
+    ; then Write == Read and nmi buffer doesn't run since it thinks theres no updates
+    lda NmtBufWriteOffset
+    adc #4
+    and #$1f
+    cmp NmtBufReadOffset
+    bne +
+      jsr EnableNMI
+      ; wait for nmi
+      jsr FlushNametableDataWrite
+      jsr DisableNMI
++   ldy NmtBufWriteOffset
+    lda $a1
+    sta $6200,y
+    lda $a0
+    sta $6201,y
+    lda #$12
+    sta $6202,y
+    lda #$00
+    sta $6203,y
+    tya
+    clc
+    adc #4
+    and #$1f
+    sta NmtBufWriteOffset
+    jsr EnableNMI
+    ; bump the pointer to write to by $20
+    lda #$20
+    clc
+    adc $a0
+    sta $a0
+    lda $a1
+    adc #$00
+    sta $a1
+    dex
+    bpl @UpdateBuffer
+
+  ; and done!
+  rts
+
+
 ; At this point, all of the objects are gone, so we are free to use
 ; RAM for whatever we want
 TsAddr = $90

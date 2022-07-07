@@ -391,6 +391,7 @@ BankSwitch16k              = $c40e
 BankSwitch8k_8000          = $c418
 BankSwitch8k_a000          = $c427
 FlushNametableDataWrite    = $c676
+WaitForNametableBufferAvailable = $c72b
 MainLoop_01_Game           = $cab6
 CheckForPlayerDeath        = $cb84
 DialogAction_11            = $d21d

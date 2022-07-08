@@ -3,7 +3,10 @@
 ## Latest
 * Add presets for the 2022 tournament rounds.
 * Rudimentary sprite swapping to allow playing as Mesia.
+* Enemy HP is displayed at the bottom of the HUD (can be optionally disabled
+  with `Vh`, or force-disabled with `V!h`).
 * Increase pity MP to 2.
+* Add some unidentified and misspelled item names.
 * Bug fixes:
     * Fixed internal flag allocation bug to not reuse flags on multiple maps.
 

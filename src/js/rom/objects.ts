@@ -749,6 +749,20 @@ export class Objects extends EntityArray<ObjectData> {
       }
       a.assign('ENEMY_NAME_LENGTH', longestName);
       a.export('ENEMY_NAME_LENGTH');
+      a.segment('1a')
+      a.reloc('EnemyNameBlocklist')
+      a.label('EnemyNameBlocklist')
+      a.export('EnemyNameBlocklist')
+      let blockListLen = 0;
+      for (const obj of this) {
+        if (obj.hp > 0 && obj.displayName == '') {
+          a.byte(obj.id);
+          blockListLen++;
+        }
+      }
+      a.assign('ENEMY_NAME_BLOCKLIST_LEN', blockListLen);
+      a.export('ENEMY_NAME_BLOCKLIST_LEN');
+
       modules.push(a.module());
     }
     return modules;

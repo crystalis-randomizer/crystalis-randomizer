@@ -861,12 +861,15 @@ ClearEnemyHPRam:
 .segment "fe", "ff"  ; needs to be accessible from multiple banks
 .reloc
 ClearCurrentEnemyHPSlot:
-  lda #0
-  sta CurrentEnemySlot
-  lda ShouldRedisplayUI
-  ora #DRAW_ENEMY_STATS
-  sta ShouldRedisplayUI
-  rts
+  ; if the current slot is already cleared out then theres nothing to do
+  lda CurrentEnemySlot
+  beq +
+    lda #0
+    sta CurrentEnemySlot
+    lda ShouldRedisplayUI
+    ora #DRAW_ENEMY_STATS
+    sta ShouldRedisplayUI
++ rts
 .endif ; _ENEMY_HP
 .popseg
 
@@ -922,6 +925,7 @@ UpdateStatusBarDisplays:
 StoreObjectExp:
   lda ObjectExp,y
   sta $61
+  sty $62
   rts
 
 ;; Update the level up check
@@ -983,8 +987,12 @@ ExitWithoutDrawingEXP:
 .reloc
 RemoveEnemyAndPlaySFX:
   ;; the last attacked enemy is getting cleared out so we want to update the HP display
-  jsr ClearCurrentEnemyHPSlot
-  lda #SFX_MONSTER_HIT
+  ;; Check first if the current slot == this obj slot (stored in $62 at this point)
+  lda CurrentEnemySlot
+  cmp $62
+  bne +
+    jsr ClearCurrentEnemyHPSlot
++ lda #SFX_MONSTER_HIT
   jmp StartAudioTrack
   ; implicit rts
 .endif ; _ENEMY_HP
@@ -1092,9 +1100,9 @@ EnemyNameTable = $a000
 EnemyNameTableLo = $a000
 EnemyNameTableHi = $a100
 
-ENEMY_HP_VRAM_BUFFER_OFFSET = $60
+ENEMY_HP_VRAM_BUFFER_OFFSET = $a0
 ENEMY_HP_VRAM_UPDATE = $20
-ENEMY_NAME_VRAM_BUFFER_OFFSET = $80
+ENEMY_NAME_VRAM_BUFFER_OFFSET = $b0
 ENEMY_NAME_VRAM_UPDATE = $21
 ENEMY_NAME_BUFFER_SIZE = ENEMY_NAME_LENGTH + 2
 
@@ -1202,7 +1210,11 @@ UpdateEnemyHPDisplayInternal:
         jsr StageNametableWriteFromTable
         lda #ENEMY_NAME_VRAM_UPDATE
         jsr StageNametableWriteFromTable
-        jmp @Exit ; early exit
+    pla
+    tay
+  pla
+  tax
+  rts
 
 @EnemyAlive: ; (so update name)
       ldy CurrentEnemySlot
@@ -1389,6 +1401,7 @@ UpdateEnemyHPDisplayInternal:
 ;;; NOTE: must finish before 35152
 FREE_UNTIL $9152
 
+.import EnemyNameBlocklist, ENEMY_NAME_BLOCKLIST_LEN
 .ifdef _ENEMY_HP
 .reloc
 UpdateEnemyHP:
@@ -1398,14 +1411,20 @@ UpdateEnemyHP:
     ; Check to see if the monster we attacked is on the blocklist
     ; by looking to see if it has a name. If the name table hi addr is $00
     ; then we don't want to display it (even if it does have HP)
-    ldx ObjectNameId,y
-    lda EnemyNameTableHi,x
-    beq +
-      sty CurrentEnemySlot
-      lda ShouldRedisplayUI
-      ora #DRAW_ENEMY_STATS
-      sta ShouldRedisplayUI
-+   rts
+    lda ObjectNameId,y
+    ; The blocklist should never be empty, but if it somehow does, then this code would break horribly
+.assert ENEMY_NAME_BLOCKLIST_LEN > 0
+    ldx #ENEMY_NAME_BLOCKLIST_LEN-1
+-     cmp EnemyNameBlocklist,x
+      beq @Exit
+      dex
+      bpl -
+    sty CurrentEnemySlot
+    lda ShouldRedisplayUI
+    ora #DRAW_ENEMY_STATS
+    sta ShouldRedisplayUI
+@Exit:
+    rts
 .endif ; _ENEMY_HP
 
 ;;; Change sacred shield to block curse instead of paralysis

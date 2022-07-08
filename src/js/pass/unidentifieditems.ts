@@ -99,6 +99,7 @@ const STATUE_NAMES = [
   'Flail Guy Trophy',
   'Metroid Amiibo',
   'Model of Dyna',
+  'Jeff Peters Statue',
   'Mattrick Figurine',  // #2 speedrun 2017 (1h04m04s)
   'Dragondarch Statue', // #1 speedrun 2016 (58m14s)
   'Overswarm Statue',   // #1 speedrun 2019-2021 (52m53s)

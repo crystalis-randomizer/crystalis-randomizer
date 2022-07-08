@@ -1188,6 +1188,9 @@ UpdateEnemyHPDisplayInternal:
     pha
       ldy CurrentEnemySlot
       bne @EnemyAlive
+        ;; If the HP slot is already clear, then skip redrawing anything
+        cpy PreviousEnemySlot
+        beq @EarlyExit
         ;; y is 0 at this point - zero everything out
         sty PreviousEnemySlot
         sty RecentEnemyCurrHPHi
@@ -1210,6 +1213,7 @@ UpdateEnemyHPDisplayInternal:
         jsr StageNametableWriteFromTable
         lda #ENEMY_NAME_VRAM_UPDATE
         jsr StageNametableWriteFromTable
+@EarlyExit:
     pla
     tay
   pla

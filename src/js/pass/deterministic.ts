@@ -271,7 +271,7 @@ function updateGraphicsForStatTracking(rom: Rom): void {
 
   const theendPaletteOffset = 0x23438;
   const replacedPaletteAddr = 0x4 * replacePalette;
-  const hudPalette = [0x0f, 0x30, 0x11, 0x0f];
+  const hudPalette = [0x0f, 0x30, 0x0f, 0x11]; //[0x0f, 0x30, 0x11, 0x0f];
   for (let i = 0; i< hudPalette.length; i++) {
     rom.prg[theendPaletteOffset + replacedPaletteAddr + i] = hudPalette[i];
   }

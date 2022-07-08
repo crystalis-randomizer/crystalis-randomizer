@@ -3476,40 +3476,42 @@ CheckForStatTrackedItems:
   ; [in] a - current item id (also stored in $29).
   inc StatsChecks
   lda $29 ; reload the item to restore the minus flag (set by a cmp earlier)
-  bmi @Exit
-  cmp #$05 ; check to see if its a sword (items $00 - $04) are wind - crystalis
-  bmi @Sword
-  cmp #$48
-  beq @Flight
-  cmp #$3e
-  beq @BowOfMoon
-  cmp #$3f
-  beq @BowOfSun
-  cmp #$40
-  beq @BowOfTruth
+  pha
+    bmi @Exit
+    cmp #$05 ; check to see if its a sword (items $00 - $04) are wind - crystalis
+    bmi @Sword
+    cmp #$48
+    beq @Flight
+    cmp #$3e
+    beq @BowOfMoon
+    cmp #$3f
+    beq @BowOfSun
+    cmp #$40
+    beq @BowOfTruth
 @Exit:
+  pla
   rts
 @Sword:
-  clc
-  adc #TsWindSword
-  tay
-  bmi @AddTimestampAndExit
-  ; implicit rts
+    clc
+    adc #TsWindSword
+    bpl @AddTimestampAndExit ; unconditional
 @Flight:
-  ldy #TsFlight
-  bmi @AddTimestampAndExit
-  ; implicit rts
+    lda #TsFlight
+    bpl @AddTimestampAndExit ; unconditional
 @BowOfSun:
-  ldy #TsBowSun
-  bmi @AddTimestampAndExit
+    lda #TsBowSun
+    bpl @AddTimestampAndExit ; unconditional
 @BowOfMoon:
-  ldy #TsBowMoon
-  bmi @AddTimestampAndExit
+    lda #TsBowMoon
+    bpl @AddTimestampAndExit ; unconditional
 @BowOfTruth:
-  ldy #TsBowTruth
-  ; fallthrough
+    lda #TsBowTruth
+    ; fallthrough
 @AddTimestampAndExit:
-  jmp AddTimestamp
+    tay
+    jsr AddTimestamp
+  pla
+  rts
   ; implicit rts
 
 ; Patch ObjectActionJump_6f (boss death) to add a timestamp for their death
@@ -3520,7 +3522,7 @@ CheckForStatTrackedItems:
 SetBossDeathTimestamp:
   ; do the original action at the place we patched
   sta $0600,x
-  ; Check if its one of the bosses we do not track (and replaced with bows)
+  ; Check if its one of the bosses we do not track (and were replaced with bows)
   cpx #TsBowMoon
   beq @Exit
   cpx #TsBowSun
@@ -3548,12 +3550,13 @@ SetBossDeathTimestamp:
 AddTimestamp:
   ; double read the timestamp. this prevents an issue where reading is interrupted by NMI
   ; keep the lo value in X so we can check if it changed and read again if it does
+  ; brk 
+  ; nop
   ldx TimestampCount
   ; a = y since we just pushed it to the stack
   sta TimestampTypeList,x
-  txa
   asl ; clears carry
-  adc TimestampCount
+  adc TimestampTypeList,x
   tax
 -   ldy StatTimerLo
     tya
@@ -3582,7 +3585,7 @@ CreditWriteNametable = $a81c
   .word (SkipToTheGoodPart)
 .reloc
 SkipToTheGoodPart:
-  lda #$18
+  lda #$19
   sta $0600
   rts
 
@@ -3656,6 +3659,22 @@ UpdateAttributeTable:
 
 .pushseg "3d"
 
+.define Remainder  $a0
+.define Dividend   $a3
+.define Divisor    $a6
+.define DivTmp     $a9
+
+.define Hex0        $b0
+.define DecOnes     $b1
+.define DecTens     $b2
+.define DecHundreds $b3
+
+.define TmpHoursOnes   $90
+.define TmpMinutesOnes $91
+.define TmpMinutesTens $92
+.define TmpSecondsOnes $93
+.define TmpSecondsTens $94
+
 .reloc
 DrawAllStats:
   ; Start by drawing the border and background
@@ -3670,68 +3689,68 @@ DrawAllStats:
 .reloc
 DrawBox:
   ; draw top and bottom of the HUD
-  ldx #$11 - 2
-- lda #$19 ; top
-    sta $6002,x
-    dex
-    bpl -
-  lda #$18 ; top left
-  sta $6001
-  lda #$a9 ; clear tile
-  sta $6000
-  lda #$1a ; top right
-  sta $6011
+;   ldx #$11 - 2
+; - lda #$19 ; top
+;     sta $6002,x
+;     dex
+;     bpl -
+;   lda #$18 ; top left
+;   sta $6001
+;   lda #$a9 ; clear tile
+;   sta $6000
+;   lda #$1a ; top right
+;   sta $6011
 
-  ldx #$11 - 2
-- lda #$1c ; bot
-    sta $6022,x
-    dex
-    bpl -
-  lda #$1b ; bot left
-  sta $6021
-  lda #$a9 ; clear tile
-  sta $6020
-  lda #$1d ; bot right
-  sta $6031
+;   ldx #$11 - 2
+; - lda #$1c ; bot
+;     sta $6022,x
+;     dex
+;     bpl -
+;   lda #$1b ; bot left
+;   sta $6021
+;   lda #$a9 ; clear tile
+;   sta $6020
+;   lda #$1d ; bot right
+;   sta $6031
 
   ; clear out the area in overscan just in case emu is showing it
-  ldx #$12
-- lda #$a9 ; bot
-    sta $6080,x
-    dex
-    bpl -
+;   ldx #$12
+;   lda #$20 ; space tile
+; -   sta $6080,x
+;     dex
+;     bpl -
 
   ; write box top box bot and attribute headers
   jsr DisableNMI
   ldx NmtBufWriteOffset
-  ; top box line
-  lda #$20
-  sta $6200,x
-  lda #$20
-  sta $6201,x
-  lda #$12
-  sta $6202,x
-  lda #$00
-  sta $6203,x
-  txa
-  clc
-  adc #4
-  and #$1f
-  tax
-  ; bottom box line
-  lda #$23
-  sta $6200,x
-  lda #$80
-  sta $6201,x
-  lda #$12
-  sta $6202,x
-  lda #$20
-  sta $6203,x
-  txa
-  clc
-  adc #4
-  and #$1f
-  tax
+  ; ; top box line
+  ; lda #$20
+  ; sta $6200,x
+  ; lda #$20
+  ; sta $6201,x
+  ; lda #$12
+  ; sta $6202,x
+  ; lda #$00
+  ; sta $6203,x
+  ; txa
+  ; clc
+  ; adc #4
+  ; and #$1f
+  ; tax
+  ; ; bottom box line
+  ; lda #$23
+  ; sta $6200,x
+  ; lda #$80
+  ; sta $6201,x
+  ; lda #$12
+  ; sta $6202,x
+  ; lda #$20
+  ; sta $6203,x
+  ; txa
+  ; clc
+  ; adc #4
+  ; and #$1f
+  ; tax
   ; write attribute table header that was drawn earlier
   lda #$23
   sta $6200,x
@@ -3747,32 +3766,32 @@ DrawBox:
   and #$1f
   tax
   ; clear out the overscan
-  lda #$20
-  sta $6200,x
-  lda #$00
-  sta $6201,x
-  lda #$12
-  sta $6202,x
-  lda #$80
-  sta $6203,x
-  txa
-  clc
-  adc #4
-  and #$1f
-  tax
-  lda #$23
-  sta $6200,x
-  lda #$a0
-  sta $6201,x
-  lda #$12
-  sta $6202,x
-  lda #$80
-  sta $6203,x
-  txa
-  clc
-  adc #4
-  and #$1f
-  tax
+  ; lda #$20
+  ; sta $6200,x
+  ; lda #$00
+  ; sta $6201,x
+  ; lda #$12
+  ; sta $6202,x
+  ; lda #$80
+  ; sta $6203,x
+  ; txa
+  ; clc
+  ; adc #4
+  ; and #$1f
+  ; tax
+  ; lda #$23
+  ; sta $6200,x
+  ; lda #$a0
+  ; sta $6201,x
+  ; lda #$12
+  ; sta $6202,x
+  ; lda #$80
+  ; sta $6203,x
+  ; txa
+  ; clc
+  ; adc #4
+  ; and #$1f
+  ; tax
   stx NmtBufWriteOffset
   jsr EnableNMI
 
@@ -3781,32 +3800,36 @@ DrawBox:
   ; now spam the rest of the border
   ; draw 26 lines of the same stuff
   ; write to slots in $6000
-  lda #$40
+  ; lda #$40
+  lda #$00
   sta $a0
   lda #$20
   sta $a1
 
-  lda #$20
+  lda #$20 ; space tile
   ldy #$12
 @DrawWallLoop:
     sta $6000, y
     dey
     bpl @DrawWallLoop
   lda #$1e ; left wall
-  ldy #$01
-  sta $6000, y
+  ; ldy #$01
+  sta $6001
   lda #$1f ; right wall
-  ldy #$11
-  sta $6000, y
-  lda #$a9 ; background color
-  ldy #$00
-  sta $6000, y
+  ; ldy #$11
+  sta $6011
+  ; lda #$a9 ; background color
+  ; ldy #$00
+  ; sta $6000, y
 
-  ldx #25 ; loop counter we have 26 rows to draw
+  ; ldx #25 ; loop counter we have 26 rows to draw
+  ldx #28
 @UpdateBuffer:
-    jsr WaitForNMTSlot
+    jsr DisableNMIAndWaitForNMTSlot
     ldy NmtBufWriteOffset
+        
     lda $a1
+    ; ora #$80 ; TODO allow for multiple per frame, but limit it to once every 5 or so
     sta $6200,y
     lda $a0
     sta $6201,y
@@ -3821,8 +3844,8 @@ DrawBox:
     sta NmtBufWriteOffset
     jsr EnableNMI
     ; bump the pointer to write to by $20
-    lda #$20
     clc
+    lda #$20
     adc $a0
     sta $a0
     lda $a1
@@ -3834,10 +3857,6 @@ DrawBox:
   ; and done!
   rts
 
-.define Hex0    $b0
-.define DecOnes $b1
-.define DecTens $b2
-.define DecHundreds $b3
 .reloc
 HexToDecimal8Bit:
 ;Given: Hex value in Hex0
@@ -3917,12 +3936,28 @@ DrawBasicStats:
     sta $6000,x
     dex
     bpl -
-  
-  ldx #VictoryLen
--   lda @Victory,x
-    sta $6000 + 6,x
-    dex
-    bpl -
+  lda #$4c ; "L"
+  sta $6007
+  lda #$76 ; "v"
+  sta $6008
+  lda Difficulty
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecTens
+  sta $6009
+  lda DecOnes
+  sta $600a
+  ; lda 
+  ; sta $600b
+  lda #$44 ; "D"
+  sta $600c
+  lda Difficulty
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecTens
+  sta $600d
+  lda DecOnes
+  sta $600e
   
   ldx #ChecksLen-1
 -   lda @Checks,x
@@ -3943,13 +3978,41 @@ DrawBasicStats:
   sta $602a
   lda #$2d ; '-'
   sta $602b
+.import CHECK_COUNT_HUN, CHECK_COUNT_TEN, CHECK_COUNT_ONE
+  lda #CHECK_COUNT_HUN
+  beq +
+  sta $602c
++ lda #CHECK_COUNT_TEN
+  sta $602d
+  lda #CHECK_COUNT_ONE
+  sta $602e
 
+; Handle mimics
   ldx #MimicsLen-1
 -   lda @Mimics,x
     sta $6040,x
     dex
     bpl -
-  
+    
+  lda StatsMimics
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecTens
+  beq +
+  sta $6049
++ lda DecOnes
+  sta $604a
+  lda #$2d ; '-'
+  sta $604b
+.import MIMIC_COUNT_HUN, MIMIC_COUNT_TEN, MIMIC_COUNT_ONE
+  lda #MIMIC_COUNT_HUN
+  beq +
+  sta $604c
++ lda #MIMIC_COUNT_TEN
+  sta $604d
+  lda #MIMIC_COUNT_ONE
+  sta $604e
+
   ldx #DeathsLen-1
 -   lda @Deaths,x
     sta $6060,x
@@ -3968,7 +4031,7 @@ DrawBasicStats:
   sta NmtBufReadOffset
   lda #20
   sta NmtBufWriteOffset
-  lda #$20
+  lda #$20 | $80
 .repeat 5, I
   sta $6200 + I * 4
 .endrepeat
@@ -3988,9 +4051,6 @@ DrawBasicStats:
 
   rts
   ; extra data to write
-@Victory:
-.byte " victory!"
-VictoryLen = * - @Victory
 @Checks:
 .byte "Checks:"
 ChecksLen = * - @Checks
@@ -4008,7 +4068,216 @@ ResetsLen = * - @Resets
 .reloc
 DrawTimestamps:
   jsr ClearBufferRAMForBox
+
+  ; loop counter
+  lda TimestampCount
+  sta $c0
+  lda #0
+  sta $c1
+
+  ; ppuaddr
+  lda #$02
+  sta $c2
+  lda #$21
+  sta $c3
+
+  ; setup read offset to point to the 
+  ; clc
+  ; lda #<@TsNameStart
+  ; sta $c4
+  ; lda #>@TsNameStart
+  ; sta $c5
+
+  ; write offset
+  lda #$00
+  sta $c6
+  lda #$60
+  sta $c7
+@OuterLoop:
+
+  ; Get the read offset for this element
+  ldy $c1
+  ; Get the type of timestamp
+  lda TimestampTypeList, y
+  ; multiply i * 7 to get the offset into the timestamp name list
+  asl
+  asl
+  asl
+  sec
+  sbc TimestampTypeList, y
+  ; a = index into name list
+
+  ; update the read pointer
+  clc
+  adc #<@TsNameStart
+  sta $c4
+  lda #>@TsNameStart
+  adc #0
+  sta $c5
+
+  ; copy name of timestamp
+  ldy #TsNameLen-1
+  @CopyNameLoop:
+    lda ($c4),y
+    sta ($c6),y
+    dey
+    bpl @CopyNameLoop
+
+  ; Get the read offset for this element
+  ldy $c1
+  ; Get the type of timestamp
+  lda TimestampTypeList, y
+  ; multiply i * 3 to get offset into timestamp list
+  asl
+  adc TimestampTypeList, y
+  tax
+
+  ; read the 3 digits of the timestamp into the divide memory
+  lda TimestampList,x
+  sta Dividend
+  lda TimestampList+1,x
+  sta Dividend+1
+  lda TimestampList+2,x
+  sta Dividend+2
+  ; 60.1 frm/sec * 60 sec/min * 60 min/hr = 216360 or 34d28 in hex
+  lda #$28
+  sta Divisor
+  lda #$4d
+  sta Divisor+1
+  lda #$03
+  sta Divisor+2
+  jsr LongDivision24bit
+  ; results in Dividend, Remainder will be divided again to find minutes
+  lda Dividend
+  sta Hex0
+  jsr HexToDecimal8Bit
+  ; if theres a ten's place for the hours, then just write 9:99:99
+  lda DecTens
+  beq +
+    lda #9
+    sta TmpHoursOnes
+    sta TmpMinutesOnes
+    sta TmpSecondsOnes
+    sta TmpMinutesTens
+    sta TmpSecondsTens
+    jmp @WriteNumber
++ lda DecOnes
+  sta TmpHoursOnes
+
+  ; Update the minutes
+  lda Remainder
+  sta Dividend
+  lda Remainder + 1
+  sta Dividend + 1
+  lda Remainder + 2
+  sta Dividend + 2
+  ; 60.1 frm/sec * 60 sec/min = 3606 or 0e16 in hex
+  lda #$16
+  sta Divisor
+  lda #$0e
+  sta Divisor+1
+  lda #$00
+  sta Divisor+2
+  jsr LongDivision24bit
+  lda Dividend
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecTens
+  sta TmpMinutesTens
+  lda DecOnes
+  sta TmpMinutesOnes
+
+  ; update the seconds
+  
+  lda Remainder
+  sta Dividend
+  lda Remainder + 1
+  sta Dividend + 1
+  lda Remainder + 2
+  sta Dividend + 2
+  ; 60.1 frm/sec = 60 or 3c in hex
+  lda #$3c
+  sta Divisor
+  lda #$00
+  sta Divisor+1
+  lda #$00
+  sta Divisor+2
+  jsr LongDivision24bit
+  lda Dividend
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecTens
+  sta TmpSecondsTens
+  lda DecOnes
+  sta TmpSecondsOnes
+
+  ; Finally draw write the numbers to the $6000 address
+
+@WriteNumber:
+  ldy #8
+  lda TmpHoursOnes
+  sta ($c6),y
+  iny
+  lda #$3a     ; ':'
+  sta ($c6),y
+  iny
+  lda TmpMinutesTens
+  sta ($c6),y
+  iny
+  lda TmpMinutesOnes
+  sta ($c6),y
+  iny
+  lda #$3a     ; ':'
+  sta ($c6),y
+  iny
+  lda TmpSecondsTens
+  sta ($c6),y
+  iny
+  lda TmpSecondsOnes
+  sta ($c6),y
+  
+  ; add the header
+  jsr DisableNMIAndWaitForNMTSlot
+  ldy NmtBufWriteOffset
+  lda $c3
+  ora #$80 ; enable multiple writes per NMI
+  sta $6200,y
+  lda $c2
+  sta $6201,y
+  lda #$0f ; 15 bytes fixed length
+  sta $6202,y
+  lda $c6
+  sta $6203,y
+  tya
+  clc
+  adc #4
+  and #$1f
+  sta NmtBufWriteOffset
+  jsr EnableNMI
+
+  ; update PPUADDR for next slot
+  clc
+  lda #$20
+  adc $c2
+  sta $c2
+  lda #$00
+  adc $c3
+  sta $c3
+
+  ; update the write pointer to the next available slot
+  clc
+  lda #$20
+  adc $c6
+  sta $c6
+
+  inc $c1
+  lda $c1
+  cmp $c0
+  beq @Exit
+  jmp @OuterLoop
+@Exit:
   rts
+
 ; All timestamp names have to be 7 Chars or shorter to fit timestamps
 ; example: `namehre h:mm:ss`
 @TsNameStart:
@@ -4050,9 +4319,10 @@ DrawTimestamps:
 .byte "Thun", $0a, $0b, $0c
 @Crystalis:
 .byte "Crys", $0a, $0b, $0c
-TsNameLen = * - @TsNameStart
+TsAllNameLen = * - @TsNameStart
+TsNameLen = 7
 ; Verify that all the names are 7 characters long
-.assert (TS_COUNT * 7) = TsNameLen
+.assert (TS_COUNT * TsNameLen) = TsAllNameLen
 
 .reloc
 ClearBufferRAMForBox:
@@ -4067,7 +4337,7 @@ ClearBufferRAMForBox:
   rts
 
 .reloc
-WaitForNMTSlot:
+DisableNMIAndWaitForNMTSlot:
   jsr DisableNMI
   ; wait until the next nmt slot is available
   ; if next next one isn't available, when we bump the pointer at the end
@@ -4083,31 +4353,12 @@ WaitForNMTSlot:
     jsr DisableNMI
 + rts
 
-; At this point, all of the objects are gone, so we are free to use
-; RAM for whatever we want
-.define TsAddr     $90
-.define DisplayX   $92
-.define DisplayY   $93
-.define ConvertTmp $94
-; and $95
-.reloc
-ConvertTimestampToAscii:
-  lda #0
-  sta Divisor + 1
-  sta Divisor + 2
-  lda #180
-  sta Divisor
-
-
 ;; Long division routine copied from here:
 ;; https://codebase64.org/doku.php?id=base:24bit_division_24-bit_result
-;; I could shave off bytes/cycles if I made it a 8 bit divisor, but lazy
-Remainder = $a0
-Dividend  = $a3
-Divisor   = $a6
-DivTmp    = $a9
 .reloc
 LongDivision24bit:
+  tya
+  pha
   lda #0              ;preset remainder to 0
   sta Remainder
   sta Remainder+1
@@ -4139,6 +4390,8 @@ LongDivision24bit:
 @Skip:
   dex
   bne @Loop
+  pla
+  tay
   rts
 
 .popseg ; "3c"

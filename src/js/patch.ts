@@ -355,6 +355,7 @@ async function shuffleInternal(rom: Uint8Array,
       for (const [slot, item] of fill) {
         parsed.slots[slot & 0xff] = item & 0xff;
       }
+      parsed.slots.setCheckCount(fill.size);
     } else {
       return [rom, -1];
       //console.error('COULD NOT FILL!');

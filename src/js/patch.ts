@@ -447,12 +447,13 @@ async function shuffleInternal(rom: Uint8Array,
     const toks = new TokenStream();
     toks.enter(TokenSource.concat(
         new Tokenizer(flagFile, 'flags.s'),
-        await tokenizer('init.s'),
-        await tokenizer('alloc.s'),
-        await tokenizer('cleanup.s'),
-        await tokenizer('preshuffle.s'),
-        await tokenizer('postparse.s'),
-        await tokenizer('postshuffle.s')));
+        await tokenizer('../asm/init.s'),
+        await tokenizer('../asm/alloc.s'),
+        await tokenizer('../asm/cleanup.s'),
+        await tokenizer('../asm/stattracker.s'),
+        await tokenizer('../asm/preshuffle.s'),
+        await tokenizer('../asm/postparse.s'),
+        await tokenizer('../asm/postshuffle.s')));
     const pre = new Preprocessor(toks, asm);
     asm.tokens(pre);
     return asm.module();

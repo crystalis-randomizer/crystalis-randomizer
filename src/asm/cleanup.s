@@ -463,6 +463,4 @@ FREE_UNTIL $ec6c
 .org $ed61
   jmp EnableNMI
 
-;;------------------------------
-
 .popseg ; "fe", "ff"

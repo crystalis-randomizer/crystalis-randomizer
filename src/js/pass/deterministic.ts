@@ -276,6 +276,7 @@ function updateGraphicsForStatTracking(rom: Rom): void {
     rom.prg[theendPaletteOffset + replacedPaletteAddr + i] = hudPalette[i];
   }
 
+
   // Replace the 3rd color in the rock palette color with the one used in the replaced palette.
   // This brown color bleeds into the trees above the rocks, but its much
   // more green/brown than the original, so its easier on the eyes.

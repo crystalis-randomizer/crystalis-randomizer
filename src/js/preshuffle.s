@@ -925,6 +925,9 @@ UpdateStatusBarDisplays:
 StoreObjectExp:
   lda ObjectExp,y
   sta $61
+  ; After player level up, we need the original object slot so we can check to see
+  ; if the monster that just died is the same one thats in the HP bar. If this monster
+  ; is blocklisted then we shouldn't clear the HP bar when it dies
   sty $62
   rts
 
@@ -988,6 +991,8 @@ ExitWithoutDrawingEXP:
 RemoveEnemyAndPlaySFX:
   ;; the last attacked enemy is getting cleared out so we want to update the HP display
   ;; Check first if the current slot == this obj slot (stored in $62 at this point)
+  ;; If the moster that just died is not the current monster, then its very likely that
+  ;; this monster is blocklisted, so don't clear the HP bar.
   lda CurrentEnemySlot
   cmp $62
   bne +
@@ -1190,9 +1195,10 @@ UpdateEnemyHPDisplayInternal:
       bne @EnemyAlive
         ;; If the HP slot is already clear, then skip redrawing anything
         cpy PreviousEnemySlot
-        beq @EarlyExit
+        bne +
+          jmp @Exit
         ;; y is 0 at this point - zero everything out
-        sty PreviousEnemySlot
++       sty PreviousEnemySlot
         sty RecentEnemyCurrHPHi
         sty RecentEnemyCurrHPLo
         sty RecentEnemyMaxHPLo
@@ -1213,13 +1219,7 @@ UpdateEnemyHPDisplayInternal:
         jsr StageNametableWriteFromTable
         lda #ENEMY_NAME_VRAM_UPDATE
         jsr StageNametableWriteFromTable
-@EarlyExit:
-    pla
-    tay
-  pla
-  tax
-  rts
-
+        jmp @Exit
 @EnemyAlive: ; (so update name)
       ldy CurrentEnemySlot
       ; if the object id changed, update the name of the monster
@@ -1407,28 +1407,29 @@ FREE_UNTIL $9152
 
 .import EnemyNameBlocklist, ENEMY_NAME_BLOCKLIST_LEN
 .ifdef _ENEMY_HP
+
 .reloc
 UpdateEnemyHP:
     lda $62
     rol
     sta ObjectDef,y
     ; Check to see if the monster we attacked is on the blocklist
-    ; by looking to see if it has a name. If the name table hi addr is $00
-    ; then we don't want to display it (even if it does have HP)
+    ; by looking at the blocklist generated from the object data.
+    ; If a monster has HP but does not have a display name then it is
+    ; blocked from being displayed.
     lda ObjectNameId,y
     ; The blocklist should never be empty, but if it somehow does, then this code would break horribly
 .assert ENEMY_NAME_BLOCKLIST_LEN > 0
     ldx #ENEMY_NAME_BLOCKLIST_LEN-1
 -     cmp EnemyNameBlocklist,x
-      beq @Exit
+      beq +
       dex
       bpl -
     sty CurrentEnemySlot
     lda ShouldRedisplayUI
     ora #DRAW_ENEMY_STATS
     sta ShouldRedisplayUI
-@Exit:
-    rts
++   rts
 .endif ; _ENEMY_HP
 
 ;;; Change sacred shield to block curse instead of paralysis

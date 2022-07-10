@@ -13,6 +13,7 @@
     "clean": "rm -rf dist src/js/**/flycheck_*",
     "checkout": "sh scripts/update.sh out",
     "checkin": "sh scripts/update.sh in",
+    "merge": "sh scripts/update.sh merge",
     "buildchr": "sh scripts/buildchr.sh"
   },
   "bin": {

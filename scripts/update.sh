@@ -4,12 +4,11 @@
 #   out:
 #     Expects Crystalis.s to be non-writable.
 #     Reassembles it from the rom.
-#     Saves a pristine copy in Crystalis.s.out for merging.
+#     Saves a pristine copy in Crystalis.s.pristine for merging.
 #   in:
 #     Expects Crystalis.s to be writable.
 #     Rebuilds the Crystalis.st template file.
 #     Does a validity check to ensure it's correct.
-#     Deletes Crystalis.s.out.
 #   check:
 #     Fails if there's un-checked in changes
 #   merge:
@@ -34,6 +33,7 @@ while [ $# -gt 0 ]; do
     (-v)      verbose=true    ;;
     (out)     action=out      ;;
     (in)      action=in       ;;
+    (merge)   action=merge    ;;
     (check)   action=check    ;;
     (*) echo "Bad option: $1" >& 2; exit 1 ;;
   esac
@@ -60,6 +60,7 @@ case "$action" in
     fi
     chmod +w "$source"
     "$strip" -r "$rom" "$template" >| "$source"
+    rm -f "$pristine"
     cp "$source" "$pristine"
     chmod -w "$pristine"
     ;;
@@ -82,7 +83,7 @@ case "$action" in
       echo "Differences found.  Leaving $(basename "$tmp") for comparison" >& 2
       exit 7
     fi
-    rm -f "$tmp" "$pristine"
+    rm -f "$tmp"
     chmod -w "$source"
     ;;
   (check)
@@ -94,7 +95,7 @@ case "$action" in
     fi
     if ! diff --ignore-space-change -u "$source" "$tmp" > /dev/null 2> /dev/null; then
       echo "$source appears to be checked out.
-"'Please run `npm run checkin` to ensure consistency.' >& 2
+"'Please run `npm run checkin` or `npm run merge` to ensure consistency.' >& 2
       if $verbose; then
         diff --ignore-space-change -u "$source" "$tmp"
         echo "--------------------------------" >& 2
@@ -112,17 +113,17 @@ case "$action" in
     remote() { (cd "$tmpdir"; "$@") > /dev/null 2> /dev/null; }
     remote git init -b upstream
     f="$tmpdir/Crystalis.s"
-    cp "$pristine" "$f"
+    cat "$pristine" >| "$f"
     remote git add Crystalis.s
     remote git commit -m "Common ancestor"
     "$strip" -r "$rom" "$template" >| "$f"
     remote git commit -am "Upstream changes"
     remote git checkout -b local upstream^
-    cp "$source" "$f"
+    cat "$source" >| "$f"
     remote git commit -am "Local changes"
     remote git merge upstream
-    cp "$f" "$source"
     chmod +w "$source"
+    cp "$f" "$source"
     ;;
   (*)
     echo "No action given" >& 2

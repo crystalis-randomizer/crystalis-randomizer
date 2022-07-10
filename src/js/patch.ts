@@ -208,7 +208,9 @@ function defines(flags: FlagSet,
     _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
   };
   return Object.keys(defines)
-      .filter(d => defines[d]).map(d => `.define ${d} 1\n`).join('');
+      .filter(d => defines[d])
+      .map(d => `.define ${d} ${defines[d]}\n`)
+      .join('');
 }
 
 function patchGraphics(rom: Uint8Array, sprites: Sprite[]) {

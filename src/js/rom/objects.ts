@@ -72,7 +72,7 @@ export class Objects extends EntityArray<ObjectData> {
   blueBat = new Monster(this, {
     id: 0x55,
     scaling: 4,
-    displayName: 'Blue Bat',
+    displayName: 'Bat',
   });
   greenWyvern = new Monster(this, {
     id: 0x56,
@@ -238,7 +238,7 @@ export class Objects extends EntityArray<ObjectData> {
   mimic = new Monster(this, {
     id: 0x73,
     scaling: 22,
-    displayName: 'Treasure Mimic',
+    displayName: 'Mimic',
   });
   redSpider = new Monster(this, {
     id: 0x74,
@@ -427,7 +427,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x9b,
     scaling: 45,
     type: 'boss',
-    displayName: 'Emporer Draygon',
+    displayName: 'Emperor Draygon',
   });
   statueOfSun = new ObjectData(this, 0x9c); // scaling: 47 ?
   statueOfMoon = new ObjectData(this, 0x9d); // scaling: 47 ?

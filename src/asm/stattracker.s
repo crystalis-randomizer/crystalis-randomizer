@@ -9,7 +9,7 @@
 ;
 ; Patch locations and general changes for supporting stat tracking
 
-.pushseg "0e", "0f"
+.pushseg "0f"
 
 ; Added this to PatchStartItemGet
 ; X,Y Registers do NOT need to be preserved as they are all reloaded afterwards
@@ -63,17 +63,17 @@ SetBossDeathTimestamp:
   ; do the original action at the place we patched
   sta $0600,x
   ; Check if its one of the bosses we do not track (and were replaced with bows)
-  cpx #TsBowMoon
+  cpy #TsBowMoon
   beq @Exit
-  cpx #TsBowSun
+  cpy #TsBowSun
   beq @Exit
-  cpx #TsBowTruth
+  cpy #TsBowTruth
   beq @Exit
   ; A = Y, x is obj index, y is the boss id
-  ; A = Y so we don't need to preserve A
   pha
     txa
     pha
+      tya
       jsr AddTimestamp
     pla
     tax
@@ -106,7 +106,7 @@ AddTimestamp:
     bne -
   inc TimestampCount
   rts
-.popseg ; "0e", "0f"
+.popseg ; "0f"
 
 
 .pushseg "17"
@@ -192,20 +192,74 @@ ResetStatsCheckpoint:
 
 .pushseg "10", "11"
 
+
+NAMETABLE_ADDR = $2800
+
 CreditWriteNametable = $a81c
+WriteOAMDataFromTable = $a9d7
+
 .org $a19c
   .word (DrawStatsToNMT2)
 
 ; TODO Remove this debugging code to skip to the last part of the credits
-.org $a166
-  .word (SkipToTheGoodPart)
+; .org $a166
+;   .word (SkipToTheGoodPart)
+; .reloc
+; SkipToTheGoodPart:
+;   lda #$19
+;   sta $0600
+;   rts
+
+;; Patch the end credits main loop to check for the start button and skip to the end
+;; if its pressed
+.org $a14a
+  jsr CheckForStartAndSkip
+
 .reloc
-SkipToTheGoodPart:
-  lda #$19
-  sta $0600
+CheckForStartAndSkip:
+  lda $43 ; currently pressed 
+  cmp #$10 ; start
+  beq @SkipToTheEnd
+    ; start isn't pressed so return
+    lda $60e
+    rts
+@SkipToTheEnd:
+  lda $0600 ; check current scene to see if we can skip
+  cmp #$1b
+  bcc +
+    ; current scene is after where we skip to so return early
+    lda $60e
+    rts
+  ; skip ahead to loading the final scene, but fade out first
++ lda #$1b
+  sta $0600 ; Scene
+  lda #2    ; Fade out
+  sta $0602 ; Credits Mode
+  lda #$00  ; 0 frames
+  sta $0604
+  lda #$01  ; 1 second
+  sta $0605
+  ; double return so we skip any of this frame's scene
+  pla
+  pla
   rts
 
-; Force this part to be in $8000 bank so we can reuse $3d that store enemy name info
+; .org $a696 ; CreditScene_19
+;   jsr ResetScroll
+
+; .reloc
+; ResetScroll:
+;   ; Reset the scroll value in case we skipped here from a different spot
+;   lda #0
+;   sta $02
+;   sta $03
+;   sta $04
+;   sta $05
+;   lda $b304
+;   rts
+
+
+; Force this part to be in $8000 bank so we can reuse $3d (expanded bank with enemy name info)
 .pushseg "10"
 .reloc
 ;; Instead of just waiting for the timer, redraw the background into a second nametable
@@ -221,9 +275,16 @@ DrawStatsToNMT2:
   sta $8b
   jsr CreditWriteNametable
   jsr FlushNametableDataWrite
-  ; go ahead and do some bank switching to add the letters to the CHR tile bank
-  lda #$3c ; Menu/HUD CHR bank
-  sta $07f0
+  ; in case we got here through skipping the credits, then we need to draw the mesia/simea sprites
+  lda #$04 ; sprite index
+  sta $063e
+  lda #$05 ; simea mesia sprite
+  jsr WriteOAMDataFromTable
+  lda #$8c ; sprite index
+  sta $063e
+  lda #$07 ; THE END sprite
+  jsr WriteOAMDataFromTable
+
   jsr UpdateAttributeTable
   ; switch to a spare code bank to store the bulk of the code to use
   lda $6f
@@ -234,8 +295,6 @@ DrawStatsToNMT2:
   pla
   sta $6f
   jsr BankSwitch8k_a000
-
-  inc $0600
   rts
 
 .reloc
@@ -300,77 +359,31 @@ DrawAllStats:
   jsr FlushNametableDataWrite
   jsr DrawTimestamps
   jsr FlushNametableDataWrite
+
+  ; go ahead and do some bank switching to add the letters to the CHR tile bank
+  lda #$3c ; Menu/HUD CHR bank
+  sta $07f0
+
+  ; set scroll to nametable 2
+  lda #0
+  sta $02
+  sta $03
+  sta $04
+  lda #$01
+  sta $05
+  inc $0600
   rts
 
 .reloc
 DrawBox:
-  ; draw top and bottom of the HUD
-;   ldx #$11 - 2
-; - lda #$19 ; top
-;     sta $6002,x
-;     dex
-;     bpl -
-;   lda #$18 ; top left
-;   sta $6001
-;   lda #$a9 ; clear tile
-;   sta $6000
-;   lda #$1a ; top right
-;   sta $6011
 
-;   ldx #$11 - 2
-; - lda #$1c ; bot
-;     sta $6022,x
-;     dex
-;     bpl -
-;   lda #$1b ; bot left
-;   sta $6021
-;   lda #$a9 ; clear tile
-;   sta $6020
-;   lda #$1d ; bot right
-;   sta $6031
-
-  ; clear out the area in overscan just in case emu is showing it
-;   ldx #$12
-;   lda #$20 ; space tile
-; -   sta $6080,x
-;     dex
-;     bpl -
-
-  ; write box top box bot and attribute headers
+  ; space is tight in segment "10", "11" so write the attribute header here
+  ; write attribute headers
   jsr DisableNMI
   ldx NmtBufWriteOffset
-  ; ; top box line
-  ; lda #$20
-  ; sta $6200,x
-  ; lda #$20
-  ; sta $6201,x
-  ; lda #$12
-  ; sta $6202,x
-  ; lda #$00
-  ; sta $6203,x
-  ; txa
-  ; clc
-  ; adc #4
-  ; and #$1f
-  ; tax
-  ; ; bottom box line
-  ; lda #$23
-  ; sta $6200,x
-  ; lda #$80
-  ; sta $6201,x
-  ; lda #$12
-  ; sta $6202,x
-  ; lda #$20
-  ; sta $6203,x
-  ; txa
-  ; clc
-  ; adc #4
-  ; and #$1f
-  ; tax
-  ; write attribute table header that was drawn earlier
-  lda #$23
+  lda #>NAMETABLE_ADDR + $03
   sta $6200,x
-  lda #$c0
+  lda #<NAMETABLE_ADDR + $c0
   sta $6201,x
   lda #$40
   sta $6202,x
@@ -381,45 +394,16 @@ DrawBox:
   adc #4
   and #$1f
   tax
-  ; clear out the overscan
-  ; lda #$20
-  ; sta $6200,x
-  ; lda #$00
-  ; sta $6201,x
-  ; lda #$12
-  ; sta $6202,x
-  ; lda #$80
-  ; sta $6203,x
-  ; txa
-  ; clc
-  ; adc #4
-  ; and #$1f
-  ; tax
-  ; lda #$23
-  ; sta $6200,x
-  ; lda #$a0
-  ; sta $6201,x
-  ; lda #$12
-  ; sta $6202,x
-  ; lda #$80
-  ; sta $6203,x
-  ; txa
-  ; clc
-  ; adc #4
-  ; and #$1f
-  ; tax
   stx NmtBufWriteOffset
   jsr EnableNMI
-
-  jsr FlushNametableDataWrite
-
+  
   ; now spam the rest of the border
   ; draw 26 lines of the same stuff
   ; write to slots in $6000
   ; lda #$40
-  lda #$00
+  lda #<NAMETABLE_ADDR
   sta $a0
-  lda #$20
+  lda #>NAMETABLE_ADDR
   sta $a1
 
   lda #$20 ; space tile
@@ -434,9 +418,6 @@ DrawBox:
   lda #$1f ; right wall
   ; ldy #$11
   sta $6011
-  ; lda #$a9 ; background color
-  ; ldy #$00
-  ; sta $6000, y
 
   ; ldx #25 ; loop counter we have 26 rows to draw
   ldx #28
@@ -647,12 +628,12 @@ DrawBasicStats:
   sta NmtBufReadOffset
   lda #20
   sta NmtBufWriteOffset
-  lda #$20 | $80
+  lda #>NAMETABLE_ADDR | $80
 .repeat 5, I
   sta $6200 + I * 4
 .endrepeat
 .repeat 5, I
-  lda #$42  + I * $20
+  lda #<NAMETABLE_ADDR + $42 + I * $20
   sta $6201 + I * 4
 .endrepeat
   lda #$0f
@@ -692,17 +673,10 @@ DrawTimestamps:
   sta $c1
 
   ; ppuaddr
-  lda #$02
+  lda #<NAMETABLE_ADDR + $02
   sta $c2
-  lda #$21
+  lda #>NAMETABLE_ADDR + $01
   sta $c3
-
-  ; setup read offset to point to the 
-  ; clc
-  ; lda #<@TsNameStart
-  ; sta $c4
-  ; lda #>@TsNameStart
-  ; sta $c5
 
   ; write offset
   lda #$00

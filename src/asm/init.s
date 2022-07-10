@@ -266,6 +266,8 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
+.define _TRAINER 1
+
 .ifdef _STATS_TRACKING
 ;;;-------------
 ; layout of the stats SRAM is as follows

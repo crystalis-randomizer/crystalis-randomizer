@@ -1146,6 +1146,13 @@ export class Location extends Entity {
           const z2 = ((y - (y1 >> 4)) ** 2 + (x - (x1 >> 4)) ** 2);
           if (z2 < (r + 1) ** 2) continue POOL;
         }
+        // test distance from seamless exits - require 8 tiles!
+        for (const exit of this.exits) {
+          if (!exit.isSeamless()) continue;
+          const {x: x1, y: y1} = exit;
+          const z2 = ((y - (y1 >> 4)) ** 2 + (x - (x1 >> 4)) ** 2);
+          if (z2 < (r + 8) ** 2) continue POOL;
+        }
         // test distance from other enemies.
         for (const [, x1, y1, r1] of placed) {
           const z2 = ((y - y1) ** 2 + (x - x1) ** 2);

@@ -131,6 +131,18 @@ export function fixDialog(rom: Rom) {
 
   // TODO - consider warping on a random sword? - message 1c:11
 
+  // Split the message on either side of Sabre N entrance.
+  {
+    const msg = rom.messages.alloc();
+    rom.trigger(0x86).message.mid = msg.mid; // rabbit
+    msg.text =
+        '{:HERO:}, there\'s nothing to see here! Return to Zebu at once!';
+    // rom.trigger(0xba) // teleport
+    // TODO - see if it's changed?
+    rom.messages.parts[0x1c][0x0f].text =
+        '{:HERO:}, you cannot climb this yet! Seek out [44:Teleport] at once!';
+  }
+
   ////////////////////////////////////////////////////////////////
 
   function unmagic(mid: string) {

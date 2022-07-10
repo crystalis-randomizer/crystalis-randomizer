@@ -4,26 +4,34 @@
 #   out:
 #     Expects Crystalis.s to be non-writable.
 #     Reassembles it from the rom.
+#     Saves a pristine copy in Crystalis.s.out for merging.
 #   in:
 #     Expects Crystalis.s to be writable.
 #     Rebuilds the Crystalis.st template file.
 #     Does a validity check to ensure it's correct.
+#     Deletes Crystalis.s.out.
 #   check:
 #     Fails if there's un-checked in changes
+#   merge:
+#     Merges changes to Crystalis.s into any upstream changes to Crystalis.st.
+#     Leaves conflict markers as needed.
 # If the rom is not specified, looks at all *.nes files in the current
 # directory to find something with the correct crc32.
 
 top=$(git rev-parse --show-toplevel)
 source="$top/Crystalis.s"
+pristine="$source.pristine"
 template="$top/Crystalis.st"
 strip="$top/scripts/strip"
 rom=
 action=
+verbose=false
 
 while [ $# -gt 0 ]; do
   case "$1" in
     (--rom)   shift; rom=$1   ;;
     (--rom=*) rom=${1#--rom=} ;;
+    (-v)      verbose=true    ;;
     (out)     action=out      ;;
     (in)      action=in       ;;
     (check)   action=check    ;;
@@ -52,6 +60,8 @@ case "$action" in
     fi
     chmod +w "$source"
     "$strip" -r "$rom" "$template" >| "$source"
+    cp "$source" "$pristine"
+    chmod -w "$pristine"
     ;;
   (in)
     if [ ! -e "$source" ]; then
@@ -72,7 +82,7 @@ case "$action" in
       echo "Differences found.  Leaving $(basename "$tmp") for comparison" >& 2
       exit 7
     fi
-    rm -f "$tmp"
+    rm -f "$tmp" "$pristine"
     chmod -w "$source"
     ;;
   (check)
@@ -85,11 +95,34 @@ case "$action" in
     if ! diff --ignore-space-change -u "$source" "$tmp" > /dev/null 2> /dev/null; then
       echo "$source appears to be checked out.
 "'Please run `npm run checkin` to ensure consistency.' >& 2
+      if $verbose; then
+        diff --ignore-space-change -u "$source" "$tmp"
+        echo "--------------------------------" >& 2
+        echo "+ lines come from upstream and will be lost by checkin" >& 2
+        echo "- lines are local changes and will be lost by checkout" >& 2
+      fi
       rm -f "$tmp"
       exit 255
     fi
     rm -f "$tmp"
     chmod -w "$source"
+    ;;
+  (merge)
+    tmpdir=$(mktemp -d)
+    remote() { (cd "$tmpdir"; "$@") > /dev/null 2> /dev/null; }
+    remote git init -b upstream
+    f="$tmpdir/Crystalis.s"
+    cp "$pristine" "$f"
+    remote git add Crystalis.s
+    remote git commit -m "Common ancestor"
+    "$strip" -r "$rom" "$template" >| "$f"
+    remote git commit -am "Upstream changes"
+    remote git checkout -b local upstream^
+    cp "$source" "$f"
+    remote git commit -am "Local changes"
+    remote git merge upstream
+    cp "$f" "$source"
+    chmod +w "$source"
     ;;
   (*)
     echo "No action given" >& 2

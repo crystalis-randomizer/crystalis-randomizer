@@ -18,6 +18,14 @@
        (= 0 (shell-command (format "cd %s; scripts/update.sh in" crystalis-root-path))))
       (read-only-mode 1)))
 
+(defun crystalis-merge-source ()
+  "Merges the source with upstream, making it read-write"
+  (interactive)
+  (if (and
+       (string= "Crystalis.s" (file-name-nondirectory buffer-file-name))
+       (= 0 (shell-command (format "cd %s; scripts/update.sh merge" crystalis-root-path))))
+      (read-only-mode 0)))
+
 (defun crystalis-label-exits ()
   "Labels the exits for a mapdata block."
   (interactive)
@@ -535,6 +543,7 @@
 
 (define-key asm-mode-map (kbd "C-c s o") 'crystalis-checkout-source)
 (define-key asm-mode-map (kbd "C-c s i") 'crystalis-checkin-source)
+(define-key asm-mode-map (kbd "C-c s m") 'crystalis-merge-source)
 
 (defun link-data-table-entry ()
   (interactive)

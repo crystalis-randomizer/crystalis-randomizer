@@ -1,5 +1,6 @@
 .DS_Store
 Crystalis.s
+Crystalis.s.*
 *.nes
 deploy
 deploy_key

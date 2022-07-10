@@ -1124,7 +1124,7 @@ function orbsOptional(rom: Rom): void {
   for (const obj of [0x10, 0x14, 0x18, 0x1d]) {
     // 1. Loosen terrain susceptibility of level 1 shots
     rom.objects[obj].terrainSusceptibility &= ~0x04;
-    // 2. Increase the level to 2
+    // 2. Increase the level to 2 (rather than changing the asm)
     rom.objects[obj].level = 2;
   }
 }

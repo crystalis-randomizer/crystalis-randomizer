@@ -788,6 +788,17 @@ class Quality extends FlagSection {
            disables this change and retains normal behavior.`,
     optional: OPTIONAL,
   });
+
+  static readonly AudibleWallCues = Quality.flag('Qw', {
+    name: 'Audible wall cues',
+    text: `Provide an audible cue when failing to break a non-iron wall.
+           The intended way to determine which sword is required for normal
+           cave walls is by looking at the color.  This causes the level 3
+           sword sound of the required element to play when the wall fails
+           to break.  Note that fortress walls (iron in vanilla) do not give
+           this hint, since there is no visual cue for them, either.`,
+    optional: OPTIONAL,
+  });
 }
 
 class DebugMode extends FlagSection {
@@ -1215,6 +1226,9 @@ export class FlagSet {
   }
   noMusic(pass: 'early' | 'late'): boolean {
     return pass === 'late' && this.check(Aesthetics.NoMusic);
+  }
+  audibleWallCues(pass: 'early' | 'late'): boolean {
+    return pass === 'late' && this.check(Quality.AudibleWallCues);
   }
 
   shouldColorSwordElements(): boolean {

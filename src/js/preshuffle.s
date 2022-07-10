@@ -1621,10 +1621,9 @@ MaybeSpawnInsect:
 ;;; This is in object jump 07, replacing the hardcoded location check
 .org $a864
   lda $06c0,x
+  eor #$ff
+  and #$10  ; set Z if the 10 bit was _set_, meaning we should shoot.
   nop
-  nop
-  nop
-  cmp #$ff
 .endif
 
 
@@ -2600,15 +2599,23 @@ SpawnWall:
   lsr
   lsr
   lsr
-  adc #$d0 ; carry clear
-  sta $11
-  jsr LoadOneObjectDataInternal
+  pha
+   adc #$d0 ; carry clear
+   sta $11
+   jsr LoadOneObjectDataInternal
+   ;; 6c0,x gets some information about the wall:
+   ;;  - the 10 bit indicates it shoots
+   ;;  - the 03 bits store the original type/shape:
+   ;;    0/1 for a normal wall, 2 for bridge, 3 for iron.
+   ;;    We use this for audible tinks.
+  pla
+  sta $06c0,x
   lda $2e
-  and #$10
-  beq +
-   lda #$ff
-   sta $06c0,x
-+ lda $2f
+  and #$fc    ; don't overwrite the type
+  ora $06c0,x ; We check the $10 bit later
+  sta $06c0,x
+  ;; Store the inverse of the element's mask in 500,x
+  lda $2f
   and #$03
   tay
   lda WallElements,y
@@ -3554,6 +3561,51 @@ PrepareGameInitialDataTable:
 .org $be80
   .byte 100
 .popseg
+.endif
+
+.ifdef _AUDIBLE_WALLS
+.pushseg "1a","fe","ff"
+;;; Reorder the checks: if it's too low, then bail.
+;;; Otherwise, check for element match and maybe play
+;;; a sound if it's not an iron wall.  This is basically
+;;; copied from the original.
+.org $9094 ; 35094
+  lda $0420,x ; ObjectLevel,x
+  cmp #$01
+  beq @rts ; Level is too low -> bail out
+  lda $0500,y ; ObjectElementalDefense,y
+  and $0500,x ; ObjectElementalDefense,x
+  and #$0f
+  jsr @AudibleWalls ; Will do a double-return if mismatched
+  jmp KillObject
+@rts:
+  rts
+.reloc
+@AudibleWalls:
+  beq +
+   ;; Element mismatched.
+   ;; See if we should play a sound, double-return either way.
+   ;; When we spawned the wall, we stored the original element
+   ;; in the upper nibble of the ID byte, so check that that's
+   ;; not 3 before playing the sound. (We should also avoid 2?)
+   pla
+   pla
+   lda $06c0,y
+   and #$02
+   bne + ; bail out if it's iron/bridge
+    ;; Figure out what the element is by shifting
+    txa
+    pha
+     lda $0500,y
+     ldx #$3f ; 40 is wind, 41 is fire, etc
+-     inx
+      lsr
+     bcs -
+     txa
+     jsr $c125
+    pla
+    tax
++ rts
 .endif
 
 ;;; NOTE: This is an alternative implementation of SelectCHRRomBanks

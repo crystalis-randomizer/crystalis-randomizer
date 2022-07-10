@@ -159,6 +159,7 @@ function defines(flags: FlagSet,
     _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
                                  flags.shuffleBossElements(),
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
+    _AUDIBLE_WALLS: flags.audibleWallCues(pass),
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(pass),
     _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
@@ -303,6 +304,7 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
 
   if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
+  updateWallSpawnFormat(parsed);
   randomizeWalls(parsed, flags, random);
   crumblingPlatforms(parsed, random);
 
@@ -576,6 +578,28 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
     for (const shop of data.shops) {
       while (shop.contents.length < 4) shop.contents.push(0xff);
       shop.contents.sort((a, b) => a - b);
+    }
+  }
+}
+
+/**
+ * We rearrange how walls spawn to support custom shooting walls,
+ * among other things.  The signal to the game (and later passes)
+ * that we've made this change is to set the 0x20 bit on the 3rd
+ * spawn byte (i.e. the spawn type).
+ */
+function updateWallSpawnFormat(rom: Rom) {
+  for (const location of rom.locations) {
+    if (!location.used) continue;
+    for (const spawn of location.spawns) {
+      if (spawn.isWall()) {
+        const elem = spawn.id & 0xf;
+        spawn.id = elem | (elem << 4);
+        const shooting = spawn.isShootingWall(location);
+        spawn.data[2] = shooting ? 0x33 : 0x23;
+        // const iron = spawn.isIronWall();
+        // spawn.data[2] = 0x23 | (shooting ? 0x10 : 0) | (iron ? 0x40 : 0);
+      }
     }
   }
 }

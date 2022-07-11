@@ -852,7 +852,8 @@ FREE_UNTIL $bad9
 .reloc
 ClearEnemyHPRam:
   ;; Clear out the SRAM that stores the enemy HP data
-  ldy RecentEnemyCurrHPHi - $6a10
+  lda #0
+  ldy #RecentEnemyCurrHPHi - $6a10
 -   sta $6a10,y
     dey
   bpl -
@@ -1293,8 +1294,8 @@ UpdateEnemyHPDisplayInternal:
       adc #$00 ; adds 1 only if the carry is set (from the previous adc)
       cpx RecentEnemyCurrHPLo
       bne +
-      cmp RecentEnemyCurrHPHi
-      beq @MaxHP
+        cmp RecentEnemyCurrHPHi
+        beq @MaxHP
       ; A = enemy curr hp hi, x = enemy curr hp lo
 +     sta RecentEnemyCurrHPHi
       stx RecentEnemyCurrHPLo
@@ -1311,7 +1312,7 @@ UpdateEnemyHPDisplayInternal:
       cpx RecentEnemyMaxHPLo
       bne +
         cmp RecentEnemyMaxHPHi
-        bne @Exit
+        beq @Exit
       ; A = enemy max hp hi, x = enemy max hp lo
 +     sta RecentEnemyMaxHPHi
       stx RecentEnemyMaxHPLo

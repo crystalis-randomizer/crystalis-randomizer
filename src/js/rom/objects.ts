@@ -18,6 +18,7 @@ import { Module } from '../asm/module.js';
 
 export class Objects extends EntityArray<ObjectData> {
 
+  mesiaSabera = new ObjectData(this, 0x2a, "Mesia");
   sorcerorShot = new Monster(this, {
     id: 0x3f,
     scaling: 37,

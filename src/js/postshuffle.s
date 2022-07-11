@@ -24,7 +24,28 @@
 ;;; Constraints:
 ;;;   $12 and $13 are used as temporary space
 ComputeEnemyStats:
-  lda ObjectRecoil,x
+.ifdef _ENEMY_HP
+  ; Don't write any enemy data to the HP bar if its below the first enemy slot
+  cpx #$0d
+  bmi +
+   ;; preload the enemy data here. Later the HP lo/hi will be fixed up if the
+   ;; enemy has scaling.
+   lda $11
+   sta ObjectNameId,x
+   lda ObjectHP,x
+   sta ObjectMaxHPLo,x
+   lda #0
+   sta ObjectMaxHPHi,x
+   ;; If respawning something in the currently-displayed slot then
+   ;; clear it out.
+   cpx CurrentEnemySlot
+   bne +
+    ;; The enemy displayed in the HP slot is now removed,
+    ; so clear the display.
+    jsr ClearCurrentEnemyHPSlot
+
+.endif ; _ENEMY_HP
++ lda ObjectRecoil,x
   bmi +
    jmp $c2af ; exit point
 + and #$7f
@@ -253,19 +274,6 @@ ComputeEnemyStats:
 +    lda #$ff
 +++ sta ObjectExp,x
 @RescaleDone:
-   ;; $11 contains the original object ID.
-   lda $11
-   sta ObjectNameId,x
-.ifdef _ENEMY_HP
-   ;; If respawning something in the currently-displayed slot then
-   ;; clear it out.
-   cpx CurrentEnemySlot
-   bne +
-    ;; The enemy displayed in the HP slot is now removed,
-    ;; so clear the display.
-    jsr ClearCurrentEnemyHPSlot
-
-.endif ; _ENEMY_HP
 +  jmp $c2af
 
 ; .assert * <= $c000

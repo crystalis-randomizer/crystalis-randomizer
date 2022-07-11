@@ -849,17 +849,19 @@ InitializeStatusBarNametable:
 FREE_UNTIL $bad9
 
 .ifdef _ENEMY_HP
+
+.segment "fe", "ff"  ; needs to be accessible from multiple banks
+
 .reloc
 ClearEnemyHPRam:
   ;; Clear out the SRAM that stores the enemy HP data
   lda #0
-  ldy #RecentEnemyCurrHPHi - $6a10
+  ldy #(RecentEnemyCurrHPHi - $6a10)
 -   sta $6a10,y
     dey
   bpl -
   jmp ClearCurrentEnemyHPSlot
 
-.segment "fe", "ff"  ; needs to be accessible from multiple banks
 .reloc
 ClearCurrentEnemyHPSlot:
   ; if the current slot is already cleared out then theres nothing to do
@@ -1174,10 +1176,15 @@ UpdateEnemyHPDisplay:
 @EndReplace:
 .reloc
 @ClearCurrentEnemyHPSlotAndRedraw:
-  jsr $c72b ; WaitForNametableBufferAvailable
-  jsr ClearCurrentEnemyHPSlot
-  jsr UpdateEnemyHPDisplayInternal
-  .move @EndReplace - @StartReplace, @StartReplace
+  ;; We use #$ff as a signal that the slot was empty before spawning
+  ;; NPCs.  This code runs _after_ NPC spawn (and fade-in?)
+  inc CurrentEnemySlot
+  beq +
+   jsr $c72b ; WaitForNametableBufferAvailable
+   jsr ClearCurrentEnemyHPSlot
+   jsr ClearEnemyHPVram
+   jsr UpdateEnemyHPDisplayInternal
++ .move @EndReplace - @StartReplace, @StartReplace
   rts
 .popseg
 
@@ -1205,21 +1212,7 @@ UpdateEnemyHPDisplayInternal:
         sty RecentEnemyMaxHPLo
         sty RecentEnemyMaxHPHi
         sty RecentEnemyObjectId
-
-        lda #$1c ; [=] bar character
-        ldy #ENEMY_NAME_BUFFER_SIZE - 1
--         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
-          dey
-        bpl -
-        lda #$20 ; space tile
-        ldy #$09
--         sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
-          dey
-        bpl -
-        lda #ENEMY_HP_VRAM_UPDATE
-        jsr StageNametableWriteFromTable
-        lda #ENEMY_NAME_VRAM_UPDATE
-        jsr StageNametableWriteFromTable
+        jsr ClearEnemyHPVram
         jmp @Exit
 @EnemyAlive: ; (so update name)
       ldy CurrentEnemySlot
@@ -1324,6 +1317,24 @@ UpdateEnemyHPDisplayInternal:
   pla
   tax
   rts
+
+.reloc
+ClearEnemyHPVram:
+        lda #$1c ; [=] bar character
+        ldy #ENEMY_NAME_BUFFER_SIZE - 1
+-         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
+          dey
+        bpl -
+        lda #$20 ; space tile
+        ldy #$09
+-         sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
+          dey
+        bpl -
+        lda #ENEMY_HP_VRAM_UPDATE
+        jsr StageNametableWriteFromTable
+        lda #ENEMY_NAME_VRAM_UPDATE
+        jmp StageNametableWriteFromTable
+
 .popseg
 
 .endif ; _ENEMY_HP
@@ -1912,9 +1923,15 @@ LocationChangePreSpawnHook:
     .ifdef _WARP_FLAGS_TABLE
   jsr SetWarpFlagForLocation
     .endif
-     .ifdef _ENEMY_HP
-  jsr ClearCurrentEnemyHPSlot
-  jsr UpdateEnemyHPDisplay
+    .ifdef _ENEMY_HP
+  lda CurrentEnemySlot
+  beq +
+    jsr ClearCurrentEnemyHPSlot
+    jsr UpdateEnemyHPDisplay
+    clc
+    bcc ++
++  dec CurrentEnemySlot
+++ 
     .endif
   jmp $e144 ; LoadNpcDataForCurrentLocation
 

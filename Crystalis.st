@@ -30800,8 +30800,10 @@ CreditsContinueToNextScene
         $220ff  xx:         xxx
 ;;; --------------------------------
 MainLoop_EndingSequence
+                            ; Run OAM sprite updates every frame
         $22100  xx xx:      xxx #$xx
         $22102  xx xx:      xxx $xx
+                            ; $8c appears to be a timer thats only updated here
         $22104  xx xx:      xxx $xx
         $22106  xx xx xx:   xxx $xxxx
         $22109  xx:         xxx
@@ -30813,16 +30815,16 @@ MainLoop_EndingSequence
         $22117  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
 CreditsModeTable 
-        $2211a              .word (CreditsMode_00)
+        $2211a              .word (CreditsModeRunScene)
         $2211c              .word (CreditsMode_01)
         $2211e              .word (CreditsMode_02)
 ;;; --------------------------------
         $22120  xx xx:      xxx $xx
         $22122  xx xx:      xxx #$xx
-        $22124  xx xx:      xxx $xx
+        $22124  xx xx:      xxx + ; $22127
         $22126  xx:         xxx
 ;;; --------------------------------
-        $22127  xx xx:      xxx #$xx
++       $22127  xx xx:      xxx #$xx
         $22129  xx xx xx:   xxx $xxxx
         $2212c  xx xx xx:   xxx $xxxx
         $2212f  xx:         xxx
@@ -30838,10 +30840,10 @@ DataTable_22140
 ;;; --------------------------------
 CreditsModeRunScene
         $2214a  xx xx xx:   xxx $xxxx
-        $2214d  xx xx:      xxx $xx
+        $2214d  xx xx:      xxx + ; $22152
         $2214f  xx xx xx:   xxx $22120
 ;;; --------------------------------
-        $22152  xx xx xx:   xxx $xxxx
++       $22152  xx xx xx:   xxx $xxxx
         $22155  xx:         xxx
         $22156  xx:         xxx
         $22157  xx xx xx:   xxx EndCreditsSceneTable,y
@@ -31108,12 +31110,12 @@ CreditScene_03
         $22361  xx xx:      xxx $xx
         $22363  xx xx:      xxx #$xx
         $22365  xx xx xx:   xxx $22a22
-        $22368  xx xx xx:   xxx $22a55
+        $22368  xx xx xx:   xxx CopyPaletteFrom0618AndReturn
         $2236b  xx xx xx:   xxx WaitForOAMDMA_altbank11
         $2236e  xx xx xx:   xxx WaitForOAMDMA_altbank11
         $22371  xx xx:      xxx #$xx
         $22373  xx xx xx:   xxx $22a22
-        $22376  xx xx xx:   xxx $22a55
+        $22376  xx xx xx:   xxx CopyPaletteFrom0618AndReturn
         $22379  xx xx xx:   xxx WaitForOAMDMA_altbank11
         $2237c  xx xx xx:   xxx WaitForOAMDMA_altbank11
         $2237f  xx xx xx:   xxx WaitForOAMDMA_altbank11
@@ -31534,13 +31536,14 @@ CreditScene_1a
         $226fa  xx:         xxx
 ;;; --------------------------------
 CreditsDisplayTheEND
+                            ; Copy a new palete for the THE END sprites
         $226fb  xx xx:      xxx #$xx
         $226fd  xx xx xx:   xxx $xxxx
         $22700  xx xx:      xxx #$xx
         $22702  xx xx xx:   xxx $xxxx
         $22705  xx xx:      xxx #$xx
         $22707  xx xx xx:   xxx $xxxx
-        $2270a  xx xx xx:   xxx $22a55
+        $2270a  xx xx xx:   xxx CopyPaletteFrom0618AndReturn
         $2270d  xx xx:      xxx #$xx
         $2270f  xx xx xx:   xxx $xxxx
         $22712  xx xx:      xxx #$xx
@@ -32017,11 +32020,12 @@ WriteOAMDataCopyLoop
         $22a52  xx xx:      xxx $xx
         $22a54  xx:         xxx
 ;;; --------------------------------
+CopyPaletteFrom0618AndReturn
         $22a55  xx xx:      xxx #$xx
-        $22a57  xx xx xx:   xxx $xxxx,x
+-       $22a57  xx xx xx:   xxx $xxxx,x
         $22a5a  xx xx xx:   xxx $xxxx,x
         $22a5d  xx:         xxx
-        $22a5e  xx xx:      xxx $xx
+        $22a5e  xx xx:      xxx -
         $22a60  xx:         xxx
 ;;; --------------------------------
 CopyPaletteFrom0618
@@ -32036,30 +32040,30 @@ CopyPaletteFrom0618
         $22a73  xx:         xxx
 ;;; --------------------------------
 CreditsMode_01
-;; This appears to be the fade out mode
-;; since its writing to the palette every 8 frames
+;; This appears to be the fade in mode
+;; since its writing to the palette every 8 frames and increasing the value of the colors
         $22a74  xx xx:      xxx $xx
         $22a76  xx xx:      xxx #$xx
-        $22a78  xx xx:      xxx $xx
+        $22a78  xx xx:      xxx +
         $22a7a  xx:         xxx
 ;;; --------------------------------
-        $22a7b  xx xx:      xxx #$xx
++       $22a7b  xx xx:      xxx #$xx
         $22a7d  xx xx xx:   xxx $xxxx
         $22a80  xx xx:      xxx #$xx
         $22a82  xx xx xx:   xxx $xxxx,x
         $22a85  xx xx xx:   xxx $xxxx,x
-        $22a88  xx xx:      xxx $xx
+        $22a88  xx xx:      xxx +
         $22a8a  xx xx xx:   xxx $xxxx
-        $22a8d  xx xx xx:   xxx $22a96
+        $22a8d  xx xx xx:   xxx ++ ; $22a96
 ;;; --------------------------------
-        $22a90  xx:         xxx
++       $22a90  xx:         xxx
         $22a91  xx xx:      xxx #$xx
         $22a93  xx xx xx:   xxx $xxxx,x
-        $22a96  xx:         xxx
-        $22a97  xx xx:      xxx $xx
+++      $22a96  xx:         xxx
+        $22a97  xx xx:      xxx - ; $22a82
         $22a99  xx xx xx:   xxx $xxxx
         $22a9c  xx xx:      xxx #$xx
-        $22a9e  xx xx:      xxx $xx
+        $22a9e  xx xx:      xxx +
         $22aa0  xx:         xxx
 ;;; --------------------------------
 CreditsChangeToMode0
@@ -32073,41 +32077,42 @@ CreditsChangeToMode2
         $22aac  xx:         xxx
 ;;; --------------------------------
 CreditsMode_02
-;; This appears to be a fade in mode that updates the palette.
+;; This appears to be a fade out mode that updates the palette.
 ;; $6140 - $615f is the address range used for palette updates
         $22aad  xx xx:      xxx $xx
         $22aaf  xx xx:      xxx #$xx
-        $22ab1  xx xx:      xxx $xx
+        $22ab1  xx xx:      xxx + ; $22ab4
         $22ab3  xx:         xxx
 ;;; --------------------------------
-        $22ab4  xx xx:      xxx #$xx
++       $22ab4  xx xx:      xxx #$xx
         $22ab6  xx xx xx:   xxx $xxxx
         $22ab9  xx xx:      xxx #$xx
         $22abb  xx xx xx:   xxx $xxxx,x
         $22abe  xx xx:      xxx #$xx
-        $22ac0  xx xx:      xxx $xx
+        $22ac0  xx xx:      xxx + ; $22ac8
         $22ac2  xx xx xx:   xxx $xxxx
-        $22ac5  xx xx xx:   xxx $22adc
+        $22ac5  xx xx xx:   xxx ++ ; $22adc
 ;;; --------------------------------
-        $22ac8  xx:         xxx
++       $22ac8  xx:         xxx
         $22ac9  xx xx:      xxx #$xx
-        $22acb  xx xx:      xxx $xx
+        $22acb  xx xx:      xxx + ; $22ad5
         $22acd  xx xx:      xxx #$xx
         $22acf  xx xx xx:   xxx $xxxx,x
-        $22ad2  xx xx xx:   xxx $22adc
+        $22ad2  xx xx xx:   xxx ++ ; $22adc
 ;;; --------------------------------
-        $22ad5  xx:         xxx
++       $22ad5  xx:         xxx
         $22ad6  xx:         xxx
         $22ad7  xx xx:      xxx #$xx
         $22ad9  xx xx xx:   xxx $xxxx,x
-        $22adc  xx:         xxx
-        $22add  xx xx:      xxx $xx
+++      $22adc  xx:         xxx
+        $22add  xx xx:      xxx - ;$22abb
         $22adf  xx xx xx:   xxx $xxxx
         $22ae2  xx xx:      xxx #$xx
-        $22ae4  xx xx:      xxx $xx
+        $22ae4  xx xx:      xxx + ; $22ae7
         $22ae6  xx:         xxx
 ;;; --------------------------------
-        $22ae7  xx xx:      xxx #$xx
+ReturnToMode0
++       $22ae7  xx xx:      xxx #$xx
         $22ae9  xx xx xx:   xxx $xxxx
         $22aec  xx:         xxx
 ;;; --------------------------------

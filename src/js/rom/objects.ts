@@ -435,7 +435,7 @@ export class Objects extends EntityArray<ObjectData> {
     id: 0x9e,
     scaling: 47,
     type: 'boss',
-    displayName: 'Draygon',
+    displayName: 'Emperor Draygon',
   });
   crumblingVerticalPlatform = new ObjectData(this, 0x9f); // scaling: 47 ?
   brownRobot = new Monster(this, {

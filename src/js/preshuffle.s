@@ -841,26 +841,51 @@ UpdateGlobalStepCounter:
 .org $baca
 InitializeStatusBarNametable:
 .ifdef _ENEMY_HP
-  jsr ClearEnemyHPRam
+  jsr ClearCurrentEnemyHPSlot
 .endif ; _ENEMY_HP
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
-  jmp $c676 ; WaitForNametableFlush
+  jmp FlushNametableDataWrite ; WaitForNametableFlush
 FREE_UNTIL $bad9
 
 .ifdef _ENEMY_HP
 
-.segment "fe", "ff"  ; needs to be accessible from multiple banks
+.pushseg "1a", "1b", "fe", "ff"
+.org $e486
+  jsr WaitForNametableFlushDuringLoad
 
 .reloc
-ClearEnemyHPRam:
-  ;; Clear out the SRAM that stores the enemy HP data
-  lda #0
-  ldy #(RecentEnemyCurrHPHi - $6a10)
--   sta $6a10,y
+WaitForNametableFlushDuringLoad:
+  jsr $9cef ; Do the original handler for location change
+  jmp FlushNametableDataWrite
+.popseg ; "0d", "fe", "ff"
+
+.pushseg "fe", "ff"  ; needs to be accessible from multiple banks
+
+
+.reloc
+ClearCurrentEnemyHP:
+  ldy #0
+  sty PreviousEnemySlot
+  sty RecentEnemyCurrHPHi
+  sty RecentEnemyCurrHPLo
+  sty RecentEnemyMaxHPLo
+  sty RecentEnemyMaxHPHi
+  sty RecentEnemyObjectId
+  lda #$1c ; [=] bar character
+  ldy #ENEMY_NAME_BUFFER_SIZE - 1
+-   sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
     dey
   bpl -
-  jmp ClearCurrentEnemyHPSlot
+  lda #$20 ; space tile
+  ldy #$09
+-   sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
+    dey
+  bpl -
+  lda #ENEMY_HP_VRAM_UPDATE
+  jsr StageNametableWriteFromTable
+  lda #ENEMY_NAME_VRAM_UPDATE
+  jmp StageNametableWriteFromTable
 
 .reloc
 ClearCurrentEnemyHPSlot:
@@ -874,8 +899,8 @@ ClearCurrentEnemyHPSlot:
     sta ShouldRedisplayUI
 + rts
 .endif ; _ENEMY_HP
-.popseg
-
+.popseg ; "fe", "ff"
+.popseg ; "13", "fe", "ff"
 
 .pushseg "1a", "fe", "ff"
 ;;; Calls DisplayNumberInternal for each of the bits in A as follows:
@@ -1178,12 +1203,9 @@ UpdateEnemyHPDisplay:
 @ClearCurrentEnemyHPSlotAndRedraw:
   ;; We use #$ff as a signal that the slot was empty before spawning
   ;; NPCs.  This code runs _after_ NPC spawn (and fade-in?)
-  inc CurrentEnemySlot
-  beq +
-   jsr $c72b ; WaitForNametableBufferAvailable
-   jsr ClearCurrentEnemyHPSlot
-   jsr ClearEnemyHPVram
-   jsr UpdateEnemyHPDisplayInternal
+  lda #0
+  sta CurrentEnemySlot
+  jsr ClearCurrentEnemyHP
 + .move @EndReplace - @StartReplace, @StartReplace
   rts
 .popseg
@@ -1206,13 +1228,7 @@ UpdateEnemyHPDisplayInternal:
         bne +
           jmp @Exit
         ;; y is 0 at this point - zero everything out
-+       sty PreviousEnemySlot
-        sty RecentEnemyCurrHPHi
-        sty RecentEnemyCurrHPLo
-        sty RecentEnemyMaxHPLo
-        sty RecentEnemyMaxHPHi
-        sty RecentEnemyObjectId
-        jsr ClearEnemyHPVram
++       jsr ClearCurrentEnemyHP
         jmp @Exit
 @EnemyAlive: ; (so update name)
       ldy CurrentEnemySlot
@@ -1317,23 +1333,6 @@ UpdateEnemyHPDisplayInternal:
   pla
   tax
   rts
-
-.reloc
-ClearEnemyHPVram:
-        lda #$1c ; [=] bar character
-        ldy #ENEMY_NAME_BUFFER_SIZE - 1
--         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
-          dey
-        bpl -
-        lda #$20 ; space tile
-        ldy #$09
--         sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
-          dey
-        bpl -
-        lda #ENEMY_HP_VRAM_UPDATE
-        jsr StageNametableWriteFromTable
-        lda #ENEMY_NAME_VRAM_UPDATE
-        jmp StageNametableWriteFromTable
 
 .popseg
 
@@ -1922,16 +1921,6 @@ WarpMenuNametableData:
 LocationChangePreSpawnHook:
     .ifdef _WARP_FLAGS_TABLE
   jsr SetWarpFlagForLocation
-    .endif
-    .ifdef _ENEMY_HP
-  lda CurrentEnemySlot
-  beq +
-    jsr ClearCurrentEnemyHPSlot
-    jsr UpdateEnemyHPDisplay
-    clc
-    bcc ++
-+  dec CurrentEnemySlot
-++ 
     .endif
   jmp $e144 ; LoadNpcDataForCurrentLocation
 
@@ -3573,12 +3562,25 @@ PrepareGameInitialDataTable:
   .word ($0051)
   .byte $00
   .byte 0
-
 .ifdef _MONEY_AT_START
 .pushseg "17"
 .org $be80
   .byte 100
 .popseg
+.endif
+
+.ifdef _ENEMY_HP
+;; Clear out the SRAM that stores the enemy HP data
+.org $f39f ; Patches on cold/warm boot
+  jsr PatchClearEnemyHPRam
+.reloc
+PatchClearEnemyHPRam:
+  lda #0
+  ldy #EnemyHPRamLen-1 ; - 1 to account for bpl
+-   sta EnemyHPRamStart,y
+    dey
+    bpl -
+  jmp $f0a4 ; ValidateSaveFiles
 .endif
 
 .ifdef _AUDIBLE_WALLS

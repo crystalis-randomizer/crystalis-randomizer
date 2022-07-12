@@ -143,6 +143,8 @@ FREE "3d" [$a000, $c000)
 
 
 ;;; Various global definitions.
+PpuCtrlShadow = $00
+PpuMaskShadow = $01
 GameMode = $41
 ObjectRecoil = $340
 ObjectHP = $3c0
@@ -160,6 +162,7 @@ ObjectExp = $520
 ; starting at zero and counting up to ExpToNextLevel, it will start at ExpToNextLevel
 ; and count down.
 PlayerExp = $704
+PlayerMaxExp = $706 ; unused
 PlayerMP = $708
 PlayerMaxMP = $709
 EquippedConsumableItem = $715
@@ -174,11 +177,52 @@ InvMagic = $6458
 SlotFlagsStart = $64a0
 ItemFlagsStart = $64c0
 Difficulty = $648f         ; requires defrag! (flags 078 .. 07f)
-ShouldRedisplayDifficulty = $61ff
 
-        
+; 0000 0eed - Bit pattern for flags
+;       ||^-- Redisplay difficulty
+;       |^--- Update Enemy HP stats
+;       ^---- If 1 draw the data, if 0 clear the field.
+ShouldRedisplayUI = $61ff
+UPDATE_DIFFICULTY = %000000001
+DRAW_ENEMY_STATS  = %000000010
+
+; .define _TRAINER 1
 SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
+
+; These are offset by $0d since enemy objects only load from $0d - $1f
+ObjectNameId        = $6a10 - $0d ; 18 bytes from $10 - $22 used to look up this object's name.
+ObjectMaxHPLo       = $6a22 - $0d ; 18 bytes from $22 - $34
+ObjectMaxHPHi       = $6a34 - $0d ; 18 bytes from $34 - $46
+CurrentEnemySlot    = $6a46 ; 1 byte. Stores the most recent attacked enemy (or zero if we need to clear)
+PreviousEnemySlot   = $6a47 ; 1 byte. Stores the previous attacked slot (to determine if the )
+RecentEnemyObjectId = $6a48 ; 1 byte. Used to determine if the name has changed since the previous enemy.
+RecentEnemyMaxHP    = $6a49 ; 2 bytes 49-4a
+RecentEnemyMaxHPLo  = RecentEnemyMaxHP
+RecentEnemyMaxHPHi  = RecentEnemyMaxHP+1
+RecentEnemyCurrHP   = $6a4b ; 2 bytes 4b-4c
+RecentEnemyCurrHPLo = RecentEnemyCurrHP
+RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
+
+; Constants used in DisplayNumberInternal for the NumericDisplays LUT
+; These are including the overrides done in the randomizer
+DISPLAY_NUMBER_LEVEL1   = $00 ; Level in Status Bar
+DISPLAY_NUMBER_MONEY    = $01
+DISPLAY_NUMBER_EXP      = $02
+DISPLAY_NUMBER_MAXMP    = $03 ; Replaces ExpLeft
+DISPLAY_NUMBER_MP       = $04
+DISPLAY_NUMBER_ENEMYHP  = $05 ; Replaces MaxMP
+DISPLAY_NUMBER_SCALING  = $06 ; Replaces Level (Menu)
+DISPLAY_NUMBER_HP       = $07
+DISPLAY_NUMBER_MAXHP    = $08
+DISPLAY_NUMBER_ATTACK   = $09
+DISPLAY_NUMBER_DEF1     = $0a
+DISPLAY_NUMBER_BUYCOST  = $0b
+DISPLAY_NUMBER_INNCOST  = $0c
+DISPLAY_NUMBER_PAWNVAL  = $0d
+DISPLAY_NUMBER_LEVEL2   = $0e ; Level in Menu replaces Unused
+DISPLAY_NUMBER_ENEMYMAX = $0f ; Replaces Unused
+DISPLAY_NUMBER_DEF2     = $10
 
 .ifdef _EXTRA_PITY_MP
 PITY_MP_AMOUNT    = 34
@@ -204,6 +248,16 @@ ITEM_OPEL_STATUE     = $26
 SFX_MONSTER_HIT      = $21
 SFX_ATTACK_IMMUNE    = $3a
 
+PPUCTRL   = $2000
+PPUMASK   = $2001
+PPUSTATUS = $2002
+OAMADDR   = $2003
+OAMDATA   = $2004
+PPUSCROLL = $2005
+PPUADDR   = $2006
+PPUDATA   = $2007
+OAMDMA    = $4014
+
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read
 .define SKIP_TWO_BYTES .byte $2c
@@ -227,11 +281,13 @@ ActivateOpelStatue = $b9b0
 
 
 .segment "1a"         ; 34000
+
 ArmorDefense          = $8bc0
 ShieldDefense         = $8bc9
 DisplayNumberInternal = $8e46
 KillObject            = $9152
 KnockbackObject       = $95c0
+NextLevelExpByLevel   = $8b9e
 
 .segment "fe"              ; 3c000
 PowersOfTwo                = $c000
@@ -249,6 +305,9 @@ LoadAndShowDialog          = $d347
 WaitForDialogToBeDismissed = $d354
 SpawnMimic                 = $d3da
 MainLoopItemGet            = $d3ff
+WaitForNametableBufferAvailable = $c72b
+EnableNMI                  = $c436
+StageNametableWriteFromTable = $c482
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756

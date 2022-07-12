@@ -16,12 +16,36 @@
 ;; DiffExp:   ; ExpBase * 4, encoded in standard EXP encoding
 ;; .org * + SCALING_LEVELS
 
-;;; $12 and $13 are free RAM at this point
-
-;.org $1bdd0  ; Note: this follows immediately from the tables.
 .reloc
+;;; Inputs:
+;;;   $11 - original object ID (i.e. $50 for slime, etc)
+;;;   X   - spawn slot ($0d..$1e)
+;;;   Y   - scaling level (0..47 or more)
+;;; Constraints:
+;;;   $12 and $13 are used as temporary space
 ComputeEnemyStats:
-  lda ObjectRecoil,x
+.ifdef _ENEMY_HP
+  ; Don't write any enemy data to the HP bar if its below the first enemy slot
+  cpx #$0d
+  bmi +
+   ;; preload the enemy data here. Later the HP lo/hi will be fixed up if the
+   ;; enemy has scaling.
+   lda $11
+   sta ObjectNameId,x
+   lda ObjectHP,x
+   sta ObjectMaxHPLo,x
+   lda #0
+   sta ObjectMaxHPHi,x
+   ;; If respawning something in the currently-displayed slot then
+   ;; clear it out.
+   cpx CurrentEnemySlot
+   bne +
+    ;; The enemy displayed in the HP slot is now removed,
+    ; so clear the display.
+    jsr ClearCurrentEnemyHPSlot
+
+.endif ; _ENEMY_HP
++ lda ObjectRecoil,x
   bmi +
    jmp $c2af ; exit point
 + and #$7f
@@ -45,13 +69,13 @@ ComputeEnemyStats:
 .endif
 ++ tay
    sta $63
-RescaleDefAndHP:
+@RescaleDefAndHP:
    ;; HP = max(PAtk + SWRD - DEF, 1) * HITS - 1
    ;; DiffAtk = 8 * PAtk
    ;; DEF = (8 * PAtk) * SDEF / 64   (alt, SDEF = 8 * DEF / PAtk)
    lda ObjectHP,x
    bne +
-    jmp RescaleAtk
+    jmp @RescaleAtk
    ;; Start by computing 8*DEF, but don't write it to DEF yet.
 +  lda ObjectDef,x
    pha
@@ -142,12 +166,16 @@ RescaleDefAndHP:
     sec
 +  rol ObjectDef,x
    sta ObjectHP,x
-RescaleAtk:   ; $1bc63
+   sta ObjectMaxHPLo,x
+   lda ObjectDef,x
+   and #$01
+   sta ObjectMaxHPHi,x
+@RescaleAtk:   ; $1bc63
   ;; DiffDef = 4 * PDef
   ;; DiffHP = PHP
   ;; ATK = (4 * PDef + PHP * SAtk / 32) / 4
   lda ObjectAtk,x
-   beq RescaleGold
+   beq @RescaleGold
   sta $61
   lda DiffHP,y
   sta $62
@@ -174,7 +202,7 @@ RescaleAtk:   ; $1bc63
   lda $61
   ror
   sta ObjectAtk,x
-RescaleGold:   ; $1bc98
+@RescaleGold:   ; $1bc98
   ;; GOLD = min(15, (8 * DGLD + 3 * DIFF) / 16)
   lda $6c
   and #$f8
@@ -186,11 +214,11 @@ RescaleGold:   ; $1bc98
    sta ObjectGold,x
    lda #$00
    sta ObjectExp,x
-   beq RescaleDone ; unconditional
+   beq @RescaleDone ; unconditional
    ;; ------------
 + lda ObjectGold,x
   and #$f0
-   beq RescaleExp
+   beq @RescaleExp
   lsr
   sta $61
   lda $63 ; difficulty
@@ -205,11 +233,11 @@ RescaleGold:   ; $1bc98
   and #$0f
   ora $61
   sta ObjectGold,x
-RescaleExp:   ; $1bcbd
+@RescaleExp:   ; $1bcbd
   ;; EXP = min(2032, DiffExp * SEXP)
   ;; NOTE: SEXP is compressed for values > $7f.
   lda ObjectExp,x
-   beq RescaleDone
+   beq @RescaleDone
   sta $61
   lda DiffExp,y
   php ; keep track of whether we were compressed or not.
@@ -245,8 +273,8 @@ RescaleExp:   ; $1bcbd
     bcc +++
 +    lda #$ff
 +++ sta ObjectExp,x
-RescaleDone:
-   jmp $c2af
+@RescaleDone:
++  jmp $c2af
 
 ; .assert * <= $c000
 ;.assert < $1bff0

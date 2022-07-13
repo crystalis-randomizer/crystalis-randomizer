@@ -217,7 +217,7 @@ PatchStartItemGet:
   lda CheckToItemGetMap,x
   tay
   cmp #$70
-  bcc +
+  bcc @RegularItem
     ; Mimics are the 16 objects from $70 to $80, so use the Powers of Two lookup to convert from the mimic to
     ; a mask for the byte. $70-$77 in the lo byte $78-$7f in hi
     cmp #$78
@@ -245,7 +245,8 @@ PatchStartItemGet:
     pla
     pla
     jmp SpawnMimic
-+ cmp #$49
+@RegularItem:
+  cmp #$49
   bcc +
    lda OriginalItemGetTable,y  ; NOTE: y>=$49, so this is really [$9daf...)
 + sta $29
@@ -676,6 +677,15 @@ CheckOpelStatue:
 FREE_UNTIL $b91c
 .endif
 
+.ifdef _STATS_TRACKING
+.org $b91e ; PlayerDeath
+  jsr PatchPlayerDeath
+
+.reloc
+PatchPlayerDeath:
+  inc StatsDeaths
+  jmp StartAudioTrack
+.endif ; _STATS_TRACKING
 
 ;;; Fix the graphics glitch from getting a sword while changed.
 .org $bc04

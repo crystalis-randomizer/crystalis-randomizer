@@ -141,17 +141,6 @@ FREE "3d" [$a000, $c000)
 ;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
 ;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 
-VromPalettes = $3f00
-PPUCTRL   = $2000
-PPUMASK   = $2001
-PPUSTATUS = $2002
-OAMADDR   = $2003
-OAMDATA   = $2004
-PPUSCROLL = $2005
-PPUADDR   = $2006
-PPUDATA   = $2007
-OAMDMA    = $4014
-
 ; Workaround compiler issue that forces values set using `=`
 ; to use absolute addressing instead of zp by using .define
 .define PpuCtrlShadow $00
@@ -208,7 +197,6 @@ ShouldRedisplayUI = $61ff
 UPDATE_DIFFICULTY = %000000001
 DRAW_ENEMY_STATS  = %000000010
 
-; .define _TRAINER 1
 SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
 
@@ -266,7 +254,6 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
-.define _TRAINER 1
 
 .ifdef _STATS_TRACKING
 ;;;-------------
@@ -302,9 +289,10 @@ StatsChecks = TimestampListEnd + 1
 StatsMimics   = StatsChecks + 1
 StatsMimicsLo = StatsMimics
 StatsMimicsHi = StatsMimicsLo + 1
+CheckpointEnd = StatsMimicsHi + 1
 
 PERMANENT_LENGTH  = CheckpointBase - StatTrackingBase
-CHECKPOINT_LENGTH = (StatsMimics - CheckpointBase)
+CHECKPOINT_LENGTH = (CheckpointEnd - CheckpointBase)
 CHECKPOINT = CHECKPOINT_LENGTH
 
 ; All Timestamp types listed below for reference
@@ -353,6 +341,9 @@ OAMDATA   = $2004
 PPUSCROLL = $2005
 PPUADDR   = $2006
 PPUDATA   = $2007
+
+VromPalettes = $3f00
+
 OAMDMA    = $4014
 
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
@@ -403,8 +394,6 @@ LoadAndShowDialog          = $d347
 WaitForDialogToBeDismissed = $d354
 SpawnMimic                 = $d3da
 MainLoopItemGet            = $d3ff
-WaitForNametableBufferAvailable = $c72b
-EnableNMI                  = $c436
 StageNametableWriteFromTable = $c482
 
 .segment "ff"                 ; 3e000

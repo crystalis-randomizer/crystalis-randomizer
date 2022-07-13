@@ -121,7 +121,7 @@ CopyExtraStateFromCheckpoint = $bd60
 
 .reloc
 SaveStatsToCheckpoint:
-  ldx #CHECKPOINT_LENGTH
+  ldx #CHECKPOINT_LENGTH-1
 -   lda CheckpointBase,x
     sta CheckpointBase+CHECKPOINT,x
     dex
@@ -130,7 +130,7 @@ SaveStatsToCheckpoint:
 
 .reloc
 LoadStatsFromCheckpoint:
-  ldx #CHECKPOINT_LENGTH
+  ldx #CHECKPOINT_LENGTH-1
 -   lda CheckpointBase+CHECKPOINT,x
     sta CheckpointBase,x
     dex
@@ -147,8 +147,24 @@ LoadStatsFromCheckpoint:
 ;; We can use the fact that if a save file was reset, the game sets $7001 to $ff
 ;; It later overwrites this, but we can just store that in another spot
 ; ValidateSaveFiles = $f0a4
-; .org $f39f
-;   jsr ValidateSaveFilesAndSetFlag
+
+HandleColdBoot = $f374
+HandleWarmBoot = $f39f
+
+.org $f36d
+  ; jmp instead of jsr because the main loop never returns
+  jmp PatchResetWarmBootCheck
+FREE_UNTIL $f374
+
+.reloc
+PatchResetWarmBootCheck:
+  lda $0184
+  cmp #$4f
+  bne +
+    ; the reset was a warm boot, so we want to increase the reset counter
+    inc StatsResets
+    jmp HandleWarmBoot
++ jmp HandleColdBoot
 
 ; .reloc
 ; ValidateSaveFilesAndSetFlag:
@@ -201,15 +217,6 @@ WriteOAMDataFromTable = $a9d7
 .org $a19c
   .word (DrawStatsToNMT2)
 
-; TODO Remove this debugging code to skip to the last part of the credits
-; .org $a166
-;   .word (SkipToTheGoodPart)
-; .reloc
-; SkipToTheGoodPart:
-;   lda #$19
-;   sta $0600
-;   rts
-
 ;; Patch the end credits main loop to check for the start button and skip to the end
 ;; if its pressed
 .org $a14a
@@ -243,21 +250,6 @@ CheckForStartAndSkip:
   pla
   pla
   rts
-
-; .org $a696 ; CreditScene_19
-;   jsr ResetScroll
-
-; .reloc
-; ResetScroll:
-;   ; Reset the scroll value in case we skipped here from a different spot
-;   lda #0
-;   sta $02
-;   sta $03
-;   sta $04
-;   sta $05
-;   lda $b304
-;   rts
-
 
 ; Force this part to be in $8000 bank so we can reuse $3d (expanded bank with enemy name info)
 .pushseg "10"
@@ -371,6 +363,10 @@ DrawAllStats:
   sta $04
   lda #$01
   sta $05
+  ; Pause the music just in case we skipped here from pushing start
+  lda #$a4
+  jsr StartAudioTrack
+  ; and done! Bump $600 to go to the final scene
   inc $0600
   rts
 
@@ -528,21 +524,24 @@ DrawBasicStats:
   jsr ClearBufferRAMForBox
 
   ; Start by writing player name
-  ldx #$05
+  ldx #0
 -   lda $6400,x
+    beq + ; Player name is a null terminated string
     sta $6000,x
-    dex
-    bpl -
-  lda #$4c ; "L"
+    inx
+    cmp #$06
+    bmi -
++ lda #$4c ; "L"
   sta $6007
   lda #$76 ; "v"
   sta $6008
-  lda Difficulty
+  lda PlayerLevel
   sta Hex0
   jsr HexToDecimal8Bit
   lda DecTens
-  sta $6009
-  lda DecOnes
+  beq +
+    sta $6009
++ lda DecOnes
   sta $600a
   ; lda 
   ; sta $600b
@@ -552,8 +551,9 @@ DrawBasicStats:
   sta Hex0
   jsr HexToDecimal8Bit
   lda DecTens
-  sta $600d
-  lda DecOnes
+  beq +
+    sta $600d
++ lda DecOnes
   sta $600e
   
   ldx #ChecksLen-1
@@ -630,12 +630,36 @@ DrawBasicStats:
     sta $6060,x
     dex
     bpl -
-  
+
+  lda StatsDeaths
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecHundreds
+  beq +
+  sta $606b
++ lda DecTens
+  beq +
+  sta $606c
++ lda DecOnes
+  sta $606d
+
   ldx #ResetsLen-1
 -   lda @Resets,x
     sta $6080,x
     dex
     bpl -
+
+  lda StatsResets
+  sta Hex0
+  jsr HexToDecimal8Bit
+  lda DecHundreds
+  beq +
+  sta $608b
++ lda DecTens
+  beq +
+  sta $608c
++ lda DecOnes
+  sta $608d
 
   jsr DisableNMI
   ; The NMT buffer is flushed between writes, so we can just write from slot zero
@@ -683,7 +707,10 @@ DrawTimestamps:
 
   ; loop counter
   lda TimestampCount
-  sta $c0
+  bne +
+    ; Sanity check that they have any timestamps. Really only possible with hacks.
+    rts
++ sta $c0
   lda #0
   sta $c1
 
@@ -932,7 +959,7 @@ TsNameLen = 7
 .reloc
 ClearBufferRAMForBox:
   lda #$20
-  ldx #15
+  ldx #$1f
 @Loop:
 .repeat 7, I
     sta $6000 + I * $20,x

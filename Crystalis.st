@@ -57531,7 +57531,7 @@ MainGameModeJump_01_LocationChange
 MainGameModeJump_00_Initialize
         $3ca5f  xx xx:      xxx #$xx ; 8000 -> 24000
         $3ca61  xx xx xx:   xxx BankSwitch16k
-        $3ca64  xx xx xx:   xxx $27a65
+        $3ca64  xx xx xx:   xxx InitializeStatusBarNametable
         $3ca67  xx xx xx:   xxx WaitForNametableFlush
         $3ca6a  xx xx:      xxx #$xx ; 8000 -> 34000
         $3ca6c  xx xx xx:   xxx BankSwitch8k_8000
@@ -57778,7 +57778,7 @@ MainGameModeJump_1f_DynaAppears
         $3cc75  xx xx xx:   xxx $xxxx
         $3cc78  xx xx:      xxx #$xx
         $3cc7a  xx xx xx:   xxx BankSwitch16k
-        $3cc7d  xx xx xx:   xxx $27a65
+        $3cc7d  xx xx xx:   xxx InitializeStatusBarNametable
         $3cc80  xx xx xx:   xxx WaitForOAMDMA
         $3cc83  xx xx:      xxx #$xx
         $3cc85  xx xx:      xxx #$xx

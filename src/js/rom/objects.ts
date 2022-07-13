@@ -754,16 +754,11 @@ export class Objects extends EntityArray<ObjectData> {
       a.reloc('EnemyNameBlocklist')
       a.label('EnemyNameBlocklist')
       a.export('EnemyNameBlocklist')
-      let blockListLen = 0;
-      for (const obj of this) {
-        if (obj.hp > 0 && obj.displayName == '') {
-          a.byte(obj.id);
-          blockListLen++;
-        }
-      }
-      a.assign('ENEMY_NAME_BLOCKLIST_LEN', blockListLen);
+      const hardcodedBlockedObjs = [this.dynaCounter, this.dynaLaser, this.dynaBubble];
+      const blocklist = this.filter(obj => obj.hp > 0 && obj.displayName == '').concat(hardcodedBlockedObjs);
+      a.byte(...blocklist.map(obj => obj.id))
+      a.assign('ENEMY_NAME_BLOCKLIST_LEN', blocklist.length);
       a.export('ENEMY_NAME_BLOCKLIST_LEN');
-
       modules.push(a.module());
     }
     return modules;

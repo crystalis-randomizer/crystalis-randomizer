@@ -298,8 +298,10 @@ TimestampList     = TimestampTypeListEnd + 1
 TimestampListEnd  = TimestampList + TS_COUNT * 3
 ; number of checks made
 StatsChecks = TimestampListEnd + 1
-; number of mimics encountered
-StatsMimics = StatsChecks + 1
+; bit mask of each mimic encountered
+StatsMimics   = StatsChecks + 1
+StatsMimicsLo = StatsMimics
+StatsMimicsHi = StatsMimicsLo + 1
 
 PERMANENT_LENGTH  = CheckpointBase - StatTrackingBase
 CHECKPOINT_LENGTH = (StatsMimics - CheckpointBase)

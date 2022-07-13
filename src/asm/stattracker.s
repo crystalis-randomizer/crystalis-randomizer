@@ -590,9 +590,24 @@ DrawBasicStats:
     sta $6040,x
     dex
     bpl -
-    
-  lda StatsMimics
+  ; Count the number of mimics by shifting each bit
+  lda #0
   sta Hex0
+  lda StatsMimicsLo
+  ldx #7
+-   asl
+    bcc +
+      inc Hex0
++   dex
+    bpl -
+  lda StatsMimicsHi
+  ldx #7
+-   asl
+    bcc +
+      inc Hex0
++   dex
+    bpl -
+  ; Hex0 has the number of mimics
   jsr HexToDecimal8Bit
   lda DecTens
   beq +

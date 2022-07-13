@@ -218,17 +218,32 @@ PatchStartItemGet:
   tay
   cmp #$70
   bcc +
+    ; Mimics are the 16 objects from $70 to $80, so use the Powers of Two lookup to convert from the mimic to
+    ; a mask for the byte. $70-$77 in the lo byte $78-$7f in hi
+    cmp #$78
+    bcc +
+      sec
+      sbc #$78
+      tay
+      lda PowersOfTwo,y
+      ora StatsMimicsHi
+      sta StatsMimicsHi
+      bcs @SkipToSpawnMimic ; unconditional
++   sec
+    sbc #$70
+    tay
+    lda PowersOfTwo,y
+    ora StatsMimicsLo
+    sta StatsMimicsLo
    ;; spawn mimic instead - need to back out of 3 layers of calls
    ;; TODO - keep track of which mimic so we can set the flag?
+@SkipToSpawnMimic:
     pla
     pla
     pla
     pla
     pla
     pla
-.ifdef _STATS_TRACKING
-    inc StatsMimics
-.endif
     jmp SpawnMimic
 + cmp #$49
   bcc +

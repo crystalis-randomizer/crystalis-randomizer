@@ -861,9 +861,7 @@ RedrawEnemyHPDisplayAfterClear:
   sta PreviousEnemySlot
   jmp UpdateEnemyHPDisplay
   ; implicit rts
-.endif ; _ENEMY_HP
-
-.ifdef _ENEMY_HP
+.popseg ; 13/fe/ff
 
 .pushseg "1a", "1b", "fe", "ff"
 .org $e486
@@ -873,10 +871,9 @@ RedrawEnemyHPDisplayAfterClear:
 WaitForNametableFlushDuringLoad:
   jsr $9cef ; Do the original handler for location change
   jmp FlushNametableDataWrite
-.popseg ; "0d", "fe", "ff"
+.popseg ; 1a/1b/fe/ff
 
 .pushseg "fe", "ff"  ; needs to be accessible from multiple banks
-
 
 .reloc
 ClearCurrentEnemyHP:
@@ -914,8 +911,7 @@ ClearCurrentEnemyHPSlot:
     sta ShouldRedisplayUI
 + rts
 .endif ; _ENEMY_HP
-.popseg ; "fe", "ff"
-.popseg ; "13", "fe", "ff"
+.popseg ; fe/ff
 
 .pushseg "1a", "fe", "ff"
 ;;; Calls DisplayNumberInternal for each of the bits in A as follows:

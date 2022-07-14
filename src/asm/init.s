@@ -309,19 +309,19 @@ TsKarmine      = $09
 TsDraygon1     = $0a
 TsDraygon2     = $0b
 ; TsVampire2     = $0c
-TsDyna         = $0d
+; TsDyna         = $0d
 ; Items
-TsFlight       = $03
-TsBowMoon      = $00
-TsBowSun       = $01
-TsBowTruth     = $0c
+TsFlight       = $03 ; replaces unused Rage slot
+TsBowMoon      = $00 ; replaces Vamp1
+TsBowSun       = $01 ; replaces Insect
+TsBowTruth     = $0c ; replaces Vamp2
 TsWindSword    = $0e
 TsFireSword    = $0f
 TsWaterSword   = $10
 TsThunderSword = $11
 TsCrystalis    = $12
 ; Other
-; TsComplete     = $13
+TsComplete     = $0d ; replaces DYNA
 TS_COUNT       = $13
 
 .endif

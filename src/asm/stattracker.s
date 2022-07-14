@@ -69,6 +69,8 @@ SetBossDeathTimestamp:
   beq @Exit
   cpy #TsBowTruth
   beq @Exit
+  cpy #TsComplete
+  beq @Exit
   ; A = Y, x is obj index, y is the boss id
   pha
     txa
@@ -108,6 +110,25 @@ AddTimestamp:
   rts
 .popseg ; "0f"
 
+.pushseg "13"
+.org $be54
+  jsr PatchGameCompleted
+.popseg ; 13
+
+.pushseg "fe", "ff"
+.reloc
+PatchGameCompleted:
+  ; original code
+  jsr RequestAttributeTable0Write
+  lda $6f
+  pha
+    lda #$0f
+    jsr BankSwitch8k_a000
+    lda #TsComplete
+    jsr AddTimestamp
+  pla
+  jmp BankSwitch8k_a000
+.popseg ; fe,ff
 
 .pushseg "17"
 ComputeChecksumForCheckpoint = $bd92
@@ -529,7 +550,7 @@ DrawBasicStats:
     beq + ; Player name is a null terminated string
     sta $6000,x
     inx
-    cmp #$06
+    cpx #$06
     bmi -
 + lda #$4c ; "L"
   sta $6007
@@ -913,9 +934,9 @@ DrawTimestamps:
 ; All timestamp names have to be 7 Chars or shorter to fit timestamps
 ; example: `namehre h:mm:ss`
 @TsNameStart:
-@BowMoon:
+@BowMoon: ; replaces Vampire1
 .byte "BowMoon"
-@BowSun:
+@BowSun: ; replaces Insect
 .byte "BowSun "
 @Kelbesque1:
 .byte "Kelbes1"
@@ -937,10 +958,12 @@ DrawTimestamps:
 .byte "Draygn1"
 @Draygon2:
 .byte "Draygn2"
-@Dyna:
-.byte "DYNA   "
-@BowTruth:
+@BowTruth: ; replaces Vampire2
 .byte "BowTrut"
+; @Dyna:
+; .byte "DYNA   "
+@Complete:
+.byte "Finish "
 @WindSword:
 .byte "Wind", $0a, $0b, $0c
 @FireSword:

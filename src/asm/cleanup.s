@@ -387,7 +387,7 @@ FREE_UNTIL $8aed
 .org $bc01
   jmp RequestAttributeTable0Write
 .org $be54
-  jmp RequestAttributeTable0Write
+  jsr RequestAttributeTable0Write
 
 .org $8174 ; DisableNMI_alt2 and then EnableNMI_alt2
   brk ; TODO remove after all are surely gone

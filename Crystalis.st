@@ -35951,7 +35951,7 @@ ActivateOpelStatue
         $279ec  xx xx:      xxx #$xx
         $279ee  xx xx xx:   xxx $xxxx
         $279f1  xx xx:      xxx #$xx
-        $279f3  xx xx xx:   xxx $3c176
+        $279f3  xx xx xx:   xxx WaitForMultipleOAMDMA
         $279f6  xx xx:      xxx #GAME_MODE_ITEM_USE
         $279f8  xx xx:      xxx GameMode
         $279fa  xx:         xxx
@@ -36428,12 +36428,12 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e47  xx xx xx:   xxx StageNametableWriteFromTable
         $27e4a  xx xx:      xxx #$xx
         $27e4c  xx xx:      xxx #$xx
-        $27e4e  xx xx xx:   xxx $xxxx,y
+-       $27e4e  xx xx xx:   xxx $xxxx,y
         $27e51  xx:         xxx
-        $27e52  xx xx:      xxx $xx
+        $27e52  xx xx:      xxx - ; $27e4e
         $27e54  xx xx xx:   xxx RequestAttributeTable0Write
         $27e57  xx xx:      xxx #$xx
-        $27e59  xx xx xx:   xxx $3c418
+        $27e59  xx xx xx:   xxx BankSwitch8k_8000
         $27e5c  xx xx:      xxx #$xx
         $27e5e  xx xx xx:   xxx $17e00,y
         $27e61  xx xx xx:   xxx $xxxx,y
@@ -36443,8 +36443,9 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e69  xx xx xx:   xxx StageNametableWriteFromTable
         $27e6c  xx xx xx:   xxx WaitForNametableFlush
         $27e6f  xx xx:      xxx #$xx
-        $27e71  xx xx xx:   xxx $3c418
-        $27e74  xx xx xx:   xxx $xxxx
+        $27e71  xx xx xx:   xxx BankSwitch8k_8000
+        ; walk simea to the core of the reactor
+-       $27e74  xx xx xx:   xxx $xxxx
         $27e77  xx xx xx:   xxx WaitForOAMDMA
         $27e7a  xx xx:      xxx #$xx
         $27e7c  xx xx xx:   xxx $xxxx
@@ -36452,13 +36453,13 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e81  xx xx xx:   xxx $xxxx
         $27e84  xx xx:      xxx #$xx
         $27e86  xx xx:      xxx $xx
-        $27e88  xx xx:      xxx $xx
+        $27e88  xx xx:      xxx + ; $27e96
         $27e8a  xx xx:      xxx #$xx
         $27e8c  xx xx:      xxx #$xx
         $27e8e  xx xx xx:   xxx $xxxx
         $27e91  xx xx:      xxx #$xx
         $27e93  xx xx xx:   xxx $xxxx
-        $27e96  xx:         xxx
++       $27e96  xx:         xxx
         $27e97  xx:         xxx
         $27e98  xx xx:      xxx $xx
         $27e9a  xx xx:      xxx $xx
@@ -36466,7 +36467,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e9e  xx xx xx:   xxx DrawAllObjectSprites
         $27ea1  xx xx:      xxx $xx
         $27ea3  xx xx:      xxx #$xx
-        $27ea5  xx xx:      xxx $xx
+        $27ea5  xx xx:      xxx - ; $27e74
         $27ea7  xx xx:      xxx #$xx
         $27ea9  xx xx xx:   xxx $xxxx
         $27eac  xx xx:      xxx #$xx
@@ -36476,7 +36477,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27eb7  xx xx:      xxx $xx
         $27eb9  xx xx:      xxx $xx
         $27ebb  xx xx:      xxx $xx
-        $27ebd  xx xx xx:   xxx $3ff8c
+        $27ebd  xx xx xx:   xxx DrawAllObjectSprites
         $27ec0  xx xx:      xxx $xx
         $27ec2  xx xx:      xxx #$xx
         $27ec4  xx xx:      xxx $xx
@@ -36487,7 +36488,7 @@ MainGameModeJump_1e_ThrustCrystalis
         $27ed0  xx xx:      xxx #$xx
         $27ed2  xx xx xx:   xxx $xxxx
         $27ed5  xx xx xx:   xxx WaitForOAMDMA
-        $27ed8  xx xx xx:   xxx $3ff8c
+        $27ed8  xx xx xx:   xxx DrawAllObjectSprites
         $27edb  xx xx xx:   xxx $xxxx
         $27ede  xx xx xx:   xxx $xxxx
         $27ee1  xx xx:      xxx #$xx
@@ -36517,13 +36518,13 @@ MainGameModeJump_1e_ThrustCrystalis
         $27f18  xx xx xx:   xxx $3ff8c
         $27f1b  xx xx xx:   xxx $27fc9
         $27f1e  xx xx:      xxx #$xx
-        $27f20  xx xx xx:   xxx $3c176
+        $27f20  xx xx xx:   xxx WaitForMultipleOAMDMA
         $27f23  xx xx:      xxx #$xx
         $27f25  xx xx xx:   xxx $xxxx
         $27f28  xx xx xx:   xxx DrawAllObjectSprites
         $27f2b  xx xx xx:   xxx $27fc9
         $27f2e  xx xx:      xxx #$xx
-        $27f30  xx xx xx:   xxx $3c176
+        $27f30  xx xx xx:   xxx WaitForMultipleOAMDMA
         $27f33  xx xx:      xxx #$xx
         $27f35  xx xx:      xxx $xx
         $27f37  xx xx:      xxx #$xx
@@ -56603,7 +56604,7 @@ WaitForOAMDMA
         $3c175  xx:         xxx
 ;;; --------------------------------
 WaitForMultipleOAMDMA
-	;; But who changes the sprite RAM?  ?NMI handler?!?
+        ;; [in y] - Number of frames to wait.
 -       $3c176  xx xx xx:    xxx WaitForOAMDMA
         $3c179  xx:          xxx
         $3c17a  xx xx:      xxx -
@@ -59601,7 +59602,7 @@ HandleItemOrTrigger
         $3d869  xx xx xx:      xxx $3c89e
         $3d86c  xx xx:         xxx #SFX_DIALOG
         $3d86e  xx xx xx:      xxx StartAudioTrack
-        $3d871  xx xx xx:      xxx $3d347
+        $3d871  xx xx xx:      xxx LoadAndShowDialog
         $3d874  xx xx xx:      xxx $3c008
         $3d877  xx xx xx:      xxx $3c8a9
         $3d87a  xx:           xxx

@@ -50,8 +50,9 @@ CheckForStatTrackedItems:
     ; fallthrough
 @AddTimestampAndExit:
     jsr AddTimestamp
-  ; reload the original item ID into a
+  ; reload the original item ID into A and Y
   lda $29
+  tay
   rts
 
 ; Patch ObjectActionJump_6f (boss death) to add a timestamp for their death
@@ -394,8 +395,8 @@ DrawAllStats:
 .reloc
 DrawBox:
 
-  ; space is tight in segment "10", "11" so write the attribute header here
-  ; write attribute headers
+  ; space is tight in segment "10", "11" so we copied the attribute data while they are banked in
+  ; but now we can write buffer update headers
   jsr DisableNMI
   ldx NmtBufWriteOffset
   lda #>NAMETABLE_ADDR + $03
@@ -436,8 +437,8 @@ DrawBox:
   ; ldy #$11
   sta $6011
 
-  ; ldx #25 ; loop counter we have 26 rows to draw
-  ldx #28
+  ; NES is 30x32 so draw 30 rows of the wall
+  ldx #29
 @UpdateBuffer:
     jsr DisableNMIAndWaitForNMTSlot
     ldy NmtBufWriteOffset

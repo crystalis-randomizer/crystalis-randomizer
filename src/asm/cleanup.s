@@ -228,8 +228,12 @@ WriteNametableDataToPpu:
 .endrepeat
     ; faster way to add 8 to x by using safe unofficial opcode `axs`
     ; which calculates x = a & x - imm (#~8)
+    ; txa
+    ; .byte $cb, $f8 ; axs #$f8 ; removed for now since it breaks steves emu
     txa
-    .byte $cb, $f8 ; axs #$f8
+    clc
+    adc #$08
+    tax
     dey
     bne @BatchLoopCopy
   ;; Bump the read offset

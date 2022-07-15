@@ -40,6 +40,7 @@ fi
 
 dirs="asm edit logic maze pass rom spoiler view"
 # Make directories and copy the relevant files.
+mkdir -p "deploy/$dir/asm"
 mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/css/view"
 mkdir -p "deploy/$dir/images"
@@ -62,6 +63,7 @@ done
 # Also make the minimum necessary dirs for permalinks
 sha=sha/$commit
 mkdir -p "deploy/$sha/js"
+mkdir -p "deploy/$sha/asm"
 mkdir -p "deploy/$sha/css"
 echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
 echo '<script type="module">document.body.classList.add("permalink")</script>' \

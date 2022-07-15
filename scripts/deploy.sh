@@ -48,7 +48,7 @@ for sub in $dirs; do
   cp dist/js/$sub/*.js "deploy/$dir/js/$sub/"
 done
 cp dist/js/*.js "deploy/$dir/js/"
-cp dist/js/*.s "deploy/$dir/js/"
+cp dist/asm/*.s "deploy/$dir/asm/"
 cp dist/css/*.css "deploy/$dir/css/"
 cp dist/css/view/*.css "deploy/$dir/css/view/"
 cp dist/images/* "deploy/$dir/images/"
@@ -71,7 +71,7 @@ cat deploy/$dir/help.html >> deploy/$sha/help.html
 cp deploy/$dir/js/main.min.js deploy/$sha/js/main.min.js
 cp deploy/$dir/js/build_info.js deploy/$sha/js/build_info.js
 cp deploy/$dir/css/main.css deploy/$sha/css/main.css
-cp deploy/$dir/js/*.s deploy/$sha/js/
+cp deploy/$dir/asm/*.s deploy/$sha/asm/
 scripts/dedupe.sh deploy/$sha deploy/sha/files
 
 # Link stable and current if necessary.

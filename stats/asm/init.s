@@ -141,11 +141,22 @@ FREE "3d" [$a000, $c000)
 ;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
 ;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 
+; Workaround compiler issue that forces values set using `=`
+; to use absolute addressing instead of zp by using .define
+.define PpuCtrlShadow $00
+.define PpuMaskShadow $01
+
+.define NmiDisable $06 ; Set to 1 to disable NMI processing
+.define NmiSkipped $07 ; Set to $06 if NMI was skipped
+.define OamDisable $09 ; Set to $00 to have OAM run
+
+.define NmtBufReadOffset  $0a
+.define NmtBufWriteOffset $0b
+.define NmtBufTempValue   $0c
 
 ;;; Various global definitions.
-PpuCtrlShadow = $00
-PpuMaskShadow = $01
-GameMode = $41
+.define GameMode   $41
+.define ScreenMode $51
 ObjectRecoil = $340
 ObjectHP = $3c0
 PlayerHP = $3c1
@@ -186,7 +197,6 @@ ShouldRedisplayUI = $61ff
 UPDATE_DIFFICULTY = %000000001
 DRAW_ENEMY_STATS  = %000000010
 
-; .define _TRAINER 1
 SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
 
@@ -244,6 +254,78 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
+
+.ifdef _STATS_TRACKING
+;;;-------------
+; layout of the stats SRAM is as follows
+
+;; The follow stats are NOT checkpointed because they persist between reloads
+StatTrackingBase  = $7010
+
+StatTimer   = StatTrackingBase
+StatTimerLo = StatTimer
+StatTimerMd = StatTimer + 1
+StatTimerHi = StatTimer + 2
+; number of deaths
+StatsDeaths = StatTimer + 3
+; number of soft resets
+StatsResets = StatsDeaths + 1
+
+;; marks the start of the data that should be checkpointed
+;; Anything below will be copied into a duplicate when a checkpoint is made
+;; and loaded from the duplicate when the game is reloaded from checkpoint
+CheckpointBase    = StatsResets + 1
+; number of event timestamps
+TimestampCount    = CheckpointBase
+; array of each event ordered by when they happen
+TimestampTypeList = TimestampCount + 1
+TimestampTypeListEnd = TimestampTypeList + TS_COUNT
+; Timestamp of each event, this is indexed by the order of events above
+TimestampList     = TimestampTypeListEnd + 1
+TimestampListEnd  = TimestampList + TS_COUNT * 3
+; number of checks made
+StatsChecks = TimestampListEnd + 1
+; bit mask of each mimic encountered
+StatsMimics   = StatsChecks + 1
+StatsMimicsLo = StatsMimics
+StatsMimicsHi = StatsMimicsLo + 1
+CheckpointEnd = StatsMimicsHi + 1
+
+PERMANENT_LENGTH  = CheckpointBase - StatTrackingBase
+CHECKPOINT_LENGTH = (CheckpointEnd - CheckpointBase)
+CHECKPOINT = CHECKPOINT_LENGTH
+
+; All Timestamp types listed below for reference
+; Bosses
+; TsVamp1        = $00
+; TsInsect       = $01
+TsKelbesque1   = $02
+TsSabera1      = $04
+TsMado1        = $05
+TsKelbesque2   = $06
+TsSabera2      = $07
+TsMado2        = $08
+TsKarmine      = $09
+TsDraygon1     = $0a
+TsDraygon2     = $0b
+; TsVampire2     = $0c
+; TsDyna         = $0d
+; Items
+TsFlight       = $03 ; replaces unused Rage slot
+TsBowMoon      = $00 ; replaces Vamp1
+TsBowSun       = $01 ; replaces Insect
+TsBowTruth     = $0c ; replaces Vamp2
+TsWindSword    = $0e
+TsFireSword    = $0f
+TsWaterSword   = $10
+TsThunderSword = $11
+TsCrystalis    = $12
+; Other
+TsComplete     = $0d ; replaces DYNA
+TS_COUNT       = $13
+
+.endif
+
 ;;; Constants
 GAME_MODE_STATUS_MSG = $10
 ITEM_RABBIT_BOOTS    = $12
@@ -259,6 +341,9 @@ OAMDATA   = $2004
 PPUSCROLL = $2005
 PPUADDR   = $2006
 PPUDATA   = $2007
+
+VromPalettes = $3f00
+
 OAMDMA    = $4014
 
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
@@ -301,6 +386,7 @@ BankSwitch16k              = $c40e
 BankSwitch8k_8000          = $c418
 BankSwitch8k_a000          = $c427
 FlushNametableDataWrite    = $c676
+WaitForNametableBufferAvailable = $c72b
 MainLoop_01_Game           = $cab6
 CheckForPlayerDeath        = $cb84
 DialogAction_11            = $d21d
@@ -308,12 +394,11 @@ LoadAndShowDialog          = $d347
 WaitForDialogToBeDismissed = $d354
 SpawnMimic                 = $d3da
 MainLoopItemGet            = $d3ff
-WaitForNametableBufferAvailable = $c72b
-EnableNMI                  = $c436
 StageNametableWriteFromTable = $c482
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
+ExecuteScreenMode             = $f6ad
 ReadControllersWithDirections = $fe80
 DisplayNumber                 = $ffa9
 
@@ -392,7 +477,6 @@ FREE "fe" [$d654, $d659)
 ;;; Recovered from other item/trigger jumps (06/11, 0b, 0c, 0d, 0e, 0f,
 FREE "fe" [$d6d5, $d746)
 
-FREE "ff" [$f9ba, $fa00) ; first byte of DMC sample actually matters
 FREE "ff" [$fa01, $fe00) ; rts at 3fe00 is important
 FREE "ff" [$fe01, $fe16)
 FREE "ff" [$fe18, $fe78) ;; NOTE: 3fe2e might be safer than 3fe18

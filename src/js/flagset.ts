@@ -1234,7 +1234,12 @@ export class FlagSet {
   shouldColorSwordElements(): boolean {
     return true;
   }
+  
   shouldUpdateHud(): boolean {
     return this.check(Vanilla.Hud, false);
+  }
+
+  hasStatTracking(): boolean {
+    return true;
   }
 }

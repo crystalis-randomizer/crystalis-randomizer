@@ -486,3 +486,20 @@ MaybeUpdateMusic = $f7fe
 FREE_UNTIL $f4e5
 
 .popseg ; "fe", "ff"
+
+; Resample DMC to use less space overall
+.pushseg "18", "fe", "ff"
+
+.org $8bdc
+  ; We resampled the original sample to a playback rate of 8, shrinking the sample from
+  ; 992 bytes to 288 bytes.
+  .byte $08,$00,$e8,$12
+  FREE_UNTIL $8c0c
+
+; Resampled DMC audio binary
+.org $fa00
+.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$7f,$00,$00,$00,$e8,$ff,$f3,$fb,$03,$84,$05,$00,$d0,$f9,$81,$01,$00,$80,$ff,$85,$64,$d0,$01,$e0,$b0,$ff,$83,$26,$14,$20,$f1,$7f,$00,$00,$bc,$6b,$e7,$5f,$ff,$c7,$e1,$bc,$69,$61,$fe,$bb,$fb,$ff,$fa,$07,$8d,$bc,$7d,$24,$e8,$7b,$f8,$ff,$07,$fe,$f4,$ff,$fb,$df,$fd,$bf,$ff,$ff,$f3,$29,$a7,$e3,$3f,$0c,$50,$72,$3a,$09,$5f,$76,$73,$6f,$32,$e7,$37,$5c,$f4,$9f,$41,$fe,$de,$4d,$e7,$60,$1f,$1d,$d7,$52,$7a,$4b,$e7,$96,$3d,$91,$f4,$2b,$21,$ad,$8b,$7b,$69,$e4,$c4,$17,$c5,$14,$3c,$e7,$73,$e0,$c9,$77,$ab,$7b,$98,$3f,$76,$77,$58,$07,$d3,$03,$1c,$e7,$bf,$e3,$f0,$1b,$8a,$57,$fb,$45,$b3,$c0,$fc,$eb,$d5,$77,$f4,$d4,$3b,$fa,$6c,$96,$c1,$f7,$7c,$ac,$45,$f0,$7e,$8c,$c9,$8f,$f3,$7b,$55,$be,$e4,$f0,$9f,$6f,$56,$00,$f8,$60,$e8,$ed,$ec,$c4,$ff,$b7,$5b,$c3,$e3,$f7,$0b,$03,$f2,$47,$57,$3e,$1b,$86,$e7,$71,$e1,$bc,$cd,$7d,$b8,$6a,$53,$27,$c1,$3f,$97,$ba,$16,$4e,$b0,$1f,$b7,$e7,$1c,$fb,$87,$7e,$38,$1b,$9f,$c5,$83,$7f,$e3,$14,$9f,$f5,$bf,$0c,$be,$ff,$6b,$37,$63,$f7,$97,$eb,$b2,$0f,$fe,$af,$f5,$2a,$1e,$c7,$fe,$03,$07,$ee,$27,$b6,$73,$86,$13,$bf,$fb,$f2,$eb,$b9,$86,$ae,$77,$10,$60,$ff,$dd,$f8,$0f,$60,$3e,$54,$55,$55,$55,$55,$55
+
+FREE "ff" [*, $fe00) ; rts at 3fe00 is important
+
+.popseg ; 18,fe,ff

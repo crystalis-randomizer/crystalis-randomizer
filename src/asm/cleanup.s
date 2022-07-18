@@ -467,4 +467,22 @@ FREE_UNTIL $ec6c
 .org $ed61
   jmp EnableNMI
 
+ReturnFromIRQ = $f482
+MaybeUpdateMusic = $f7fe
+.org $f4cb ; in IRQCallback_01 - HandleStatusBarAndNextFrame
+  ; NmiSkipped increments every time it skips, so store it and check to see if it changes
+  lda NmiSkipped
+  pha
+    DISABLE_NMI
+    jsr MaybeUpdateMusic
+    ENABLE_NMI
+  pla
+  cmp NmiSkipped
+  beq +
+    ; if NMI was skipped then we need to run the ScreenMode for this frame
+    jsr ExecuteScreenMode
+; the new code takes more space, so save a few bytes jmping to another pla/rti chain
++ jmp ReturnFromIRQ
+FREE_UNTIL $f4e5
+
 .popseg ; "fe", "ff"

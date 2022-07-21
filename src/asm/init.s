@@ -179,6 +179,17 @@ PlayerMaxMP = $709
 EquippedConsumableItem = $715
 EquippedPassiveItem    = $716
 
+; Screen values are written in the main game loop, and are copied to the scroll values
+; during NMI. So the IRQ will read from the scroll values and the game will write to Screen
+.define ScreenXLo   $02
+.define ScreenXHi   $03
+.define ScreenYLo   $04
+.define ScreenYHi   $05
+
+ScrollXLo = $07d8
+ScrollXHi = $07d9
+ScrollYLo = $07da
+ScrollYHi = $07db
 
 InvSwords = $6430
 InvConsumables = $6440
@@ -345,6 +356,13 @@ PPUDATA   = $2007
 VromPalettes = $3f00
 
 OAMDMA    = $4014
+
+BANKSELECT = $8000
+BANKDATA   = $8001
+IRQLATCH   = $c000
+IRQRELOAD  = $c001
+IRQDISABLE = $e000
+IRQENABLE  = $e001
 
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read

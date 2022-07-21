@@ -63655,14 +63655,14 @@ SetIRQCallback
         $3f432  xx:         xxx
 ;;; --------------------------------
 IRQCallbackTable
-        $3f433              .word ($xxxx)
-        $3f435              .word ($xxxx)
-        $3f437              .word ($xxxx)
-        $3f439              .word ($xxxx)
-        $3f43b              .word ($xxxx)
-        $3f43d              .word ($xxxx)
-        $3f43f              .word ($xxxx)
-        $3f441              .word ($xxxx)
+        $3f433              .word (VerticalScreenWrapHandler)
+        $3f435              .word (HandleStatusBarAndNextFrame)
+        $3f437              .word (MessageBoxTopHandler)
+        $3f439              .word (MessageBoxBottomHandler)
+        $3f43b              .word ($xxxx)    ; UNUSED
+        $3f43d              .word ($xxxx)    ; UNUSED
+        $3f43f              .word (AnimateSNKLogoScroll)
+        $3f441              .word (InventoryUpdateCHRROMForMagic)
 ;;; --------------------------------
 HandleIRQ
         $3f443  xx:         xxx
@@ -63681,7 +63681,22 @@ KillSomeCycles
         $3f452  xx xx:      xxx - ; $3f451
         $3f454  xx:         xxx
         ;; --------------------------------
-IRQCallback_00
+VerticalScreenWrapHandler
+;;; Crystalis hides the vertical scrolling seam by setting an IRQ
+;;; to trigger in the middle of the screen during normal gameplay.
+;;;
+;;; The timing for when this IRQ is fired is based on $57 (current scanline)
+;;; which is updated at the end of each IRQ. The range of this
+;;; value goes from #$00 to #$BE where #$BE seems to indicate that the scroll
+;;; seam is behind the status bar (or otherwise doesn't need to scroll)
+;;; 
+;;; The goal for this IRQ is to set the scroll such that the "bottom" half
+;;; of the current playing field gets drawn correctly based on the chars
+;;; location.
+;;;
+;;; After the new scroll value is set, the handler will set the
+;;; IRQ callback value to #$01 for drawing the status bar and executing the
+;;; next ScreenMode action.
         $3f455  xx xx xx:      xxx $xxxx          ; X = 9 always?
         $3f458  xx xx xx:      xxx KillSomeCycles ; $3f451
         $3f45b  xx xx xx:      xxx PPUSTATUS ; reset address latch
@@ -63753,7 +63768,7 @@ IRQCallback_01
         $3f4e3  xx:         xxx
         $3f4e4  xx:         xxx
 ;;; --------------------------------
-IRQCallback_02
+MessageBoxTopHandler
         $3f4e5  xx xx xx:   xxx $xxxx
         $3f4e8  xx xx xx:   xxx KillSomeCycles
         $3f4eb  xx:         xxx
@@ -63767,7 +63782,7 @@ IRQCallback_02
         $3f4f8  xx xx:      xxx #$xx
         $3f4fa  xx xx xx:   xxx PPUADDR
         $3f4fd  xx xx xx:   xxx PPUSCROLL
-        $3f500  xx xx xx:   xxx $3f64f
+        $3f500  xx xx xx:   xxx SwitchCHRBankForMessageBox
         $3f503  xx xx:      xxx #$xx
         $3f505  xx xx xx:   xxx IRQLATCH
         $3f508  xx xx xx:   xxx IRQRELOAD
@@ -63864,7 +63879,7 @@ DataTable_3f5a1
         $3f5d0              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $3f5e0              .byte $xx
 ;;; --------------------------------
-IRQCallback_04
+IRQCallback_04 ; UNUSED
         $3f5e1  xx xx xx:   xxx $xxxx
         $3f5e4  xx xx xx:   xxx KillSomeCycles
         $3f5e7  xx xx xx:   xxx PPUSTATUS
@@ -63888,7 +63903,7 @@ IRQCallback_04
         $3f60c  xx:         xxx
         $3f60d  xx:         xxx
 ;;; --------------------------------
-IRQCallback_05
+IRQCallback_05 ; UNUSED
         $3f60e  xx xx xx:   xxx IRQDISABLE
         $3f611  xx xx xx:   xxx MaybeUpdateMusic
         $3f614  xx:         xxx
@@ -63898,7 +63913,7 @@ IRQCallback_05
         $3f618  xx:         xxx
         $3f619  xx:         xxx
 ;;; --------------------------------
-IRQCallback_07
+InventoryUpdateCHRROMForMagic
         $3f61a  xx xx xx:   xxx $xxxx
         $3f61d  xx xx xx:   xxx KillSomeCycles
         $3f620  xx xx:      xxx #$xx
@@ -63925,6 +63940,7 @@ IRQCallback_07
         $3f64d  xx:         xxx
         $3f64e  xx:         xxx
 ;;; --------------------------------
+SwitchCHRBankForMessageBox
         ;; Note: This seems related to SelectCHRRomBanks.
         ;; Both write out all the CHR rom banks based on
         ;; some part of RAM, but they use different regions
@@ -63957,7 +63973,7 @@ IRQCallback_07
         $3f68d  xx xx xx:   xxx BANKSELECT
         $3f690  xx:         xxx
 ;;; --------------------------------
-IRQCallback_06
+AnimateSNKLogoScroll
         $3f691  xx xx xx:   xxx $xxxx
         $3f694  xx xx xx:   xxx KillSomeCycles
         $3f697  xx xx xx:   xxx $xxxx
@@ -64075,7 +64091,7 @@ ScreenModeJumpTable_02
         $3f75a  xx xx:      xxx #$xx
         $3f75c  xx xx xx:   xxx $xxxx
         $3f75f  xx xx xx:   xxx $xxxx
-        $3f762  xx xx xx:   xxx $3f64f
+        $3f762  xx xx xx:   xxx SwitchCHRBankForMessageBox
         $3f765  xx xx:      xxx $xx
         $3f767  xx xx:      xxx #$xx
         $3f769  xx xx:      xxx + ; $3f76e
@@ -64134,7 +64150,7 @@ ScreenModeJumpTable_06
         $3f7e0  xx xx:      xxx #$xx
         $3f7e2  xx xx xx:   xxx $xxxx
         $3f7e5  xx xx xx:   xxx $xxxx
-        $3f7e8  xx xx xx:   xxx $3f64f
+        $3f7e8  xx xx xx:   xxx SwitchCHRBankForMessageBox
         $3f7eb  xx xx:      xxx #$xx
         $3f7ed  xx xx xx:   xxx SetIRQCallback
         $3f7f0  xx xx:      xxx #$xx

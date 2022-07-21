@@ -80,23 +80,23 @@ NMIHandler:
             ; fallthrough
 @CopyFromObjCoords:
             lda $83
-            sta $07d8
+            sta ScrollXLo
             lda $a3
-            sta $07d9
+            sta ScrollXHi
             lda $c3
-            sta $07da
+            sta ScrollYLo
             lda $e3
-            sta $07db
+            sta ScrollYHi
             jmp @SkipOAMDMA
 @CopyFromStandardScroll:
-            lda $02
-            sta $07d8
-            lda $03
-            sta $07d9
-            lda $04
-            sta $07da
-            lda $05
-            sta $07db
+            lda ScreenXLo
+            sta ScrollXLo
+            lda ScreenXHi
+            sta ScrollXHi
+            lda ScreenYLo
+            sta ScrollYLo
+            lda ScreenYHi
+            sta ScrollYHi
             ; fallthrough
 @SkipOAMDMA:
         ;; Back to the main line - always write nametables and palettes.
@@ -134,8 +134,8 @@ NMIHandler:
     pla
     tax
   pla
+InitialIRQHandler:
   rti
-
 
 .org $c739
   brk
@@ -467,24 +467,6 @@ FREE_UNTIL $ec6c
 .org $ed61
   jmp EnableNMI
 
-ReturnFromIRQ = $f482
-MaybeUpdateMusic = $f7fe
-.org $f4cb ; in IRQCallback_01 - HandleStatusBarAndNextFrame
-  ; NmiSkipped increments every time it skips, so store it and check to see if it changes
-  lda NmiSkipped
-  pha
-    DISABLE_NMI
-    jsr MaybeUpdateMusic
-    ENABLE_NMI
-  pla
-  cmp NmiSkipped
-  beq +
-    ; if NMI was skipped then we need to run the ScreenMode for this frame
-    jsr ExecuteScreenMode
-; the new code takes more space, so save a few bytes jmping to another pla/rti chain
-+ jmp ReturnFromIRQ
-FREE_UNTIL $f4e5
-
 .popseg ; "fe", "ff"
 
 ; Resample DMC to use less space overall
@@ -493,13 +475,650 @@ FREE_UNTIL $f4e5
 .org $8bdc
   ; We resampled the original sample to a playback rate of 8, shrinking the sample from
   ; 992 bytes to 288 bytes.
-  .byte $08,$00,$e8,$12
+  .byte $0f,$ff,$e8,$3c
   FREE_UNTIL $8c0c
 
 ; Resampled DMC audio binary
-.org $fa00
-.byte $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$7f,$00,$00,$00,$e8,$ff,$f3,$fb,$03,$84,$05,$00,$d0,$f9,$81,$01,$00,$80,$ff,$85,$64,$d0,$01,$e0,$b0,$ff,$83,$26,$14,$20,$f1,$7f,$00,$00,$bc,$6b,$e7,$5f,$ff,$c7,$e1,$bc,$69,$61,$fe,$bb,$fb,$ff,$fa,$07,$8d,$bc,$7d,$24,$e8,$7b,$f8,$ff,$07,$fe,$f4,$ff,$fb,$df,$fd,$bf,$ff,$ff,$f3,$29,$a7,$e3,$3f,$0c,$50,$72,$3a,$09,$5f,$76,$73,$6f,$32,$e7,$37,$5c,$f4,$9f,$41,$fe,$de,$4d,$e7,$60,$1f,$1d,$d7,$52,$7a,$4b,$e7,$96,$3d,$91,$f4,$2b,$21,$ad,$8b,$7b,$69,$e4,$c4,$17,$c5,$14,$3c,$e7,$73,$e0,$c9,$77,$ab,$7b,$98,$3f,$76,$77,$58,$07,$d3,$03,$1c,$e7,$bf,$e3,$f0,$1b,$8a,$57,$fb,$45,$b3,$c0,$fc,$eb,$d5,$77,$f4,$d4,$3b,$fa,$6c,$96,$c1,$f7,$7c,$ac,$45,$f0,$7e,$8c,$c9,$8f,$f3,$7b,$55,$be,$e4,$f0,$9f,$6f,$56,$00,$f8,$60,$e8,$ed,$ec,$c4,$ff,$b7,$5b,$c3,$e3,$f7,$0b,$03,$f2,$47,$57,$3e,$1b,$86,$e7,$71,$e1,$bc,$cd,$7d,$b8,$6a,$53,$27,$c1,$3f,$97,$ba,$16,$4e,$b0,$1f,$b7,$e7,$1c,$fb,$87,$7e,$38,$1b,$9f,$c5,$83,$7f,$e3,$14,$9f,$f5,$bf,$0c,$be,$ff,$6b,$37,$63,$f7,$97,$eb,$b2,$0f,$fe,$af,$f5,$2a,$1e,$c7,$fe,$03,$07,$ee,$27,$b6,$73,$86,$13,$bf,$fb,$f2,$eb,$b9,$86,$ae,$77,$10,$60,$ff,$dd,$f8,$0f,$60,$3e,$54,$55,$55,$55,$55,$55
+; .org $fa00
 
-FREE "ff" [*, $fe00) ; rts at 3fe00 is important
+FREE "ff" [$fa00, $fe00) ; rts at 3fe00 is important
+
+.popseg ; 18,fe,ff
+
+
+.ifdef _FIX_SHAKING
+
+.pushseg "fe", "ff"
+
+;;; -------------------
+;;; IRQ rewrite
+;;; -------------------
+;;; - change the IRQ callbacks to use loopy's scrolling method
+;;;   - (https://www.nesdev.org/wiki/PPU_scrolling#Split_X/Y_scroll)
+;;;   - Using this scroll method avoids the $2006 write glitch on dot 257 by
+;;;     putting the $2006 write later into hblank
+;;; - tweak the delay timings to be more lenient of irq jitter (up to 10 cpu cycles of jitter)
+;;;   - attempt to reduce IRQ total time by replacing waits with timed code
+;;; - make the IRQ code relocatable because theres no need for it to not be at this point
+;;;   - (jroweboy: I find it hard to read if i have to patch 100 small places and jump
+;;;      between vanilla and rando code to understand the full method)
+
+; Free the original IRQ space
+.org $f422
+  FREE_UNTIL $f6ad
+
+
+;;;---------
+; Update the Reset function to setup the jmp (IRQHandler) in zp
+
+MaybeUpdateMusic = $f7fe
+
+.define IRQJumpJmpAbsolute $54
+.define IRQJumpLo $55
+.define IRQJumpHi $56
+.define IRQScanline $57
+
+.define IRQ_VERTICAL_WRAP $00
+.define IRQ_STATUSBAR     $01
+.define IRQ_MESSAGE_TOP   $02
+.define IRQ_MESSAGE_BOT   $03
+.define IRQ_SNK_LOGO      $04
+.define IRQ_INVENTORY     $05
+
+.define SCANLINE_MSGTOP    12
+.define SCANLINE_MSGBOT    85
+.define SCANLINE_STATUS    191
+.define SCANLINE_FINAL     239
+
+
+.org $f2f6 ; in HandleReset
+  lda #$4c
+  sta IRQJumpJmpAbsolute
+  ;; In vanilla, this is just a pointer to a random RTI instruction
+  ;; so I pointed this to the RTI in NMI
+  lda #<InitialIRQHandler
+  sta IRQJumpLo
+  lda #>InitialIRQHandler
+  sta IRQJumpHi
+.assert * = $f302
+
+;;; --------------------------------
+;;; Sets the callback to run in the IRQ handler to the
+;;; callback indexed by A, saving the index in $56 and
+;;; the jump table entry in ($0054).
+.org $fffe ; VectorIRQ
+  .word (IRQJumpJmpAbsolute)
+
+.reloc
+SetIRQCallback:
+  ;; TODO - $56 is a very likely candidate to change from ZP to ABS
+  ;; Its only read once in the code when changing teleport spots
+  ; sta $56
+  asl
+  tax
+  lda IRQCallbackTable,x
+  sta IRQJumpLo
+  lda IRQCallbackTable+1,x
+  sta IRQJumpHi
+  rts
+
+IRQtmp = $07fe
+
+.macro FastSetIRQCallback a
+  lda IRQCallbackTable + (a * 2)
+  sta IRQJumpLo
+  lda IRQCallbackTable + (a * 2) + 1
+  sta IRQJumpHi
+.endmacro
+
+.reloc
+IRQCallbackTable:
+  .word (VerticalScreenWrapHandler)
+  .word (StatusBarAndAudio)
+  .word (MessageBoxTopHandler)
+  .word (MessageBoxBottomHandler)
+  .word (AnimateSNKLogoScroll)
+  .word (InventoryUpdateCHRROMForMagic)
+
+.reloc
+VerticalScreenWrapHandler:
+  pha
+    sta IRQDISABLE
+    sta IRQENABLE
+    ;; Instead of burning cycles, we can setup the next IRQ
+    lda #SCANLINE_STATUS - 1 ; offset by one to cover for this irq taking 1 scanline
+    sec
+    sbc IRQScanline
+    sta IRQLATCH
+    sta IRQRELOAD
+
+    FastSetIRQCallback IRQ_STATUSBAR
+
+    ; After the first two writes and setup is done, we end up on dot 180
+    ; so we need to stall for about 28 cycles.
+    .repeat 4
+      php
+      plp
+    .endrepeat
+
+    ;; first two PPU writes can happen early before we need to wait
+    lda PPUSTATUS ; reset address latch
+    ; Nametable number << 2 (that is: $00, $04, $08, or $0C) to $2006
+    lda #$00
+    sta PPUADDR
+    ; Y to $2005 -- The Y value will always be 0 because its a midframe split
+    sta PPUSCROLL
+    
+    ;; setup the next PPUADDR and PPUSCROLL value
+    ; IRQtmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
+    lda ScrollXLo
+    lsr
+    lsr
+    lsr
+    sta IRQtmp
+    ; Timing should be in hblank (between dot 257 and 320)
+    lda ScrollXLo
+    sta PPUSCROLL
+    lda IRQtmp
+    sta PPUADDR
+  pla
+  rti
+
+.reloc
+StatusBarAndAudio:
+  ; we need to preserve all of the registers because of MaybeUpdateMusic, so might
+  ; as well do it while waiting for hblank
+  pha
+    txa
+    pha
+      tya
+      pha
+        sta IRQDISABLE
+        
+        ; set draw background on
+        lda PpuMaskShadow
+        and #$0e
+        ora #$08
+        sta PPUMASK
+
+        lda #0
+        sta IRQtmp
+
+        ;; first two PPU writes can happen early before we need to wait
+        lda PPUSTATUS ; reset address latch
+        ; Nametable number << 2 (that is: $00, $04, $08, or $0C) to $2006
+        lda #$08
+        sta PPUADDR
+
+        ; Y to $2005 -- The Y value will always be 194 - (0|1|2) depending on how early it is
+        ; we can know if the status bar is early by checking if scrollY is $31 or $32
+        ; check to see if we are in an early status bar.
+        ; this could be up to 2 scanlines early.
+        ScrollRangeLo = $30 ; we need $31 to map to 1, so start at $30 instead
+        ScrollRangeHi = $32 + 1 ; +1 to account for >= in cmp/bcs
+        lda ScrollYLo
+        sec
+        sbc #ScrollRangeLo
+        cmp #ScrollRangeHi - ScrollRangeLo
+        bcs +
+          ; TODO we have enough timing window here that burning these cycles isn't a problem
+          ; but a maybe potential opt is to use a zp for IRQtmp and use BIT sta IRQtmp to skip the sta
+          ; if the scroll is not in the range
+          sta IRQtmp ; stores 1 or 2
++       bcc +
+          ; make the branch constant time by countering out the sta with another branch
+          nop
+          nop
++       StatusBarY = 195
+        lda #StatusBarY
+        sec
+        sbc IRQtmp
+        sta PPUSCROLL
+
+        .repeat 3
+          php ; stall for a few cycles
+          plp
+        .endrepeat
+
+        ; Timing should be in hblank (between dot 257 and 320)
+        lda #0
+        ; earliest dot for this scroll set is 259
+        sta PPUSCROLL
+        lda #<((StatusBarY & $f8) << 2) 
+        sta PPUADDR
+    
+        ldx #$00
+        stx BANKSELECT
+        lda #$3c
+        sta BANKDATA
+        inx
+        stx BANKSELECT
+        lda #$38
+        sta BANKDATA
+        ; restore the bank select from shadow
+        lda $50
+        sta BANKSELECT
+        ;; Attempt to process a little music before NMI
+        ;; If it skips NMI then go ahead and draw setup the screenmode and cause a lag frame
+        ; NmiSkipped increments every time it skips, so store it and check to see if it changes
+        lda NmiSkipped
+        pha
+          DISABLE_NMI
+          jsr MaybeUpdateMusic
+          ENABLE_NMI
+        pla
+        cmp NmiSkipped
+        beq +
+          ; if NMI was skipped then we need to run the ScreenMode for this frame
+          jsr ExecuteScreenMode
+    + pla
+      tay
+    pla
+    tax
+  pla
+  rti
+
+.reloc
+MessageBoxTopHandler:
+  pha
+    sta IRQDISABLE
+    sta IRQENABLE
+    
+      ; set the next one to run #$49 == 73 scanlines from now
+    lda #SCANLINE_MSGBOT - SCANLINE_MSGTOP
+    sta IRQLATCH
+    sta IRQRELOAD
+    ; ; clc
+    sec ; add 1 to account for scanline lag?
+    adc IRQScanline
+    sta IRQScanline
+    
+    FastSetIRQCallback IRQ_MESSAGE_BOT
+
+    ;; first two PPU writes can happen early before we need to wait
+    lda PPUSTATUS ; reset address latch
+
+    ; Nametable number << 2 (that is: $00, $04, $08, or $0C) to $2006
+    lda #$08
+    sta PPUADDR
+    
+    ;; take some time to figure out the messagebox bottom PPUADDR and PPUSCROLL value?
+    MessageBoxTopY = 3
+    lda #MessageBoxTopY
+    sta PPUSCROLL
+    ; we have a bit of time before hblank to swap a couple sprite CHR banks
+
+    ;; If we need to cut just a few cycles before, we can
+    ;; piggy back off MessageBoxTopY == 3 to shave off 3 cycles
+    ; lda #$03
+    sta BANKSELECT
+    lda $5b
+    sta BANKDATA
+
+    lda #$02
+    sta BANKSELECT
+    lda $5a
+    sta BANKDATA
+    lda #$04
+    sta BANKSELECT
+    lda $5c
+    sta BANKDATA
+
+    lda #0
+    ; Timing should be in hblank (between dot 257 and 320)
+    sta PPUSCROLL
+    sta PPUADDR
+
+    ; Now swap the background CHR banks
+    sta BANKSELECT
+    lda $58
+    sta BANKDATA
+    lda #$01
+    sta BANKSELECT
+    lda $59
+    sta BANKDATA
+
+    ; We didn't have enough cycles to swap this sprite CHR bank earlier, so do it now
+    lda #$05
+    sta BANKSELECT
+    lda $5d
+    sta BANKDATA
+    
+    ; restore bankselect mirror
+    lda $50
+    sta BANKSELECT
+
+    ; spend some time to setup the values for the msg box bottom IRQReload/Scanline/Callback
+    ; message boxes are a holding pattern anyway, so burning cycles here isn't critical.
+    lda IRQScanline
+    sta IRQtmp
+    lda #0
+    sta $5e
+    jsr ChooseVerticalSeamOrStatusBar
+
+  pla
+  rti
+
+.reloc
+MessageBoxBottomHandler:
+  pha
+    sta IRQDISABLE
+    sta IRQENABLE
+    
+    ; We already caluclated the next frames IRQ timing
+    lda IRQtmp
+    sta IRQLATCH
+    sta IRQRELOAD
+
+
+    lda PPUSTATUS ; reset address latch
+    ; Nametable number << 2 (that is: $00, $04, $08, or $0C) to $2006
+    lda #$00
+    sta PPUADDR
+
+    ; convert from screen position to ppu scroll
+    ; for the message box bottom position
+    ; map scroll goes from 0 - $ef, so if we go past that we need to wrap around
+    lda ScrollYLo
+    clc
+    adc IRQScanline
+    bcs +
+    cmp #SCANLINE_FINAL + 1 ; checking if its less than so we need to add one
+    bcc ++ ; if we are already at the end of the nametable add $10 (== $ff - SCANLINE_FINAL)
++    adc #$10       ; adc #imm is 2 cycles, so we need to account for 2 extra cycles of jitter
+++  ; Y to $2005
+    sta PPUSCROLL
+    and #$f8
+    asl
+    asl
+    sta IRQtmp
+
+    ; IRQtmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
+    lda ScrollXLo
+    lsr
+    lsr
+    lsr
+    ora IRQtmp
+    sta IRQtmp
+
+    ; we can spare a little extra time here
+    lda $5e
+    sta IRQScanline
+
+    ; Timing should be in hblank (between dot 257 and 320)
+    lda ScrollXLo
+    sta PPUSCROLL
+    lda IRQtmp
+    sta PPUADDR
+    lda #$00
+    sta BANKSELECT
+    lda $07f0
+    sta BANKDATA
+
+
+    jsr RestoreCHRRomBanks
+
+    lda $5f
+    beq +
+    FastSetIRQCallback IRQ_STATUSBAR
+  pla
+  rti
++   FastSetIRQCallback IRQ_VERTICAL_WRAP
+  pla
+  rti
+  
+.reloc
+InventoryUpdateCHRROMForMagic:
+  pha
+    sta IRQDISABLE
+    sta IRQENABLE
+    lda #$00
+    sta BANKSELECT
+    lda $5e
+    sta BANKDATA
+    clc
+    adc #1
+    sta BANKSELECT
+    lda $5f
+    sta BANKDATA
+    lda $50
+    sta BANKSELECT
+    lda #SCANLINE_STATUS
+    sec
+    sbc IRQScanline
+    sta IRQLATCH
+    sta IRQRELOAD
+    lda #IRQ_STATUSBAR
+    jsr SetIRQCallback
+  pla
+  rti
+
+
+;;; --------------------------------
+.reloc
+AnimateSNKLogoScroll:
+  pha
+    ; do nothing for ~60 cycles
+    lda #$e9 ;hides 'SBC #$2A'
+      rol A ;first loop only
+      nop
+      bcs *-3
+    php
+    plp
+    ; now set the scroll
+    sta IRQDISABLE
+    lda PPUSTATUS
+    lda $59
+    sta PPUADDR
+    lda $5a
+    sta PPUADDR
+  pla
+  rti
+.endif
+
+.reloc
+; This is used to switch banks in IRQ, so the banks 0 and 1 are
+; important to change quickly to prevent graphic glitches
+SwitchCHRBankForMessageBox:
+  lda #$00
+  sta BANKSELECT
+  lda $58
+  sta BANKDATA
+  lda #$01
+  sta BANKSELECT
+  lda $59
+  sta BANKDATA
+  lda #$02
+  sta BANKSELECT
+  lda $5a
+  sta BANKDATA
+  lda #$03
+  sta BANKSELECT
+  lda $5b
+  sta BANKDATA
+  lda #$04
+  sta BANKSELECT
+  lda $5c
+  sta BANKDATA
+  lda #$05
+  sta BANKSELECT
+  lda $5d
+  sta BANKDATA
+  lda $50
+  sta BANKSELECT
+  rts
+
+
+
+;;; The following patch fixes a crash where an IRQ right in the middle of
+;;; loading NPCs can fail to correctly restore the bank select register
+;;; $8000.  If the IRQ occurs exactly between selecting the bank and setting
+;;; the value (i.e. at $3c430..$3c432) and executes both MaybeUpdateMusic
+;;; (which page-swaps, rewriting $50 to $8000 afterwards, but not restoring
+;;; $50) and RestoreCHRRomBanks (which restores $8000 to the clobbered $50)
+;;; then the bank swap will fail.  In the case of this crash, it then reads
+;;; NpcData from the wrong page, reading a 7 into the NPC type and jumping
+;;; off the end of the 5-element NpcDataJump table.  The fix is to make sure
+;;; that MaybeUpdateMusic restores $50 as well as $8000, though this takes
+;;; an extra two bytes that we need to recover from RestoreCHRRomBanks (which
+;;; immediately follows) by using smaller instructions.
+
+
+.org $f6e2
+  jsr RestoreCHRRomBanks
+.org $f734
+  jsr RestoreCHRRomBanks
+.org $f762
+  jsr SwitchCHRBankForMessageBox
+.org $f779
+  jsr RestoreCHRRomBanks
+.org $f785
+  jsr RestoreCHRRomBanks
+.org $f7c8
+  jsr RestoreCHRRomBanks
+.org $f7e8
+  jsr SwitchCHRBankForMessageBox
+
+.org $f882 ; MaybeUpdateMusic
+  stx $50
+  rts
+
+.reloc
+; This is used to switch banks in IRQ, so the banks 0 and 1 are
+; important to change quickly to prevent graphic glitches
+RestoreCHRRomBanks:
+  lda #$00
+  sta BANKSELECT
+  lda $07f0
+  sta BANKDATA
+  lda #$01
+  sta BANKSELECT
+  lda $07f1
+  sta BANKDATA
+  lda #$02
+  sta BANKSELECT
+  lda $07f2
+  sta BANKDATA
+  lda #$03
+  sta BANKSELECT
+  lda $07f3
+  sta BANKDATA
+  lda #$04
+  sta BANKSELECT
+  lda $07f4
+  sta BANKDATA
+  lda #$05
+  sta BANKSELECT
+  lda $07f5
+  sta BANKDATA
+  lda $50
+  sta BANKSELECT
+  rts
+
+; Update various locations that SetIRQCallback
+
+.org $f6e5
+  jmp CalculateIRQForNextFrame
+FREE_UNTIL $f71b
+
+.reloc
+CalculateIRQForNextFrame:
+  lda #0
+  sta IRQtmp
+  sta $5e
+  lda PpuCtrlShadow
+  lsr
+  lsr
+  bcs @StatusBar
+    ; 
+    jsr ChooseVerticalSeamOrStatusBar
+    bpl + ; unconditional a is always 0 or 1 at this point
+@StatusBar:
+    jsr ChooseStatusBar
++ ; IRQtmp is the IRQRELOAD value
+  ; $5e is next value of IRQScanline
+  ; $5f is the IRQCallback
+  lda IRQtmp
+  sta IRQLATCH
+  sta IRQRELOAD
+  sta IRQENABLE
+  lda $5e
+  sta IRQScanline
+  lda $5f
+  jmp SetIRQCallback
+  ; implicit rts
+
+ChooseVerticalSeamOrStatusBar:
+  ; precalculate the irq reload values for the next screen bottom.
+  ; this part has a lot of branches, so its hard to do before the hblank starts
+  ; vanilla calculates the ppuaddr/scroll, and stores the values in $5e and $5f
+  ; but thats relatively less branchy than this part
+
+  ; input IRQtmp - current scanline that we are on. 0 if in NMI
+
+  lda #SCANLINE_FINAL
+  sec
+  sbc ScrollYLo
+  cmp #SCANLINE_STATUS - 2 ; subtract two to account for early status bar
+  bcs ChooseStatusBarCheckEarly
+
+  cmp IRQtmp     ; check if the message box is hiding the seam
+  bcc ChooseStatusBarCheckEarly
+  pha
+    sec
+    sbc IRQtmp
+    sta IRQtmp
+  pla
+  sta $5e
+  lda #IRQ_VERTICAL_WRAP
+  sta $5f
+  rts
+ChooseStatusBarCheckEarly:
+  ; Early status bar is an 1-2 pixel gap in vanilla
+  ; where the vertical seam handler *should* run but won't due to problems getting
+  ; mmc3 scanline to fire twice in a row. (Its possible, just vanilla didn't do it)
+  ; We could work around this with timed code in the future, but for now, just displaying
+  ; bg color will be fine. We do this by firing the scanline earlier, and adjusting
+  ; for the fine Y offset in the IRQ
+  sbc #SCANLINE_STATUS
+  bpl ChooseStatusBar
+    ; The value is with -1 or -2, store it here and subtract it from the scanline
+    sta $5e
+ChooseStatusBar:
+  lda #SCANLINE_STATUS
+  clc
+  adc $5e
+  pha
+    sec
+    sbc IRQtmp
+    sta IRQtmp
+  pla
+  sta $5e
+  lda #IRQ_STATUSBAR
+  sta $5f
+  rts
+
+.org $f737
+  ; CHANGED from vanilla - Instead of doing some math to change the position,
+  ; just fix it to 8 pixels from the top. Makes life easier
+  lda #SCANLINE_MSGTOP
+  sta IRQScanline
+  sta IRQLATCH
+  sta IRQRELOAD
+  sta IRQENABLE
+  lda #IRQ_MESSAGE_TOP
+  jmp SetIRQCallback
+FREE_UNTIL $f751
+
+.org $f7a5
+  ; UNUSED?
+
+.org $f7d6
+  lda #IRQ_SNK_LOGO
+  jmp SetIRQCallback
+
+.org $f7ed
+  lda #IRQ_INVENTORY
+  jsr SetIRQCallback
 
 .popseg ; 18,fe,ff

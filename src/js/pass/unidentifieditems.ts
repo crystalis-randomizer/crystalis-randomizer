@@ -50,6 +50,7 @@ const KEY_NAMES = [
 const FLUTE_NAMES = [
   'Wooden Flute',
   'Metal Flute',
+  'Piccolo',
   'Horn of Plenty',
   'Ocarina',
   'Fairy Ocarina',
@@ -70,9 +71,14 @@ const FLUTE_NAMES = [
   'Harmonica',
   'Sousaphone',
   'Trumpet',
+  'French Horn',
   'Trombone',
+  'Euphonium',
+  'Tuba',
   'Clarinet',
   'Saxophone',
+  'Oboe',
+  'Bassoon',
   'Violin',
   'Viola',
   'Cello',
@@ -83,6 +89,9 @@ const FLUTE_NAMES = [
   'Harpsichord',
   'Pipe Organ',
   'Note Block',
+  'Snare Drum',
+  'Xylophone',
+  'Tambourine',
   'Tornelsbane',
 ];
 const LAMP_NAMES = [

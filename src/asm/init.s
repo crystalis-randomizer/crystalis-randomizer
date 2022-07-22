@@ -265,6 +265,52 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
+.ifdef _FIX_SHAKING
+
+; Free the original IRQ space
+FREE "ff" [$f422, $f7fe)
+  
+; Variables and functions used in the code
+MaybeUpdateMusic = $f7fe
+
+.define IrqTmp             $0d
+.define IrqJumpJmpAbsolute $54
+.define IrqJumpLo          $55
+.define IrqJumpHi          $56
+.define IrqScanline        $57
+
+; These are reordered from vanilla to make more sense to me.
+; They are now ordered by which scanline they fire on.
+.define IRQ_MESSAGE_TOP   $00
+.define IRQ_MESSAGE_BOT   $01
+.define IRQ_VERTICAL_WRAP $02
+.define IRQ_STATUSBAR     $03
+IRQ_TABLE_COUNT = $04
+
+; The following two run at fixed scanlines, and don't need math to figure
+; out the scroll/next scanline. They are kinda different
+; so we don't need as much work here.
+.define IRQ_INVENTORY     $04
+.define IRQ_SNK_LOGO      $05
+
+.define SCANLINE_MSGTOP    12
+.define SCANLINE_MSGBOT    85
+.define SCANLINE_INVENTORY 119
+.define SCANLINE_STATUS    191
+.define SCANLINE_FINAL     239
+
+; Define a new table of data used to store precomputed values for
+; each of the following fields. During the Screen Mode execution,
+; we precompute these values so that time in the IRQ can be precisely
+; measured and 
+IrqTableBase     = $6230
+NextIrqLo        = IrqTableBase    + IRQ_COUNT
+NextIrqHi        = NextIrqLo       + IRQ_COUNT
+PpuScrollWrite1  = NextIrqHi       + IRQ_COUNT
+PpuAddrWrite2    = PpuScrollWrite1 + IRQ_COUNT
+IrqReload        = PpuAddrWrite2   + IRQ_COUNT
+
+.endif ; _FIX_SHAKING
 
 .ifdef _STATS_TRACKING
 ;;;-------------
@@ -344,6 +390,12 @@ ITEM_OPEL_STATUE     = $26
 SFX_MONSTER_HIT      = $21
 SFX_ATTACK_IMMUNE    = $3a
 
+SpriteRam           = $0200
+SpriteRamY          = $0200
+SpriteRamPattern    = $0201
+SpriteRamAttributes = $0202
+SpriteRamX          = $0203
+
 PPUCTRL   = $2000
 PPUMASK   = $2001
 PPUSTATUS = $2002
@@ -367,6 +419,9 @@ IRQENABLE  = $e001
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read
 .define SKIP_TWO_BYTES .byte $2c
+
+.define axs {#imm} \
+  .byte $cb, imm
 
 ;;; Labels (TODO - consider keeping track of bank?)
 .segment "0e"                   ; 1c000

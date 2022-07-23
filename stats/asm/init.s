@@ -179,17 +179,6 @@ PlayerMaxMP = $709
 EquippedConsumableItem = $715
 EquippedPassiveItem    = $716
 
-; Screen values are written in the main game loop, and are copied to the scroll values
-; during NMI. So the IRQ will read from the scroll values and the game will write to Screen
-.define ScreenXLo   $02
-.define ScreenXHi   $03
-.define ScreenYLo   $04
-.define ScreenYHi   $05
-
-ScrollXLo = $07d8
-ScrollXHi = $07d9
-ScrollYLo = $07da
-ScrollYHi = $07db
 
 InvSwords = $6430
 InvConsumables = $6440
@@ -265,77 +254,6 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
-.ifdef _FIX_SHAKING
-
-; Free the original IRQ space
-FREE "ff" [$f422, $f7fe)
-  
-; Variables and functions used in the code
-MaybeUpdateMusic = $f7fe
-
-.define IrqTmp             $0d
-.define IrqJumpJmpAbsolute $54
-.define IrqJump            $55
-.define IrqJumpLo          $55
-.define IrqJumpHi          $56
-.define IrqScanline        $57
-
-; These are reordered from vanilla to make more sense to me.
-; They are now ordered by which scanline they fire on.
-.define IRQ_MESSAGE_TOP   $00
-.define IRQ_MESSAGE_BOT   $01
-.define IRQ_VERTICAL_WRAP $02
-.define IRQ_STATUSBAR     $03
-.define IRQ_INVENTORY     $04
-.define IRQ_SNK_LOGO      $05
-
-.define SCANLINE_MSGTOP    12
-.define SCANLINE_MSGBOT    85
-.define SCANLINE_INVENTORY 119
-.define SCANLINE_SNK_LOGO  137
-.define SCANLINE_STATUS    191
-.define SCANLINE_FINAL     239
-
-; Define a new table of data used to store precomputed values for
-; each of the following fields. During the Screen Mode execution,
-; we precompute these values so that time in the IRQ can be precisely
-; measured and 
-IrqTableBase     = $6230
-
-; Only values that will change from frame to frame will be stored here
-MESSAGE_BOX_TOP_BASE = IrqTableBase
-MsgTopIrqReload  = MESSAGE_BOX_TOP_BASE + 1
-MESSAGE_BOX_TOP_END = MsgTopIrqReload
-
-MESSAGE_BOX_BOT_BASE = MESSAGE_BOX_TOP_END
-MsgBotNextIrqLo  = MESSAGE_BOX_BOT_BASE + 1
-MsgBotNextIrqHi  = MESSAGE_BOX_BOT_BASE + 2
-; Coarse Scroll Y value
-MsgBotScroll1    = MESSAGE_BOX_BOT_BASE + 3
-; Coarse Scroll X value
-MsgBotScroll2    = MESSAGE_BOX_BOT_BASE + 4
-; Fine X/Y combined
-MsgBotAddr2      = MESSAGE_BOX_BOT_BASE + 5
-MsgBotIrqReload  = MESSAGE_BOX_BOT_BASE + 6
-MESSAGE_BOX_BOT_END = MsgBotIrqReload
-
-VERT_SEAM_BASE = MESSAGE_BOX_BOT_END
-; Coarse Scroll Y value
-VertSeamScroll1    = VERT_SEAM_BASE + 1
-; Coarse Scroll X value
-VertSeamScroll2    = VERT_SEAM_BASE + 2
-; Fine X/Y combined
-VertSeamAddr2      = VERT_SEAM_BASE + 3
-VertSeamIrqReload  = VERT_SEAM_BASE + 4
-VERT_SEAM_END = VertSeamIrqReload
-
-STATUS_BAR_BASE = VERT_SEAM_END
-; Coarse Scroll Y value (needed because it could be an early scroll)
-StatusScroll1 = STATUS_BAR_BASE + 1
-StatusAddr2   = STATUS_BAR_BASE + 2
-; Theres no reload value because it gets disabled
-
-.endif ; _FIX_SHAKING
 
 .ifdef _STATS_TRACKING
 ;;;-------------
@@ -415,12 +333,6 @@ ITEM_OPEL_STATUE     = $26
 SFX_MONSTER_HIT      = $21
 SFX_ATTACK_IMMUNE    = $3a
 
-SpriteRam           = $0200
-SpriteRamY          = $0200
-SpriteRamPattern    = $0201
-SpriteRamAttributes = $0202
-SpriteRamX          = $0203
-
 PPUCTRL   = $2000
 PPUMASK   = $2001
 PPUSTATUS = $2002
@@ -434,19 +346,9 @@ VromPalettes = $3f00
 
 OAMDMA    = $4014
 
-BANKSELECT = $8000
-BANKDATA   = $8001
-IRQLATCH   = $c000
-IRQRELOAD  = $c001
-IRQDISABLE = $e000
-IRQENABLE  = $e001
-
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read
 .define SKIP_TWO_BYTES .byte $2c
-
-.define axs {#imm} \
-  .byte $cb, imm
 
 ;;; Labels (TODO - consider keeping track of bank?)
 .segment "0e"                   ; 1c000

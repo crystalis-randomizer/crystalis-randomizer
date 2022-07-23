@@ -2502,6 +2502,20 @@ PatchPrepareScreenMapRead:
 .endif
 
 
+
+
+.ifdef _FIX_SHAKING
+;;; Fix the shaking issues by tweaking the delay times in IRQ callbacks.
+.org $f455
+  ldx #$07
+  nop
+.org $f4eb
+  ldx #$03
+- dex
+  bpl -
+.endif
+
+
 ; possibly better to just have a bitset of modes that need to set the latch
 ; or patch the {lda 8; sta GameMode} that should be in every one?
 .ifdef _DISABLE_TRIGGER_SKIP
@@ -3514,6 +3528,48 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 ;;   nop
 ;;   jsr UpdateInGameTimer
 
+
+;;; The following patch fixes a crash where an IRQ right in the middle of
+;;; loading NPCs can fail to correctly restore the bank select register
+;;; $8000.  If the IRQ occurs exactly between selecting the bank and setting
+;;; the value (i.e. at $3c430..$3c432) and executes both MaybeUpdateMusic
+;;; (which page-swaps, rewriting $50 to $8000 afterwards, but not restoring
+;;; $50) and SelectCHRRomBanks (which restores $8000 to the clobbered $50)
+;;; then the bank swap will fail.  In the case of this crash, it then reads
+;;; NpcData from the wrong page, reading a 7 into the NPC type and jumping
+;;; off the end of the 5-element NpcDataJump table.  The fix is to make sure
+;;; that MaybeUpdateMusic restores $50 as well as $8000, though this takes
+;;; an extra two bytes that we need to recover from SelectCHRRomBanks (which
+;;; immediately follows) by using smaller instructions.
+.org $f564
+  jsr SelectCHRRomBanks
+.org $f6e2
+  jsr SelectCHRRomBanks
+.org $f734
+  jsr SelectCHRRomBanks
+.org $f779
+  jsr SelectCHRRomBanks
+.org $f785
+  jsr SelectCHRRomBanks
+.org $f7c8
+  jsr SelectCHRRomBanks
+.org $f882
+  stx $50
+  rts
+FREE_UNTIL $f8cb
+
+.reloc
+SelectCHRRomBanks:
+  ldx #$05
+-  stx $8000
+   lda $07f0,x
+   sta $8001
+   dex
+  bpl -
+  lda $50
+  sta $8000
+  rts
+
 ;;; ================================================================
 ;;; When initializing a new game, we need more space for custom
 ;;; values.  Instead of a bunch of sta $07xx to zero things out,
@@ -3655,3 +3711,43 @@ PatchClearEnemyHPRam:
     tax
 + rts
 .endif
+
+;;; NOTE: This is an alternative implementation of SelectCHRRomBanks
+;;; that is 4 bytes shorter than the original, but way longer than
+;;; the loop above.
+  ;; ldx #$80
+  ;; stx $53
+  ;; ldx #$00
+  ;; stx $52
+  ;; txa
+  ;; sta ($52,x)
+  ;; tay
+  ;; iny
+  ;; lda $07f0
+  ;; sta ($52),y
+  ;; lda #$01
+  ;; sta ($52,x)
+  ;; lda $07f1
+  ;; sta ($52),y
+  ;; lda #$02
+  ;; sta ($52,x)
+  ;; lda $07f2
+  ;; sta ($52),y
+  ;; lda #$03
+  ;; sta ($52,x)
+  ;; lda $07f3
+  ;; sta ($52),y
+  ;; lda #$04
+  ;; sta ($52,x)
+  ;; lda $07f4
+  ;; sta ($52),y
+  ;; lda #$05
+  ;; sta ($52,x)
+  ;; lda $07f5
+  ;; sta ($52),y
+  ;; lda $50
+  ;; sta ($52,x)
+  ;; rts
+
+;; ScalingLevels = SCALING_LEVELS
+;; .export ScalingLevels

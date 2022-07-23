@@ -58184,7 +58184,7 @@ MainGameModeJump_1f_DynaAppears
         $3cd8e  xx:         xxx
         $3cd8f  xx xx xx:    xxx WaitForNametableFlush
         $3cd92  xx xx xx:    xxx $3ce07
-        $3cd95  xx xx:       xxx $xx
+        $3cd95  xx xx:       xxx ScreenMode
         $3cd97  xx:          xxx
         $3cd98  xx xx xx:     xxx $xxxx,x
         $3cd9b  xx xx xx:     xxx $3ce12
@@ -59634,7 +59634,7 @@ WaitForAudio:
         $3d89a  xx xx:      xxx #$xx
         $3d89c  xx xx:      xxx ScreenMode
         $3d89e  xx xx xx:   xxx WaitForOAMDMA
-        $3d8a1  xx xx:      xxx #ITEM_MEDICAL_HERB
+        $3d8a1  xx xx:      xxx #SCREEN_MODE_TEXT
         $3d8a3  xx xx:      xxx ScreenMode
         $3d8a5  xx xx xx:   xxx WaitForOAMDMA
         $3d8a8  xx xx:      xxx $xx
@@ -64022,15 +64022,18 @@ ScreenModeJumpTable
 ScreenModeJumpTable_00
 ScreenModeJumpTable_07
         $3f6d6  xx xx:      xxx $xx
+        ; check that sprites and background are enabled
         $3f6d8  xx xx:      xxx #$xx
         $3f6da  xx xx:      xxx + ; $3f6df
+         ; if they are disabled, update music and return
         $3f6dc  xx xx xx:   xxx MaybeUpdateMusic
         ;; --------------------------------
-+       $3f6df  xx xx xx:   xxx $3f71b
++       $3f6df  xx xx xx:   xxx UpdatePpuScrollWrapping
         $3f6e2  xx xx xx:   xxx SelectCHRRomBanks
         $3f6e5  xx xx:      xxx $xx
         $3f6e7  xx:         xxx
         $3f6e8  xx:         xxx
+         ; Check if the nametable is currently set to #2 (the menu)
         $3f6e9  xx xx:      xxx + ; $3f705
         $3f6eb  xx xx:      xxx #$xx
         $3f6ed  xx:         xxx
@@ -64044,7 +64047,7 @@ ScreenModeJumpTable_07
         $3f700  xx xx:      xxx #$xx
         $3f702  xx xx xx:   xxx SetIRQCallback
         ;; --------------------------------
-        ;; Set IRQ callback to 01 ($3f488) - 
+        ;; Set IRQ callback to the statusbar handler
 +       $3f705  xx xx:      xxx #$xx
         $3f707  xx xx xx:   xxx SetIRQCallback
         $3f70a  xx xx:      xxx #$xx
@@ -64056,6 +64059,8 @@ ScreenModeJumpTable_07
         $3f717  xx xx xx:   xxx IRQENABLE
         $3f71a  xx:         xxx
 ;;; --------------------------------
+; Temporarily updates the scroll for the frame by wrapping the Y scroll value at #$e8
+UpdatePpuScrollWrapping
         $3f71b  xx xx xx:   xxx $xxxx
         $3f71e  xx xx:      xxx #$xx
         $3f720  xx xx xx:   xxx $xxxx
@@ -64069,7 +64074,7 @@ ScreenModeJumpTable_07
 ;;; Message box on top of the screen (dialog, shop, item message, etc).
 ScreenModeJumpTable_01
 ScreenModeJumpTable_09
-        $3f731  xx xx xx:   xxx $3f71b
+        $3f731  xx xx xx:   xxx UpdatePpuScrollWrapping
         $3f734  xx xx xx:   xxx SelectCHRRomBanks
         $3f737  xx xx xx:   xxx $xxxx
         $3f73a  xx xx:      xxx #$xx
@@ -64131,8 +64136,11 @@ ScreenModeJumpTable_04
         $3f7b1  xx xx xx:   xxx IRQDISABLE
         $3f7b4  xx:         xxx
 ;;; --------------------------------
-DataTable_3f7b5 
-        $3f7b5              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
+EffectTimingSelectTable
+; Lookup table for Unused Screenmode 4.
+; This value is the number of frames to run the effect for it seems.
+        $3f7b5              .byte $xx ; unused
+        $3f7b6              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
 ScreenModeJumpTable_05
         $3f7c5  xx xx xx:   xxx $3eb6d

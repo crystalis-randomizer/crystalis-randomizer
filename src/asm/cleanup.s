@@ -539,44 +539,47 @@ SetIRQCallback:
   sta IRQJumpHi
   rts
 
+;;-----------
 ; Macro that doesn't use x/y to set the next IRQcallback.
 ; if you aren't currently preserving x, this is less bytes and less cycles
 ; than doing a JSR to set the callback in code
 
 ; TODO: i don't understand these macros in your assembler steve :P
 ; this hack job should be cleaned up
-.macro FastSetIRQCallback a
-.if a = 0
-  .define Address MessageBoxTopHandler
-.elseif a = 1
-  .define Address MessageBoxBottomHandler
-.elseif a = 2
-  .define Address VerticalScreenWrapHandler
-.elseif a = 3
-  .define Address StatusBarAndAudio
-.elseif a = 4
-  .define Address InventoryUpdateCHRROMForMagic
+.macro FastSetIRQCallback from
+.if from = 0
+  .define ReadAddress IrqMessageBoxTopHandler
+.elseif from = 1
+  .define ReadAddress IrqMessageBoxBottomHandler
+.elseif from = 2
+  .define ReadAddress IrqVerticalScreenWrapHandler
+.elseif from = 3
+  .define ReadAddress IrqStatusBarAndAudio
+.elseif from = 4
+  .define ReadAddress IrqInventoryUpdateCHRROMForMagic
+.elseif from = 5
+  .define ReadAddress IrqAnimateSNKLogoScroll
 .else
-  .define Address AnimateSNKLogoScroll
-.endif 
+  .define ReadAddress from
+.endif
   lda #<Address
-  sta IRQJumpLo
+  sta IrqJumpLo
   lda #>Address
-  sta IRQJumpHi
+  sta IrqJumpHi
   .undefine Address
 .endmacro
 
 .reloc
 IRQCallbackTable:
-  .word (MessageBoxTopHandler)
-  .word (MessageBoxBottomHandler)
-  .word (VerticalScreenWrapHandler)
-  .word (StatusBarAndAudio)
-  .word (InventoryUpdateCHRROMForMagic)
-  .word (AnimateSNKLogoScroll)
+  .word (IrqMessageBoxTopHandler)
+  .word (IrqMessageBoxBottomHandler)
+  .word (IrqVerticalScreenWrapHandler)
+  .word (IrqStatusBarAndAudio)
+  .word (IrqInventoryUpdateCHRROMForMagic)
+  .word (IrqAnimateSNKLogoScroll)
 
 .reloc
-MessageBoxTopHandler:
+IrqMessageBoxTopHandler:
   pha
     sta IRQDISABLE
     sta IRQENABLE
@@ -589,7 +592,7 @@ MessageBoxTopHandler:
     adc IrqScanline
     sta IrqScanline
     
-    FastSetIRQCallback IRQ_MESSAGE_BOT
+    FastSetIRQCallback IRQ_MESSAGE_BOT IrqJump
 
     ;; first two PPU writes can happen early before we need to wait
     lda PPUSTATUS ; reset address latch
@@ -660,7 +663,7 @@ MessageBoxTopHandler:
     asl
     sta $5f
 
-    ; IRQtmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
+    ; Irqtmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
     lda ScrollXLo
     lsr
     lsr
@@ -675,7 +678,7 @@ MessageBoxTopHandler:
   rti
 
 .reloc
-MessageBoxBottomHandler:
+IrqMessageBoxBottomHandler:
   pha
     sta IRQDISABLE
     sta IRQENABLE
@@ -717,7 +720,7 @@ MessageBoxBottomHandler:
 
     ; critical timing over, finish restoring bank and setting up the next irq
     jsr ChooseVerticalSeamOrStatusBar
-    lda IRQtmp
+    lda Irqtmp
     ; TODO this might need adjusting since this happens so late
     sta IRQLATCH
     sta IRQRELOAD
@@ -739,7 +742,7 @@ MessageBoxBottomHandler:
   rti
 
 .reloc
-VerticalScreenWrapHandler:
+IrqVerticalScreenWrapHandler:
   pha
     sta IRQDISABLE
     sta IRQENABLE
@@ -768,22 +771,22 @@ VerticalScreenWrapHandler:
     sta PPUSCROLL
     
     ;; setup the next PPUADDR and PPUSCROLL value
-    ; IRQtmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
+    ; Irqtmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
     lda ScrollXLo
     lsr
     lsr
     lsr
-    sta IRQtmp
+    sta Irqtmp
     ; Timing should be in hblank (between dot 257 and 320)
     lda ScrollXLo
     sta PPUSCROLL
-    lda IRQtmp
+    lda Irqtmp
     sta PPUADDR
   pla
   rti
 
 .reloc
-StatusBarAndAudio:
+IrqStatusBarAndAudio:
   ; we need to preserve all of the registers because of MaybeUpdateMusic, so might
   ; as well do it while waiting for hblank
   pha
@@ -800,7 +803,7 @@ StatusBarAndAudio:
         sta PPUMASK
 
         lda #0
-        sta IRQtmp
+        sta Irqtmp
 
         ;; first two PPU writes can happen early before we need to wait
         lda PPUSTATUS ; reset address latch
@@ -820,9 +823,9 @@ StatusBarAndAudio:
         cmp #ScrollRangeHi - ScrollRangeLo
         bcs +
           ; TODO we have enough timing window here that burning these cycles isn't a problem
-          ; but a maybe potential opt is to use a zp for IRQtmp and use BIT sta IRQtmp to skip the sta
+          ; but a maybe potential opt is to use a zp for Irqtmp and use BIT sta Irqtmp to skip the sta
           ; if the scroll is not in the range
-          sta IRQtmp ; stores 1 or 2
+          sta Irqtmp ; stores 1 or 2
 +       bcc +
           ; make the branch constant time by countering out the sta with another branch
           nop
@@ -830,7 +833,7 @@ StatusBarAndAudio:
 +       StatusBarY = 195
         lda #StatusBarY
         sec
-        sbc IRQtmp
+        sbc Irqtmp
         sta PPUSCROLL
 
         .repeat 3
@@ -877,7 +880,7 @@ StatusBarAndAudio:
   rti
 
 .reloc
-InventoryUpdateCHRROMForMagic:
+IrqInventoryUpdateCHRROMForMagic:
   pha
     sta IRQDISABLE
     sta IRQENABLE
@@ -903,10 +906,10 @@ InventoryUpdateCHRROMForMagic:
 
 ;;; --------------------------------
 .reloc
-AnimateSNKLogoScroll:
+IrqAnimateSNKLogoScroll:
   pha
     ; do nothing for ~60 cycles
-    lda #$e9 ;hides 'SBC #$2A'
+    lda #$e9 ;hides 'sbc #$2A'
       rol A ;first loop only
       nop
       bcs *-3
@@ -1028,41 +1031,104 @@ RestoreCHRRomBanks:
 ;;;---------------------------
 ; Redo the ScreenMode code
 ; Update various locations that SetIRQCallback
-
 .reloc
 ; Changes from vanilla:
 ; frees up two ZP ($52 and $53) by using the RTS trick instead
 ExecuteScreenMode:
   lda #0
   sta IrqScanline
+  sta Irqtmp
   lda ScreenMode
   asl
   tax
-  lda ScreenModeTable+1, x
+  lda @ScreenModeTable+1,x
   pha
-  lda ScreenModeTable, x
+  lda @ScreenModeTable,x
   pha
   rts
-
-ScreenModeTable:
+@ScreenModeTable:
+  ; all values offset by one for the RTS trick
   .word (ScreenNormalPlayfield-1)
   .word (ScreenMessageboxPlayfield-1)
-  .word (ScreenModeJumpTable_02-1)
-  .word (ScreenModeJumpTable_03-1)
+  .word (ScreenPlayerStatus-1)
+  .word (ScreenMovie-1)
   .word ($0000) ; unused
-  .word (ScreenModeJumpTable_05-1)
-  .word (ScreenMode_06_InventoryScreen-1)
+  .word (ScreenSNKAnimation-1)
+  .word (ScreenInventory-1)
   .word (ScreenNametableBoss-1)
-  .word ($0000)
+  .word ($0000) ; unused
   .word (ScreenNametableBossWithMsg-1)
 
+.reloc
+; DecideVeritcalSeamOrStatusBar:
+;   lda #SCANLINE_FINAL
+;   sec
+;   sbc ScrollYLo
+;   cmp #SCANLINE_STATUS - 2 ; subtract two to account for early status bar
+;   bcs ChooseStatusBarCheckEarly
+;   cmp #SCANLINE_MSGBOT     ; check if the message box is hiding the seam
+;   bcc ChooseStatusBarCheckEarly
 
-.org $f6e5
-  jmp CalculateIRQForNextFrame
-FREE_UNTIL $f71b
+  ; input IrqScanline - current scanline that we are on. 0 if in NMI
+  ; output Irqtmp is the IRQRELOAD value
+  ; update IrqScanline (seam or statusbar scanline)
+  ; output $5f offset for the IRQ callback
 
 .reloc
-CalculateIRQForNextFrame:
+SetupIrqVerticalSeam:
+  lda #SCANLINE_FINAL
+  sec
+  sbc ScrollYLo
+  sta IrqScanline
+  sec
+  sbc IrqScanline
+  sta IrqReload,x
+
+  rts
+
+.reloc
+CheckForEarlyStatusBar:
+  ; Early status bar is an 1-2 pixel gap in vanilla
+  ; where the vertical seam handler *should* run but won't due to problems getting
+  ; mmc3 scanline to fire twice in a row. (Its possible, just vanilla didn't do it)
+  ; We could work around this with timed code in the future, but for now, just displaying
+  ; bg color will be fine. We do this by firing the scanline earlier, and adjusting
+  ; for the fine Y offset in the IRQ
+  lda #SCANLINE_FINAL
+  sec
+  sbc ScrollYLo
+  sec
+  sbc #SCANLINE_STATUS
+  bpl SetupIrqStatusBar
+    ; The value is with -1 or -2, store it here and subtract it from the scanline
+    sta Irqtmp
+SetupIrqStatusBar:
+  lda #SCANLINE_STATUS
+  clc
+  adc Irqtmp
+  pha
+    sec
+    sbc IrqScanline
+    sta Irqtmp
+  pla
+  sta IrqScanline
+  lda #IRQ_STATUSBAR
+  sta 
+  rts
+
+;;; --------------------------------
+
+.reloc
+ScreenNormalPlayfield:
+ScreenNametableBoss:
+  lda PpuMaskShadow
+  and #$18 ; check that sprites and background are enabled
+  bne +
+    jmp MaybeUpdateMusic
+    ; implicit rts
++ jsr UpdatePpuScrollWrapping
+  jsr SelectCHRRomBanks
+
   lda #0
   sta IrqScanline
   lda PpuCtrlShadow
@@ -1070,13 +1136,19 @@ CalculateIRQForNextFrame:
   lsr
   bcs @StatusBar
     ; 
-    jsr ChooseVerticalSeamOrStatusBar
+    
+    lda #SCANLINE_FINAL
+    sec
+    sbc ScrollYLo
+    cmp #SCANLINE_STATUS - 2 ; subtract two to account for early status bar
+    bcs @ChooseStatusBarCheckEarly
+
     bpl + ; unconditional a is always 0 or 1 at this point
 @StatusBar:
-    jsr ChooseStatusBar
-+ ; IRQtmp is the IRQRELOAD value
+    jsr SetupIrqStatusBar
++ ; Irqtmp is the IRQRELOAD value
   ; $5f is the IRQCallback
-  lda IRQtmp
+  lda Irqtmp
   sta IRQLATCH
   sta IRQRELOAD
   sta IRQENABLE
@@ -1084,89 +1156,96 @@ CalculateIRQForNextFrame:
   jmp SetIRQCallback
   ; implicit rts
 
-ChooseVerticalSeamOrStatusBar:
-  ; precalculate the irq reload values for the next screen bottom.
-  ; this part has a lot of branches, so its hard to do before the hblank starts
-  ; vanilla calculates the ppuaddr/scroll, and stores the values in $5e and $5f
-  ; but thats relatively less branchy than this part
-
-  ; input IrqScanline - current scanline that we are on. 0 if in NMI
-  ; output IRQtmp is the IRQRELOAD value
-  ; update IrqScanline (seam or statusbar scanline)
-  ; output $5f offset for the IRQ callback
-  lda #0
-  sta IRQtmp
-  lda #SCANLINE_FINAL
-  sec
-  sbc ScrollYLo
-  cmp #SCANLINE_STATUS - 2 ; subtract two to account for early status bar
-  bcs ChooseStatusBarCheckEarly
-
-  cmp IrqScanline     ; check if the message box is hiding the seam
-  bcc ChooseStatusBarCheckEarly
-  pha
-    sec
-    sbc IrqScanline
-    sta IRQtmp
-  pla
-  sta IrqScanline
-  lda #IRQ_VERTICAL_WRAP
-  sta $5f
-  rts
-ChooseStatusBarCheckEarly:
-  ; Early status bar is an 1-2 pixel gap in vanilla
-  ; where the vertical seam handler *should* run but won't due to problems getting
-  ; mmc3 scanline to fire twice in a row. (Its possible, just vanilla didn't do it)
-  ; We could work around this with timed code in the future, but for now, just displaying
-  ; bg color will be fine. We do this by firing the scanline earlier, and adjusting
-  ; for the fine Y offset in the IRQ
-  sbc #SCANLINE_STATUS
-  bpl ChooseStatusBar
-    ; The value is with -1 or -2, store it here and subtract it from the scanline
-    sta IRQtmp
-ChooseStatusBar:
-  lda #SCANLINE_STATUS
-  clc
-  adc IRQtmp
-  pha
-    sec
-    sbc IrqScanline
-    sta IRQtmp
-  pla
-  sta IrqScanline
-  lda #IRQ_STATUSBAR
-  sta $5f
+.reloc
+; Temporarily updates the scroll for the frame by wrapping the Y scroll value at #$e8
+UpdatePpuScrollWrapping:
+  ldx ScrollYHi
+  lda #$00
+  ldy ScrollYLo
+  cpy #$e8
+  adc #$00 ; Sets a to 1 if ScrollYLo is greater than #$e8
+  sta ScrollYHi
+  jsr UpdatePpuScroll
+  stx ScrollYHi ; Restore the original ScrollYHi value
   rts
 
-.org $f737
-  ; CHANGED from vanilla - Instead of doing some math to change the position,
-  ; just fix it to 8 pixels from the top. Makes life easier
+;;; --------------------------------
+;;; Message box on top of the screen (dialog, shop, item message, etc).
+; Changes from Vanilla:
+; Updates the scanline that the message box appears on to be at a fixed position
+; In vanilla its kinda weird, but it fluctuates up to 8 pixels depending on scroll position
+.reloc
+ScreenMessageboxPlayfield:
+ScreenNametableBossWithMsg:
+  jsr UpdatePpuScrollWrapping
+  jsr SelectCHRRomBanks
+
   lda #SCANLINE_MSGTOP
   sta IrqScanline
   sta IRQLATCH
   sta IRQRELOAD
   sta IRQENABLE
+
+  ; Precalculate all scanline data for the messagebox
+  
+
+  ; Check for a late messagebox bottom. This is similar to early status bar,
+  ; but is much rarer. This only happens if the bottom of the message box is within
+  ; two scanlines of the vertical seam. If so, we need to fire it up to two scanlines
+  ; later, which will just draw the BG color for those two lines.
+  
+  IrqReload, x
+
   lda #IRQ_MESSAGE_TOP
   jmp SetIRQCallback
-FREE_UNTIL $f751
 
-.org $f7a5
-  ; UNUSED?
+; Changes from vanilla: NONE
+.reloc
+ScreenPlayerStatus:
+  lda PpuCtrlShadow
+  and #$fc ; clear the previous nmt value
+  ora #$02 ; set nametable 2
+  sta PPUCTRL
+  lda #0
+  sta PPUSCROLL
+  sta PPUSCROLL
+  jsr SwitchCHRBankForMessageBox
+  lda PpuMaskShadow
+  and #$18 ; check if we have either sprites or background enabled
+  bne +    ; and if we do skip updating music. presumably that will run later
+   jmp MaybeUpdateMusic
++ jmp SetIRQStatusBar
 
-.org $f7d6
+
+; Changes from Vanilla: NONE
+.reloc
+ScreenMovie:
+  lda PpuMaskShadow
+  sta PPUMASK
+  jsr UpdatePpuScroll
+  jsr SelectCHRRomBanks
+  sta IRQDISABLE
+  jmp MaybeUpdateMusic
+
+; Changes from vanilla. It used $58 as a split line, but the value for $58 was constant
+; so just load the constant instead
+.reloc
+ScreenSNKAnimation:
+  jsr UpdatePpuScroll
+  jsr SelectCHRRomBanks
+  lda #SCANLINE_SNK_LOGO
+  sta IRQLATCH
+  sta IRQRELOAD
+  sta IRQLATCH
   lda #IRQ_SNK_LOGO
   jmp SetIRQCallback
 
-
+; Changes from Vanilla:
 ; Rewrite this method to setup the IRQ callback sooner than later.
 ; It needs to happen before the first scanline is run or it causes the status bar to bounce
-; Technically this could be made relocatable, but its just a reordering so it doesn't change size
-; (except i changed it to use an implicit rts now)
-; Original ScreenModeJumpTable_06
-FREE "ff" [$f7db, $f7fe)
-
 .reloc
-ScreenMode_06_InventoryScreen:
+ScreenInventory:
+  ; Its important to set the PPU values before vblank ends so do that first
   lda PpuCtrlShadow
   sta PPUCTRL
   lda #0
@@ -1184,160 +1263,6 @@ ScreenMode_06_InventoryScreen:
   lda #IRQ_INVENTORY
   jmp SetIRQCallback
   ; implicit rts
-  
-
-;;; --------------------------------
-;;; Normal playfield.  Mode 7 happens during the insect fight: since the
-;;; giant insect is 84 tiles, which is more than the 64 sprites that the
-;;; NES can handle.  In that mode, the background is empty, the insect is
-;;; actually drawn in the nametable, and scrolling is used to move *it*.
-.reloc
-ScreenNormalPlayfield:
-ScreenNametableBoss:
-  lda $01
-  and #$18
-  bne + ; $3f6df
-  jmp MaybeUpdateMusic
-+ jsr $3f71b
-  jsr SelectCHRRomBanks
-  lda $00
-  lsr
-  lsr
-  bcs + ; $3f705
-  lda #$ef
-  sec
-  sbc $07da
-  cmp #$bc
-  bcs + ; $3f705
-  sta IRQLATCH
-  sta $57
-  sta IRQRELOAD
-  sta IRQENABLE
-  lda #$00
-  jmp SetIRQCallback
-SetIRQStatusBar:
-+ lda #$01
-  jsr SetIRQCallback
-  lda #$be
-  sec
-  sbc $57
-  sta $57
-  sta IRQLATCH
-  sta IRQRELOAD
-  sta IRQENABLE
-  rts
-;;--------
-  ldx $07db
-  lda #$00
-  ldy $07da
-  cpy #$e8
-  adc #$00
-  sta $07db
-  jsr UpdatePpuScroll
-  stx $07db
-  rts
-;;; --------------------------------
-;;; Message box on top of the screen (dialog, shop, item message, etc).
-.reloc
-ScreenMessageboxPlayfield:
-ScreenNametableBossWithMsg:
-  jsr $3f71b
-  jsr SelectCHRRomBanks
-  lda $07da
-  and #$07
-  eor #$07
-  clc
-  adc #$07
-  sta IRQLATCH
-  sta $57
-  sta IRQRELOAD
-  sta IRQENABLE
-  lda #$02
-  jmp SetIRQCallback
-
-;;; --------------------------------
-.reloc
-ScreenScreenModeJumpTable_02:
-  lda PpuCtrlShadow
-  and #$fc ; 
-  ora #$02 ; set nametable 2
-  sta PPUCTRL
-  lda #$00
-  sta PPUSCROLL
-  sta PPUSCROLL
-  jsr SwitchCHRBankForMessageBox
-  lda PpuMaskShadow
-  and #$18
-  bne + ; $3f76e
-   jmp MaybeUpdateMusic
-  ; ----------
-+ jmp SetIRQStatusBar
-
-;;; --------------------------------
-.reloc
-ScreenModeJumpTable_03:
-  lda PpuMaskShadow
-  sta PPUMASK
-  jsr UpdatePpuScroll
-  jsr SelectCHRRomBanks
-  sta IRQDISABLE
-  jmp MaybeUpdateMusic
-;;; --------------------------------
-.reloc
-ScreenModeJumpTable_04:
-  jsr UpdatePpuScroll
-  jsr SelectCHRRomBanks
-  lda $58
-  beq + ; $3f7aa
-   ldy $58
-   lda $3f7b5,y
-   sta $59
-   lda #$00
-   sta $5a
-   lda #$04
-   sta IRQLATCH
-   sta $f451
-   sta IRQRELOAD
-   sta IRQENABLE
-   lda #$04
-   jmp SetIRQCallback
-  ; ----------
-+ lda $01
-  and #$f7
-  sta $0001
-  sta IRQDISABLE
-  rts
-;;; --------------------------------
-DataTable_3f7b5 
-  .byte $00,$1c,$1c,$1c,$1c,$1c,$1c,$1c,$17,$15,$12,$11,$11,$0e,$0e,$0d
-;;; --------------------------------
-.reloc
-ScreenModeJumpTable_05:
-  jsr $3eb6d
-  jsr SelectCHRRomBanks
-  lda $58
-  sta IRQLATCH
-  sta IRQRELOAD
-  sta IRQLATCH
-  lda #$06
-  jmp SetIRQCallback
-;;; --------------------------------
-.reloc
-ScreenModeJumpTable_06:
-  lda $00
-  sta $2000
-  lda #$00
-  sta $2005
-  sta $2005
-  jsr SwitchCHRBankForMessageBox
-  lda #$07
-  jsr SetIRQCallback
-  lda #$77
-  sta $57
-  sta IRQLATCH
-  sta IRQRELOAD
-  sta IRQENABLE
-  rts
 
 ; Update RemoveSpritesBehindMessageBox to account for the fixed location message box
 FREE "fe" [$c17d, $c19f)

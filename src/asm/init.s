@@ -275,6 +275,7 @@ MaybeUpdateMusic = $f7fe
 
 .define IrqTmp             $0d
 .define IrqJumpJmpAbsolute $54
+.define IrqJump            $55
 .define IrqJumpLo          $55
 .define IrqJumpHi          $56
 .define IrqScanline        $57
@@ -285,17 +286,13 @@ MaybeUpdateMusic = $f7fe
 .define IRQ_MESSAGE_BOT   $01
 .define IRQ_VERTICAL_WRAP $02
 .define IRQ_STATUSBAR     $03
-IRQ_TABLE_COUNT = $04
-
-; The following two run at fixed scanlines, and don't need math to figure
-; out the scroll/next scanline. They are kinda different
-; so we don't need as much work here.
 .define IRQ_INVENTORY     $04
 .define IRQ_SNK_LOGO      $05
 
 .define SCANLINE_MSGTOP    12
 .define SCANLINE_MSGBOT    85
 .define SCANLINE_INVENTORY 119
+.define SCANLINE_SNK_LOGO  137
 .define SCANLINE_STATUS    191
 .define SCANLINE_FINAL     239
 
@@ -304,11 +301,39 @@ IRQ_TABLE_COUNT = $04
 ; we precompute these values so that time in the IRQ can be precisely
 ; measured and 
 IrqTableBase     = $6230
-NextIrqLo        = IrqTableBase    + IRQ_COUNT
-NextIrqHi        = NextIrqLo       + IRQ_COUNT
-PpuScrollWrite1  = NextIrqHi       + IRQ_COUNT
-PpuAddrWrite2    = PpuScrollWrite1 + IRQ_COUNT
-IrqReload        = PpuAddrWrite2   + IRQ_COUNT
+
+; Only values that will change from frame to frame will be stored here
+MESSAGE_BOX_TOP_BASE = IrqTableBase
+MsgTopIrqReload  = MESSAGE_BOX_TOP_BASE + 1
+MESSAGE_BOX_TOP_END = MsgTopIrqReload
+
+MESSAGE_BOX_BOT_BASE = MESSAGE_BOX_TOP_END
+MsgBotNextIrqLo  = MESSAGE_BOX_BOT_BASE + 1
+MsgBotNextIrqHi  = MESSAGE_BOX_BOT_BASE + 2
+; Coarse Scroll Y value
+MsgBotScroll1    = MESSAGE_BOX_BOT_BASE + 3
+; Coarse Scroll X value
+MsgBotScroll2    = MESSAGE_BOX_BOT_BASE + 4
+; Fine X/Y combined
+MsgBotAddr2      = MESSAGE_BOX_BOT_BASE + 5
+MsgBotIrqReload  = MESSAGE_BOX_BOT_BASE + 6
+MESSAGE_BOX_BOT_END = MsgBotIrqReload
+
+VERT_SEAM_BASE = MESSAGE_BOX_BOT_END
+; Coarse Scroll Y value
+VertSeamScroll1    = VERT_SEAM_BASE + 1
+; Coarse Scroll X value
+VertSeamScroll2    = VERT_SEAM_BASE + 2
+; Fine X/Y combined
+VertSeamAddr2      = VERT_SEAM_BASE + 3
+VertSeamIrqReload  = VERT_SEAM_BASE + 4
+VERT_SEAM_END = VertSeamIrqReload
+
+STATUS_BAR_BASE = VERT_SEAM_END
+; Coarse Scroll Y value (needed because it could be an early scroll)
+StatusScroll1 = STATUS_BAR_BASE + 1
+StatusAddr2   = STATUS_BAR_BASE + 2
+; Theres no reload value because it gets disabled
 
 .endif ; _FIX_SHAKING
 

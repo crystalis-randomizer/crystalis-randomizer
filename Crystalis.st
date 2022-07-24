@@ -35968,7 +35968,7 @@ UpdateHPDisplayForOpelStatue
         $27a0e  xx:         xxx
 ;;; --------------------------------
         $27a0f  xx xx:      xxx #$xx
-        $27a11  xx xx xx:   xxx $3c188
+        $27a11  xx xx xx:   xxx ClearSpritesLessThanA
         $27a14  xx xx:      xxx #$xx
         $27a16  xx xx xx:   xxx $xxxx
         $27a19  xx xx:      xxx #$xx
@@ -56617,6 +56617,8 @@ RemoveSpritesBehindMessageBox
         $3c183  xx xx:      xxx #$xx
         $3c185  xx:         xxx
         $3c186  xx xx:      xxx $xx
+ClearSpritesLessThanA
+        ; Second entrypoint used to remove all sprites by setting A = $f0
         $3c188  xx xx:      xxx $xx ; $10 <- #$58 - (ScreenYLo & #$07)
         $3c18a  xx xx:      xxx #$xx
 -       $3c18c  xx xx:       xxx $xx
@@ -60357,7 +60359,7 @@ JumpTable_3df0e_03
         ;; these are entered from the 3ddbd jump table as well
         $3de51  xx xx xx:    xxx SetSprite0_F0
         $3de54  xx xx:       xxx #$xx
-        $3de56  xx xx xx:    xxx $3c188
+        $3de56  xx xx xx:    xxx ClearSpritesLessThanA
         $3de59  xx xx:       xxx #$xx
         $3de5b  xx xx xx:    xxx BankSwitch8k_8000
         $3de5e  xx xx xx:    xxx LoadPalettesForLocation
@@ -60481,7 +60483,7 @@ JumpTable_3df0e_00
         $3df63  xx xx:       xxx #$xx
         $3df65  xx xx xx:    xxx WaitForMultipleOAMDMA
         $3df68  xx xx:       xxx #$xx
-        $3df6a  xx xx xx:    xxx $3c188
+        $3df6a  xx xx xx:    xxx ClearSpritesLessThanA
         $3df6d  xx xx xx:    xxx WaitForOAMDMA
         $3df70  xx:         xxx
         $3df71  xx xx xx:   xxx $xxxx

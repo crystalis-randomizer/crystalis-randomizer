@@ -64,6 +64,7 @@ NMIHandler:
           ;; This is the map position of object $13, likely the background boss
           ;; Changes from Vanilla, since ScreenMode 8 is unused, this can just check if >=7
           lda ScreenMode
+          and #$7f
           cmp #$07
           bcc @CopyFromStandardScroll
             ; fallthrough
@@ -474,7 +475,7 @@ FREE_UNTIL $ec6c
 
 ; Free up some chunks of the DMC to allow code to be written there,
 ; ; while still keeping the original bytes a bit
-FREE "ff" [$fa00, $fb00) ; rts at 3fe00 is important
+FREE "ff" [$fa00, $fb80) ; rts at 3fe00 is important
 FREE "ff" [$fc00, $fd00) ; rts at 3fe00 is important
 FREE "ff" [$fd80, $fe00) ; rts at 3fe00 is important
 
@@ -666,10 +667,6 @@ IrqMessageBoxBottomHandler:
     sta BANKSELECT
     lda $07f3
     sta BANKDATA
-    lda #$04
-    sta BANKSELECT
-    lda $07f4
-    sta BANKDATA
 
     ; Nametable number << 2 (that is: $00, $04, $08, or $0C) to $2006
     lda #$00
@@ -677,6 +674,10 @@ IrqMessageBoxBottomHandler:
     sta BANKSELECT
     lda MsgBotScroll1
     sta PPUSCROLL
+
+    ; we have to burn just a couple of cycles
+    php
+    plp
 
     ; Timing should be in hblank (between dot 257 and 320)
     lda ScrollXLo
@@ -689,6 +690,10 @@ IrqMessageBoxBottomHandler:
     sta BANKDATA
 
     ; finish switching banks
+    lda #$04
+    sta BANKSELECT
+    lda $07f4
+    sta BANKDATA
     lda #$05
     sta BANKSELECT
     lda $07f5
@@ -1022,68 +1027,12 @@ UpdatePpuScrollWrapping:
   ldx ScrollYHi
   lda #$00
   ldy ScrollYLo
-  cpy #(SCANLINE_FINAL - 8) ; $e8
+  cpy #(SCANLINE_FINAL - 7) ; $e8
   adc #$00 ; Sets a to 1 if ScrollYLo is greater than #$e8
   sta ScrollYHi
   jsr UpdatePpuScroll
   stx ScrollYHi ; Restore the original ScrollYHi value
   rts
-
-; .reloc
-; DecideVeritcalSeamOrStatusBar:
-;   lda #SCANLINE_FINAL
-;   sec
-;   sbc ScrollYLo
-;   cmp #SCANLINE_STATUS - 2 ; subtract two to account for early status bar
-;   bcs ChooseStatusBarCheckEarly
-;   cmp #SCANLINE_MSGBOT     ; check if the message box is hiding the seam
-;   bcc ChooseStatusBarCheckEarly
-
-  ; input IrqScanline - current scanline that we are on. 0 if in NMI
-  ; output IrqTmp is the IRQRELOAD value
-  ; update IrqScanline (seam or statusbar scanline)
-  ; output $5f offset for the IRQ callback
-
-; .reloc
-; SetupIrqVerticalSeam:
-;   lda #SCANLINE_FINAL
-;   sec
-;   sbc ScrollYLo
-;   sta IrqScanline
-;   sec
-;   sbc IrqScanline
-;   sta VertSeamIrqReload
-
-;   rts
-
-; .reloc
-; CheckForEarlyStatusBar:
-;   ; Early status bar is an 1-2 pixel gap in vanilla
-;   ; where the vertical seam handler *should* run but won't due to problems getting
-;   ; mmc3 scanline to fire twice in a row. (Its possible, just vanilla didn't do it)
-;   ; We could work around this with timed code in the future, but for now, just displaying
-;   ; bg color will be fine. We do this by firing the scanline earlier, and adjusting
-;   ; for the fine Y offset in the IRQ
-;   lda #SCANLINE_FINAL
-;   sec
-;   sbc ScrollYLo
-;   sec
-;   sbc #SCANLINE_STATUS
-;   bpl SetupIrqStatusBar
-;     ; The value is with -1 or -2, store it here and subtract it from the scanline
-;     sta IrqTmp
-; SetupIrqStatusBar:
-;   lda #SCANLINE_STATUS
-;   clc
-;   adc IrqTmp
-;   tay
-;   sec
-;   sbc IrqScanline
-;   sta IrqTmp
-;   sty IrqScanline
-;   lda #IRQ_STATUSBAR
-;   ; sta 
-;   rts
 
 ;;; --------------------------------
 
@@ -1092,10 +1041,10 @@ ConfigureEarlyStatusBar:
   ; we can know if the status bar is early by checking if scrollY is $31 or $32
   ; check to see if we are in an early status bar.
   ; this could be up to 2 scanlines early.
-  ScrollRangeLo = 48 ; we need $31 to map to 1, so start at $30 instead
-  ; ScrollRangeHi = 50 + 1 ; +1 to account for >= in cmp/bcs
+  ScrollRangeLo = 48
+  lda ScrollYLo
   sec
-  sbc #(SCANLINE_FINAL - ScrollRangeLo)
+  sbc #ScrollRangeLo
   cmp #3 ; ScrollRangeHi - ScrollRangeLo
   bcs +
     sta IrqTmp ; stores 1 or 2
@@ -1137,7 +1086,7 @@ ScreenNametableBoss:
   ; (branches if we aren't even drawing the main game nametable)
   lda PpuCtrlShadow
   and #2
-  bne @StatusBar
+  bne UseStatusBar
     lda #SCANLINE_FINAL
     sec
     sbc ScrollYLo
@@ -1148,24 +1097,14 @@ ScreenNametableBoss:
       sta IRQRELOAD
       sta IRQENABLE
       sta IrqTmp
-;       lda #SCANLINE_FINAL
-;       bcs +
-;       cmp #SCANLINE_FINAL + 1 ; checking if its less than so we need to add one
-;       bcc ++ ; if we are already at the end of the nametable, add $10 (== $ff - SCANLINE_FINAL)
-; +       adc #$10
-; ++    
-      ; compute SCANLINE_STATUS - A by negating a and adding it instead
-      ; eor #$ff
-      ; clc
-      ; adc #SCANLINE_STATUS
-      ; IrqTmp should be 0 here
+      
       jsr ConfigureVerticalSeam
       lda #IRQ_VERTICAL_WRAP
       jmp SetIRQCallback
       ; implicit rts
 @ChooseStatusBarCheckEarly:
   jsr ConfigureEarlyStatusBar
-@StatusBar:
+UseStatusBar:
   jsr ConfigureStatusbar
   ; sets IrqTmp to 0-2 depending on if its an early status bar
   lda #SCANLINE_STATUS
@@ -1197,41 +1136,37 @@ ScreenNametableBossWithMsg:
   sta IRQENABLE
 
   ; Precalculate all scanline data for the messagebox
-;   lda ScrollYLo
-;   clc
-;   adc IrqScanline
-;   bcs +
-;   cmp #SCANLINE_FINAL + 1 ; checking if its less than so we need to add one
-;   bcc ++ ; if we are already at the end of the nametable add $10 (== $ff - SCANLINE_FINAL)
-; +   adc #$10       ; adc #imm is 2 cycles, so we need to account for 2 extra cycles of jitter
-; ++
   ; Check for a late messagebox bottom. This is similar to early status bar,
   ; but is much rarer. This only happens if the bottom of the message box is within
   ; two scanlines of the vertical seam. If so, we need to fire it up to two scanlines
   ; later, which will just draw the BG color for those two lines.
   ; we can detect this if ScrollYLo + MsgBoxY <= SCANLINE_FINAL+1 < ScrollYLo + MsgBoxY + 2
-  lda #SCANLINE_FINAL
+  lda #SCANLINE_FINAL - SCANLINE_MSGBOT
   sec
   sbc ScrollYLo
-  cmp #SCANLINE_MSGBOT + 2
+  cmp #3
   bcs @SetupMessageBot
     sta IrqTmp
-    lda #<IrqStatusBarAndAudio
-    sta MsgBotNextIrqLo
-    lda #>IrqStatusBarAndAudio
-    sta MsgBotNextIrqHi
 @SetupMessageBot:
-  lda #SCANLINE_MSGBOT
-  sec
-  sbc IrqTmp
+  lda #SCANLINE_MSGBOT - SCANLINE_MSGTOP
+  clc
+  adc IrqTmp
+  sta MsgTopIrqReload
+  lda #SCANLINE_MSGBOT + 2 ; account for scanline lag
+  clc
+  adc IrqTmp
+  clc
+  adc ScrollYLo
+  bcs +
+  cmp #SCANLINE_FINAL + 1
+  bcc ++
++ adc #$0f
   ; Y to $2005
-  sta MsgBotScroll1
+++sta MsgBotScroll1
   and #$f8
   asl
   asl
   sta MsgBotAddr2
-
-  ; IrqTmp == Low byte of nametable address to $2006, which is ((Y & $F8) << 2) | (X >> 3)
   lda ScrollXLo
   lsr
   lsr
@@ -1239,25 +1174,53 @@ ScreenNametableBossWithMsg:
   ora MsgBotAddr2
   sta MsgBotAddr2
   
-  ; If IrqTmp has a value in it, then we are doing a late msgbox. If we aren't doing a late one,
-  ; then we need to check and see if vertical screenwrap or status bar is next
+  ; If IrqTmp has a value in it, then we are doing a late msgbox
   lda IrqTmp
-  bne +
-    lda #SCANLINE_MSGBOT + 2
-    sta IrqTmp
-    jsr ConfigureVerticalSeam
-    lda #<IrqVerticalScreenWrapHandler
-    sta MsgBotNextIrqLo
-    lda #>IrqVerticalScreenWrapHandler
-    sta MsgBotNextIrqHi
+  bne @LateMessageBox
+    ; If we aren't doing a late one, then we need to check and see if vertical screenwrap or status bar is next
+    lda #SCANLINE_FINAL
+    sec
+    sbc ScrollYLo
+    cmp #SCANLINE_STATUS - 2 ; subtract two to account for early status bar
+    bcs @StatusBar
+    cmp #SCANLINE_MSGBOT + 2
+    bcc @StatusBar
+      ; vertical seam
+      sta IrqTmp
+      sec
+      sbc #SCANLINE_MSGBOT + 2
+      sta MsgBotIrqReload
 
+      jsr ConfigureVerticalSeam
+      lda #<IrqVerticalScreenWrapHandler
+      sta MsgBotNextIrqLo
+      lda #>IrqVerticalScreenWrapHandler
+      sta MsgBotNextIrqHi
+      
+      lda #IRQ_MESSAGE_TOP
+      jmp SetIRQCallback
+      ; implicit rts
     ; MsgBotIrqReload
-+ 
+@StatusBar:
+@LateMessageBox:
+  lda #SCANLINE_STATUS - SCANLINE_MSGBOT- 2 ; -2 for scanline lag?
+  sec
+  sbc IrqTmp
+  sta MsgBotIrqReload
+
+  lda #0
+  sta IrqTmp
   jsr ConfigureEarlyStatusBar
   jsr ConfigureStatusbar
 
+  lda #<IrqStatusBarAndAudio
+  sta MsgBotNextIrqLo
+  lda #>IrqStatusBarAndAudio
+  sta MsgBotNextIrqHi
+
   lda #IRQ_MESSAGE_TOP
   jmp SetIRQCallback
+  ; implicit rts
 
 ; Changes from vanilla: NONE
 .reloc
@@ -1274,9 +1237,10 @@ ScreenPlayerStatus:
   and #$18 ; check if we have either sprites or background enabled
   bne +    ; and if we do skip updating music. presumably that will run later
    jmp MaybeUpdateMusic
-+ ; TODO this should set status bar
-  jmp SetIRQCallback ; SetIRQStatusBar
-
+   ; implicit rts
++ 
+  jmp UseStatusBar
+  ; implicit rts
 
 ; Changes from Vanilla: NONE
 .reloc
@@ -1334,8 +1298,11 @@ RemoveSpritesBehindMessageBox:
   ; it was limited to an 8px range and i didn't even know it was a thing until i read the code
   ; So we now fixed the starting point at 12 px from the top of the screen (4px from the top
   ; of the visual area)
+  lda #SCANLINE_MSGBOT+1 ; +1 because we need a line to switch CHR ROM banks
+ClearSpritesLessThanA:
+  sta $10
   ldx #4
--   lda #SCANLINE_MSGBOT
+-   lda $10
     cmp SpriteRamY,x
     bcc +
       lda #$f0
@@ -1346,6 +1313,8 @@ RemoveSpritesBehindMessageBox:
   rts
 
 .pushseg "13"
+.org $ba11
+  jsr ClearSpritesLessThanA
 .org $bbe4
   jsr RemoveSpritesBehindMessageBox
 .org $bc3f
@@ -1371,5 +1340,8 @@ RemoveSpritesBehindMessageBox:
   jsr RemoveSpritesBehindMessageBox
 .org $de07
   jsr RemoveSpritesBehindMessageBox
-
+.org $de56
+  jsr ClearSpritesLessThanA
+.org $df6a
+  jsr ClearSpritesLessThanA
 .popseg ; 18,fe,ff

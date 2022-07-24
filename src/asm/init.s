@@ -156,6 +156,7 @@ FREE "3d" [$a000, $c000)
 
 ;;; Various global definitions.
 .define GameMode   $41
+.define BankSelectShadow $50
 .define ScreenMode $51
 ObjectRecoil = $340
 ObjectHP = $3c0
@@ -267,18 +268,23 @@ SORT_START_ROW    = 2
 
 .ifdef _FIX_SHAKING
 
-; Free the original IRQ space
-FREE "ff" [$f422, $f7fe)
+; Free the original NMI/IRQ space
+FREE "ff" [$f3b6, $f7fe)
+FREE "ff" [$f883, $fa00)
   
 ; Variables and functions used in the code
 MaybeUpdateMusic = $f7fe
+; This is the entry point after the banks have already been swapped.
+; In the status bar IRQ we have some time to kill so we swap the bank
+; ahead of time and jump here instead
+MaybeUpdateMusicBanked = $f810
 
 .define IrqTmp             $0d
 .define IrqJumpJmpAbsolute $54
 .define IrqJump            $55
 .define IrqJumpLo          $55
 .define IrqJumpHi          $56
-.define IrqScanline        $57
+; .define IrqScanline        $57
 
 ; These are reordered from vanilla to make more sense to me.
 ; They are now ordered by which scanline they fire on.
@@ -289,8 +295,8 @@ MaybeUpdateMusic = $f7fe
 .define IRQ_INVENTORY     $04
 .define IRQ_SNK_LOGO      $05
 
-.define SCANLINE_MSGTOP    12
-.define SCANLINE_MSGBOT    85
+.define SCANLINE_MSGTOP    10
+.define SCANLINE_MSGBOT    83
 .define SCANLINE_INVENTORY 119
 .define SCANLINE_SNK_LOGO  137
 .define SCANLINE_STATUS    191
@@ -304,7 +310,7 @@ IrqTableBase     = $6230
 
 ; Only values that will change from frame to frame will be stored here
 MESSAGE_BOX_TOP_BASE = IrqTableBase
-MsgTopIrqReload  = MESSAGE_BOX_TOP_BASE + 1
+MsgTopIrqReload  = MESSAGE_BOX_TOP_BASE
 MESSAGE_BOX_TOP_END = MsgTopIrqReload
 
 MESSAGE_BOX_BOT_BASE = MESSAGE_BOX_TOP_END
@@ -312,27 +318,18 @@ MsgBotNextIrqLo  = MESSAGE_BOX_BOT_BASE + 1
 MsgBotNextIrqHi  = MESSAGE_BOX_BOT_BASE + 2
 ; Coarse Scroll Y value
 MsgBotScroll1    = MESSAGE_BOX_BOT_BASE + 3
-; Coarse Scroll X value
-MsgBotScroll2    = MESSAGE_BOX_BOT_BASE + 4
 ; Fine X/Y combined
-MsgBotAddr2      = MESSAGE_BOX_BOT_BASE + 5
-MsgBotIrqReload  = MESSAGE_BOX_BOT_BASE + 6
+MsgBotAddr2      = MESSAGE_BOX_BOT_BASE + 4
+MsgBotIrqReload  = MESSAGE_BOX_BOT_BASE + 5
 MESSAGE_BOX_BOT_END = MsgBotIrqReload
 
 VERT_SEAM_BASE = MESSAGE_BOX_BOT_END
-; Coarse Scroll Y value
-VertSeamScroll1    = VERT_SEAM_BASE + 1
-; Coarse Scroll X value
-VertSeamScroll2    = VERT_SEAM_BASE + 2
-; Fine X/Y combined
-VertSeamAddr2      = VERT_SEAM_BASE + 3
-VertSeamIrqReload  = VERT_SEAM_BASE + 4
+VertSeamIrqReload  = VERT_SEAM_BASE + 1
 VERT_SEAM_END = VertSeamIrqReload
 
 STATUS_BAR_BASE = VERT_SEAM_END
 ; Coarse Scroll Y value (needed because it could be an early scroll)
 StatusScroll1 = STATUS_BAR_BASE + 1
-StatusAddr2   = STATUS_BAR_BASE + 2
 ; Theres no reload value because it gets disabled
 
 .endif ; _FIX_SHAKING
@@ -496,7 +493,7 @@ StageNametableWriteFromTable = $c482
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
-ExecuteScreenMode             = $f6ad
+UpdatePpuScroll               = $eb6d
 ReadControllersWithDirections = $fe80
 DisplayNumber                 = $ffa9
 
@@ -581,9 +578,9 @@ FREE "ff" [$ff44, $ff80)
 FREE "ff" [$ffe3, $fffa)
 
 ;;; Patch the DMC Sample to start with FF to eliminate the buzz
-.segment "ff"
-.org $fa00
-  .byte $ff
+; .segment "ff"
+; .org $fa00
+;   .byte $ff
 
 ;;; Patch the end of ItemUse to check for a few more items.
 .segment "0e"

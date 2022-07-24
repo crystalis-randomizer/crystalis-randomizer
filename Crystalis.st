@@ -64148,7 +64148,7 @@ ScreenModeJumpTable_05
         $3f7cb  xx xx:      xxx $xx
         $3f7cd  xx xx xx:   xxx IRQLATCH
         $3f7d0  xx xx xx:   xxx IRQRELOAD
-        $3f7d3  xx xx xx:   xxx IRQLATCH
+        $3f7d3  xx xx xx:   xxx IRQENABLE
         $3f7d6  xx xx:      xxx #$xx
         $3f7d8  xx xx xx:   xxx SetIRQCallback
 ;;; --------------------------------

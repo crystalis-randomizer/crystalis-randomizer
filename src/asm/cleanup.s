@@ -929,13 +929,16 @@ IrqAnimateSNKLogoScroll:
 ;  ^ ignore that, can't do that cause ScreenMode gets ora $#80 all the time
 ;    to disable palette writes in NMI
 ExecuteScreenMode:
+  lda #7
+  sta BANKSELECT
+  lda #$3d
+  sta BANKDATA
+  jsr ExecuteScreenModeInternal
+  lda #7
+  sta BANKSELECT
   lda $6f
-  pha
-    lda #$3d
-    jsr BankSwitch8k_a000
-    jsr ExecuteScreenModeInternal
-  pla
-  jmp BankSwitch8k_a000
+  sta BANKDATA
+  rts
 
 .pushseg "3d"
 ExecuteScreenModeInternal:

@@ -266,12 +266,6 @@ SORT_START_ROW    = 3
 SORT_START_ROW    = 2
 .endif
 
-.ifdef _FIX_SHAKING
-
-; Free the original NMI/IRQ space
-FREE "ff" [$f3b6, $f7fe)
-FREE "ff" [$f883, $fa00)
-  
 ; Variables and functions used in the code
 MaybeUpdateMusic = $f7fe
 ; This is the entry point after the banks have already been swapped.
@@ -331,8 +325,6 @@ STATUS_BAR_BASE = VERT_SEAM_END
 ; Coarse Scroll Y value (needed because it could be an early scroll)
 StatusScroll1 = STATUS_BAR_BASE + 1
 ; Theres no reload value because it gets disabled
-
-.endif ; _FIX_SHAKING
 
 .ifdef _STATS_TRACKING
 ;;;-------------
@@ -561,10 +553,19 @@ FREE "14" [$8520, $8528)
 ;;; just over 256 bytes free in map space
 ;.assert < $17e00
 
+;;; DMC changes, remove unused DMC configurations.
+FREE "18" [$8be0, $8c0c)
+;;; Patch the DMC Sample to start with FF to eliminate the buzz
+.pushseg "ff"
+.org $fa00
+  .byte $ff
+.popseg
+
 FREE "1b" [$a086, $a0a3)
 
 
-FREE "fe" [$c446, $c482)
+; Free the original EnableNMI/SpriteRendering routines
+FREE "fe" [$c436, $c482)
 ;;; Random uncovered 6 bytes between dialog actions
 FREE "fe" [$d196, $d19c)
 ;;; Recovered from item/trigger jump 08 (get paralysis)
@@ -572,15 +573,17 @@ FREE "fe" [$d654, $d659)
 ;;; Recovered from other item/trigger jumps (06/11, 0b, 0c, 0d, 0e, 0f,
 FREE "fe" [$d6d5, $d746)
 
+; Free the original NMI/IRQ space
+FREE "ff" [$f3b6, $f7fe)
+FREE "ff" [$f883, $fa00)
+; cut into the DMC sample a bit to gain some fixed bank space
+FREE "ff" [$fa01, $fb80)
+FREE "ff" [$fc80, $fd00)
+; rts at 3fe00 is important?
 FREE "ff" [$fe01, $fe16)
 FREE "ff" [$fe18, $fe78) ;; NOTE: 3fe2e might be safer than 3fe18
 FREE "ff" [$ff44, $ff80)
 FREE "ff" [$ffe3, $fffa)
-
-;;; Patch the DMC Sample to start with FF to eliminate the buzz
-; .segment "ff"
-; .org $fa00
-;   .byte $ff
 
 ;;; Patch the end of ItemUse to check for a few more items.
 .segment "0e"

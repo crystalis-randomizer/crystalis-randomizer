@@ -16,12 +16,6 @@ lda #%00000000
 sta NmiDisable
 .endmacro
 
-.org $c436 ; EnableNMI
-  brk
-.org $c43e ; DisableNMI
-  brk
-; TODO use FREE_UNTIL after all are surely gone
-
 ;;;--------------------------
 ;;; HandleNMI
 ; Changes from Vanilla NMI handler
@@ -64,7 +58,7 @@ NMIHandler:
           ;; This is the map position of object $13, likely the background boss
           ;; Changes from Vanilla, since ScreenMode 8 is unused, this can just check if >=7
           lda ScreenMode
-          and #$7f
+          and #$7f ; TODO if we move the bit7 skip palette to a different variable, then we can shave a few more cycles
           cmp #$07
           bcc @CopyFromStandardScroll
             ; fallthrough
@@ -134,9 +128,8 @@ NMIHandler:
 InitialIRQHandler:
   rti
 
-.org $c739
-  brk
-FREE_UNTIL $c75c
+; Free up the original RequestAttributeTable0Write
+FREE "fe" [$c739, $c75c)
 
 .reloc
 ;; Changes from vanilla:
@@ -165,9 +158,8 @@ RequestAttributeTable0Write:
 ; Changes from vanilla:
 ;  - Use axs unoffical opcode to shave cycles off bulk copy
 ;  - Removes the only reference to $0d so we can use that elsewhere
-.org $c67d
-  brk
-FREE_UNTIL $c72b
+FREE "fe" [$c67d, $c72b)
+
 .reloc
 WriteNametableDataToPpu:
 @ProcessNextEntry:
@@ -261,9 +253,7 @@ WaitForOAMDMA:
   sta OamDisable
   rts
 
-.org $c8b2
-  brk ; TODO remove after all are surely gone
-FREE_UNTIL $c8f0
+FREE "fe" [$c8b2, $c8f0)
 .reloc
 ImmediateWriteNametableDataToPpu:
   DISABLE_NMI
@@ -282,10 +272,11 @@ ImmediateWriteNametableDataToPpu:
   jsr WriteNametableDataToPpu
 .org $8ada
   jmp EnableNMI
-FREE_UNTIL $8aed
+; EnableNMI_20add DisableNMI_20ae5
+FREE "10" [$8add, $8aed)
 
-.org $a720 ; DisableNMI_altbank11
-  brk ; TODO remove
+; DisableNMI_altbank11 EnableNMI_altbank11
+FREE "11" [$a720, $a730)
 
 .org $a239
   jsr DisableNMI
@@ -379,7 +370,7 @@ FREE_UNTIL $8aed
   jsr WaitForOAMDMA
 .org $a9b0
   jsr WaitForOAMDMA
-  ; TODO This was relocated but my patch disagrees with it.
+; TODO This was relocated but my patch disagrees with it.
 .org $abb7
   jsr WaitForOAMDMA
 
@@ -390,12 +381,10 @@ FREE_UNTIL $8aed
 .org $be54
   jsr RequestAttributeTable0Write
 
-.org $8174 ; DisableNMI_alt2 and then EnableNMI_alt2
-  brk ; TODO remove after all are surely gone
-FREE_UNTIL $8184
-.org $8198 ; WaitForOAMDMA
-  brk ; TODO remove after all are surely gone
-FREE_UNTIL $81a1
+; DisableNMI_alt2 and EnableNMI_alt2
+FREE "12" [$8174, $8184)
+; WaitForOAMDMA_alt2
+FREE "12" [$8198, $81a1)
 .popseg ; "12", "13"
 
 .pushseg "14", "15"
@@ -404,12 +393,8 @@ FREE_UNTIL $81a1
 .org $8857
   jsr EnableNMI
 
-.org $8869 ; EnableNMI_alt
-  brk ; TODO remove
-FREE_UNTIL $8870
-.org $8871 ; DisableNMI_alt
-  brk ; TODO remove
-FREE_UNTIL $8878
+; EnableNMI_alt DisableNMI_alt
+FREE "13" [$8869, $8879)
 .popseg ; "14", "15"
 
 .pushseg "1a", "1b"
@@ -466,25 +451,66 @@ FREE_UNTIL $ec6c
 
 .popseg ; "fe", "ff"
 
-; .pushseg "18", "fe", "ff"
-
-; .org $8bdc
-  ; .byte $0f,$ff,$e8,$3c
-  ; FREE_UNTIL $8c0c
-; FREE "ff" [$fa00, $fe00)
-
-; Free up some chunks of the DMC to allow code to be written there,
-; ; while still keeping the original bytes a bit
-FREE "ff" [$fa00, $fb80) ; rts at 3fe00 is important
-FREE "ff" [$fc00, $fd00) ; rts at 3fe00 is important
-FREE "ff" [$fd80, $fe00) ; rts at 3fe00 is important
-
-; .popseg ; 18,fe,ff
-
-
-.ifdef _FIX_SHAKING
 
 .pushseg "fe", "ff"
+
+
+; Update RemoveSpritesBehindMessageBox to account for the fixed location message box
+FREE "fe" [$c17d, $c19f)
+.reloc
+RemoveSpritesBehindMessageBox:
+  ; Messagebox used to fluctate its starting point for ...reasons? I think the intention
+  ; is depending on where you were they could put it at different spots, but in practice
+  ; it was limited to an 8px range and i didn't even know it was a thing until i read the code
+  ; So we now fixed the starting point at 12 px from the top of the screen (4px from the top
+  ; of the visual area)
+  lda #SCANLINE_MSGBOT+1 ; +1 because we need a line to switch CHR ROM banks
+ClearSpritesLessThanA:
+  sta $10
+  ldx #4
+-   lda $10
+    cmp SpriteRamY,x
+    bcc +
+      lda #$f0
+      sta SpriteRamY,x
++   txa
+    axs #-4
+  bne -
+  rts
+
+.pushseg "13"
+.org $ba11
+  jsr ClearSpritesLessThanA
+.org $bbe4
+  jsr RemoveSpritesBehindMessageBox
+.org $bc3f
+  jsr RemoveSpritesBehindMessageBox
+.org $bc5d
+  jsr RemoveSpritesBehindMessageBox
+.popseg ; 13
+
+.pushseg "17"
+.org $bbe4
+  jsr RemoveSpritesBehindMessageBox
+.popseg ; 17
+
+.org $d376
+  jsr RemoveSpritesBehindMessageBox
+.org $d394
+  jsr RemoveSpritesBehindMessageBox
+.org $d3b0
+  jsr RemoveSpritesBehindMessageBox
+.org $d8b7
+  jsr RemoveSpritesBehindMessageBox
+.org $dbc2
+  jsr RemoveSpritesBehindMessageBox
+.org $de07
+  jsr RemoveSpritesBehindMessageBox
+.org $de56
+  jsr ClearSpritesLessThanA
+.org $df6a
+  jsr ClearSpritesLessThanA
+
 
 ;;; -------------------
 ;;; IRQ rewrite
@@ -503,7 +529,6 @@ FREE "ff" [$fd80, $fe00) ; rts at 3fe00 is important
 
 ;;;---------
 ; Update the Reset function to setup the jmp (IRQHandler) in zp
-
 .org $f2f6 ; in HandleReset
   lda #$4c
   sta IrqJumpJmpAbsolute
@@ -522,18 +547,9 @@ FREE "ff" [$fd80, $fe00) ; rts at 3fe00 is important
 .org $fffe ; VectorIRQ
   .word (IrqJumpJmpAbsolute)
 
-.reloc
-SetIRQCallback:
-  ;; TODO - $56 is a very likely candidate to change from ZP to ABS
-  ;; Its only read once in the code when changing teleport spots
-  ; sta $56
-  asl
-  tax
-  lda IRQCallbackTable,x
-  sta IrqJumpLo
-  lda IRQCallbackTable+1,x
-  sta IrqJumpHi
-  rts
+; Update the only location that read from the current IRQ setup to use screenmode instead
+.org $dca9
+  ldy ScreenMode
 
 ;;-----------
 ; Macro that doesn't use x/y to set the next IRQcallback.
@@ -562,15 +578,6 @@ SetIRQCallback:
   sta IrqJumpHi
   .undefine ReadAddress
 .endmacro
-
-.reloc
-IRQCallbackTable:
-  .word (IrqMessageBoxTopHandler)
-  .word (IrqMessageBoxBottomHandler)
-  .word (IrqVerticalScreenWrapHandler)
-  .word (IrqStatusBarAndAudio)
-  .word (IrqInventoryUpdateCHRROMForMagic)
-  .word (IrqAnimateSNKLogoScroll)
 
 .reloc
 IrqMessageBoxTopHandler:
@@ -887,39 +894,6 @@ IrqAnimateSNKLogoScroll:
     sta PPUADDR
   pla
   rti
-.endif
-
-.reloc
-; This is used to switch banks in IRQ, so the banks 0 and 1 are
-; important to change quickly to prevent graphic glitches
-SwitchCHRBankForMessageBox:
-  lda #$00
-  sta BANKSELECT
-  lda $58
-  sta BANKDATA
-  lda #$01
-  sta BANKSELECT
-  lda $59
-  sta BANKDATA
-  lda #$02
-  sta BANKSELECT
-  lda $5a
-  sta BANKDATA
-  lda #$03
-  sta BANKSELECT
-  lda $5b
-  sta BANKDATA
-  lda #$04
-  sta BANKSELECT
-  lda $5c
-  sta BANKDATA
-  lda #$05
-  sta BANKSELECT
-  lda $5d
-  sta BANKDATA
-  lda BankSelectShadow
-  sta BANKSELECT
-  rts
 
 ;;; The following patch fixes a crash where an IRQ right in the middle of
 ;;; loading NPCs can fail to correctly restore the bank select register
@@ -938,53 +912,32 @@ SwitchCHRBankForMessageBox:
   stx BankSelectShadow
   rts
 
-.reloc
-; This is used to switch banks in IRQ, so the banks 0 and 1 are
-; important to change quickly to prevent graphic glitches
-RestoreCHRRomBanks:
-  lda #$00
-  sta BANKSELECT
-  lda $07f0
-  sta BANKDATA
-  lda #$01
-  sta BANKSELECT
-  lda $07f1
-  sta BANKDATA
-  lda #$02
-  sta BANKSELECT
-  lda $07f2
-  sta BANKDATA
-  lda #$03
-  sta BANKSELECT
-  lda $07f3
-  sta BANKDATA
-  lda #$04
-  sta BANKSELECT
-  lda $07f4
-  sta BANKDATA
-  lda #$05
-  sta BANKSELECT
-  lda $07f5
-  sta BANKDATA
-  lda BankSelectShadow
-  sta BANKSELECT
-  rts
-
-
 ;;;---------------------------
 ; Redo the ScreenMode code
 ; Update various locations that SetIRQCallback
-
+; Move all of this to a new bank. This screen mode stuff is called once a frame to setup
+; the next frame's IRQs so it doesn't really need to be in the fixed bank.
 
 .reloc
 ; ExecuteScreenMode
 ; Changes from vanilla:
+; Banks the entire screen mode handling This frees up a ton of space in fixed bank
 ; frees up two ZP ($52 and $53) by using the RTS trick instead
 ; minor opt by splitting into Hi and Lo table
 ;  ^ ignore that, can't do that cause ScreenMode gets ora $#80 all the time
+;    to disable palette writes in NMI
 ExecuteScreenMode:
+  lda $6f
+  pha
+    lda #$3d
+    jsr BankSwitch8k_a000
+    jsr ExecuteScreenModeInternal
+  pla
+  jmp BankSwitch8k_a000
+
+.pushseg "3d"
+ExecuteScreenModeInternal:
   lda #0
-  ; sta IrqScanline
   sta IrqTmp
   ; TODO change the bit 7 "skip palette" to be a different flag, and just do ldx ScreenMode
   ; to shave off a few cycles in NMI
@@ -1021,6 +974,28 @@ ExecuteScreenMode:
   .byte $00
   .byte >(ScreenNametableBossWithMsg)
 
+
+; Changes from Vanilla: Doesn't set $56 anymore. (the one place that did was changed to read from screenmode instead)
+.reloc
+SetIRQCallback:
+  asl
+  tax
+  lda IRQCallbackTable,x
+  sta IrqJumpLo
+  lda IRQCallbackTable+1,x
+  sta IrqJumpHi
+  rts
+
+.reloc
+IRQCallbackTable:
+  .word (IrqMessageBoxTopHandler)
+  .word (IrqMessageBoxBottomHandler)
+  .word (IrqVerticalScreenWrapHandler)
+  .word (IrqStatusBarAndAudio)
+  .word (IrqInventoryUpdateCHRROMForMagic)
+  .word (IrqAnimateSNKLogoScroll)
+
+
 .reloc
 ; Temporarily updates the scroll for the frame by wrapping the Y scroll value at #$e8
 UpdatePpuScrollWrapping:
@@ -1032,6 +1007,70 @@ UpdatePpuScrollWrapping:
   sta ScrollYHi
   jsr UpdatePpuScroll
   stx ScrollYHi ; Restore the original ScrollYHi value
+  rts
+
+.reloc
+; This is used to switch banks in IRQ, so the banks 0 and 1 are
+; important to change quickly to prevent graphic glitches
+SwitchCHRBankForMessageBox:
+  lda #$00
+  sta BANKSELECT
+  lda $58
+  sta BANKDATA
+  lda #$01
+  sta BANKSELECT
+  lda $59
+  sta BANKDATA
+  lda #$02
+  sta BANKSELECT
+  lda $5a
+  sta BANKDATA
+  lda #$03
+  sta BANKSELECT
+  lda $5b
+  sta BANKDATA
+  lda #$04
+  sta BANKSELECT
+  lda $5c
+  sta BANKDATA
+  lda #$05
+  sta BANKSELECT
+  lda $5d
+  sta BANKDATA
+  lda BankSelectShadow
+  sta BANKSELECT
+  rts
+
+.reloc
+; This is used to switch banks in IRQ, so the banks 0 and 1 are
+; important to change quickly to prevent graphic glitches
+RestoreCHRRomBanks:
+  lda #$00
+  sta BANKSELECT
+  lda $07f0
+  sta BANKDATA
+  lda #$01
+  sta BANKSELECT
+  lda $07f1
+  sta BANKDATA
+  lda #$02
+  sta BANKSELECT
+  lda $07f2
+  sta BANKDATA
+  lda #$03
+  sta BANKSELECT
+  lda $07f3
+  sta BANKDATA
+  lda #$04
+  sta BANKSELECT
+  lda $07f4
+  sta BANKDATA
+  lda #$05
+  sta BANKSELECT
+  lda $07f5
+  sta BANKDATA
+  lda BankSelectShadow
+  sta BANKSELECT
   rts
 
 ;;; --------------------------------
@@ -1289,59 +1328,6 @@ ScreenInventory:
   jmp SetIRQCallback
   ; implicit rts
 
-; Update RemoveSpritesBehindMessageBox to account for the fixed location message box
-FREE "fe" [$c17d, $c19f)
-.reloc
-RemoveSpritesBehindMessageBox:
-  ; Messagebox used to fluctate its starting point for ...reasons? I think the intention
-  ; is depending on where you were they could put it at different spots, but in practice
-  ; it was limited to an 8px range and i didn't even know it was a thing until i read the code
-  ; So we now fixed the starting point at 12 px from the top of the screen (4px from the top
-  ; of the visual area)
-  lda #SCANLINE_MSGBOT+1 ; +1 because we need a line to switch CHR ROM banks
-ClearSpritesLessThanA:
-  sta $10
-  ldx #4
--   lda $10
-    cmp SpriteRamY,x
-    bcc +
-      lda #$f0
-      sta SpriteRamY,x
-+   txa
-    axs #-4
-  bne -
-  rts
+.popseg ; 3d
 
-.pushseg "13"
-.org $ba11
-  jsr ClearSpritesLessThanA
-.org $bbe4
-  jsr RemoveSpritesBehindMessageBox
-.org $bc3f
-  jsr RemoveSpritesBehindMessageBox
-.org $bc5d
-  jsr RemoveSpritesBehindMessageBox
-.popseg ; 13
-
-.pushseg "17"
-.org $bbe4
-  jsr RemoveSpritesBehindMessageBox
-.popseg ; 17
-
-.org $d376
-  jsr RemoveSpritesBehindMessageBox
-.org $d394
-  jsr RemoveSpritesBehindMessageBox
-.org $d3b0
-  jsr RemoveSpritesBehindMessageBox
-.org $d8b7
-  jsr RemoveSpritesBehindMessageBox
-.org $dbc2
-  jsr RemoveSpritesBehindMessageBox
-.org $de07
-  jsr RemoveSpritesBehindMessageBox
-.org $de56
-  jsr ClearSpritesLessThanA
-.org $df6a
-  jsr ClearSpritesLessThanA
-.popseg ; 18,fe,ff
+.popseg ; fe,ff

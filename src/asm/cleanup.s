@@ -120,6 +120,8 @@ NMIHandler:
         inc OamDisable ; flag OAMDMA complete by disabling it
 
         ; Reload the register values and return
+        lda BankSelectShadow
+        sta BANKSELECT
       pla
       tay
     pla

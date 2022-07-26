@@ -46,79 +46,15 @@ NMIHandler:
     pha
       tya
       pha
-        lda PPUSTATUS
-        lda OamDisable
-        bne @SkipOAMDMA
-          ;; Do an OAM DMA
-          sta OAMADDR
-          lda #$02
-          sta OAMDMA
-
-          ;; If ScreenMode is 7 or 9, then copy $[8ace]3 into $07d[89ab] instead.
-          ;; This is the map position of object $13, likely the background boss
-          ;; Changes from Vanilla, since ScreenMode 8 is unused, this can just check if >=7
-          lda ScreenMode
-          and #$7f ; TODO if we move the bit7 skip palette to a different variable, then we can shave a few more cycles
-          cmp #$07
-          bcc @CopyFromStandardScroll
-            ; fallthrough
-@CopyFromObjCoords:
-            lda $83
-            sta ScrollXLo
-            lda $a3
-            sta ScrollXHi
-            lda $c3
-            sta ScrollYLo
-            lda $e3
-            sta ScrollYHi
-            bcs @SkipOAMDMA ; unconditional
-@CopyFromStandardScroll:
-            lda ScreenXLo
-            sta ScrollXLo
-            lda ScreenXHi
-            sta ScrollXHi
-            lda ScreenYLo
-            sta ScrollYLo
-            lda ScreenYHi
-            sta ScrollYHi
-            ; fallthrough
-@SkipOAMDMA:
-        ;; Back to the main line - always write nametables and palettes.
-        jsr WriteNametableDataToPpu
-        ; Inlined WritePaletteDataToPpu since it was only called from here.
-        ; Check if ScreenMode bit 7 is set, and skip palette update if it is
-        bit ScreenMode
-        bpl +
-          jmp @AfterPaletteUpdate
-+
-;;;---------------------------
-;;; WritePaletteDataToPpu
-; Changes from the original
-;  - Inlined to shave off jsr/rts (4 bytes and 12 cycles)
-;  - Removed unused loading palette by offset in x (saves 2 cycles from removing ldx #0)
-;  - Removed paranoid palette corruption fix. (saves 16 bytes and 20 cycles)
-        lda #$00
-        sta PPUMASK
-        lda PpuCtrlShadow
-        and #%11111011 ; #$fb
-        sta PPUCTRL
-        ; we shouldn't need to reset the latch here since we did that in WriteNametableDataToPpu
-        ; lda PPUSTATUS
-        lda #>VromPalettes ; $3f
-        sta PPUADDR
-        lda #<VromPalettes ; $00
-        sta PPUADDR
-        .repeat $20, i
-          lda $6140 + i
-          sta PPUDATA
-        .endrepeat
-@AfterPaletteUpdate:
-        ;; Write PPUMASK from $01
-        lda PpuMaskShadow
-        sta PPUMASK
-        jsr ExecuteScreenMode
-        inc OamDisable ; flag OAMDMA complete by disabling it
-
+        lda #7
+        sta BANKSELECT
+        lda #$3d
+        sta BANKDATA
+        jsr NMIHandlerInternal
+        lda #7
+        sta BANKSELECT
+        lda $6f
+        sta BANKDATA
         ; Reload the register values and return
         lda BankSelectShadow
         sta BANKSELECT
@@ -130,8 +66,6 @@ NMIHandler:
 InitialIRQHandler:
   rti
 
-; Free up the original RequestAttributeTable0Write
-FREE "fe" [$c739, $c75c)
 
 .reloc
 ;; Changes from vanilla:
@@ -154,20 +88,20 @@ RequestAttributeTable0Write:
   sta NmtBufWriteOffset
   jmp EnableNMI
 
+.reloc
+WriteNametableDataToPpu:
 ;;;----------------------
-;;; WriteNametableDatatoPpu
+;;; WriteNametableDataToPpu
 ; Clean up some minor waste of cycles and make it relocatable
 ; Changes from vanilla:
 ;  - Use axs unoffical opcode to shave cycles off bulk copy
 ;  - Removes the only reference to $0d so we can use that elsewhere
-FREE "fe" [$c67d, $c72b)
-
-.reloc
-WriteNametableDataToPpu:
 @ProcessNextEntry:
   ldy NmtBufReadOffset
   cpy NmtBufWriteOffset
-  beq @Exit
+  bne +
+    rts
++
   ;; Check bit :40 of $6200,x to see if we're writing a horizontal
   ;; (clear) or vertical (set) strip to the nametable.  Fix the
   ;; :04 bit of $0 and write it to PPUCTRL.
@@ -235,6 +169,8 @@ WriteNametableDataToPpu:
   sta NmtBufReadOffset
   rts
 
+
+
 ;;; Various locations changed to no longer disable NMI
 ;;; and use the following flag versions instead
 .reloc
@@ -255,7 +191,6 @@ WaitForOAMDMA:
   sta OamDisable
   rts
 
-FREE "fe" [$c8b2, $c8f0)
 .reloc
 ImmediateWriteNametableDataToPpu:
   DISABLE_NMI
@@ -274,12 +209,6 @@ ImmediateWriteNametableDataToPpu:
   jsr WriteNametableDataToPpu
 .org $8ada
   jmp EnableNMI
-; EnableNMI_20add DisableNMI_20ae5
-FREE "10" [$8add, $8aed)
-
-; DisableNMI_altbank11 EnableNMI_altbank11
-FREE "11" [$a720, $a730)
-
 .org $a239
   jsr DisableNMI
 .org $a301
@@ -383,10 +312,6 @@ FREE "11" [$a720, $a730)
 .org $be54
   jsr RequestAttributeTable0Write
 
-; DisableNMI_alt2 and EnableNMI_alt2
-FREE "12" [$8174, $8184)
-; WaitForOAMDMA_alt2
-FREE "12" [$8198, $81a1)
 .popseg ; "12", "13"
 
 .pushseg "14", "15"
@@ -395,8 +320,6 @@ FREE "12" [$8198, $81a1)
 .org $8857
   jsr EnableNMI
 
-; EnableNMI_alt DisableNMI_alt
-FREE "13" [$8869, $8879)
 .popseg ; "14", "15"
 
 .pushseg "1a", "1b"
@@ -458,7 +381,6 @@ FREE_UNTIL $ec6c
 
 
 ; Update RemoveSpritesBehindMessageBox to account for the fixed location message box
-FREE "fe" [$c17d, $c19f)
 .reloc
 RemoveSpritesBehindMessageBox:
   ; Messagebox used to fluctate its starting point for ...reasons? I think the intention
@@ -941,6 +863,84 @@ ExecuteScreenMode:
   rts
 
 .pushseg "3d"
+
+.reloc
+NMIHandlerInternal:
+  lda PPUSTATUS
+  lda OamDisable
+  bne @SkipOAMDMA
+    ;; Do an OAM DMA
+    sta OAMADDR
+    lda #$02
+    sta OAMDMA
+
+    ;; If ScreenMode is 7 or 9, then copy $[8ace]3 into $07d[89ab] instead.
+    ;; This is the map position of object $13, likely the background boss
+    ;; Changes from Vanilla, since ScreenMode 8 is unused, this can just check if >=7
+    lda ScreenMode
+    and #$7f ; TODO if we move the bit7 skip palette to a different variable, then we can shave a few more cycles
+    cmp #$07
+    bcc @CopyFromStandardScroll
+      ; fallthrough
+@CopyFromObjCoords:
+      lda $83
+      sta ScrollXLo
+      lda $a3
+      sta ScrollXHi
+      lda $c3
+      sta ScrollYLo
+      lda $e3
+      sta ScrollYHi
+      bcs @SkipOAMDMA ; unconditional
+@CopyFromStandardScroll:
+      lda ScreenXLo
+      sta ScrollXLo
+      lda ScreenXHi
+      sta ScrollXHi
+      lda ScreenYLo
+      sta ScrollYLo
+      lda ScreenYHi
+      sta ScrollYHi
+      ; fallthrough
+@SkipOAMDMA:
+  ;; Back to the main line - always write nametables and palettes.
+  jsr WriteNametableDataToPpu
+
+  ; Inlined WritePaletteDataToPpu since it was only called from here.
+  ; Check if ScreenMode bit 7 is set, and skip palette update if it is
+  bit ScreenMode
+  bpl +
+    jmp @AfterPaletteUpdate
++
+;;;---------------------------
+;;; WritePaletteDataToPpu
+; Changes from the original
+;  - Inlined to shave off jsr/rts (4 bytes and 12 cycles)
+;  - Removed unused loading palette by offset in x (saves 2 cycles from removing ldx #0)
+;  - Removed paranoid palette corruption fix. (saves 16 bytes and 20 cycles)
+  lda #$00
+  sta PPUMASK
+  lda PpuCtrlShadow
+  and #%11111011 ; #$fb
+  sta PPUCTRL
+  ; we shouldn't need to reset the latch here since we did that in WriteNametableDataToPpu
+  ; lda PPUSTATUS
+  lda #>VromPalettes ; $3f
+  sta PPUADDR
+  lda #<VromPalettes ; $00
+  sta PPUADDR
+  .repeat $20, i
+    lda $6140 + i
+    sta PPUDATA
+  .endrepeat
+@AfterPaletteUpdate:
+  ;; Write PPUMASK from $01
+  lda PpuMaskShadow
+  sta PPUMASK
+  inc OamDisable ; flag OAMDMA complete by disabling it
+  jmp ExecuteScreenMode
+  ; implicit rts
+
 ExecuteScreenModeInternal:
   lda #0
   sta IrqTmp

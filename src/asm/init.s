@@ -576,14 +576,35 @@ FREE "fe" [$d6d5, $d746)
 ; Free the original NMI/IRQ space
 FREE "ff" [$f3b6, $f7fe)
 FREE "ff" [$f883, $fa00)
-; cut into the DMC sample a bit to gain some fixed bank space
-FREE "ff" [$fa01, $fb80)
-FREE "ff" [$fc80, $fd00)
+; cut into the DMC sample a bit to gain some fixed bank space as needed
+; FREE "ff" [$fb00, $fb80)
+; FREE "ff" [$fc80, $fd00)
 ; rts at 3fe00 is important?
 FREE "ff" [$fe01, $fe16)
 FREE "ff" [$fe18, $fe78) ;; NOTE: 3fe2e might be safer than 3fe18
 FREE "ff" [$ff44, $ff80)
 FREE "ff" [$ffe3, $fffa)
+
+; code relocated in cleanup
+; WriteNametableDatatoPpu
+FREE "fe" [$c67d, $c72b)
+; RequestAttributeTable0Write
+FREE "fe" [$c739, $c75c)
+; ImmediateWriteNametableDataToPpu
+FREE "fe" [$c8b2, $c8f0)
+; RemoveSpritesBehindMessageBox
+FREE "fe" [$c17d, $c19f)
+; EnableNMI_20add DisableNMI_20ae5
+FREE "10" [$8add, $8aed)
+; DisableNMI_altbank11 EnableNMI_altbank11
+FREE "11" [$a720, $a730)
+; DisableNMI_alt2 and EnableNMI_alt2
+FREE "12" [$8174, $8184)
+; WaitForOAMDMA_alt2
+FREE "12" [$8198, $81a1)
+; EnableNMI_alt DisableNMI_alt
+FREE "13" [$8869, $8879)
+
 
 ;;; Patch the end of ItemUse to check for a few more items.
 .segment "0e"

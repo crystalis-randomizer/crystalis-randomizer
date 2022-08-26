@@ -2,8 +2,13 @@ import {FlagSet} from '../flagset.js';
 import {Random} from '../random.js';
 import {Rom} from '../rom.js';
 
+// NOTE: the ! prefix indicates it is used when community jokes are
+// not enabled.  This is a much smaller set.  Everything WITHOUT an
+// exclamation point is reserved as a joke and will not come up in
+// easy mode.
+
 const KEY_NAMES = [
-  '!Unidentified Key',
+  '!Random Key',
   '!Curious Key',
   '!Bronze Key',
   '!Silver Key',
@@ -46,11 +51,13 @@ const KEY_NAMES = [
   'Clock Key',
   'Florida Key',
   'Key Lime Pie',
+  'Keystone',
 ];
 const FLUTE_NAMES = [
-  //'Unidentified Flute', // NOTE: too long :-(
+  '!Random Flute',
   '!Wooden Flute',
   '!Metal Flute',
+  '!Piccolo',
   'Horn of Plenty',
   '!Ocarina',
   'Fairy Ocarina',
@@ -71,9 +78,14 @@ const FLUTE_NAMES = [
   '!Harmonica',
   'Sousaphone',
   'Trumpet',
+  'French Horn',
   'Trombone',
+  'Euphonium',
+  'Tuba',
   'Clarinet',
   'Saxophone',
+  'Oboe',
+  'Bassoon',
   'Violin',
   'Viola',
   'Cello',
@@ -84,10 +96,14 @@ const FLUTE_NAMES = [
   'Harpsichord',
   'Pipe Organ',
   'Note Block',
+  'Snare Drum',
+  'Xylophone',
+  'Marimba',
+  'Tambourine',
   'Tornelsbane',
 ];
 const LAMP_NAMES = [
-  '!Unidentified Lamp',
+  '!Random Lamp',
   '!Bronze Lamp',
   '!Silver Lamp',
   '!Gold Lamp',
@@ -106,6 +122,7 @@ const LAMP_NAMES = [
   'Ultraviolet Lamp',
   'Heat Lamp',
   'Recessed Lighting',
+  'Laser Pointer',
   'Spotlight',
   'Flashlight',
   'Search Light',
@@ -115,10 +132,12 @@ const LAMP_NAMES = [
   'Birthday Candle',
   'Tallow Candle',
   'Wax Candle',
+  'Tanning Bed',
+  'CRT',
 ];
 const STATUE_NAMES = [
-  '!Unidentified Idol',
-  'Rusty Statue',
+  '!Random Statue',
+  '!Rusty Statue',
   '!Forbidden Statue',
   'Golden Idol',
   '!Strange Statue',
@@ -146,8 +165,9 @@ const STATUE_NAMES = [
   'Acmlm Figurine',     // #2 speedrun 2021 (56m00s)
   'CodeGorilla Trophy', // Full Stupid 2021/11/21
 ];
+// TODO - set up combinations that should appear together
 const BOW_NAMES = [
-  '!Unidentified Bow',
+  '!Random Bow',
   'Crossbow',
   'Autocrossbow',
   'Long Bow',
@@ -156,6 +176,10 @@ const BOW_NAMES = [
   'Wooden Bow',
   'Violin Bow',
   'Tae Bo',
+  'Botox',
+  'Bo Derek',
+  'Bo Diddley',
+  'Bo Dallas',
   'Rainbow',
   'Hair Bow',
   'Bow Tie',

@@ -190,6 +190,7 @@ DRAW_ENEMY_STATS  = %000000010
 SelectedConsumableIndex = $642c
 SelectedQuestItemIndex  = $642e
 
+EnemyHPRamStart     = $6a10
 ; These are offset by $0d since enemy objects only load from $0d - $1f
 ObjectNameId        = $6a10 - $0d ; 18 bytes from $10 - $22 used to look up this object's name.
 ObjectMaxHPLo       = $6a22 - $0d ; 18 bytes from $22 - $34
@@ -203,6 +204,8 @@ RecentEnemyMaxHPHi  = RecentEnemyMaxHP+1
 RecentEnemyCurrHP   = $6a4b ; 2 bytes 4b-4c
 RecentEnemyCurrHPLo = RecentEnemyCurrHP
 RecentEnemyCurrHPHi = RecentEnemyCurrHP+1
+EnemyHPRamEnd       = RecentEnemyCurrHP+2
+EnemyHPRamLen       = EnemyHPRamEnd - EnemyHPRamStart
 
 ; Constants used in DisplayNumberInternal for the NumericDisplays LUT
 ; These are including the overrides done in the randomizer

@@ -841,26 +841,63 @@ UpdateGlobalStepCounter:
 .org $baca
 InitializeStatusBarNametable:
 .ifdef _ENEMY_HP
-  jsr ClearEnemyHPRam
+  jsr RedrawEnemyHPDisplayAfterClear
 .endif ; _ENEMY_HP
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
-  jmp $c676 ; WaitForNametableFlush
+  jmp FlushNametableDataWrite ; WaitForNametableFlush
 FREE_UNTIL $bad9
 
 .ifdef _ENEMY_HP
+.reloc
+RedrawEnemyHPDisplayAfterClear:
+  ; This is called in a few places.
+  ; When loading the game, this is called to draw the inital status bar
+  ; This should clear the display because the RAM will be clear on game start
+  ; When in the DYNA fight, this function is called after the DYNA drawing
+  ; routine will overwrite the statusbar with garbage, so we can force a redraw
+  ; of the current enemy by setting the previous slot to 0
+  lda #0
+  sta PreviousEnemySlot
+  jmp UpdateEnemyHPDisplay
+  ; implicit rts
+.popseg ; 13/fe/ff
 
-.segment "fe", "ff"  ; needs to be accessible from multiple banks
+.pushseg "1a", "1b", "fe", "ff"
+.org $e486
+  jsr WaitForNametableFlushDuringLoad
 
 .reloc
-ClearEnemyHPRam:
-  ;; Clear out the SRAM that stores the enemy HP data
-  lda #0
-  ldy #(RecentEnemyCurrHPHi - $6a10)
--   sta $6a10,y
+WaitForNametableFlushDuringLoad:
+  jsr $9cef ; Do the original handler for location change
+  jmp FlushNametableDataWrite
+.popseg ; 1a/1b/fe/ff
+
+.pushseg "fe", "ff"  ; needs to be accessible from multiple banks
+
+.reloc
+ClearCurrentEnemyHP:
+  ldy #0
+  sty PreviousEnemySlot
+  sty RecentEnemyCurrHPHi
+  sty RecentEnemyCurrHPLo
+  sty RecentEnemyMaxHPLo
+  sty RecentEnemyMaxHPHi
+  sty RecentEnemyObjectId
+  lda #$1c ; [=] bar character
+  ldy #ENEMY_NAME_BUFFER_SIZE - 1
+-   sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
     dey
   bpl -
-  jmp ClearCurrentEnemyHPSlot
+  lda #$20 ; space tile
+  ldy #$09
+-   sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
+    dey
+  bpl -
+  lda #ENEMY_HP_VRAM_UPDATE
+  jsr StageNametableWriteFromTable
+  lda #ENEMY_NAME_VRAM_UPDATE
+  jmp StageNametableWriteFromTable
 
 .reloc
 ClearCurrentEnemyHPSlot:
@@ -874,8 +911,7 @@ ClearCurrentEnemyHPSlot:
     sta ShouldRedisplayUI
 + rts
 .endif ; _ENEMY_HP
-.popseg
-
+.popseg ; fe/ff
 
 .pushseg "1a", "fe", "ff"
 ;;; Calls DisplayNumberInternal for each of the bits in A as follows:
@@ -1005,8 +1041,7 @@ RemoveEnemyAndPlaySFX:
   ; implicit rts
 .endif ; _ENEMY_HP
 
-.org $8cc0
-UpdateHPDisplayInternal:
+UpdateHPDisplayInternal = $8cc0
 
 .reloc
 UpdatePlayerMaxHPAndMPAfterLevelUp:
@@ -1178,12 +1213,9 @@ UpdateEnemyHPDisplay:
 @ClearCurrentEnemyHPSlotAndRedraw:
   ;; We use #$ff as a signal that the slot was empty before spawning
   ;; NPCs.  This code runs _after_ NPC spawn (and fade-in?)
-  inc CurrentEnemySlot
-  beq +
-   jsr $c72b ; WaitForNametableBufferAvailable
-   jsr ClearCurrentEnemyHPSlot
-   jsr ClearEnemyHPVram
-   jsr UpdateEnemyHPDisplayInternal
+  lda #0
+  sta CurrentEnemySlot
+  jsr ClearCurrentEnemyHP
 + .move @EndReplace - @StartReplace, @StartReplace
   rts
 .popseg
@@ -1201,140 +1233,150 @@ UpdateEnemyHPDisplayInternal:
     pha
       ldy CurrentEnemySlot
       bne @EnemyAlive
+        ;; Enemy is dead, so clear the display
         ;; If the HP slot is already clear, then skip redrawing anything
         cpy PreviousEnemySlot
-        bne +
-          jmp @Exit
-        ;; y is 0 at this point - zero everything out
-+       sty PreviousEnemySlot
-        sty RecentEnemyCurrHPHi
-        sty RecentEnemyCurrHPLo
-        sty RecentEnemyMaxHPLo
-        sty RecentEnemyMaxHPHi
-        sty RecentEnemyObjectId
-        jsr ClearEnemyHPVram
-        jmp @Exit
-@EnemyAlive: ; (so update name)
-      ldy CurrentEnemySlot
-      ; if the object id changed, update the name of the monster
-      lda ObjectNameId,y
-      cmp RecentEnemyObjectId
-      beq @DrawStandardTilesIfMissing
-      sta RecentEnemyObjectId
-
-      ; Load the pointer to the enemy name len (one byte) and enemy name (len bytes)
-      tax
-      lda EnemyNameTableLo,x
-      sta $61
-      lda EnemyNameTableHi,x
-      sta $62
-
-      lda #$9a ; tile for left close ]
-      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET
-
-      ; read the length of the name into x and store it for later use
-      ldy #0
-      lda ($61),y
-      pha
-        tax
-        iny
-        ; copy the name into the staging buffer
--         lda ($61),y
-          sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
-          iny
-          dex
-        bne -
-      pla
-      tax
-      inx
-      lda #$9b ; tile for right close [
-      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
-      inx
-      ; check if we need to fill the rest with the border
-      cpx #ENEMY_NAME_BUFFER_SIZE
-      bpl +
-        ; fill the rest of the buffer with #$1c the bar character
-        lda #$1c
--         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
-          inx
-          cpx #ENEMY_NAME_BUFFER_SIZE
-        bmi -
-+     ; call the function to blit it to the nametable
-      lda #ENEMY_NAME_VRAM_UPDATE
-      jsr StageNametableWriteFromTable
-@DrawStandardTilesIfMissing:
-      lda PreviousEnemySlot
-      bne @CurrentHP
-      ; if the previous enemy was slot 0, then we need to draw the Ey and /
-      sty PreviousEnemySlot
-      lda #$82 ; Ey
-      sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET
-      lda #$20 ; Space
-      sta $6001 + ENEMY_HP_VRAM_BUFFER_OFFSET
-      lda #$9d ; /
-      sta $6005 + ENEMY_HP_VRAM_BUFFER_OFFSET
-      lda #ENEMY_HP_VRAM_UPDATE
-      jsr StageNametableWriteFromTable
-@CurrentHP:
-      ldy CurrentEnemySlot
-      lda ObjectHP,y
-      clc
-      adc #01
-      tax
-      lda ObjectDef,y
-      ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
-      and #$01
-      adc #$00 ; adds 1 only if the carry is set (from the previous adc)
-      cpx RecentEnemyCurrHPLo
-      bne +
-        cmp RecentEnemyCurrHPHi
-        beq @MaxHP
-      ; A = enemy curr hp hi, x = enemy curr hp lo
-+     sta RecentEnemyCurrHPHi
-      stx RecentEnemyCurrHPLo
-      lda #DISPLAY_NUMBER_ENEMYHP
-      jsr DisplayNumberInternal
-@MaxHP:
-      ldy CurrentEnemySlot
-      lda ObjectMaxHPLo,y
-      clc
-      adc #$01
-      tax
-      lda ObjectMaxHPHi,y
-      adc #$00 ; adds 1 only if the carry is set (because Max HP overflowed)
-      cpx RecentEnemyMaxHPLo
-      bne +
-        cmp RecentEnemyMaxHPHi
         beq @Exit
-      ; A = enemy max hp hi, x = enemy max hp lo
-+     sta RecentEnemyMaxHPHi
-      stx RecentEnemyMaxHPLo
-      lda #DISPLAY_NUMBER_ENEMYMAX
-      jsr DisplayNumberInternal
+        ;; y is 0 at this point - zero everything out
+        jsr ClearCurrentEnemyHP
 @Exit:
     pla
     tay
   pla
   tax
   rts
+@EnemyAlive:
+  ; If the previous slot was empty, call all of the update functions without checking
+  ; to see if they changed. This is useful in the event the game needs to redraw the status bar
+  ; (See RedrawEnemyHPDisplayAfterClear for more info)
+  lda PreviousEnemySlot
+  bne +
+    jsr @StandardTiles
+    jsr @EnemyName
+    jsr @LoadCurrentHP
+    jsr @DrawCurrentHP
+    jsr @LoadMaxHP
+    jsr @DrawMaxHP
+    bcc @Exit ; unconditional
++ ldy CurrentEnemySlot
+  lda ObjectNameId,y
+  cmp RecentEnemyObjectId
+  beq +
+    jsr @EnemyName
++ jsr @LoadCurrentHP
+  cpx RecentEnemyCurrHPLo
+  bne +
+    cmp RecentEnemyCurrHPHi
+    beq ++
+  ; A = enemy curr hp hi, x = enemy curr hp lo
++ jsr @DrawCurrentHP
+++jsr @LoadMaxHP
+  cpx RecentEnemyMaxHPLo
+  bne +
+    cmp RecentEnemyMaxHPHi
+    beq @Exit
+  ; A = enemy max hp hi, x = enemy max hp lo
++ jsr @DrawMaxHP
+  bcc @Exit ; unconditional
 
 .reloc
-ClearEnemyHPVram:
-        lda #$1c ; [=] bar character
-        ldy #ENEMY_NAME_BUFFER_SIZE - 1
--         sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
-          dey
-        bpl -
-        lda #$20 ; space tile
-        ldy #$09
--         sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET,y
-          dey
-        bpl -
-        lda #ENEMY_HP_VRAM_UPDATE
-        jsr StageNametableWriteFromTable
-        lda #ENEMY_NAME_VRAM_UPDATE
-        jmp StageNametableWriteFromTable
+@StandardTiles:
+  ; if the previous enemy was slot 0, then we need to draw the Ey and /
+  ldy CurrentEnemySlot
+  sty PreviousEnemySlot
+  lda #$82 ; Ey
+  sta $6000 + ENEMY_HP_VRAM_BUFFER_OFFSET
+  lda #$20 ; Space
+  sta $6001 + ENEMY_HP_VRAM_BUFFER_OFFSET
+  lda #$9d ; /
+  sta $6005 + ENEMY_HP_VRAM_BUFFER_OFFSET
+  lda #ENEMY_HP_VRAM_UPDATE
+  jmp StageNametableWriteFromTable
+  ; implicit rts
+.reloc
+@EnemyName:
+  ldy CurrentEnemySlot
+  lda ObjectNameId,y
+  sta RecentEnemyObjectId
+  ; Load the pointer to the enemy name len (one byte) and enemy name (len bytes)
+  tax
+  lda EnemyNameTableLo,x
+  sta $61
+  lda EnemyNameTableHi,x
+  sta $62
 
+  lda #$9a ; tile for left close ]
+  sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET
+
+  ; read the length of the name into x and store it for later use
+  ldy #0
+  lda ($61),y
+  pha
+    tax
+    iny
+    ; copy the name into the staging buffer
+-     lda ($61),y
+      sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,y
+      iny
+      dex
+    bne -
+  pla
+  tax
+  inx
+  lda #$9b ; tile for right close [
+  sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
+  inx
+  ; check if we need to fill the rest with the border
+  cpx #ENEMY_NAME_BUFFER_SIZE
+  bpl +
+    ; fill the rest of the buffer with #$1c the bar character
+    lda #$1c
+-     sta $6000 + ENEMY_NAME_VRAM_BUFFER_OFFSET,x
+      inx
+      cpx #ENEMY_NAME_BUFFER_SIZE
+    bmi -
++ ; call the function to blit it to the nametable
+  lda #ENEMY_NAME_VRAM_UPDATE
+  jmp StageNametableWriteFromTable
+  ; implicit rts
+.reloc
+@LoadCurrentHP:
+  ; load the Current HP into A == hi X == lo
+  ldy CurrentEnemySlot
+  lda ObjectHP,y
+  clc
+  adc #01
+  tax
+  lda ObjectDef,y
+  ; mask off all but the lowest bit (since the enemy HP is only 9bits right now)
+  and #$01
+  adc #$00 ; adds 1 only if the carry is set (from the previous adc)
+  rts
+.reloc
+@DrawCurrentHP:
+  sta RecentEnemyCurrHPHi
+  stx RecentEnemyCurrHPLo
+  lda #DISPLAY_NUMBER_ENEMYHP
+  jmp DisplayNumberInternal
+  ; implicit rts
+.reloc
+@LoadMaxHP:
+  ; load the Max HP into A == hi X == lo
+  ldy CurrentEnemySlot
+  lda ObjectMaxHPLo,y
+  clc
+  adc #$01
+  tax
+  lda ObjectMaxHPHi,y
+  adc #$00 ; adds 1 only if the carry is set (because Max HP overflowed)
+  rts
+.reloc
+@DrawMaxHP:
+  sta RecentEnemyMaxHPHi
+  stx RecentEnemyMaxHPLo
+  lda #DISPLAY_NUMBER_ENEMYMAX
+  jmp DisplayNumberInternal
+  ; implicit rts
 .popseg
 
 .endif ; _ENEMY_HP
@@ -1922,16 +1964,6 @@ WarpMenuNametableData:
 LocationChangePreSpawnHook:
     .ifdef _WARP_FLAGS_TABLE
   jsr SetWarpFlagForLocation
-    .endif
-    .ifdef _ENEMY_HP
-  lda CurrentEnemySlot
-  beq +
-    jsr ClearCurrentEnemyHPSlot
-    jsr UpdateEnemyHPDisplay
-    clc
-    bcc ++
-+  dec CurrentEnemySlot
-++ 
     .endif
   jmp $e144 ; LoadNpcDataForCurrentLocation
 
@@ -3573,12 +3605,25 @@ PrepareGameInitialDataTable:
   .word ($0051)
   .byte $00
   .byte 0
-
 .ifdef _MONEY_AT_START
 .pushseg "17"
 .org $be80
   .byte 100
 .popseg
+.endif
+
+.ifdef _ENEMY_HP
+;; Clear out the SRAM that stores the enemy HP data
+.org $f39f ; Patches on cold/warm boot
+  jsr PatchClearEnemyHPRam
+.reloc
+PatchClearEnemyHPRam:
+  lda #0
+  ldy #EnemyHPRamLen-1 ; - 1 to account for bpl
+-   sta EnemyHPRamStart,y
+    dey
+    bpl -
+  jmp $f0a4 ; ValidateSaveFiles
 .endif
 
 .ifdef _AUDIBLE_WALLS

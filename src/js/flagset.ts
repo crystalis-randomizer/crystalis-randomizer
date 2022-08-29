@@ -77,6 +77,7 @@ class Presets {
         EasyMode.GuaranteeRefresh,
         EasyMode.GuaranteeStartingSword,
         EasyMode.ExperienceScalesFaster,
+        EasyMode.NoCommunityJokes,
         Routing.NoThunderSwordWarp,
         Vanilla.Shops,
         Vanilla.Dyna,
@@ -89,6 +90,7 @@ class Presets {
       Provides a relatively quick playthough with a reasonable amount of
       challenge.  Similar to older versions.`, [
         EasyMode.GuaranteeStartingSword,
+        EasyMode.NoCommunityJokes,
         Glitches.StatueGlitch,
         [Routing.NoThunderSwordWarp, '!'],
         [Vanilla.Maps, '!'],
@@ -608,6 +610,13 @@ class EasyMode extends FlagSection {
     text: `Less grinding will be required to "keep up" with the game difficulty.`,
     excludes: ['Hx'],
   });
+
+  static readonly NoCommunityJokes = EasyMode.flag('Ec', {
+    name: 'No community jokes',
+    text: `Skip community jokes, such as funny/misspelled item, monster, or
+           character names.  This will make it easier to look up information
+           in guides/FAQs if necessary.`,
+  });
 }
 
 class NoGuarantees extends FlagSection {
@@ -1125,6 +1134,9 @@ export class FlagSet {
   }
   guaranteeRefresh() {
     return this.check(EasyMode.GuaranteeRefresh);
+  }
+  communityJokes() {
+    return this.check(EasyMode.NoCommunityJokes, false);
   }
 
   disableSwordChargeGlitch() {

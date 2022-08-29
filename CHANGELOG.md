@@ -1,9 +1,6 @@
 # Changes
 
 ## Latest
-* Mt Sabre North blocking triggers now indicate what they want.
-* Don't place enemies on the same screen as a seamless exit.
-* Wall elements can now optionally provide audible cues (optional `Qw` flag).
 
 ## 2.0.0
 * Revamped the flagset system:
@@ -82,11 +79,13 @@
     * Enemy HP and name are displayed at the bottom of the HUD.
 * Rudimentary sprite swapping to allow playing as Mesia.
 * Sword is now colored based on the element, making it easy to follow on stream.
+* Wall elements can now optionally provide audible cues (optional `Qw` flag).
 * Flyers now spawn in a different random off-screen location every time.
 * Warp points are activated immediately upon loading an area, rather than
   stepping on a specific trigger tile.
 * Increase pity MP to 2 (to ensure flight is always possible).
 * Add some unidentified and misspelled item names.
+* Mt Sabre North blocking triggers now indicate what they want.
 * Minor bug fixes:
     * Fixed some graphical glitches.
     * Fixed glitchy vampire dialog caused by Kensu beach house changes.
@@ -103,6 +102,7 @@
     * White robots will no longer spawn directly underneath the player.
     * Tomatoes and other non-flyers now respect the terrain.
     * Fixed internal flag allocation bug to not reuse flags on multiple maps.
+    * Don't place enemies on the same screen as a seamless exit.
 * Internal cleanups:
     * Rearrange passes into a strict order of (1) read bytes from ROM into an
       internal data structure, (2) shuffle the internal data structure,

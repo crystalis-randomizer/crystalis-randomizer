@@ -169,7 +169,10 @@ export function fixDialog(rom: Rom) {
     for (const cond of conditions) {
       for (const id of locs) {
         const loc = rom.locations[id];
-        for (const spawn of loc.spawns) {
+        // NOTE: Fog Lamp Cave 3 has the spawns in order, so we need to
+        // check for the spawns in reverse order to go deeper-first.
+        const spawns = [...loc.spawns].reverse();
+        for (const spawn of spawns) {
           if (!spawn.isChest()) continue;
           const item = rom.slots[spawn.id];
           if (item <= 0x48 && cond(item)) {

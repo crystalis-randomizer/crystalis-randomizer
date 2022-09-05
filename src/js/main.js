@@ -370,8 +370,8 @@ const updateRaceDom = () => {
   for (const span of document.getElementsByClassName('flagstring-out')) {
     span.textContent = flagString;
   }
-  document.getElementById('track-url').href =
-      `track#flags=${flagString.replace(/ /g, '')}`;
+  // document.getElementById('track-url').href =
+  //     `track#flags=${flagString.replace(/ /g, '')}`;
 }
 
 const loadRomFromStorage = () => {

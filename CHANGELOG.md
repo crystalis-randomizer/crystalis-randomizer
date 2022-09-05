@@ -84,7 +84,8 @@
 * Warp points are activated immediately upon loading an area, rather than
   stepping on a specific trigger tile.
 * Increase pity MP to 2 (to ensure flight is always possible).
-* Add some unidentified and misspelled item names.
+* Add some unidentified and misspelled names.
+    * Many of these "community jokes" can be disabled with the `Ec` flag.
 * Mt Sabre North blocking triggers now indicate what they want.
 * Minor bug fixes:
     * Fixed some graphical glitches.
@@ -103,6 +104,7 @@
     * Tomatoes and other non-flyers now respect the terrain.
     * Fixed internal flag allocation bug to not reuse flags on multiple maps.
     * Don't place enemies on the same screen as a seamless exit.
+    * Fixed the hint
 * Internal cleanups:
     * Rearrange passes into a strict order of (1) read bytes from ROM into an
       internal data structure, (2) shuffle the internal data structure,

@@ -3659,6 +3659,14 @@ PatchClearEnemyHPRam:
 + rts
 .endif
 
+.ifdef _FIX_SWORD_MANA_CHECK
+.segment "1a"
+.org $9c9a
+  lda $0708 ; player mp
+  cmp $8bd8,y ; cost
+  bcs $9ca7 ; skip switching to level 2
+.endif
+
 .ifdef _FIX_BLIZZARD_SPAWN
 .segment "1a","fe","ff"
 .org $9cba

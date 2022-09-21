@@ -104,7 +104,11 @@
     * Tomatoes and other non-flyers now respect the terrain.
     * Fixed internal flag allocation bug to not reuse flags on multiple maps.
     * Don't place enemies on the same screen as a seamless exit.
-    * Fixed the hint
+    * Fixed the waterfall cave hint to traverse chests in correct order.
+    * Fixed Crystalis sword power to not decrease after opening the menu.
+    * Fixed vanilla bug where a second round of blizzard shots despawn if fired
+      too soon after an earlier round.
+    * Fixed vanilla bug where you need an extra MP to use sword magic.
 * Internal cleanups:
     * Rearrange passes into a strict order of (1) read bytes from ROM into an
       internal data structure, (2) shuffle the internal data structure,

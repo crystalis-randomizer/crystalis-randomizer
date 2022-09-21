@@ -2502,10 +2502,13 @@ PostInventoryMenu:
   ;; Change 'lda' (ad) to 'jsr' (20) to enable these
 .ifdef _AUTO_EQUIP_BRACELET
   jsr AutoEquipBracelets
-.else
-  lda AutoEquipBracelets ; basically just a 3-byte no-op
 .endif
-  jmp UpdateEquipmentAndStatus
+  lda $0711 ; Equipped sword
+  cmp #$05  ; Crystalis
+  bne +
+   lda #2
+   sta $0719
++ jmp UpdateEquipmentAndStatus
 
 .reloc
 AutoEquipBracelets:

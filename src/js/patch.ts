@@ -176,6 +176,7 @@ function defines(flags: FlagSet,
     _EXPAND_PRG: EXPAND_PRG,
     _EXTRA_EXTENDED_SCREENS: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
+    _FIX_BLIZZARD_SPAWN: true,
     _FIX_COIN_SPRITES: true,
     _FIX_OPEL_STATUE: true,
     _FIX_SHAKING: true,

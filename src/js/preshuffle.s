@@ -3671,6 +3671,31 @@ PatchClearEnemyHPRam:
 + rts
 .endif
 
+.ifdef _FIX_BLIZZARD_SPAWN
+.segment "1a","fe","ff"
+.org $9cba
+  jsr @AdHocSpawnSwordShot
+
+.reloc
+@AdHocSpawnSwordShot:
+    ;; Check for 0b (blizzard) and clear sword spawns if found
+    cmp #$0b
+    bne +
+      pha
+      txa
+      pha
+      lda #$00
+      ldx #$07
+-       sta $4a4,x
+        dex
+      bpl -
+      pla
+      tax
+      pla
++   jmp $972d ; AdHocSpawnObject
+.endif
+
+
 ;;; NOTE: This is an alternative implementation of SelectCHRRomBanks
 ;;; that is 4 bytes shorter than the original, but way longer than
 ;;; the loop above.

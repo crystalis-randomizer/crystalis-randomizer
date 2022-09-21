@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131783670-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-131783670-1');
+</script>
+<!DOCTYPE html>
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="js/build_info.js"></script>
+<script type="module" src="js/main.min.js"></script>
+<script>
+// Display a message if the main script hasn't already removed it.
+setTimeout(function() {
+  if (!document.body.classList.contains('js-works')) {
+    document.body.classList.add('js-broken');
+  }
+}, 1000);
+</script>
+
+<nav>
+  <a class="img if-not-permalink" href="/"><img src="images/crystalis-sword.png"></a>
+  <a href="index">Play</a>
+  <!-- a class="if-not-permalink" id="track-url" href="track">Track</a -->
+  <a href="help">Help</a>
+  <!-- TODO: better process for stable version numbers. -->
+  <span class="version"></span>
+</nav>
+<div></div>
+
+<main>
+  <section class="if-not-permalink">
+    <h1>Introduction</h1>
+    <div>
+      <p>Welcome to Crystalis Randomizer.  This project seeks to
+        provide fresh gameplay experiences through the classic NES game
+        Crystalis.  See the <a href="help">help</a> for more
+        information about gameplay changes and randomization features.
+      <h2>Discord</h2>
+      <p>Join us on our <a href="https://discord.gg/ktyz5E6">discord server</a>.
+    </div>
+  </section>
+
+  <section class="if-release-candidate if-not-permalink">
+    <h1>Release Candidate</h1>
+    <div>
+      <p>This version of the randomizer is a release candidate
+        and is scheduled to be marked "stable" very soon.  If
+        this causes any issues, the previous stable version is
+        still available at
+        <a href="https://crystalisrandomizer.com/stable">https://crystalisrandomizer.com/stable</a>.
+    </div>
+  </section>
+
+  <section id="js-notice" class="if-js-broken warning">
+    <h1>Something went wrong!</h1>
+    <div>
+      <p>Something went wrong with the scripts on this page.  This may be
+        caused by attempting to access this with an older browser (recent
+        versions of Chrome, Firefox, and Safari, should all work; Microsoft
+        IE and Edge are both known to fail), or a slow connection is causing
+        the script to take longer to load, or a bug somehow crept into the
+        page.  If you suspect it's the latter, please open your browser's
+        developer tools (usually F12) and send a bug report (to GitHub or Discord)
+        with your browser version (see <a href="about:versions">about:version</a>)
+        and any error messages you find in the developer console.
+    </div>
+  </section>
+
+  <section id="js-notice" class="if-failure warning">
+    <h1>Something went wrong!</h1>
+    <div>
+      <p>Something went wrong with the scripts on this page.  Please report
+        the following in the discord's #bug-reports channel:
+      <p>Version: <span class="version"></span>
+        <br>Flags: <span class="flagstring-out"></span>
+        <br>Seed: <span class="seed-out"></span>
+      <p id="error-text">
+    </div>
+  </section>
+
+  <section id="getting-started" class="if-js-works">
+    <h1>Getting Started</h1>
+    <div>
+      <p>Please select a standard English ROM of Crystalis.  This should only be
+         required the first time.  The selected image will be stored in your
+         browser's cache.
+      <p><label class="file-picker button">
+        Select Crystalis ROM File
+        <input type="file" accept=".nes" id="pick-file" style="display: none;">
+      </label>
+      <p>You can also run the randomizer locally by installing the
+        <a href="https://nodejs.org">node</a> package:
+        <code style="display: block; margin-top: 0.5em; padding-left: 2em;">
+          npm install -g crystalis-randomizer
+          <br>cryr --flags="Gt Mr Rlpt Sbkm Sct Tasd" Crystalis.nes</code>
+    </div>
+  </section>
+
+  <section id="checksum-warning" class="if-rom-broken warning">
+    <h1>Warning</h1>
+    <div>
+      The selected rom image is not recognized.  The randomization may not work
+      correctly, and the identification stamp will be different.  Please select
+      a new rom image above.
+    </div>
+  </section>
+
+  <section class="if-rom-uploaded expandable">
+    <h1>Presets</h1>
+    <div id="presets">
+      <p>For a quick start, consider using one of the following presets, or else
+      typing in a custom flag string.
+
+      <h2>Custom Flagstring</h2>
+      <div class="flex-row">
+        <input id="flagstring" spellcheck="false" type="text"
+               placeholder="(enter custom flagstring here)">
+        <a id="preset-apply" class="button" href="javascript:">Apply</a>
+      </div>
+      <!-- TODO - consider a visual warning for invalid flag strings -->
+    </div>
+  </section>
+
+  <section class="if-rom-uploaded expandable">
+    <h1>Flags</h1>
+    <div id="select-options"></div>
+  </section>
+
+  <section class="if-rom-uploaded expandable">
+    <h1>Custom Graphics Packs</h1>
+    <div>
+      <h2>Play As</h2>
+      <div id="simea-sprite-options" class="flex-row"></div>
+    </div>
+  </section>
+
+  <section class="if-rom-uploaded">
+    <h1>Generate</h1>
+    <div>
+      <h2>Seed</h2>
+      <p>
+        You may specify a seed for the random number generator, if
+        desired.  If it is left blank, a new seed will be chosen at
+        random each time.  Use the 'new' button to generate a
+        shareable seed, which will be automatically added to the URL.
+      <div class="flex-row">
+        <input id="seed" type="text">
+        <a id="new-seed" class="button">New</a>
+      </div>
+      <h2></h2>
+      <div class="flex-row">
+        <a id="generate" class="button">Generate</a>
+        <a id="spoiler" class="button if-spoiled">Spoiler</a>
+        <a id="race" class="button if-versioned">Race</a>
+        <progress class="if-shuffling" id="progress" max="1"></progress>
+        <!-- a id="share" class="button">Share</a -->
+      </div>
+      <p>Your flag string is <span class="flagstring-out"></span>
+      <p>The checksum for this seed is <span id="checksum">????????</span>
+    </div>
+  </section>
+
+  <section class="if-spoiled expandable">
+    <h1>Spoiler Log</h1>
+    <div>
+      <h2 class="empty-spoiler">Flags</h2>
+      <ul id="spoiler-flags"></ul>
+      <h2 class="empty-spoiler">Item Names</h2>
+      <ul id="spoiler-item-names"></ul>
+      <h2 class="empty-spoiler">Trades</h2>
+      <ul id="spoiler-trades"></ul>
+      <h2 class="empty-spoiler">Wild Warp</h2>
+      <ul id="spoiler-wild-warps"></ul>
+      <h2 class="empty-spoiler">Houses</h2>
+      <ul id="spoiler-houses"></ul>
+      <h2>Item Placement</h2>
+      <ul id="spoiler-items">
+        <li>Generate or seed or spoiler log to populate...
+      </ul>
+      <!--
+      <h2>Enemy Placement</h2>
+      <ul id="spoiler-enemies">
+        <li>Generate or seed or spoiler log to populate...
+      </ul>
+      -->
+      <h2>Route</h2>
+      <ul id="spoiler-route">
+        <li>Generate or seed or spoiler log to populate...
+      </ul>
+      <h2 class="empty-spoiler">Walls</h2>
+      <ul id="spoiler-walls"></ul>
+      <h2 class="empty-spoiler">Mazes</h2>
+      <ul id="spoiler-mazes"></ul>
+    </div>
+  </section>
+</main>

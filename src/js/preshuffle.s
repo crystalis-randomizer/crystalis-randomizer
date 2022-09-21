@@ -3674,12 +3674,30 @@ PatchClearEnemyHPRam:
 + rts
 .endif
 
-.ifdef _FIX_SWORD_MANA_CHECK
+.ifdef _FIX_MANA_CHECKS
 .segment "1a"
 .org $9c9a
   lda $0708 ; player mp
   cmp $8bd8,y ; cost
   bcs $9ca7 ; skip switching to level 2
+
+;; also fix flight mana check
+.segment "1a","1b"
+.org $a117
+  lda $0620,x ; Currently flying (height)
+  bne +
+   lda $0708  ; Player MP
+   beq $a15c  ; UseMagic_InsufficientMP
+   lda #$34   ; Terrains we're susceptible to
+   sta $460,x ; Terrain susceptibility
+   bne $a14d  ; Initiate flight (in magic jump 9)
++ lda $08     ; Global counter
+  and #$0f    ; Every 16 frames
+  bne +
+   lda #$01   ; Spend 1 MP
+   jsr $9ae8  ; SpendMPOrDoubleReturn
++:
+.assert * = $a133
 .endif
 
 .ifdef _FIX_BLIZZARD_SPAWN

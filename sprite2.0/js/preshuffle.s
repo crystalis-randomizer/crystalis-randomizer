@@ -2502,10 +2502,13 @@ PostInventoryMenu:
   ;; Change 'lda' (ad) to 'jsr' (20) to enable these
 .ifdef _AUTO_EQUIP_BRACELET
   jsr AutoEquipBracelets
-.else
-  lda AutoEquipBracelets ; basically just a 3-byte no-op
 .endif
-  jmp UpdateEquipmentAndStatus
+  lda $0711 ; Equipped sword
+  cmp #$05  ; Crystalis
+  bne +
+   lda #2
+   sta $0719
++ jmp UpdateEquipmentAndStatus
 
 .reloc
 AutoEquipBracelets:
@@ -3670,6 +3673,39 @@ PatchClearEnemyHPRam:
     tax
 + rts
 .endif
+
+.ifdef _FIX_SWORD_MANA_CHECK
+.segment "1a"
+.org $9c9a
+  lda $0708 ; player mp
+  cmp $8bd8,y ; cost
+  bcs $9ca7 ; skip switching to level 2
+.endif
+
+.ifdef _FIX_BLIZZARD_SPAWN
+.segment "1a","fe","ff"
+.org $9cba
+  jsr @AdHocSpawnSwordShot
+
+.reloc
+@AdHocSpawnSwordShot:
+    ;; Check for 0b (blizzard) and clear sword spawns if found
+    cmp #$0b
+    bne +
+      pha
+      txa
+      pha
+      lda #$00
+      ldx #$07
+-       sta $4a4,x
+        dex
+      bpl -
+      pla
+      tax
+      pla
++   jmp $972d ; AdHocSpawnObject
+.endif
+
 
 ;;; NOTE: This is an alternative implementation of SelectCHRRomBanks
 ;;; that is 4 bytes shorter than the original, but way longer than

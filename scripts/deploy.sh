@@ -51,8 +51,8 @@ cp dist/js/*.js "deploy/$dir/js/"
 cp dist/js/*.s "deploy/$dir/js/"
 cp dist/css/*.css "deploy/$dir/css/"
 cp dist/css/view/*.css "deploy/$dir/css/view/"
-cp dist/images/* "deploy/$dir/images/"
-cp dist/images/spritesheets/* "deploy/$dir/images/spritesheets/"
+cp dist/images/*.png "deploy/$dir/images/"
+cp dist/images/spritesheets/*.nss "deploy/$dir/images/spritesheets/"
 
 # Clobber the *.min.js files.
 cp dist/*.js "deploy/$dir/js/"

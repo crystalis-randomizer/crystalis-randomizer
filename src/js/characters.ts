@@ -35,6 +35,24 @@ export async function generateThumbnailImage(nss: NssFile): Promise<string> {
   return offscreenCanvas.toDataURL('image/png');
 }
 
+export async function generatePreviewImage(nss: NssFile): Promise<string> {
+  // global offscreen canvas is probably not needed, but every image 
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = 1024;
+  offscreenCanvas.height = 1024;
+  const ctx = offscreenCanvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  // clear the background
+  ctx.fillStyle = "#155fd9";
+  ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+  // blit the main character from the top left corner of the pre-rendered CHR
+  const imgData = new ImageData(new Uint8ClampedArray(nss.rendered), 128, 128)
+  const imgBitmap = await createImageBitmap(imgData, {resizeQuality: "pixelated"});
+  ctx.drawImage(imgBitmap, 0,0,128,128, 0,0,1024,1024);
+  return offscreenCanvas.toDataURL('image/png');
+}
+
 async function createImageFromCHR(buffer: ArrayBuffer, palette:number[]): Promise<ImageData> {
   const tileCount = buffer.byteLength / 16; // 16 bytes per tile
   const pixelsPerTile = 8;
@@ -278,8 +296,6 @@ export class CustomTilesetMapping {
     mapping.set(0x43, [toChrAddr(8,0,0x19)]);
     // bot left
     mapping.set(0x52, [toChrAddr(8,0,0x38)]);
-    // bot right
-    mapping.set(0x53, [toChrAddr(8,0,0x27)]);
 
     // Frame 3
     // mid left
@@ -431,9 +447,9 @@ export class CustomTilesetMapping {
     // Telepathy
     // Frame 1
     // top left
-    mapping.set(0x66, [toChrAddr(11,1,0x14)]);
+    mapping.set(0x66, [toChrAddr(11,1,0x12)]);
     // top right
-    mapping.set(0x67, [toChrAddr(11,1,0x15)]);
+    mapping.set(0x67, [toChrAddr(11,1,0x13)]);
     // mid left
     mapping.set(0x76, [toChrAddr(11,1,0x08)]);
     // mid right

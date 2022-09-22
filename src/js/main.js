@@ -464,6 +464,8 @@ const loadSpriteSelectionsFromStorage = () => {
       const name = file.name.replace(/\.[^/.]+$/, "").replace(/_/, " ");
       Sprite.init(name, "simea", parseNssFile(file.name, nssdata), `Loaded on ${new Date().toLocaleString()}`).then(sprite => {
         savedSprites[name] = sprite;
+        // uncomment this and the img tag to debug spritesheet loading
+        // generatePreviewImage(sprite.nssdata).then(img => document.getElementById('test-spritesheet-upload').src = img);
         window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
         // reload custom sprites
         reloadSpritesFromStorage();

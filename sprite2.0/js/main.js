@@ -6,7 +6,7 @@ import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
 import {ProgressTracker} from './progress.js';
 import {FetchReader} from './fetchreader.js';
-import { CharacterSet, Sprite, parseNssFile } from './characters.js';
+import { CharacterSet, Sprite, parseNssFile, generatePreviewImage } from './characters.js';
 
 // global state
 let flags;
@@ -464,6 +464,7 @@ const loadSpriteSelectionsFromStorage = () => {
       const name = file.name.replace(/\.[^/.]+$/, "").replace(/_/, " ");
       Sprite.init(name, "simea", parseNssFile(file.name, nssdata), `Loaded on ${new Date().toLocaleString()}`).then(sprite => {
         savedSprites[name] = sprite;
+        generatePreviewImage(sprite.nssdata).then(img => document.getElementById('test-spritesheet-upload').src = img);
         window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
         // reload custom sprites
         reloadSpritesFromStorage();

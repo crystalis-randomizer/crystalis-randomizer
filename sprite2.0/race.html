@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131783670-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-131783670-1');
+</script>
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="js/build_info.js"></script>
+<script type="module" src="js/main.min.js"></script>
+<script>
+// Display a message if the main script hasn't already removed it.
+setTimeout(function() {
+  if (!document.body.classList.contains('js-works')) {
+    document.body.classList.add('js-broken');
+  }
+}, 1000);
+</script>
+
+<nav>
+  <a class="img" href="/"><img src="images/crystalis-sword.png"></a>
+  <a href="index">Play</a>
+  <a id="track-url" href="track">Track</a>
+  <a href="help">Help</a>
+  <!-- TODO: better process for stable version numbers. -->
+  <span id="version"></span>
+</nav>
+<div></div>
+
+<main>
+  <section class="if-spoiled warning">
+    <h1>Spoilers</h1>
+    <div>
+      <p>Note that this flag set allows a spoiler log to be generated.
+    </div>
+  </section>
+
+  <section id="js-notice" class="if-js-broken warning">
+    <h1>Something went wrong!</h1>
+    <div>
+      <p>Something went wrong with the scripts on this page.  This may be
+        caused by attempting to access this with an older browser (recent
+        versions of Chrome, Firefox, and Safari, should all work; Microsoft
+        IE and Edge are both known to fail), or a slow connection is causing
+        the script to take longer to load, or a bug somehow crept into the
+        page.  If you suspect it's the latter, please open your browser's
+        developer tools (usually F12) and send a bug report (to GitHub or Discord)
+        with your browser version (see <a href="about:versions">about:version</a>)
+        and any error messages you find in the developer console.
+        <!-- TODO - provide a copy-paste for the command-line tool -->
+    </div>
+  </section>
+
+  <section id="checksum-warning" class="if-rom-broken warning">
+    <h1>Warning</h1>
+    <div>
+      The selected rom image is not recognized.  The randomization may not work
+      correctly, and the identification stamp will be different.  Please select
+      a new rom image above.
+    </div>
+  </section>
+
+  <section class="if-js-works">
+    <h1>Race</h1>
+    <div>
+      <p>Please select a standard English ROM of Crystalis.  This should only be
+         required the first time.  The selected image will be stored in your
+         browser's cache.
+      <p><label class="file-picker button">
+        Select Crystalis ROM File
+        <input type="file" accept=".nes" id="pick-file" style="display: none;">
+      </label>
+
+      <div class="if-rom-uploaded" style="margin-top: 1.5em">
+        <h2></h2>
+        <p>Your flag string is <span id="flagstring-out"></span>
+        <div class="flex-row">
+          <a id="generate" class="button">Generate</a>
+          <progress class="if-shuffling" id="progress" max="1"></progress>
+        </div>
+        <p>The checksum for this seed is <span id="checksum">????????</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="race-summary">
+    <h1>Flags</h1>
+    <div id="flags"></div>
+  </section>
+</main>

@@ -6,7 +6,7 @@ import {EXPECTED_CRC32} from './rom.js';
 import {FlagSet} from './flagset.js';
 import {ProgressTracker} from './progress.js';
 import {FetchReader} from './fetchreader.js';
-import { CharacterSet } from './characters.js';
+import { CharacterSet, Sprite, parseNssFile } from './characters.js';
 
 // global state
 let flags;
@@ -57,11 +57,12 @@ const main = () => {
 
   render.renderPresets(document.getElementById('presets'));
   render.renderOptions(document.getElementById('select-options'));
-  render.renderCharacters(document.getElementById('simea-sprite-options'));
+  render.renderDefaultCharacters(document.getElementById('simea-sprite-options')).then(() => {
+    loadSpriteSelectionsFromStorage();
+  });
 
   // Check for a stored ROM.
   loadRomFromStorage();
-  loadSpriteSelectionsFromStorage();
   initializeStateFromHash(true);
 
   // Wire up the presets menu.
@@ -216,7 +217,7 @@ const shuffleRom = async (seed) => {
   let shuffled;
   let crc;
   const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
-  const sprite = CharacterSet.simea().find((spr) => spr.name == selectedsimeaSprite);
+  const sprite = await CharacterSet.get("simea").get(selectedsimeaSprite);
   try {
     [shuffled, crc] =
         await patch.shuffle(
@@ -411,19 +412,65 @@ const loadRomFromStorage = () => {
   });
 };
 
+const reloadSpritesFromStorage = () => {
+  const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
+  const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
+  const savedSprites = JSON.parse(savedSpritesStr);
+  // load any saved sprites from storage
+  const savedSpritesDiv = document.getElementById('simea-sprite-custom');
+  savedSpritesDiv.innerHTML = '';
+  for (let [filename, sprite] of Object.entries(savedSprites)) {
+    // Update the character set mapping for this custom sprite
+    CharacterSet.get("simea").set(sprite.name, Promise.resolve(sprite));
+
+    render.renderCustomCharacter(savedSpritesDiv, sprite)
+    const thisRadio = document.getElementById(`simea-replacement-${sprite.name}`);
+    thisRadio.addEventListener('change', (event) => {
+      window['localStorage'].setItem('simea-replacement', event.target.value);
+    });
+    if (thisRadio.value == selectedSimeaSprite) {
+      thisRadio.checked = true;
+    }
+  }
+}
+
 const loadSpriteSelectionsFromStorage = () => {
-  const simeaSprite = window['localStorage'].getItem('simea-replacement');
+  const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
+
   const simeaOptions = document.getElementsByName('simea-replacement');
   for (const radio of simeaOptions) {
-    if (radio.value == simeaSprite) {
+    if (radio.value == selectedSimeaSprite) {
       radio.checked = true;
     }
   }
-  simeaOptions.forEach( (radio) => {
+  simeaOptions.forEach((radio) => {
     radio.addEventListener('change', (event) => {
       window['localStorage'].setItem('simea-replacement', event.target.value);
     })
   })
+
+  reloadSpritesFromStorage();
+
+  // add a handler for the sprite upload
+  const upload = document.getElementById('upload-sprite');
+  upload.addEventListener('change', () => {
+    const file = upload.files[0];
+    const reader = new FileReader();
+    reader.addEventListener('loadend', () => {
+      const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
+      const savedSprites = JSON.parse(savedSpritesStr);
+      const nssdata = reader.result;
+      // Get rid of the extension and replace any _ with spaces
+      const name = file.name.replace(/\.[^/.]+$/, "").replace(/_/, " ");
+      Sprite.init(name, "simea", parseNssFile(file.name, nssdata), `Loaded on ${new Date().toLocaleString()}`).then(sprite => {
+        savedSprites[name] = sprite;
+        window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
+        // reload custom sprites
+        reloadSpritesFromStorage();
+      });
+    });
+    reader.readAsText(file);
+  });
 }
 
 const download = (data, name) => {

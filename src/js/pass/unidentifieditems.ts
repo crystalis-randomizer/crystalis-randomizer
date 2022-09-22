@@ -101,6 +101,7 @@ const FLUTE_NAMES = [
   'Marimba',
   'Tambourine',
   'Tornelsbane',
+  'Flute of Power',
 ];
 const LAMP_NAMES = [
   '!Random Lamp',
@@ -155,6 +156,7 @@ const STATUE_NAMES = [
   'Metroid Amiibo',
   'Model of Dyna',
   'Jeff Peters Statue',
+  'M. Toki Statue',
   'Statue of Liberty',
   'Colossus of Rhodes',
   'Mattrick Figurine',  // #2 speedrun 2017 (1h04m04s)

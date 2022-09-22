@@ -87,6 +87,11 @@ function misspellItems(rom: Rom, flags: FlagSet, random: Random) {
   if (flags.unidentifiedItems()) return;
   if ('sphereAnalysis' in globalThis) return; // skip this when analyzing
   // Pick a single item to misspell.  5% chance of misspelling _everything_.
+
+  // TODO: Maybe swap ivory statue for flute of repun, and insect
+  // flute for insect figurine (or maybe mosquito herb)?  Should we
+  // only do this if we're not shuffling trade-ins?
+
   const items = random.next() < 0.05 ? rom.items :
       [rom.items[random.nextInt(0x48)]];
   for (const item of items) {
@@ -163,12 +168,14 @@ function misspellCharacters(rom: Rom, random: Random) {
 }
 
 function misspellEnemies(rom: Rom, random: Random) {
-  // Pick an enemy first
-  const [origName, choices] = random.pick([...MONSTERS]);
-  const next = random.pick(['', ...choices, ...choices, ...choices]);
-  const newName = next || transpose(origName, random);
-  if (newName === origName) return;
-  replaceCharacterName(rom, replace(origName, newName));
+  for (let i = 0; i < 5; i++) {
+    // Pick an enemy first
+    const [origName, choices] = random.pick([...MONSTERS]);
+    const next = random.pick(['', ...choices, ...choices, ...choices]);
+    const newName = next || transpose(origName, random);
+    if (newName === origName) continue;
+    replaceCharacterName(rom, replace(origName, newName));
+  }
 }
 
 // TODO: misspell monsters (e.g. flails -> kfal's people)

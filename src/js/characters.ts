@@ -460,6 +460,10 @@ export class CustomTilesetMapping {
     mapping.set(0x87, [toChrAddr(11,1,0x29)]);
 
     // Frame 2
+    // top left
+    mapping.set(0x96, [toChrAddr(11,1,0x2c)]);
+    // top right
+    mapping.set(0x97, [toChrAddr(11,1,0x2d)]);
     // mid left
     mapping.set(0xa6, [toChrAddr(11,1,0x0a)]);
     // mid right

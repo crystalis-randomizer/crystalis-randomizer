@@ -65,8 +65,9 @@ const MONSTERS: ReadonlyMap<string, string[]> = new Map([
   ['Axe Wereboar', ['The Axeman']],
   ['Pillbug', ['Tomato']],
   ['Ice Golem', ['Polar Bear']],
-  ['Flail Guy', ['Kfal\'s People']],
+  ['Flail Guy', ['Kfal\'s Dude']],
   ['Flail Knight', ['Kfal\'s Knight']],
+  ['Flying Plant', ['Obnoxious Turnip']],
   ['Beholder', ['Floating Eye']],
   ['Burt', ['Bert', 'Bort', 'Sorceror']],
   ['Mummy', ['Tornel Hugger']],
@@ -168,7 +169,7 @@ function misspellCharacters(rom: Rom, random: Random) {
 }
 
 function misspellEnemies(rom: Rom, random: Random) {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 10; i++) {
     // Pick an enemy first
     const [origName, choices] = random.pick([...MONSTERS]);
     const next = random.pick(['', ...choices, ...choices, ...choices]);

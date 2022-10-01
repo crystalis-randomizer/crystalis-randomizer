@@ -42,10 +42,10 @@ const ITEMS: ReadonlyMap<string, string[]> = new Map([
 
 const CHARACTERS: ReadonlyMap<string, string[]> = new Map([
   ['Aryllis', ['Mimic Queen']],
-  ['Akahana', ['Steve', 'Jerkahana']],
-  ['Asina', ['Athena']],
+  ['Akahana', ['Steve', 'Jerkahana', 'Mashamahana']],
+  ['Asina', ['Athena', 'Jrowina']],
   ['Azteca', ['Steve']],
-  ['Clark', ['Steve', 'Fred']],
+  ['Clark', ['Steve', 'Fred', 'Mattrick', 'Clarktrick']],
   ['Deo', ['Steve']],
   ['Kelbesque', ['Linebacker']], // NOTE: also change in displayNames
   ['Kensu', ['Steve', 'Jerksu']],

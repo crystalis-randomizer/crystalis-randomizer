@@ -52,6 +52,7 @@ const KEY_NAMES = [
   'Florida Key',
   'Key Lime Pie',
   'Keystone',
+  'Answer Key',
 ];
 const FLUTE_NAMES = [
   '!Random Flute',
@@ -197,6 +198,10 @@ const BOW_NAMES = [
   'Bow of Life',
   'Bow of Death',
   'Bow of Freedom',
+  'JBowe',
+  'KLINGSBO',
+  'LILLABO',
+  'SVALBO',
   'Buriza-Do Kyanon',
   'Windforce',
   'Eaglehorn',

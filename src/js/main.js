@@ -461,7 +461,7 @@ const loadSpriteSelectionsFromStorage = () => {
       const savedSprites = JSON.parse(savedSpritesStr);
       const nssdata = reader.result;
       // Get rid of the extension and replace any _ with spaces
-      const name = file.name.replace(/\.[^/.]+$/, "").replaceAll(/_/, " ");
+      const name = file.name.replace(/\.[^/.]+$/, "").replaceAll(/_/g, " ");
       Sprite.init(name, "simea", parseNssFile(file.name, nssdata), `Loaded on ${new Date().toLocaleString()}`).then(sprite => {
         savedSprites[name] = sprite;
         // uncomment this and the img tag to debug spritesheet loading

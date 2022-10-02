@@ -83,6 +83,9 @@ CheckBelowBoss:
      lda #$dc
      cmp $04c0,x  ; first version has #$cf, second has #$dc
      bne @ReturnImmediate
+     ;; This entirely removes the delay before Sabera 2
+     lda #$3f
+     sta $0620,x
 @CheckPosition:
     ;; Check that we're on the correct y-screen
     lda $d0
@@ -97,11 +100,6 @@ CheckBelowBoss:
     and #$f0
     cmp #$90
      beq @ReturnTrue
-    ;; Alternative to 9th row: screen is already locked.
-    ;; This is important for Sabera 2, which has a $40-frame
-    ;; count-up 
-    lda $07d7
-     bne @ReturnTrue
     ;; This is a little over-clever, but it compresses 6 bytes
     ;; (@ReturnFalse: lda #$ff; rts; @ReturnTrue: lda #$00; rts)
     ;; into only 4 by jumping into a misaligned opcode.

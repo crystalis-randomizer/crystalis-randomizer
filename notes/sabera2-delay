@@ -48,3 +48,6 @@ to just check the screen lock and keep the 1-second delay.
 .popseg
 ```
 
+We can actually skip the delay only on Sabera 2 by setting $62d to
+$3f immediately before the first increment.  This is probably the
+best solution.

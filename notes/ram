@@ -1098,8 +1098,18 @@ These are written but mostly never read?
 Only the following are ever read: $743, $744, $780, $7c0
 
 
-$7d5, $7d6
-----------
+$7d5
+----
+7d5 has to do with screen scroll, seeming to track whether
+the screen needs to move to keep up with the player.  It's
+set to zero in KeepPlayerInCenterOfScreenIfPossible (at $3e9b3)
+and set to one later in that routine (at $3ea5b) under certain
+conditions??
+
+
+$7d6
+----
+
 ??
 
 

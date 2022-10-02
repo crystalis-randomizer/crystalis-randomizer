@@ -1,0 +1,50 @@
+Problem: Sabera 2 can delay indefinitely.
+
+This is not present in vanilla, and seems to be caused by our fix
+to prevent softlocking in reverse-goa.  In vanilla, the first instr
+of the stage-0 BossPatternJump_xx for many bosses (i.e. before the
+fight starts) is to load $0380,x to check if the boss is on screen,
+and if so start the screen scroll/lock and (eventually) the fight
+(cf. $1ec8f for Sabera 2).  This causes problems when the boss
+enters the bottom of the screen, since the player is still above
+the boss, and the screen locks/scrolls to the wrong map tile.
+Even when this isn't an issue, it can awkwardly start the fight
+while the player is on top of the boss, causing unavoidable damage.
+
+The fix is to replace the "on screen" check with a different check,
+`CheckBelowBoss`, which retains the output in the sign flag, but uses
+a different criterion: whether the player is on row 9 of the same
+map tile as the boss.  This works a lot better, but for some reason
+Sabera 2 has a counter in $062d (i.e. $0620,x) that normally counts
+any time she's visible, but now only increments on row 9, so if the
+player is standing on any other row, she's not making progress.  Once
+the counter hits $50, the fight starts.
+
+Digging into the actual BossPatternJump_17 ($1ec8f), we see some setup
+and a conditional break if $7d5 is zero.  $7d5 seems to track whether
+the screen needs to move to keep up with the player.  It's set to zero
+in KeepPlayerInCenterOfScreenIfPossible (at $7e9b3) and set to one
+later in that routine (at $7ea5b) under certain conditions??
+
+An issue is that this routine needs to keep executing, but it stops?
+We could probably fix it easily by checking whether the screen is
+_already locked_?
+
+Another option is just to get rid of the delay entirely by not
+doing the comparison at $1ecc0.  Those 4 bytes could just be nops.
+Unfortunately, this causes surprising results if the player stabs
+Mesia from behind, as is the standard practice (i.e. there's no
+time to back away and you immediately get hit).  So probably best
+to just check the screen lock and keep the 1-second delay.
+
+```
+;; Skip the 1-second delay entirely (not viable)
+.pushseg "0f"
+.org $acc0
+  nop
+  nop
+  nop
+  nop
+.popseg
+```
+

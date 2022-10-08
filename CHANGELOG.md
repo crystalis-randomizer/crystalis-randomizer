@@ -111,6 +111,8 @@
       too soon after an earlier round.
     * Fixed vanilla bug where you need an extra MP to use sword magic.
     * Fixed Sabera 2 to not delay before starting the fight.
+    * Shooting statue skip (via flight) can no longer require going south
+      through statues, since that direction is not RTA viable.
 * Internal cleanups:
     * Rearrange passes into a strict order of (1) read bytes from ROM into an
       internal data structure, (2) shuffle the internal data structure,

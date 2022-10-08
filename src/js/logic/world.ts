@@ -180,7 +180,8 @@ export class World {
         Money,
         OpenedCrypt,
         RabbitBoots, Refresh, RepairedStatue, RescuedChild,
-        ShellFlute, ShieldRing, ShootingStatue, StormBracelet,
+        ShellFlute, ShieldRing,
+        ShootingStatue, ShootingStatueSouth, StormBracelet,
         Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind,
         TornadoBracelet, TravelSwamp, TriggerSkip,
         WildWarp,
@@ -254,7 +255,7 @@ export class World {
     this.addCheck([start], Flight.r, [ClimbWaterfall.id, ClimbSlope10.id]);
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope8.id]);
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope9.id]);
-    this.addCheck([start], Barrier.r, [ShootingStatue.id]);
+    this.addCheck([start], Barrier.r, [ShootingStatue.id, ShootingStatueSouth.id]);
     this.addCheck([start], GasMask.r, [TravelSwamp.id]);
     const pain = this.flagset.changeGasMaskToHazmatSuit() ? GasMask : LeatherBoots;
     this.addCheck([start], or(Flight, RabbitBoots, pain), [CrossPain.id]);
@@ -278,7 +279,7 @@ export class World {
       this.addCheck([start], [[Money.c, BuyHealing.c],
                               [Money.c, ShieldRing.c],
                               [Money.c, Refresh.c]],
-                    [ShootingStatue.id]);
+                    [ShootingStatue.id, ShootingStatueSouth.id]);
     }
     if (this.flagset.assumeFlightStatueSkip()) {
       // NOTE: with no money, we've got 16 MP, which isn't enough
@@ -615,7 +616,7 @@ export class World {
 
   processLocationTiles(location: Location) {
     const walls = new Map<ScreenId, WallType>();
-    const shootingStatues = new Set<ScreenId>();
+    const shootingStatues = new Set<TileId>();
     const inTower = (location.id & 0xf8) === 0x58;
     for (const spawn of location.spawns) {
       // Walls need to come first so we can avoid adding separate
@@ -623,7 +624,17 @@ export class World {
       if (spawn.isWall()) {
         walls.set(ScreenId.from(location, spawn), (spawn.id & 3) as WallType);
       } else if (spawn.isMonster() && spawn.id === 0x3f) { // shooting statues
-        shootingStatues.add(ScreenId.from(location, spawn));
+        // Add constraint only between the statues: x in [4..b] and y in
+        // [yt-3..yt+3], rather than just a single entire row.  This is hard
+        // because the ScreenId puts the screen y in an inconvenient nibble
+        // relative to the tile y, so we need to do some weird math to get this
+        // correct.
+        const center = TileId(ScreenId.from(location, spawn) << 8 | spawn.yt << 4);
+        for (let dx = 4; dx <= 0xb; dx++) {
+          for (let dy = -3; dy <= 3; dy++) {
+            shootingStatues.add(TileId.add(center, dy, dx));
+          }
+        }
       }
     }
     //const page = location.screenPage;
@@ -689,7 +700,6 @@ export class World {
       for (let x = 0, width = location.width; x < width; x++) {
         const screen = this.rom.screens[row[x]];
         const screenId = ScreenId(rowId | x);
-        const barrier = shootingStatues.has(screenId);
         const flagYx = screenId & 0xff;
         const wall = walls.get(screenId);
         const flag =
@@ -710,10 +720,12 @@ export class World {
             tile = tileset.alternates[tile];
           }
           const effects = location.isShop() ? 0 : tileEffects.effects[tile];
+          const barrier = shootingStatues.has(tid);
           let terrain = makeTerrain(effects, tid, barrier);
           //if (!terrain) throw new Error(`bad terrain for alternate`);
           if (tile < 0x20 && tileset.alternates[tile] !== tile &&
               flag != null && !logic.assumeTrue && !logic.assumeFalse) {
+            // NOTE: barrier=true is probably an error here?
             const alternate =
                 makeTerrain(tileEffects.effects[tileset.alternates[tile]],
                                  tid, barrier);

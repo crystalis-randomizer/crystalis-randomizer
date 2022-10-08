@@ -169,7 +169,7 @@ MetaSpriteBankName=Mesia
 
 FilterCHR=1
 FilterName=1
-FileNameCHR=C:\Users\jroweboy\Desktop\temp\mesia_sprite_sheet_chr.chr
+FileNameCHR=
 FileNameName=
 FileNamePal=
-FileNameMetaSpriteBank=C:\Users\jroweboy\Desktop\temp\semia_sprite_replacement_animations
+FileNameMetaSpriteBank=

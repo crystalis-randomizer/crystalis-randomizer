@@ -172,4 +172,4 @@ FilterName=1
 FileNameCHR=
 FileNameName=
 FileNamePal=
-FileNameMetaSpriteBank=C:\Users\jroweboy\Desktop\temp\semia_sprite_replacement_animations.msb
+FileNameMetaSpriteBank=

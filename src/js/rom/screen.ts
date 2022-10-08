@@ -63,6 +63,23 @@ export class Screen extends Entity {
     }
   }
 
+  /**
+   * Return a 2d block from the tile array.  A size of 0x00 will
+   * result in one row and one column.
+   */
+  get2d(start: number, size: number): number[][] {
+    const x0 = start & 0xf;
+    const y0 = start >>> 4;
+    const xs = (size & 0xf) + 1;
+    const y1 = y0 + (size >>> 4);
+    const result = [];
+    for (let y = y0; y <= y1; y++) {
+      const i = y << 4 | x0;
+      result.push(this.tiles.slice(i, i + xs));
+    }
+    return result;
+  }
+
   assemble(a: Assembler) {
     const id = this.id.toString(16).padStart(2, '0');
     let tiles = this.tiles;

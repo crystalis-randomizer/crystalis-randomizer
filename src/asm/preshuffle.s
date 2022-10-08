@@ -68,33 +68,54 @@ PatchTradeInItem:
 
 
 ;; Prevent soft-lock when encountering sabera and mado from reverse
-;; Returns N if player is not on same screen as boss and is at row 9,
-;; which causes the caller to return.  We skip the vanilla "on-screen"
-;; check in favor of our own version that is not skippable.
+;; Returns N (negative/false) if player is not on same screen as boss
+;; and is at row 9, which causes the caller to return without
+;; proceding any further in the action.  We skip the vanilla
+;; "on-screen" check in favor of our own version that is not
+;; skippable.
 .reloc
 CheckBelowBoss:
     ; skip the check for sabera 1 and mado 1
     lda $04a0,x
     and #$fe
     cmp #$e6  ; sabera and mado
-    bne +
+    bne @CheckPosition
      lda #$dc
      cmp $04c0,x  ; first version has #$cf, second has #$dc
-     bne +++
-+   lda $d0
+     bne @ReturnImmediate
+     ;; This entirely removes the delay before Sabera 2
+     lda #$3f
+     sta $0620,x
+@CheckPosition:
+    ;; Check that we're on the correct y-screen
+    lda $d0
     cmp $d0,x
-     bne ++
+     bne @ReturnFalse
+    ;; Check that we're on the correct x-screen
     lda $90
     cmp $90,x
-     bne ++
+     bne @ReturnFalse
+    ;; Check that we're on the 9th tile down
     lda $b0
     and #$f0
     cmp #$90
-     bne ++
-    lda #$00
+     beq @ReturnTrue
+    ;; This is a little over-clever, but it compresses 6 bytes
+    ;; (@ReturnFalse: lda #$ff; rts; @ReturnTrue: lda #$00; rts)
+    ;; into only 4 by jumping into a misaligned opcode.
+    ;; Specifically, jumping to @ReturnFalse reads as "lda #$a9; rts"
+    ;; while jumping one byte further reads as "lda #$60; rts", so
+    ;; it effectively returns true.  It might be possible to do this
+    ;; with only three bytes if there were a positive one-byte opcode
+    ;; that always set the negative flag, or a negative one-byte op
+    ;; that always cleared it, but the only relevant op is LSR, which
+    ;; clears it and is positive, so we're out of luck there.
+@ReturnFalse:
+    .byte $a9  ; lda (immediate)
+@ReturnTrue:
+    lda #$60   ; rts
+@ReturnImmediate:
     rts
-++  lda #$ff
-+++ rts
 
 .ifdef _NERF_MADO
 ;;; Mado's cannonball time is a function of his HP: framecount = HP + #$20.

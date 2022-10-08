@@ -1,33 +1,150 @@
 
+
+
+class NssFile {
+  readonly filename: string;
+  readonly chrdata: number[];
+  readonly palette: number[];
+  readonly rendered: number[];
+  constructor(filename: string,
+              chrdata: ArrayBuffer,
+              palette: number[],
+              rendered: ImageData) {
+    this.filename = filename;
+    this.chrdata = Array.from(new Uint8Array(chrdata));
+    this.palette = palette;
+    this.rendered = Array.from(new Uint8Array(rendered.data));
+  }
+}
+
+export async function generateThumbnailImage(nss: NssFile): Promise<string> {
+  // global offscreen canvas is probably not needed, but every image 
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = 112;
+  offscreenCanvas.height = 100;
+  const ctx = offscreenCanvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  // clear the background
+  ctx.fillStyle = "#155fd9";
+  ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+  // blit the main character from the top left corner of the pre-rendered CHR
+  const imgData = new ImageData(new Uint8ClampedArray(nss.rendered), 128, 128)
+  const imgBitmap = await createImageBitmap(imgData, {resizeQuality: "pixelated"});
+  ctx.drawImage(imgBitmap, 0,0,16,24, 24,2,16*4,24*4);
+  return offscreenCanvas.toDataURL('image/png');
+}
+
+export async function generatePreviewImage(nss: NssFile): Promise<string> {
+  // global offscreen canvas is probably not needed, but every image 
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = 1024;
+  offscreenCanvas.height = 1024;
+  const ctx = offscreenCanvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+  // clear the background
+  ctx.fillStyle = "#155fd9";
+  ctx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+  // blit the main character from the top left corner of the pre-rendered CHR
+  const imgData = new ImageData(new Uint8ClampedArray(nss.rendered), 128, 128)
+  const imgBitmap = await createImageBitmap(imgData, {resizeQuality: "pixelated"});
+  ctx.drawImage(imgBitmap, 0,0,128,128, 0,0,1024,1024);
+  return offscreenCanvas.toDataURL('image/png');
+}
+
+async function createImageFromCHR(buffer: ArrayBuffer, palette:number[]): Promise<ImageData> {
+  const tileCount = buffer.byteLength / 16; // 16 bytes per tile
+  const pixelsPerTile = 8;
+  // TODO: if we start supporting two color mesia, then we need to handle multiple palettes
+  const paletteIdx = 0;
+
+  const offscreenCanvas = document.createElement('canvas');
+  offscreenCanvas.width = 128;
+  offscreenCanvas.height = 128;
+  const ctx = offscreenCanvas.getContext('2d')!;
+  const imageData = ctx.createImageData(128, 128);
+
+  const view = new Uint8ClampedArray(buffer);
+  for (let n=0; n < tileCount; ++n) {
+    const offset = n * 16;
+    const x = (n % 16) * 8;
+    const y = Math.floor(n / 16) * 8;
+    for (let j=0; j < pixelsPerTile; ++j) {
+      const plane0 = view[offset + j];
+      const plane1 = view[offset + j + 8];
+      for (let i=0; i < pixelsPerTile; ++i) {
+        const pixelbit = 7-i;
+        const bit0 = (plane0>>pixelbit) & 1;
+        const bit1 = ((plane1>>pixelbit) & 1) << 1;
+        const color = (bit0 | bit1) + (paletteIdx * 4);
+        const appliedColor = basePaletteColors[palette[color]];
+        // 3d -> 1d array conversion. the dest is a 3d data[128][128][4] that we
+        // access through a 1d view, so we do z + x * width + y * width * height
+        const k = (x + i) * 4 + (y + j) * 4 * 128;
+        imageData.data[0 + k] = appliedColor[0]; // R
+        imageData.data[1 + k] = appliedColor[1]; // G
+        imageData.data[2 + k] = appliedColor[2]; // B
+        imageData.data[3 + k] = (color == 0) ? 0 : 255; // A
+      }
+    }
+  }
+  return imageData;
+}
+
 export class Sprite {
   readonly name: string;
-  readonly converter: Map<number, number[]>;
-  readonly image: string;
-  readonly chrData: number[];
+  readonly converter: string;
+  readonly nssdata: NssFile;
   readonly description?: string;
   constructor(name: string,
-              converter: Map<number, number[]>,
-              image: string,
-              chrData: number[],
+              converter: string,
+              nssdata: NssFile,
               description?: string) {
     this.name = name;
     this.converter = converter;
-    this.image = image;
-    this.chrData = chrData;
+    this.nssdata = nssdata;
     this.description = description;
   }
 
-  public isCustom = () => { return this.chrData.length != 0; }
+  static async init(name: string, converter: string, nssdata: Promise<NssFile>, description?: string): Promise<Sprite> {
+    const nss = await nssdata;
+    return new Sprite(name, converter, nss, description);
+  }
 
-  public applyPatch(rom: Uint8Array, expandedPRG: Boolean) {
-    if (!this.isCustom()) {
+  public static isCustom = (s: Sprite) => { return s.name != "Simea"; }
+
+  public static applyPatch(s: Sprite, rom: Uint8Array, expandedPRG: Boolean) {
+    if (!Sprite.isCustom(s)) {
       return;
     }
-    for (let [src, dsts] of this.converter) {
+    const expandedOffset = expandedPRG ? 0x40000 : 0;
+    for (let [src, dsts] of CustomTilesetMapping.getChr(s.converter)) {
       for (let dst of dsts) {
         for (let i=0; i<0x10; ++i) {
-          const expandedOffset = expandedPRG ? 0x40000 : 0;
-          rom[dst + i + expandedOffset] = this.chrData[src * 0x10 + i];
+          rom[dst + i + expandedOffset] = s.nssdata.chrdata[src * 0x10 + i];
+        }
+      }
+    }
+    // apply the palette from the sprite for this converter
+    for (let [src, dsts] of CustomTilesetMapping.getPalette(s.converter)) {
+      for (let dst of dsts) {
+        switch (src) {
+          case "color0":
+            rom[dst] = s.nssdata.palette[0];
+            break;
+          case "color1":
+            rom[dst] = s.nssdata.palette[1];
+            break;
+          case "color2":
+            rom[dst] = s.nssdata.palette[2];
+            break;
+          case "color3":
+            rom[dst] = s.nssdata.palette[3];
+            break;
+          case "metasprite":
+            rom[dst + expandedOffset] = 0x00;
+            break;
         }
       }
     }
@@ -36,39 +153,64 @@ export class Sprite {
 
 export class CharacterSet {
   private static instance: CharacterSet;
-  private readonly simeaReplacements = new Array<Sprite>();
+  private readonly simeaReplacements = new Map<string, Promise<Sprite>>();
+  private readonly mapping: Map<string, Map<string, Promise<Sprite>>> = new Map();
 
-  static simea(): Sprite[] {
+  public static get(which: string): Map<string, Promise<Sprite>> {
     if (!this.instance) this.instance = new CharacterSet();
-    return [...this.instance.simeaReplacements];
+    return this.instance.mapping.get(which)!;
   }
 
   constructor() {
-    this.simeaReplacements.push(new Sprite("Simea", CustomTilesetMapping.simea(), "images/simea.png", [], "The original main character of Crystalis"));
-    this.simeaReplacements.push(new Sprite("Mesia", CustomTilesetMapping.simea(), "images/mesia.png", mesia_patch_data, "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy"));
+    this.simeaReplacements.set("Simea", Sprite.init("Simea", "simea", loadNssFileFromServer("images/spritesheets/Simea.nss"), "The original main character of Crystalis"));
+    this.simeaReplacements.set("Mesia", Sprite.init("Mesia", "simea", loadNssFileFromServer("images/spritesheets/Mesia.nss"), "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy"));
+    this.mapping.set("simea", this.simeaReplacements);
   }
 }
 
-function toAddr(chr_page: number, nametable: number, tile_number: number): number {
+function toChrAddr(chr_page: number, nametable: number, tile_number: number): number {
   const baseAddr = 0x40000 + 0x10; // added 0x10 to account for rom header
   return baseAddr + chr_page * 0x2000 + nametable * 0x1000 + tile_number * 0x10;
 }
 
 // Provides a lookup from the sample tileset to the CHRROM locations
-class CustomTilesetMapping {
+export class CustomTilesetMapping {
   private static instance: CustomTilesetMapping;
-  private readonly simeaMapping: Map<number, number[]>;
+  private readonly simeaChrMapping: Map<number, number[]>;
+  private readonly simeaPaletteMapping: Map<string, number[]>;
+  private readonly chrMapping: Map<string, Map<number, number[]>> = new Map();
+  private readonly paletteMapping: Map<string, Map<string, number[]>> = new Map();
 
-  static simea() : Map<number, number[]> {
+  public static getChr(which: string): Map<number, number[]> {
     if (!this.instance) this.instance = new CustomTilesetMapping();
-    return this.instance.simeaMapping;
+    return this.instance.chrMapping.get(which)!;
+  }
+
+  public static getPalette(which: string): Map<string, number[]> {
+    if (!this.instance) this.instance = new CustomTilesetMapping();
+    return this.instance.paletteMapping.get(which)!;
   }
 
   constructor() {
-    this.simeaMapping = this.generatesimeaMapping();
+    this.simeaChrMapping = this.generateSimeaMapping();
+    this.simeaPaletteMapping = this.generateSimeaPalette();
+    this.chrMapping.set("simea", this.simeaChrMapping);
+    this.paletteMapping.set("simea", this.simeaPaletteMapping);
   }
 
-  private generatesimeaMapping() : Map<number, number[]> {
+  private generateSimeaPalette() : Map<string, number[]> {
+    const mapping = new Map<string, number[]>();
+    // move the character main palette to palette_b0
+    const customCharPaletteAddr = 0x6cf0 + 0x10;
+    mapping.set("color0", [customCharPaletteAddr + 0]);
+    mapping.set("color1", [customCharPaletteAddr + 1]);
+    mapping.set("color2", [customCharPaletteAddr + 2]);
+    mapping.set("color3", [customCharPaletteAddr + 3]);
+    mapping.set("metasprite", [0x3c054 + 0x10]);
+    return mapping;
+  }
+
+  private generateSimeaMapping() : Map<number, number[]> {
     // For most of the mappings, there is only one location to write it to, but for some, its split across several CHRROM banks.
     // so thats why its a map of tileset number to a list of addresses
 
@@ -81,151 +223,149 @@ class CustomTilesetMapping {
     //////////
     // Walking Down
     // top left
-    mapping.set(0x00, [toAddr(8,0,0x1a)]);
+    mapping.set(0x00, [toChrAddr(8,0,0x1a)]);
     // top right
-    mapping.set(0x01, [toAddr(8,0,0x1b)]);
+    mapping.set(0x01, [toChrAddr(8,0,0x1b)]);
     // mid left
-    mapping.set(0x10, [toAddr(8,0,0x00)]);
+    mapping.set(0x10, [toChrAddr(8,0,0x00)]);
     // mid right
-    mapping.set(0x11, [toAddr(8,0,0x01)]);
+    mapping.set(0x11, [toChrAddr(8,0,0x01)]);
     // bot left
-    mapping.set(0x20, [toAddr(8,0,0x20)]);
+    mapping.set(0x20, [toChrAddr(8,0,0x20)]);
     // bot right
-    mapping.set(0x21, [toAddr(8,0,0x21)]);
+    mapping.set(0x21, [toChrAddr(8,0,0x21)]);
 
     //////////
     // Walking Left
     // top left
-    mapping.set(0x02, [toAddr(8,0,0x1c)]);
+    mapping.set(0x02, [toChrAddr(8,0,0x1c)]);
     // top right
-    mapping.set(0x03, [toAddr(8,0,0x1d)]);
+    mapping.set(0x03, [toChrAddr(8,0,0x1d)]);
     // mid left
-    mapping.set(0x12, [toAddr(8,0,0x02)]);
+    mapping.set(0x12, [toChrAddr(8,0,0x02)]);
     // mid right
-    mapping.set(0x13, [toAddr(8,0,0x03)]);
+    mapping.set(0x13, [toChrAddr(8,0,0x03)]);
     // mid arm left
-    mapping.set(0x14, [toAddr(8,0,0x04)]);
+    mapping.set(0x14, [toChrAddr(8,0,0x04)]);
     // mid arm right
-    mapping.set(0x15, [toAddr(8,0,0x05)]);
+    mapping.set(0x15, [toChrAddr(8,0,0x05)]);
     // bot left
-    mapping.set(0x22, [toAddr(8,0,0x22)]);
+    mapping.set(0x22, [toChrAddr(8,0,0x22)]);
     // bot right
-    mapping.set(0x23, [toAddr(8,0,0x23)]);
+    mapping.set(0x23, [toChrAddr(8,0,0x23)]);
     // bot leg left
-    mapping.set(0x24, [toAddr(8,0,0x24)]);
+    mapping.set(0x24, [toChrAddr(8,0,0x24)]);
     // bot leg right
-    mapping.set(0x25, [toAddr(8,0,0x25)]);
+    mapping.set(0x25, [toChrAddr(8,0,0x25)]);
 
     //////////
     // Walking Up
     // Up top left
-    mapping.set(0x06, [toAddr(8,0,0x1e)]);
+    mapping.set(0x06, [toChrAddr(8,0,0x1e)]);
     // Up top right
-    mapping.set(0x07, [toAddr(8,0,0x1f)]);
+    mapping.set(0x07, [toChrAddr(8,0,0x1f)]);
     // Up mid left
-    mapping.set(0x16, [toAddr(8,0,0x06)]);
+    mapping.set(0x16, [toChrAddr(8,0,0x06)]);
     // Up mid right
-    mapping.set(0x17, [toAddr(8,0,0x07)]);
+    mapping.set(0x17, [toChrAddr(8,0,0x07)]);
     // Up bot left
-    mapping.set(0x26, [toAddr(8,0,0x26)]);
+    mapping.set(0x26, [toChrAddr(8,0,0x26)]);
     // Up bot right
-    mapping.set(0x27, [toAddr(8,0,0x27)]);
+    mapping.set(0x27, [toChrAddr(8,0,0x27)]);
 
     //////////
     // Up attack
     // Frame 1
     // mid left
-    mapping.set(0x40, [toAddr(8,0,0x14)]);
+    mapping.set(0x40, [toChrAddr(8,0,0x14)]);
     // mid right
-    mapping.set(0x41, [toAddr(8,0,0x15)]);
+    mapping.set(0x41, [toChrAddr(8,0,0x15)]);
     // bot left
-    mapping.set(0x50, [toAddr(8,0,0x34)]);
+    mapping.set(0x50, [toChrAddr(8,0,0x34)]);
     // bot right
-    mapping.set(0x51, [toAddr(8,0,0x35)]);
+    mapping.set(0x51, [toChrAddr(8,0,0x35)]);
 
     // Frame 2
     // top left
-    mapping.set(0x32, [toAddr(8,0,0x3c)]);
+    mapping.set(0x32, [toChrAddr(8,0,0x3c)]);
     // top right
-    mapping.set(0x33, [toAddr(8,0,0x3d)]);
+    mapping.set(0x33, [toChrAddr(8,0,0x3d)]);
     // mid left
-    mapping.set(0x42, [toAddr(8,0,0x18)]);
+    mapping.set(0x42, [toChrAddr(8,0,0x18)]);
     // mid right
-    mapping.set(0x43, [toAddr(8,0,0x19)]);
+    mapping.set(0x43, [toChrAddr(8,0,0x19)]);
     // bot left
-    mapping.set(0x52, [toAddr(8,0,0x38)]);
-    // bot right
-    mapping.set(0x53, [toAddr(8,0,0x27)]);
+    mapping.set(0x52, [toChrAddr(8,0,0x38)]);
 
     // Frame 3
     // mid left
-    mapping.set(0x44, [toAddr(8,0,0x16)]);
+    mapping.set(0x44, [toChrAddr(8,0,0x16)]);
     // mid right
-    mapping.set(0x45, [toAddr(8,0,0x17)]);
+    mapping.set(0x45, [toChrAddr(8,0,0x17)]);
     // bot left
-    mapping.set(0x54, [toAddr(8,0,0x36)]);
+    mapping.set(0x54, [toChrAddr(8,0,0x36)]);
 
     ////////
     // Left attack
     // Frame 1
     // mid left
-    mapping.set(0x70, [toAddr(8,0,0x0e)]);
+    mapping.set(0x70, [toChrAddr(8,0,0x0e)]);
     // mid right
-    mapping.set(0x71, [toAddr(8,0,0x0f)]);
+    mapping.set(0x71, [toChrAddr(8,0,0x0f)]);
     // bot left
-    mapping.set(0x80, [toAddr(8,0,0x2e)]);
+    mapping.set(0x80, [toChrAddr(8,0,0x2e)]);
     // bot right
-    mapping.set(0x81, [toAddr(8,0,0x2f)]);
+    mapping.set(0x81, [toChrAddr(8,0,0x2f)]);
 
     // Frame 2
     // mid left
-    mapping.set(0x72, [toAddr(8,0,0x12)]);
+    mapping.set(0x72, [toChrAddr(8,0,0x12)]);
     // mid right
-    mapping.set(0x73, [toAddr(8,0,0x13)]);
+    mapping.set(0x73, [toChrAddr(8,0,0x13)]);
     // bot left
-    mapping.set(0x82, [toAddr(8,0,0x30)]);
+    mapping.set(0x82, [toChrAddr(8,0,0x30)]);
     // bot right
-    mapping.set(0x83, [toAddr(8,0,0x33)]);
+    mapping.set(0x83, [toChrAddr(8,0,0x33)]);
 
     // Frame 3
     // mid left
-    mapping.set(0x74, [toAddr(8,0,0x10)]);
+    mapping.set(0x74, [toChrAddr(8,0,0x10)]);
     // mid right
-    mapping.set(0x75, [toAddr(8,0,0x11)]);
+    mapping.set(0x75, [toChrAddr(8,0,0x11)]);
     // bot right
-    mapping.set(0x85, [toAddr(8,0,0x31)]);
+    mapping.set(0x85, [toChrAddr(8,0,0x31)]);
 
     //////////
     // Down attack
     // Frame 1
     // mid left
-    mapping.set(0xa0, [toAddr(8,0,0x08)]);
+    mapping.set(0xa0, [toChrAddr(8,0,0x08)]);
     // mid right
-    mapping.set(0xa1, [toAddr(8,0,0x09)]);
+    mapping.set(0xa1, [toChrAddr(8,0,0x09)]);
     // bot left
-    mapping.set(0xb0, [toAddr(8,0,0x28)]);
+    mapping.set(0xb0, [toChrAddr(8,0,0x28)]);
 
     // Frame 2
     // top left
-    mapping.set(0x92, [toAddr(8,0,0x3a)]);
+    mapping.set(0x92, [toChrAddr(8,0,0x3a)]);
     // top right
-    mapping.set(0x93, [toAddr(8,0,0x3b)]);
+    mapping.set(0x93, [toChrAddr(8,0,0x3b)]);
     // mid left
-    mapping.set(0xa2, [toAddr(8,0,0x0c)]);
+    mapping.set(0xa2, [toChrAddr(8,0,0x0c)]);
     // mid right
-    mapping.set(0xa3, [toAddr(8,0,0x0d)]);
+    mapping.set(0xa3, [toChrAddr(8,0,0x0d)]);
     // bot left
-    mapping.set(0xb2, [toAddr(8,0,0x2c)]);
+    mapping.set(0xb2, [toChrAddr(8,0,0x2c)]);
     // bot right
-    mapping.set(0xb3, [toAddr(8,0,0x2d)]);
+    mapping.set(0xb3, [toChrAddr(8,0,0x2d)]);
 
     // Frame 3
     // mid left
-    mapping.set(0xa4, [toAddr(8,0,0x0a)]);
+    mapping.set(0xa4, [toChrAddr(8,0,0x0a)]);
     // mid right
-    mapping.set(0xa5, [toAddr(8,0,0x0b)]);
+    mapping.set(0xa5, [toChrAddr(8,0,0x0b)]);
     // bot right
-    mapping.set(0xb5, [toAddr(8,0,0x2b)]);
+    mapping.set(0xb5, [toChrAddr(8,0,0x2b)]);
 
     // Armor mappings
     // Create the armor mappings by using the hardcoded sprite mappings but with the armor offsets
@@ -244,90 +384,94 @@ class CustomTilesetMapping {
     // Death
     // Frame 1
     // top left
-    mapping.set(0xc0, [toAddr(11,1,0x00)]);
+    mapping.set(0xc0, [toChrAddr(11,1,0x00)]);
     // top right
-    mapping.set(0xc1, [toAddr(11,1,0x01)]);
+    mapping.set(0xc1, [toChrAddr(11,1,0x01)]);
     // mid left
-    mapping.set(0xd0, [toAddr(11,1,0x02)]);
+    mapping.set(0xd0, [toChrAddr(11,1,0x02)]);
     // mid right
-    mapping.set(0xd1, [toAddr(11,1,0x03)]);
+    mapping.set(0xd1, [toChrAddr(11,1,0x03)]);
     // bot left
-    mapping.set(0xe0, [toAddr(11,1,0x04)]);
+    mapping.set(0xe0, [toChrAddr(11,1,0x04)]);
     // bot right
-    mapping.set(0xe1, [toAddr(11,1,0x05)]);
+    mapping.set(0xe1, [toChrAddr(11,1,0x05)]);
 
     // Frame 2
     // top left
-    mapping.set(0xc2, [toAddr(11,1,0x24)]);
+    mapping.set(0xc2, [toChrAddr(11,1,0x24)]);
     // top right
-    mapping.set(0xc3, [toAddr(11,1,0x25)]);
+    mapping.set(0xc3, [toChrAddr(11,1,0x25)]);
     // mid left
-    mapping.set(0xd2, [toAddr(11,1,0x06)]);
+    mapping.set(0xd2, [toChrAddr(11,1,0x06)]);
     // mid right
-    mapping.set(0xd3, [toAddr(11,1,0x07)]);
+    mapping.set(0xd3, [toChrAddr(11,1,0x07)]);
     // bot left
-    mapping.set(0xe2, [toAddr(11,1,0x26)]);
+    mapping.set(0xe2, [toChrAddr(11,1,0x26)]);
     // bot right
-    mapping.set(0xe3, [toAddr(11,1,0x27)]);
+    mapping.set(0xe3, [toChrAddr(11,1,0x27)]);
 
     // Frame 3
     // top left
-    mapping.set(0xc4, [toAddr(11,1,0x20)]);
+    mapping.set(0xc4, [toChrAddr(11,1,0x20)]);
     // top right
-    mapping.set(0xc5, [toAddr(11,1,0x21)]);
+    mapping.set(0xc5, [toChrAddr(11,1,0x21)]);
     // mid left
-    mapping.set(0xd4, [toAddr(11,1,0x22)]);
+    mapping.set(0xd4, [toChrAddr(11,1,0x22)]);
     // mid right
-    mapping.set(0xd5, [toAddr(11,1,0x23)]);
+    mapping.set(0xd5, [toChrAddr(11,1,0x23)]);
 
     // Frame 4
     // mid left
-    mapping.set(0xd6, [toAddr(11,1,0x14)]);
+    mapping.set(0xd6, [toChrAddr(11,1,0x14)]);
     // mid right
-    mapping.set(0xd7, [toAddr(11,1,0x15)]);
+    mapping.set(0xd7, [toChrAddr(11,1,0x15)]);
     // bot left
-    mapping.set(0xe6, [toAddr(11,1,0x16)]);
+    mapping.set(0xe6, [toChrAddr(11,1,0x16)]);
     // bot right
-    mapping.set(0xe7, [toAddr(11,1,0x17)]);
+    mapping.set(0xe7, [toChrAddr(11,1,0x17)]);
 
     // Holding sword
     // top left
-    mapping.set(0x36, [toAddr(11,1,0x0c)]);
+    mapping.set(0x36, [toChrAddr(11,1,0x0c)]);
     // top right
-    mapping.set(0x37, [toAddr(11,1,0x0d)]);
+    mapping.set(0x37, [toChrAddr(11,1,0x0d)]);
     // mid left
-    mapping.set(0x46, [toAddr(11,1,0x32)]);
+    mapping.set(0x46, [toChrAddr(11,1,0x32)]);
     // mid right
-    mapping.set(0x47, [toAddr(11,1,0x33)]);
+    mapping.set(0x47, [toChrAddr(11,1,0x33)]);
     // bot left
-    mapping.set(0x56, [toAddr(11,1,0x2e)]);
+    mapping.set(0x56, [toChrAddr(11,1,0x2e)]);
     // bot right
-    mapping.set(0x57, [toAddr(11,1,0x2f)]);
+    mapping.set(0x57, [toChrAddr(11,1,0x2f)]);
 
     // Telepathy
     // Frame 1
     // top left
-    mapping.set(0x66, [toAddr(11,1,0x14)]);
+    mapping.set(0x66, [toChrAddr(11,1,0x12)]);
     // top right
-    mapping.set(0x67, [toAddr(11,1,0x15)]);
+    mapping.set(0x67, [toChrAddr(11,1,0x13)]);
     // mid left
-    mapping.set(0x76, [toAddr(11,1,0x08)]);
+    mapping.set(0x76, [toChrAddr(11,1,0x08)]);
     // mid right
-    mapping.set(0x77, [toAddr(11,1,0x09)]);
+    mapping.set(0x77, [toChrAddr(11,1,0x09)]);
     // bot left
-    mapping.set(0x86, [toAddr(11,1,0x28)]);
+    mapping.set(0x86, [toChrAddr(11,1,0x28)]);
     // bot right
-    mapping.set(0x87, [toAddr(11,1,0x29)]);
+    mapping.set(0x87, [toChrAddr(11,1,0x29)]);
 
     // Frame 2
+    // top left
+    mapping.set(0x96, [toChrAddr(11,1,0x2c)]);
+    // top right
+    mapping.set(0x97, [toChrAddr(11,1,0x2d)]);
     // mid left
-    mapping.set(0xa6, [toAddr(11,1,0x0a)]);
+    mapping.set(0xa6, [toChrAddr(11,1,0x0a)]);
     // mid right
-    mapping.set(0xa7, [toAddr(11,1,0x0b)]);
+    mapping.set(0xa7, [toChrAddr(11,1,0x0b)]);
     // bot left
-    mapping.set(0xb6, [toAddr(11,1,0x2a)]);
+    mapping.set(0xb6, [toChrAddr(11,1,0x2a)]);
     // bot right
-    mapping.set(0xb7, [toAddr(11,1,0x2b)]);
+    mapping.set(0xb7, [toChrAddr(11,1,0x2b)]);
 
 
     //////////
@@ -335,11 +479,11 @@ class CustomTilesetMapping {
     // Each sword has their own page of sprites, so apply the change to all pages.
     let copyToAllWeaponPages = (tile: number) => {
       return [
-        toAddr(8, 0, tile) + CHR_PAGE_OFFSET * 2,
-        toAddr(8, 0, tile) + CHR_PAGE_OFFSET * 3,
-        toAddr(8, 1, tile),
-        toAddr(8, 1, tile) + CHR_PAGE_OFFSET,
-        toAddr(8, 1, tile) + CHR_PAGE_OFFSET * 2,
+        toChrAddr(8, 0, tile) + CHR_PAGE_OFFSET * 2,
+        toChrAddr(8, 0, tile) + CHR_PAGE_OFFSET * 3,
+        toChrAddr(8, 1, tile),
+        toChrAddr(8, 1, tile) + CHR_PAGE_OFFSET,
+        toChrAddr(8, 1, tile) + CHR_PAGE_OFFSET * 2,
       ]
     }
     // Swords
@@ -360,7 +504,7 @@ class CustomTilesetMapping {
     // ???
     mapping.set(0xf7, copyToAllWeaponPages(0x17));
     // Hilt - is only in the page with mesia since its only used in the tower
-    mapping.set(0xf8, [toAddr(8, 1, 0xed)]);
+    mapping.set(0xf8, [toChrAddr(8, 1, 0xed)]);
     // full length blade
     mapping.set(0xf9, copyToAllWeaponPages(0x19));
     // diagonal right
@@ -380,6 +524,66 @@ class CustomTilesetMapping {
   }
 }
 
+async function loadNssFileFromServer(path: string): Promise<NssFile> {
+  const data = await (await fetch(path)).text();
+  // remove the rest of the path that is before the filename.nss
+  const filename = path.replace(/^.*[\\\/]/, '');
+  return parseNssFile(filename, data);
+}
 
-const mesia_spritesheet_chr = "BwgRFhkRFxcHDx4fHg4KGuAQiGiYiOjo4PB4+HhwUFgHCDxDREw/DwcPM397ezoK4BAICIhIuLjg8Pj4+PjIyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwgQEBgWERAHDx8fHw0OH+AQCAgYaIgI4PD4+PiwcPgHCBEWGREXFwcPHh8eDgoa4BCIaJiI6Ojg8Hj4eHBQWAcIPENETD8PBw8zf3t7OgrgEAgIiEi4uODw+Pj4+MjIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHCBAQGBYREAcPHx8fDQ4f4BAICBhoiAjg8Pj4+LBw+BcnIytaW34+GDw/Nmd+Zyfw6MjEfPx8NBA4+HzsdOT8DwcDAwIDAgQIBAMCAwIDB4SCkpGJhUYk/P7+/////vwAAAwcPHx4MAAACBAgVEgwABAYHBweHgwAEAgEBBoSDBAQECA5OXl4Hx8fPy8/T08ISEhERCIipPj4+Pz8/v78FycrOV5dfD0YPD8/fX5nJ/Do2Jx8vDycEDj4/Kx05PwPBwMCAwICBAgEAwMCAwMHhJJK6eWnskz8/v7////+/AAACBw8eHAwAAAIHDxYQDAAABA4PB4eDAAAEDg8GhIMEBAQMDk5eXgfHx8/Pz9PTwhISEREIiKk+Pj4/Pz+/vw0DwcECAkGAD8PBAcPDwYAGPDw8JCQiMj48JCQ8PD4+AQDAQEBAgQDBwMBAQEDBwMQ4OAgEBAgwPDgIODw8ODABAcHOUEiEgwHBwQ/fz4eDBjw+PQiEiQY+PB4zD4ePBg0DwcECAkGAD8PBAcPDwYAFPjw8JCQiEj8+JCQ8PD4eD8PBwQICQYAPw8EBw8PBgD48PDwkJCIyPjwkJDw8Pj4BwMBAQECBAMHAwEBAQMHA/Dg4CAQECDA8OAg4PDw4MAHBwc5QSISDAcHBD9/Ph4M+PD49CISJBj48HjMPh48GDQPBwQICQYAPw8EBw8PBgAU+PDwkJCISPz4kJDw8Ph4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwQIEBgWEQADBw8fDw0eAMAgEAgYaIgAwODw+PCweAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwgRFhkR9/cHDx4fHg4qOuAQiGiYiOjo4PB4+HhwUFgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADBAgQGBYRAAMHDx8PDR4AwCAQCBhoiADA4PD48LB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEBAgZUlJAAAfHz8/f38AAISIiAxePwAA/Pj49OblEBAQCRkkPDwfHx8PHz8/JwhISCQkopKU+Pj4/Pz+/vwAAAAQEHLh4QAAAB8ff7+/AAAACExMKCQAAAD49PT4/P//dyMSCwoO2IxPPh8ODw/49NTKTd9efhg8/H73d/ryAAAQECBlSUkAAB8fPz9/fwAAhIiIHF4/AAD8+Pj8/v0QEBAJGTw8PB8fHw8fPz8nCEhIJCSikpT4+Pj8/P7+/AAAABAQcuHhAAAAHx9/v78AAAAITEwoJAAAAPj8/Pj8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIPgcECA8AAH8/BAcPDwAAHz/ekPCQiIT58f7wkPD4/D4fBwQJBwAAJx8EBw8HAAAU+PDwkJCISPz4kJDw8Ph4GAcHBAgHAQAfBwQHDwcBAAAAAAAAAAAAAAAAAAAAAAAYDw8PCRERDh8PCQkPHx8OGPDw8JCIiHD48JCQ8Pj4cEg+BwQIDwAAfz8EBw8PAAAfP/7w8JCIhPnx/vCQ8Pj8Ph8HBAkHAAAnHwQHDwcAABT48PCQkIhI/PiQkPDw+HgYBwcECAcBAB8HBAcPBwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwwQEBkAAAADDx8PDgAAAMCwCAiYAAAAwPD48HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHAwEDAAAAAAQCAQMAAAAA5MLSkgAAAAA8fv5+AAA/f//ydwwAACFznp9sDwAAYJic/p+PAADg+OTm+fkAAAAPBwMBAQAAAAgEAwEBAAAAyKgUHKgAAAB4+Pz82BYRLy8vIzknHx44Pjg8Pz5ohPT09MqqxPh8HHwcPv58AAAAAAcDAQMAAAAABAIBAwAAAADk4vLSAAAAADx+/v4AAD9///RyDwAAIXOfm30PABDY5LK+X48AMPj8/v75+QAAAA8HAwEBAAAACAQDAQEAAADI6PR8aAAAAHj4/Pz4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBwMPEQgEAwQEAw8eDwcD4dEerPpyZPi///58Zv78+AEBAgMHCBAPAQEDAgYPHw/2MChY4GBIsPbw+Oh4+PiwAAAAAAAAAAAAAAAAAAAAAPh4ePz6cmSY+MjIfGb+/JgnHxg/cXA4HzoRHydfXy8f5PgY/L5eXPhciPjkwuLs+AcHAw8RCAQDBAQDDx4PBwPRmf78+nJk+P///nxm/vz4AQEDAwcIEA8BAQMCBg8fDzbw+PjgYEiw9vD46Hj4+LAAAAAAAAAAAAAAAAAAAAAA+Hj4/PpyZJj4yMh8Zv78mAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADDBgYOCcyPwMPHxc/PD8swDAYGBzkSvrA8Pjo/Dz+NgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMMGBg4JzI/Aw8fFz88PyzAMBgYHORK+sDw+Oj8PP42AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC/Hw/PKDwgIOPx/Ps8MDw/4+PTSWr68PBg4/H728uzkAAAAPx8nJx8AAAAqGjw7EQAAAPr68vTYAAAAVl4+/DgPFyNDZvv6fAgcP35fjr9P9Orm9D7+D/8cPv488jb5+RYRLy8nIzMiHx44Pjg9Pj9ohPT09MrKRPh8HHwcvn78P+/n88oLCA84/H8/zQwPD/jozJ6+fny8GDj8/nby7OQAAAA/HycnHwAAACoaPDsRAAAA+vr67KgAAABWXj782A8fM3l+/fx5CBw/f12Ov0/0+s6cfr4/zxw+/vyydvn5AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBwQIDwAAAAcEBw8PAAAAAAAAAAAAAAAAAAAAAAAAAA8HAwMDAQAACAQDAgIBAADQkJBwaIREOPDw8NDY/Hw4AAAAAAAAAAAAAAAAAAAAAJCQ8PCQmIjI8PCQkPD4+PhLcvz/cXA4H35/n5d/Xy8f0lY//75eXPh+/vnpxuLs+AcHBAgPAAAABwQHDw8AAAAAAAAAAAAAAAAAAAAAAAAADwcDAwMBAAAIBAMDAwEAANCQ8PDohEQ4sPDw0Nj8fDgAAAAAAAAAAAAAAAAAAAAA8PDw8JCYiMjw8JCQ8Pj4+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwgRFhkRFxcHDx4fHg4KGuAQiGiYiOjo4PB4+HhwUFgHCDxDREw/DwcPM397ezoK4BAICIhIuLjg8Pj4+PjIyAcIEBAYFhEQBw8fHx8NDh/gEAgIGGiICODw+Pj4sHD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABcnIytaW34+GDw/Nmd+Zyfo5MTUWtp+fBg8/GzmfubkDwcDAwIDAwcIBAMCAwIDBoSCkpGJhcbk/P7+/////nwQEBAgKSlJSB8fHz8/P39/CEhIREQiIqT4+Pj8/P7+/AAABxkhIkJAAAAHHz8/f38AAMAgUEgICAAAwODw+Pj4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYDw8PCRERDh8PCQkPHx8OGPDw8JCIiHD48JCQ8Pj4cAUDAQEBAgQDBwMBAQEDBwPw4OAgEBAgwDDgIODw8ODAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABTfLiQ0OjnwHxr7///LyfAJPR6MRc/zwb8XN7///nJBgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQIBgeHxwAABg5HxMTFDw4OHBwIAAAJCgoUFAgAACBZiQ8PDw8PP9+PCQkJCQkPDw8PDw8OBAkJCQkJCQoEAAAf/9/PwAAAAB/gEA/AAABAv74+P4CAQED/wcH/wMBTEKceHh4eHh8fuxISEhISHh4cCAAAAAASEhQIAAAAAAAGCQ8JDwkfgAYPDw8PDx+eHh4eHh4eHhISEhISEhISAgwOHg8HB4OOFBIaCQUEgoAAAcfPz8fBwAABx8/Px8HAAAAPEKZpaUAAAA8fv///wAAAAwSKioqAAAADB4+Pj4wUJCQkKCgkDBw8PDw4ODwgEgwAAAAAADweDAAAAAAAA==";
-const mesia_patch_data = Array.from(atob(mesia_spritesheet_chr), c => c.charCodeAt(0))
+/**
+ * Text based RLE decoder. There are two types of tokens in this format.
+ * - xx ASCII hex value
+ * - [xx] the number of times to repeat the previous value. Note that this number includes the byte in the stream
+ *        so if you have 02[3] then it expands to 020202 (as opposed to 02020202)
+ * @param d - RLE encoded value
+ */
+ function unRLE(d: string): string {
+  let buffer = "";
+  let current = "";
+  let i=0;
+  while (i < d.length) {
+    if (d[i] === "[") {
+      ++i;
+      const nextI = d.indexOf("]",i);
+      // Subtract one because we already added the current byte to the buffer once
+      const rle = parseInt(d.slice(i, nextI), 16) - 1;
+      buffer += current.repeat(rle);
+      i = nextI+1; // +1 to skip the "]"
+    } else {
+      current = d.slice(i, i+2);
+      buffer += current;
+      i += 2;
+    }
+  }
+  return buffer;
+}
+
+function chunk(str: string, size: number): string[] {
+  return str.match(new RegExp('.{1,' + size + '}', 'g')) || [];
+}
+
+function hexstrToBytes(str: string): ArrayBuffer {
+  const bytes = chunk(str, 2).map(s => parseInt(s, 16));
+  return new Uint8Array(bytes);
+}
+
+function hex2Num(strs: string[]): number[] {
+    return strs.map(s => parseInt(s, 16));
+}
+
+export async function parseNssFile(filename: string, data: string): Promise<NssFile> {
+  const nss = new Map(data.split("\n").filter(s => s.includes("=")).map(s => s.split("=")).map(s => [s[0], s[1]]));
+  const paletteData = nss.get("Palette") || "";
+  const palette = hex2Num(chunk(unRLE(paletteData).slice(0, 32), 2));
+  const chrdata = hexstrToBytes(unRLE(nss.get("CHRMain") || ""));
+  const rendered = await createImageFromCHR(new Uint8ClampedArray(chrdata), palette);
+  return new NssFile(filename, chrdata, palette, rendered);
+}
+
+const basePaletteColors: number[][] = [
+  [ 84,  84,  84], [  0,  30, 116], [  8,  16, 144], [ 48,   0, 136], [ 68,   0, 100], [ 92,   0,  48], [ 84,   4,   0], [ 60,  24,   0], [ 32,  42,   0], [  8,  58,   0], [  0,  64,   0], [  0,  60,   0], [  0,  50,  60], [  0,   0,   0], [  0,   0,   0], [  0,   0,   0],
+  [152, 150, 152], [  8,  76, 196], [ 48,  50, 236], [ 92,  30, 228], [136,  20, 176], [160,  20, 100], [152,  34,  32], [120,  60,   0], [ 84,  90,   0], [ 40, 114,   0], [  8, 124,   0], [  0, 118,  40], [  0, 102, 120], [  0,   0,   0], [  0,   0,   0], [  0,   0,   0],
+  [236, 238, 236], [ 76, 154, 236], [120, 124, 236], [176,  98, 236], [228,  84, 236], [236,  88, 180], [236, 106, 100], [212, 136,  32], [160, 170,   0], [116, 196,   0], [ 76, 208,  32], [ 56, 204, 108], [ 56, 180, 204], [ 60,  60,  60], [  0,   0,   0], [  0,   0,   0],
+  [236, 238, 236], [168, 204, 236], [188, 188, 236], [212, 178, 236], [236, 174, 236], [236, 174, 212], [236, 180, 176], [228, 196, 144], [204, 210, 120], [180, 222, 120], [168, 226, 144], [152, 226, 180], [160, 214, 228], [160, 162, 160], [  0,   0,   0], [  0,   0,   0],
+];

@@ -139,10 +139,12 @@ class SimpleTerrain implements Terrain {
 // Basic terrain with an entrance and/or non-south exit condition
 class SouthTerrain implements Terrain {
   readonly exit: ExitRequirements;
-  constructor(readonly enter: Requirement.Frozen, exit?: Requirement.Frozen) {
+  constructor(readonly enter: Requirement.Frozen,
+              // openDir is which directions are open
+              exit?: Requirement.Frozen, openDir: number = 4) {
     this.exit =
         exit ?
-            [[0xb, exit], [0x4, Requirement.OPEN]] :
+            [[0xf & ~openDir, exit], [openDir, Requirement.OPEN]] :
             [[0xf, Requirement.OPEN]];
   }
 
@@ -170,6 +172,7 @@ class SouthTerrain implements Terrain {
 function makeTile(rom: Rom, effects: number): Terrain {
   let enter = Requirement.OPEN;
   let exit = undefined;
+  let openDir = 4;
 
   if ((effects & Terrain.DOLPHIN) && (effects & Terrain.FLY)) {
     if (effects & Terrain.SLOPE) {
@@ -197,8 +200,10 @@ function makeTile(rom: Rom, effects: number): Terrain {
   if (effects & Terrain.BARRIER) { // shooting statues
     enter = enter.map(
         (cs: readonly Condition[]) => [rom.flags.ShootingStatue.c, ...cs]);
+    exit = rom.flags.ShootingStatueSouth.r;
+    openDir = 1; // north
   }
-  return new SouthTerrain(enter, exit);
+  return new SouthTerrain(enter, exit, openDir);
 }
 
 // Bosses can be entered for free but only exited by killing the boss.
@@ -237,6 +242,7 @@ class FlagTerrain extends SimpleTerrain {
     // NOTE: base and alt must both be simple terrains!
     // If flag is -1 then don't consider it (it's untracked).
     if (base.exit.length !== 1 || alt.exit.length !== 1) {
+      console.error(base, alt);
       throw new Error('bad flag');
     }
     const f = [[flag as Condition]];

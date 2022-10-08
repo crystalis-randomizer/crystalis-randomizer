@@ -218,7 +218,7 @@ function defines(flags: FlagSet,
 
 function patchGraphics(rom: Uint8Array, sprites: Sprite[]) {
   for (let sprite of sprites) {
-    sprite.applyPatch(rom, EXPAND_PRG);
+    Sprite.applyPatch(sprite, rom, EXPAND_PRG);
   }
 }
 
@@ -486,8 +486,7 @@ async function shuffleInternal(rom: Uint8Array,
   parsed.writeData(prgCopy);
   parsed.modules.set(ASM, await asm('late'));
 
-  const hasGraphics = spriteReplacements?.some((spr) => spr.isCustom()) || false;
-
+  const hasGraphics = spriteReplacements?.some((spr) => Sprite.isCustom(spr)) || false;
   const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics);
 
 
@@ -508,12 +507,12 @@ async function shuffleInternal(rom: Uint8Array,
 
   parsed.writeData();
 
-  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
-  patchGraphics(rom, spriteReplacements);
   if (EXPAND_PRG) {
     const prg = rom.subarray(0x10);
     prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
   }
+  // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
+  patchGraphics(rom, spriteReplacements);
   return [rom, crc];
 }
 

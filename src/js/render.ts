@@ -1,6 +1,6 @@
 // Utilities for rendering flags.
 
-import { CharacterSet } from './characters.js';
+import { CharacterSet, Sprite, generateThumbnailImage } from './characters.js';
 import {FlagSection, FlagSet, Preset} from './flagset.js';
 
 export function renderPresets(presets: HTMLElement) {
@@ -62,44 +62,53 @@ export function renderOptions(options: HTMLElement) {
   }
 }
 
-export function renderCharacters(options: HTMLElement) {
-  const simeaReplacements = CharacterSet.simea();
-  for (const {name, image, chrData, description} of simeaReplacements.values()) {
+export async function renderDefaultCharacters(options: HTMLElement) {
+  // Display all simea replacements that are built-in to the rando
+  const simeaReplacements = CharacterSet.get("simea");
+  for (const sprite of simeaReplacements.values()) {
     const container = document.createElement('div');
-    container.className = "flex-row";
-    container.style.width = '100%';
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = 'simea-replacement'
-    input.id = `simea-replacement-${name}`;
-    input.value = name;
-    input.style.display = 'none';
-    if (chrData.length == 0) {
-      input.checked = true;
-    }
-    container.appendChild(input);
-    const label = document.createElement('label');
-    label.className = "sprite-replacement";
-    label.htmlFor = `simea-replacement-${name}`;
-    const img = document.createElement('img');
-    img.src = image;
-    img.style.float = "left";
-    label.appendChild(img);
-
-    const title = document.createElement('div');
-    title.textContent = name;
-    title.className = "title";
-    label.appendChild(title);
-
-    if (description) {
-      const desc = document.createElement('div');
-      desc.innerHTML = description; // NOTE: mainly for italics and bold
-      desc.className = "desc";
-      label.appendChild(desc);
-    }
-    container.appendChild(label);
+    renderCustomCharacter(container, await sprite);
     options.appendChild(container);
   }
+}
+
+export function renderCustomCharacter(container: HTMLElement, sprite: Sprite) {
+  container.className = "flex-row";
+  container.style.width = '100%';
+  const input = document.createElement('input');
+  input.type = 'radio';
+  input.name = 'simea-replacement'
+  input.id = `simea-replacement-${sprite.name}`;
+  input.value = sprite.name;
+  input.style.display = 'none';
+  // Select the mesia sprite by default. Later when loading the values from localstorage,
+  // we will choose the previous sprite option
+  if (sprite.name == "Simea") {
+    input.checked = true;
+  }
+  container.appendChild(input);
+  const label = document.createElement('label');
+  label.className = "sprite-replacement";
+  label.htmlFor = `simea-replacement-${sprite.name}`;
+  const img = document.createElement('img');
+  img.width = 112;
+  img.height = 98;
+  img.style.float = "left";
+  generateThumbnailImage(sprite.nssdata).then(src => img.src = src);
+  label.appendChild(img);
+
+  const title = document.createElement('div');
+  title.textContent = sprite.name;
+  title.className = "title";
+  label.appendChild(title);
+
+  if (sprite.description) {
+    const desc = document.createElement('div');
+    desc.innerHTML = sprite.description; // NOTE: mainly for italics and bold
+    desc.className = "desc";
+    label.appendChild(desc);
+  }
+  container.appendChild(label);
 }
 
 export function renderRaceFlags(options: HTMLElement, flagset: FlagSet) {

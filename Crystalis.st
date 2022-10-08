@@ -49174,7 +49174,7 @@ DataTable_371e9
         $37220              .byte $xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx,$xx
         $37230              .byte $xx,$xx,$xx,$xx,$xx
 ;;; --------------------------------
-ObjectActionJump_13
+ObjectActionJump_13 ; Blizzard projectile
         $37235  xx xx xx:   xxx $xxxx,x
         $37238  xx xx:      xxx #$xx
         $3723a  xx xx xx:   xxx $xxxx,x

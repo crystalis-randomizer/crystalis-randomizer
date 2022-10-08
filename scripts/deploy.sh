@@ -43,7 +43,7 @@ dirs="asm edit logic maze pass rom spoiler view"
 mkdir -p "deploy/$dir/asm"
 mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/css/view"
-mkdir -p "deploy/$dir/images"
+mkdir -p "deploy/$dir/images/spritesheets"
 for sub in $dirs; do
   mkdir -p "deploy/$dir/js/$sub"
   cp dist/js/$sub/*.js "deploy/$dir/js/$sub/"
@@ -52,7 +52,9 @@ cp dist/js/*.js "deploy/$dir/js/"
 cp dist/asm/*.s "deploy/$dir/asm/"
 cp dist/css/*.css "deploy/$dir/css/"
 cp dist/css/view/*.css "deploy/$dir/css/view/"
-cp dist/images/* "deploy/$dir/images/"
+cp dist/images/*.png "deploy/$dir/images/"
+cp dist/images/spritesheets/*.nss "deploy/$dir/images/spritesheets/"
+
 # Clobber the *.min.js files.
 cp dist/*.js "deploy/$dir/js/"
 # Prepend the analytics tag to each .html file.

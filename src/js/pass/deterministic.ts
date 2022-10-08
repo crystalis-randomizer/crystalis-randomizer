@@ -7,7 +7,7 @@ import {MessageId} from '../rom/messageid.js';
 import {GlobalDialog, LocalDialog} from '../rom/npc.js';
 import {ShopType} from '../rom/shop.js';
 import {Trigger} from '../rom/trigger.js';
-import {hex} from '../rom/util.js';
+import {hex, Mutable} from '../rom/util.js';
 import {assert} from '../util.js';
 import {Monster} from '../rom/monster.js';
 import {Patterns} from '../rom/pattern.js';
@@ -169,7 +169,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   addCordelWestTriggers(rom, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(rom);
   if (flags.disableFlightStatueSkip()) fixFlightStatueSkip(rom);
-  if (flags.disableRageSkip()) patchLimeTreeLake(rom);
+  patchLimeTreeLake(rom, flags);
 
   fixReverseWalls(rom);
   if (flags.chargeShotsOnly()) disableStabs(rom);
@@ -824,43 +824,47 @@ function leafElderInSabreHeals(rom: Rom): void {
 
 // Prevent Rage skip by adding trees on either side of entrance.
 // TODO - make this optional? account for it in logic?
-function patchLimeTreeLake(rom: Rom): void {
-  rom.metatilesets.lime.getTile(0x7c).setEffects(6);
-  rom.metatilesets.lime.getTile(0x7f).setEffects(6);
-  rom.metatilesets.lime.getTile(0x7b).setTiles([0x7f, 0x7f, 0x7f, 0x7f])
-      .setAttrs(0).setEffects(6); //.replaceIn(rom.metascreens.limeTreeLake);
+function patchLimeTreeLake(rom: Rom, flags: FlagSet): void {
+  const loc = rom.locations.LimeTreeLake;
+  const screen = rom.screens[rom.metascreens.limeTreeLake.sid];
 
+  // NOTE: we no longer need to make unwalkable green tiles.
+  // rom.metatilesets.lime.getTile(0x7c).setEffects(6);
+  // rom.metatilesets.lime.getTile(0x7f).setEffects(6);
+  // rom.metatilesets.lime.getTile(0x7b).setTiles([0x7f, 0x7f, 0x7f, 0x7f])
+  //     .setAttrs(0).setEffects(6); //.replaceIn(rom.metascreens.limeTreeLake);
 
-  rom.screens[0x74].set2d(0x90, [
-    [0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, null, null,
-     0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b],
-    [0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, null, null,
-     0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b, 0x7b],
-  
+  if (flags.disableRageSkip()) {
+    // Shift the whole top part of the screen down.
+    screen.set2d(0x20, screen.get2d(0x00, 0x8f));
+    // Remove the (now lower) branch sticking out the right side of the tree.
+    screen.set2d(0x2a, screen.get2d(0x3a, 0x01));
+    // Smooth out the ugly line between the 2nd and 3rd row of leaves.
+    screen.set2d(0x10, screen.get2d(0x20, 0x04));
+    screen.set2d(0x1a, screen.get2d(0x2a, 0x05));
+    // Fix up a little more of the border that the branch blocked.
+    screen.set2d(0x1b, screen.get2d(0x00, 0x10));
+    // // Replace most of the bottom row of land with water, except a small tongue.
+    // screen.set2d(0xa0, [
+    //   [0x76, 0x76, 0x76, 0x76, 0x76, 0x76, 0x77, 0x78, 0x79,
+    //    0x7a, 0x76, 0x76, 0x76, 0x76, 0x76, 0x76]]);
 
-
-  // rom.screens[0x74].set2d(0x90, [
-  //   [0x7c, 0x7f, 0x7c, 0x7f, 0x7c, 0x7f, 0x7c, 0x7d, 0x7e,
-  //    0x7c, 0x7f, 0x7c, 0x7f, 0x7c, 0x7f, 0x7c],
-  //   [0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, null, null,
-  //    0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30],
-  //   [0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, null, null,
-  //    0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30],
-
-
-
-    // Different options to fill in the spaces...
-    // [0x73, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73, null, null,
-    //  0x73, 0x73, 0x73, 0x73, 0x73, 0x73, 0x73],
-    // [0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65, null, null,
-    //  0x65, 0x65, 0x65, 0x65, 0x65, 0x65, 0x65],
-    // [0x67, 0x67, 0x67, 0x67, 0x67, 0x67, 0x67, null, null,
-    //  0x67, 0x67, 0x67, 0x67, 0x67, 0x67, 0x67],
-    // [0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, null, null,
-    //  0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30],
-    // [0x7f, 0x7c, 0x7f, 0x7c, 0x7f, 0x7c, 0x7f, null, null,
-    //  0x7f, 0x7c, 0x7f, 0x7c, 0x7f, 0x7c, 0x7f],
-  ]);
+    // Move spawns and exits down.
+    for (const spawn of loc.spawns) {
+      spawn.tile += 0x20;
+    }
+    const e = rom.metascreens.limeTreeLake.findExitByType('cave');
+    (e as Mutable<typeof e>).entrance += 0x2000;
+    (e as Mutable<typeof e>).exits = e.exits.map(ex => ex + 0x20);
+  } else {
+    // Make a prettier landing, just because we can.
+    screen.set2d(0x90, [
+      [0x76, 0x76, 0x76, 0x76, 0x77, 0x78, null, null, null,
+       null, 0x79, 0x7a, 0x76, 0x76, 0x76, 0x76],
+      [0x76, 0x76, 0x77, 0x78, null, null, null, null, null,
+       null, null, null, 0x79, 0x7a, 0x76, 0x76],
+    ]);
+  }
 }
 
 function preventNpcDespawns(rom: Rom, opts: FlagSet): void {

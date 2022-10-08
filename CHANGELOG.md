@@ -59,7 +59,8 @@
     * `Wg` shuffles the order of the floors in Goa fortress.
 * New glitch options:
     * `Gr` allows skipping Rage via a damage boost to go directly to the
-      answering machine.
+      answering machine.  Whether the skip is disabled can be determined by the
+      shape of the land (there's no space to damage-boost into when it's off).
     * `Gg` allows flight to be used to sneak past shooting statues.
 * Adds `Rb` "no bow mode", which provides a direct portal from Mezame to
   Draygon 2, who no longer needs the Bow of Truth to fight.
@@ -109,6 +110,7 @@
     * Fixed vanilla bug where a second round of blizzard shots despawn if fired
       too soon after an earlier round.
     * Fixed vanilla bug where you need an extra MP to use sword magic.
+    * Fixed Sabera 2 to not delay before starting the fight.
 * Internal cleanups:
     * Rearrange passes into a strict order of (1) read bytes from ROM into an
       internal data structure, (2) shuffle the internal data structure,

@@ -1101,6 +1101,20 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
                                                 patternBank: 1,
                                                 id: guard2.id}));
 
+  // The last thing to do with Portoa Queen is to split her dialog across two
+  // separate locations.  When area shuffle is on, access to the throne room
+  // may not guarantee access to Asina's back room.  In vanilla, the queen's
+  // dialog is a single chain and it relies on synchronizing spawn conditions
+  // with dialog flags to ensure the right dialog is in the right place, but
+  // our logic can't figure this out, so it thinks you can get Recover from
+  // the throne room if you've seen the answering machine, which is not actually
+  // true.  Instead, split out the first two dialogs into a separate location.
+  PortoaQueen.localDialogs.set(Portoa_AsinaRoom.id,
+                               PortoaQueen.dialog().splice(0, 2));
+  PortoaQueen.localDialogs.set(PortoaPalace_ThroneRoom.id,
+                               PortoaQueen.dialog());
+  PortoaQueen.localDialogs.delete(-1);
+
   // Kensu in cabin ($68 @ $61) needs to be available even after visiting Joel.
   // Change him to just disappear after setting the rideable dolphin flag (09b),
   // and to not even show up at all unless the fog lamp was returned (021).

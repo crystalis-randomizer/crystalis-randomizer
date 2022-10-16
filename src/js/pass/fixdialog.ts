@@ -16,7 +16,7 @@ export function fixDialog(rom: Rom) {
       KensuInSwan,
       MtSabreNorthSummit,
       MtSabreWestTornel,
-      PortoaQueen,
+      PortoaQueen: PortoaQueenItem,
       Rage,
       RepairedStatue,
       SlimedKensu,
@@ -27,6 +27,10 @@ export function fixDialog(rom: Rom) {
       AkahanaInBrynmaer,
       Aryllis,
       Fisherman,
+      PortoaQueen,
+    },
+    locations: {
+      PortoaPalace_ThroneRoom,
     },
   } = rom;
 
@@ -63,8 +67,8 @@ export function fixDialog(rom: Rom) {
   replaceMessage('09:05', '[35:Fog Lamp]', item(fogLampWant));
   replaceMessage('09:06', 'lamp', commonNoun(fogLampWant));
 
-  const queenWant = rom.npcs.PortoaQueen.dialog()[3].condition;
-  replaceMessage('0a:0c', '[28:Flute of Lime]', item(PortoaQueen));
+  const queenWant = PortoaQueen.dialog(PortoaPalace_ThroneRoom)[1].condition;
+  replaceMessage('0a:0c', '[28:Flute of Lime]', item(PortoaQueenItem));
   replaceMessage('0a:0d', '[02:Sword of Water]', item(queenWant));
   // TODO - consider replacing 0a:0d but we need to also replace condition?
   if (!AsinaInBackRoom.item.isMagic()) unmagic('0b:01');

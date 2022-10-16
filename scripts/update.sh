@@ -54,11 +54,13 @@ fi
 # Now do the action
 case "$action" in
   (out)
-    if [ -w "$source" ]; then
-      echo "$source is already checked out: refusing to overwrite" >& 2
-      exit 3
+    if [ -e "$source" ]; then
+      if [ -w "$source" ]; then
+        echo "$source is already checked out: refusing to overwrite" >& 2
+        exit 3
+      fi
+      chmod +w "$source"
     fi
-    chmod +w "$source"
     "$strip" -r "$rom" "$template" >| "$source"
     rm -f "$pristine"
     cp "$source" "$pristine"

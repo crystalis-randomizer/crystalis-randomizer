@@ -28,3 +28,14 @@ you can just get reachable locations through AP and see if its 0
 since you need to encode it for AP anyway
 this will also allow you to check if there's a small number (<5 or such) available checks and force an early item
 
+======
+
+Serializing ROM object
+ - could use JSON or protobuf
+ - move expanded PRG to start
+ - output actual patch (could auto-apply in UI)
+ - add a hash as well for optional checksum
+ - find-replace ($|0x)3[cdef]\x{3} with 3->7
+
+Client
+ - knowing which parts of memory are important to check

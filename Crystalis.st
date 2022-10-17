@@ -30301,48 +30301,48 @@ CopyThreePagesOfBytesByLookup
         $21ce0  xx:         xxx
         $21ce1  xx xx:      xxx #$xx
         ; Save values in $10-$15
--       $21ce3  xx xx:      xxx $xx,x
-        $21ce5  xx xx xx:   xxx $xxxx,x
-        $21ce8  xx:         xxx
-        $21ce9  xx xx:      xxx #$xx
-        $21ceb  xx xx:      xxx -
+-       $21ce3  xx xx:       xxx $xx,x
+        $21ce5  xx xx xx:    xxx $xxxx,x
+        $21ce8  xx:          xxx
+        $21ce9  xx xx:       xxx #$xx
+        $21ceb  xx xx:      xxx - ; $21ce3
         $21ced  xx:         xxx
         $21cee  xx:         xxx
         $21cef  xx:         xxx
         $21cf0  xx:         xxx
         $21cf1  xx xx:      xxx #$xx
--       $21cf3  xx xx xx:   xxx CopyPageBytesTable,x
-        $21cf6  xx xx xx:   xxx $xxxx,y
-        $21cf9  xx:         xxx
-        $21cfa  xx:         xxx
-        $21cfb  xx xx:      xxx #$xx
-        $21cfd  xx xx:      xxx -
+-       $21cf3  xx xx xx:    xxx CopyPageBytesTable,x
+        $21cf6  xx xx xx:    xxx $xxxx,y
+        $21cf9  xx:          xxx
+        $21cfa  xx:          xxx
+        $21cfb  xx xx:       xxx #$xx
+        $21cfd  xx xx:      xxx - ; $21cf3
         $21cff  xx xx:      xxx #$xx
         $21d01  xx xx:      xxx $xx
         $21d03  xx xx:      xxx #$xx
         $21d05  xx xx:      xxx $xx
         $21d07  xx xx:      xxx #$xx
--       $21d09  xx xx:      xxx ($xx),y
-        $21d0b  xx xx:      xxx ($xx),y
-        $21d0d  xx xx:      xxx $xx
-        $21d0f  xx xx:      xxx + ; $21d13
-        $21d11  xx xx:      xxx $xx
-+       $21d13  xx xx:      xxx $xx
-        $21d15  xx xx:      xxx + ; $21d19
-        $21d17  xx xx:      xxx $xx
-+       $21d19  xx xx:      xxx $xx
-        $21d1b  xx xx:      xxx - ; $21d09
-        $21d1d  xx xx:      xxx $xx
-        $21d1f  xx xx:      xxx $xx
-        $21d21  xx xx:      xxx #$xx
+-       $21d09  xx xx:        xxx ($xx),y
+        $21d0b  xx xx:        xxx ($xx),y
+        $21d0d  xx xx:        xxx $xx
+        $21d0f  xx xx:        xxx + ; $21d13
+        $21d11  xx xx:         xxx $xx
++       $21d13  xx xx:        xxx $xx
+        $21d15  xx xx:        xxx + ; $21d19
+        $21d17  xx xx:         xxx $xx
++       $21d19  xx xx:        xxx $xx
+        $21d1b  xx xx:       xxx - ; $21d09
+        $21d1d  xx xx:       xxx $xx
+        $21d1f  xx xx:       xxx $xx
+        $21d21  xx xx:       xxx #$xx
         $21d23  xx xx:      xxx - ; $21d09
         ; Restore the previous values in $10-$15
         $21d25  xx xx:      xxx #$xx
--       $21d27  xx xx xx:   xxx $xxxx,x
-        $21d2a  xx xx:      xxx $xx,x
-        $21d2c  xx:         xxx
-        $21d2d  xx xx:      xxx #$xx
-        $21d2f  xx xx:      xxx -
+-       $21d27  xx xx xx:    xxx $xxxx,x
+        $21d2a  xx xx:       xxx $xx,x
+        $21d2c  xx:          xxx
+        $21d2d  xx xx:       xxx #$xx
+        $21d2f  xx xx:      xxx - ; $21d27
         $21d31  xx:         xxx
 ;;; --------------------------------
 CopyPageBytesTable
@@ -30786,15 +30786,15 @@ CreditsWaitForTimer
         ; Countdown for ending credits
         $220eb  xx xx xx:   xxx $xxxx
         $220ee  xx xx:      xxx + ; $220f1
-        $220f0  xx:         xxx
-;;; --------------------------------
+        $220f0  xx:          xxx
+        ;;;                  ---
 CreditsDecrementSeconds
 +       $220f1  xx xx:      xxx #$xx
         $220f3  xx xx xx:   xxx $xxxx ; 604 stores frames, 605 stores seconds
         $220f6  xx xx xx:   xxx $xxxx
-        $220f9  xx xx:      xxx +
-        $220fb  xx:         xxx
-;;; --------------------------------
+        $220f9  xx xx:      xxx + ; $220fc
+        $220fb  xx:          xxx
+        ;;;                  ---
 CreditsContinueToNextScene
 +       $220fc  xx xx xx:   xxx $xxxx
         $220ff  xx:         xxx
@@ -30822,8 +30822,8 @@ CreditsModeTable
         $22120  xx xx:      xxx $xx
         $22122  xx xx:      xxx #$xx
         $22124  xx xx:      xxx + ; $22127
-        $22126  xx:         xxx
-;;; --------------------------------
+        $22126  xx:          xxx
+        ;;;                  ---
 +       $22127  xx xx:      xxx #$xx
         $22129  xx xx xx:   xxx $xxxx
         $2212c  xx xx xx:   xxx $xxxx
@@ -30841,8 +30841,8 @@ DataTable_22140
 CreditsModeRunScene
         $2214a  xx xx xx:   xxx $xxxx
         $2214d  xx xx:      xxx + ; $22152
-        $2214f  xx xx xx:   xxx $22120
-;;; --------------------------------
+        $2214f  xx xx xx:    xxx $22120
+        ;;;                  ----------
 +       $22152  xx xx xx:   xxx $xxxx
         $22155  xx:         xxx
         $22156  xx:         xxx
@@ -30853,36 +30853,36 @@ CreditsModeRunScene
         $22163  xx xx xx:   xxx ($xxxx)
 ;;; --------------------------------
 EndCreditsSceneTable
-        $22166              .word (CreditScene_00)
-        $22168              .word (CreditsWaitForTimer)
-        $2216a              .word (CreditScene_02)
-        $2216c              .word (CreditScene_03)
-        $2216e              .word (CreditsWaitForTimer)
-        $22170              .word (CreditScene_05)
-        $22172              .word (CreditsWaitForTimer)
-        $22174              .word (CreditScene_07)
-        $22176              .word (CreditScene_08)
-        $22178              .word (CreditsWaitForTimer)
-        $2217a              .word (CreditScene_0a)
-        $2217c              .word (CreditScene_0b)
-        $2217e              .word (CreditsWaitForTimer)
-        $22180              .word (CreditScene_0d)
-        $22182              .word (CreditScene_0e)
-        $22184              .word (CreditScene_0f)
-        $22186              .word (CreditsWaitForTimer)
-        $22188              .word (CreditScene_11)
-        $2218a              .word (CreditScene_12)
-        $2218c              .word (CreditScene_13)
-        $2218e              .word (CreditsWaitForTimer)
-        $22190              .word (CreditScene_15)
-        $22192              .word (CreditScene_16)
-        $22194              .word (CreditsWaitForTimer)
-        $22196              .word (CreditScene_18)
-        $22198              .word (CreditScene_19)
-        $2219a              .word (CreditScene_1a)
-        $2219c              .word (CreditsWaitForTimer)
-        $2219e              .word (CreditsDisplayTheEND)
-        $221a0              .word (EndingCreditsFinished)
+        $22166              .word (CreditScene_00)        ; 00
+        $22168              .word (CreditsWaitForTimer)   ; 01
+        $2216a              .word (CreditScene_02)        ; 02
+        $2216c              .word (CreditScene_03)        ; 03
+        $2216e              .word (CreditsWaitForTimer)   ; 04
+        $22170              .word (CreditScene_05)        ; 05
+        $22172              .word (CreditsWaitForTimer)   ; 06
+        $22174              .word (CreditScene_07)        ; 07
+        $22176              .word (CreditScene_08)        ; 08
+        $22178              .word (CreditsWaitForTimer)   ; 09
+        $2217a              .word (CreditScene_0a)        ; 0a
+        $2217c              .word (CreditScene_0b)        ; 0b
+        $2217e              .word (CreditsWaitForTimer)   ; 0c
+        $22180              .word (CreditScene_0d)        ; 0d
+        $22182              .word (CreditScene_0e)        ; 0e
+        $22184              .word (CreditScene_0f)        ; 0f
+        $22186              .word (CreditsWaitForTimer)   ; 10
+        $22188              .word (CreditScene_11)        ; 11
+        $2218a              .word (CreditScene_12)        ; 12
+        $2218c              .word (CreditScene_13)        ; 13
+        $2218e              .word (CreditsWaitForTimer)   ; 14
+        $22190              .word (CreditScene_15)        ; 15
+        $22192              .word (CreditScene_16)        ; 16
+        $22194              .word (CreditsWaitForTimer)   ; 17
+        $22196              .word (CreditScene_18)        ; 18
+        $22198              .word (CreditScene_19)        ; 19
+        $2219a              .word (CreditScene_1a)        ; 1a
+        $2219c              .word (CreditsWaitForTimer)   ; 1b
+        $2219e              .word (CreditsDisplayTheEND)  ; 1c
+        $221a0              .word (EndingCreditsFinished) ; 1d
 ;;; --------------------------------
         $221a2  xx xx:      xxx #$xx
         $221a4  xx xx xx:   xxx $221ab
@@ -31586,7 +31586,7 @@ EnableNMI_altbank11
 WaitForOAMDMA_altbank11
         $22744  xx xx:      xxx #$xx
         $22746  xx xx:      xxx $xx
--       $22748  xx xx:      xxx $xx
+-       $22748  xx xx:       xxx $xx
         $2274a  xx xx:      xxx - ; $22748
         $2274c  xx xx:      xxx #$xx
         $2274e  xx xx:      xxx $xx
@@ -31651,49 +31651,49 @@ WaitForOAMDMA_altbank11
         $227ba  xx xx:      xxx #$xx
         $227bc  xx xx:      xxx $xx
         $227be  xx xx:      xxx $xx
---      $227c0  xx xx:      xxx $xx
-        $227c2  xx xx:      xxx #$xx
--       $227c4  xx xx:      xxx ($xx),y
-        $227c6  xx xx xx:   xxx $xxxx,y
-        $227c9  xx:         xxx
-        $227ca  xx:         xxx
-        $227cb  xx xx:      xxx - ; $227c4
-        $227cd  xx:         xxx
-        $227ce  xx:         xxx
-        $227cf  xx xx:      xxx $xx
-        $227d1  xx xx:      xxx $xx
-        $227d3  xx xx:      xxx #$xx
-        $227d5  xx xx:      xxx $xx
-        $227d7  xx xx:      xxx $xx
-        $227d9  xx xx xx:   xxx DisableNMI_altbank11
-        $227dc  xx xx:      xxx $xx
-        $227de  xx xx:      xxx $xx
-        $227e0  xx xx xx:   xxx $xxxx
-        $227e3  xx xx xx:   xxx $xxxx,x
-        $227e6  xx xx:      xxx $xx
-        $227e8  xx xx xx:   xxx $xxxx,x
-        $227eb  xx xx:      xxx $xx
-        $227ed  xx xx xx:   xxx $xxxx,x
-        $227f0  xx xx:      xxx #$xx
-        $227f2  xx xx xx:   xxx $xxxx,x
-        $227f5  xx:         xxx
-        $227f6  xx:         xxx
-        $227f7  xx xx:      xxx #$xx
-        $227f9  xx xx:      xxx #$xx
-        $227fb  xx xx:      xxx $xx
-        $227fd  xx xx:      xxx #$xx
-        $227ff  xx xx xx:   xxx $xxxx
-        $22802  xx xx:      xxx + ; $22806
-        $22804  xx xx:      xxx #$xx
-+       $22806  xx:         xxx
-        $22807  xx xx:      xxx $xx
-        $22809  xx xx:      xxx $xx
-        $2280b  xx xx:      xxx #$xx
-        $2280d  xx xx:      xxx $xx
-        $2280f  xx xx:      xxx $xx
-        $22811  xx xx xx:   xxx EnableNMI_altbank11
-        $22814  xx xx xx:   xxx WaitForOAMDMA_altbank11
-        $22817  xx xx:      xxx $xx
+--      $227c0  xx xx:       xxx $xx
+        $227c2  xx xx:       xxx #$xx
+-       $227c4  xx xx:        xxx ($xx),y
+        $227c6  xx xx xx:     xxx $xxxx,y
+        $227c9  xx:           xxx
+        $227ca  xx:           xxx
+        $227cb  xx xx:       xxx - ; $227c4
+        $227cd  xx:          xxx
+        $227ce  xx:          xxx
+        $227cf  xx xx:       xxx $xx
+        $227d1  xx xx:       xxx $xx
+        $227d3  xx xx:       xxx #$xx
+        $227d5  xx xx:       xxx $xx
+        $227d7  xx xx:       xxx $xx
+        $227d9  xx xx xx:    xxx DisableNMI_altbank11
+        $227dc  xx xx:       xxx $xx
+        $227de  xx xx:       xxx $xx
+        $227e0  xx xx xx:    xxx $xxxx
+        $227e3  xx xx xx:    xxx $xxxx,x
+        $227e6  xx xx:       xxx $xx
+        $227e8  xx xx xx:    xxx $xxxx,x
+        $227eb  xx xx:       xxx $xx
+        $227ed  xx xx xx:    xxx $xxxx,x
+        $227f0  xx xx:       xxx #$xx
+        $227f2  xx xx xx:    xxx $xxxx,x
+        $227f5  xx:          xxx
+        $227f6  xx:          xxx
+        $227f7  xx xx:       xxx #$xx
+        $227f9  xx xx:       xxx #$xx
+        $227fb  xx xx:       xxx $xx
+        $227fd  xx xx:       xxx #$xx
+        $227ff  xx xx xx:    xxx $xxxx
+        $22802  xx xx:       xxx + ; $22806
+        $22804  xx xx:        xxx #$xx
++       $22806  xx:          xxx
+        $22807  xx xx:       xxx $xx
+        $22809  xx xx:       xxx $xx
+        $2280b  xx xx:       xxx #$xx
+        $2280d  xx xx:       xxx $xx
+        $2280f  xx xx:       xxx $xx
+        $22811  xx xx xx:    xxx EnableNMI_altbank11
+        $22814  xx xx xx:    xxx WaitForOAMDMA_altbank11
+        $22817  xx xx:       xxx $xx
         $22819  xx xx:      xxx -- ;$227c0
         $2281b  xx:         xxx
 ;;; --------------------------------
@@ -31730,21 +31730,21 @@ CreditsCopyTileLoop
         $22842  xx xx:      xxx $xx
         $22844  xx xx:      xxx $xx
 -       $22846  xx xx:      xxx $xx
-        $22848  xx xx:      xxx ($xx),y
-        $2284a  xx xx:      xxx $xx
-        $2284c  xx:         xxx
-        $2284d  xx xx:      xxx $xx
-        $2284f  xx xx xx:   xxx $23004,x
-        $22852  xx xx xx:   xxx $xxxx,y
-        $22855  xx xx xx:   xxx $230c4,x
-        $22858  xx xx xx:   xxx $xxxx,y
-        $2285b  xx xx xx:   xxx $23184,x
-        $2285e  xx xx xx:   xxx $xxxx,y
-        $22861  xx xx xx:   xxx $23244,x
-        $22864  xx xx xx:   xxx $xxxx,y
-        $22867  xx xx:      xxx $xx
-        $22869  xx xx:      xxx $xx
-        $2286b  xx xx:      xxx $xx
+        $22848  xx xx:       xxx ($xx),y
+        $2284a  xx xx:       xxx $xx
+        $2284c  xx:          xxx
+        $2284d  xx xx:       xxx $xx
+        $2284f  xx xx xx:    xxx $23004,x
+        $22852  xx xx xx:    xxx $xxxx,y
+        $22855  xx xx xx:    xxx $230c4,x
+        $22858  xx xx xx:    xxx $xxxx,y
+        $2285b  xx xx xx:    xxx $23184,x
+        $2285e  xx xx xx:    xxx $xxxx,y
+        $22861  xx xx xx:    xxx $23244,x
+        $22864  xx xx xx:    xxx $xxxx,y
+        $22867  xx xx:       xxx $xx
+        $22869  xx xx:       xxx $xx
+        $2286b  xx xx:       xxx $xx
         $2286d  xx xx:      xxx - ; $22846
         $2286f  xx:         xxx
         $22870  xx xx:      xxx $xx
@@ -31800,16 +31800,16 @@ CreditsCopyTileLoop
         $228d7  xx xx xx:   xxx WaitForOAMDMA_altbank11
         $228da  xx xx:      xxx $xx
         $228dc  xx xx:      xxx + ; $228e1
-        $228de  xx xx xx:   xxx CreditsCopyTileLoop ; $2283c
-;;; --------------------------------
+        $228de  xx xx xx:    xxx CreditsCopyTileLoop ; $2283c
+        ;;;                  --------------------------------
 CopyAttributesPalettesAndBanks
 +       $228e1  xx xx:      xxx #$xx
         $228e3  xx xx:      xxx #$xx
         ; Copies 40 bytes of attribute data
--       $228e5  xx xx:      xxx ($xx),y
-        $228e7  xx xx xx:   xxx $xxxx,y
-        $228ea  xx:         xxx
-        $228eb  xx:         xxx
+-       $228e5  xx xx:       xxx ($xx),y
+        $228e7  xx xx xx:    xxx $xxxx,y
+        $228ea  xx:          xxx
+        $228eb  xx:          xxx
         $228ec  xx xx:      xxx - ; $228e5
         $228ee  xx xx xx:   xxx DisableNMI_altbank11
         $228f1  xx xx:      xxx $xx
@@ -31831,27 +31831,27 @@ CopyAttributesPalettesAndBanks
         $22914  xx xx xx:   xxx WaitForOAMDMA_altbank11
         $22917  xx xx:      xxx #$xx
         ; Copy palette data into $0618 where it will be copied later into $6140
--       $22919  xx xx:      xxx ($xx),y
-        $2291b  xx xx xx:   xxx $xxxx,x
-        $2291e  xx:         xxx
-        $2291f  xx:         xxx
-        $22920  xx xx:      xxx #$xx
+-       $22919  xx xx:       xxx ($xx),y
+        $2291b  xx xx xx:    xxx $xxxx,x
+        $2291e  xx:          xxx
+        $2291f  xx:          xxx
+        $22920  xx xx:       xxx #$xx
         $22922  xx xx:      xxx - ; $22919
         $22924  xx xx:      xxx #$xx
         ; Copy the CHR nametable banks to the update buffer
--       $22926  xx xx:      xxx ($xx),y
-        $22928  xx xx xx:   xxx $xxxx,x
-        $2292b  xx:         xxx
-        $2292c  xx:         xxx
-        $2292d  xx xx:      xxx #$xx
+-       $22926  xx xx:       xxx ($xx),y
+        $22928  xx xx xx:    xxx $xxxx,x
+        $2292b  xx:          xxx
+        $2292c  xx:          xxx
+        $2292d  xx xx:       xxx #$xx
         $2292f  xx xx:      xxx - ; $22926
         $22931  xx xx:      xxx #$xx
         ; Copy the CHR sprite banks to the update buffer
--       $22933  xx xx:      xxx ($xx),y
-        $22935  xx xx xx:   xxx $xxxx,x
-        $22938  xx:         xxx
-        $22939  xx:         xxx
-        $2293a  xx xx:      xxx #$xx
+-       $22933  xx xx:       xxx ($xx),y
+        $22935  xx xx xx:    xxx $xxxx,x
+        $22938  xx:          xxx
+        $22939  xx:          xxx
+        $2293a  xx xx:       xxx #$xx
         $2293c  xx xx:      xxx - ; $22933
         $2293e  xx:         xxx
         $2293f  xx:         xxx
@@ -31867,8 +31867,8 @@ CreditsAnimateSpriteFromTable
         $2294c  xx:         xxx
         $2294d  xx xx:      xxx #$xx
         $2294f  xx xx xx:   xxx $xxxx
--       $22952  xx xx xx:   xxx $xxxx,x
-        $22955  xx:         xxx
+-       $22952  xx xx xx:    xxx $xxxx,x
+        $22955  xx:          xxx
         $22956  xx xx:      xxx - ; $22952
         $22958  xx xx xx:   xxx OAMWriteTable,y
         $2295b  xx xx:      xxx $xx
@@ -31881,45 +31881,45 @@ CreditsLoadSpriteUntilFF
         $22969  xx xx:      xxx ($xx),y
         $2296b  xx xx:      xxx #$xx
         $2296d  xx xx:      xxx + ; $22970
-        $2296f  xx:         xxx
-;;; --------------------------------
+        $2296f  xx:          xxx
+        ;;;                  ---
 +       $22970  xx xx xx:   xxx $xxxx,x
         $22973  xx:         xxx
         $22974  xx xx:      xxx ($xx),y
         $22976  xx xx:      xxx + ; $22980
-        $22978  xx:         xxx
-        $22979  xx xx:      xxx $xx
-        $2297b  xx xx:      xxx ++ ; $22990
-        $2297d  xx xx xx:   xxx $229c9
-;;; --------------------------------
-+       $22980  xx xx:      xxx #$xx
-        $22982  xx xx:      xxx $xx
-        $22984  xx xx:      xxx $xx
-        $22986  xx:         xxx
-        $22987  xx xx:      xxx $xx
-        $22989  xx xx:      xxx $xx
-        $2298b  xx xx:      xxx $xx
-        $2298d  xx xx xx:   xxx $229c9
-;;; --------------------------------
+        $22978  xx:           xxx
+        $22979  xx xx:        xxx $xx
+        $2297b  xx xx:        xxx ++ ; $22990
+        $2297d  xx xx xx:      xxx $229c9
+        ;;;                    ----------
++       $22980  xx xx:       xxx #$xx
+        $22982  xx xx:       xxx $xx
+        $22984  xx xx:       xxx $xx
+        $22986  xx:          xxx
+        $22987  xx xx:       xxx $xx
+        $22989  xx xx:       xxx $xx
+        $2298b  xx xx:       xxx $xx
+        $2298d  xx xx xx:    xxx $229c9
+        ;;;                  ----------
 ++      $22990  xx xx xx:   xxx $xxxx,x
         $22993  xx:         xxx
         $22994  xx xx:      xxx ($xx),y
-        $22996  xx xx:      xxx $xx
-        $22998  xx:         xxx
-        $22999  xx xx:      xxx $xx
-        $2299b  xx xx:      xxx $xx
-        $2299d  xx xx xx:   xxx $229c9
-;;; --------------------------------
-        $229a0  xx xx:      xxx #$xx
-        $229a2  xx xx:      xxx $xx
-        $229a4  xx xx:      xxx $xx
-        $229a6  xx:         xxx
-        $229a7  xx xx:      xxx $xx
-        $229a9  xx xx:      xxx $xx
-        $229ab  xx xx:      xxx $xx
-        $229ad  xx xx xx:   xxx $229c9
-;;; --------------------------------
-        $229b0  xx xx xx:   xxx $xxxx,x
+        $22996  xx xx:      xxx + ; $229a0
+        $22998  xx:           xxx
+        $22999  xx xx:        xxx $xx
+        $2299b  xx xx:        xxx ++ ; $229b0
+        $2299d  xx xx xx:      xxx $229c9
+        ;;;                    ----------
++       $229a0  xx xx:       xxx #$xx
+        $229a2  xx xx:       xxx $xx
+        $229a4  xx xx:       xxx $xx
+        $229a6  xx:          xxx
+        $229a7  xx xx:       xxx $xx
+        $229a9  xx xx:       xxx $xx
+        $229ab  xx xx:       xxx $xx ; !! c9 a9 is `cmp #$a9`, irrelevant?
+        $229ad  xx xx xx:    xxx $229c9
+        ;;;                  ----------
+++      $229b0  xx xx xx:   xxx $xxxx,x
         $229b3  xx:         xxx
         $229b4  xx xx xx:   xxx $xxxx
         $229b7  xx xx:      xxx $xx
@@ -31949,8 +31949,8 @@ WriteOAMDataFromTable
         ; Clear out OAM before writing
         $229d9  xx xx:      xxx #$xx
         $229db  xx xx xx:   xxx $xxxx
--       $229de  xx xx xx:   xxx $xxxx,x
-        $229e1  xx:         xxx
+-       $229de  xx xx xx:    xxx $xxxx,x
+        $229e1  xx:          xxx
         $229e2  xx xx:      xxx - ; $229de
         $229e4  xx xx xx:   xxx OAMWriteTable,y
         $229e7  xx xx:      xxx $xx
@@ -31961,8 +31961,8 @@ WriteOAMDataFromTable
         $229f3  xx xx:      xxx ($xx),y
         $229f5  xx xx:      xxx #$xx
         $229f7  xx xx:      xxx WriteOAMDataCopyLoop
-        $229f9  xx:         xxx
-;;; --------------------------------
+        $229f9  xx:          xxx
+        ;;;                  ---
 WriteOAMDataCopyLoop
         $229fa  xx xx xx:   xxx $xxxx,x
         $229fd  xx:         xxx
@@ -32022,18 +32022,18 @@ WriteOAMDataCopyLoop
 ;;; --------------------------------
 CopyPaletteFrom0618AndReturn
         $22a55  xx xx:      xxx #$xx
--       $22a57  xx xx xx:   xxx $xxxx,x
-        $22a5a  xx xx xx:   xxx $xxxx,x
-        $22a5d  xx:         xxx
-        $22a5e  xx xx:      xxx -
+-       $22a57  xx xx xx:    xxx $xxxx,x
+        $22a5a  xx xx xx:    xxx $xxxx,x
+        $22a5d  xx:          xxx
+        $22a5e  xx xx:      xxx - ; $22a57
         $22a60  xx:         xxx
 ;;; --------------------------------
 CopyPaletteFrom0618
         $22a61  xx xx:      xxx #$xx
--       $22a63  xx xx xx:   xxx $xxxx,x
-        $22a66  xx xx:      xxx #$xx
-        $22a68  xx xx xx:   xxx $xxxx,x
-        $22a6b  xx:         xxx
+-       $22a63  xx xx xx:    xxx $xxxx,x
+        $22a66  xx xx:       xxx #$xx
+        $22a68  xx xx xx:    xxx $xxxx,x
+        $22a6b  xx:          xxx
         $22a6c  xx xx:      xxx - ; $22a63
         $22a6e  xx xx:      xxx #$xx
         $22a70  xx xx xx:   xxx $xxxx
@@ -32044,30 +32044,30 @@ CreditsMode_01
 ;; since its writing to the palette every 8 frames and increasing the value of the colors
         $22a74  xx xx:      xxx $xx
         $22a76  xx xx:      xxx #$xx
-        $22a78  xx xx:      xxx +
-        $22a7a  xx:         xxx
-;;; --------------------------------
+        $22a78  xx xx:      xxx + ; $22a7b
+        $22a7a  xx:          xxx
+        ;;;                  ---
 +       $22a7b  xx xx:      xxx #$xx
         $22a7d  xx xx xx:   xxx $xxxx
         $22a80  xx xx:      xxx #$xx
-        $22a82  xx xx xx:   xxx $xxxx,x
-        $22a85  xx xx xx:   xxx $xxxx,x
-        $22a88  xx xx:      xxx +
-        $22a8a  xx xx xx:   xxx $xxxx
-        $22a8d  xx xx xx:   xxx ++ ; $22a96
-;;; --------------------------------
-+       $22a90  xx:         xxx
-        $22a91  xx xx:      xxx #$xx
-        $22a93  xx xx xx:   xxx $xxxx,x
-++      $22a96  xx:         xxx
+-       $22a82  xx xx xx:    xxx $xxxx,x
+        $22a85  xx xx xx:    xxx $xxxx,x
+        $22a88  xx xx:       xxx + ; $22a90
+        $22a8a  xx xx xx:      xxx $xxxx
+        $22a8d  xx xx xx:      xxx ++ ; $22a96
+        ;;;                    ---------------
++       $22a90  xx:           xxx
+        $22a91  xx xx:        xxx #$xx
+        $22a93  xx xx xx:     xxx $xxxx,x
+++      $22a96  xx:          xxx
         $22a97  xx xx:      xxx - ; $22a82
         $22a99  xx xx xx:   xxx $xxxx
         $22a9c  xx xx:      xxx #$xx
-        $22a9e  xx xx:      xxx +
-        $22aa0  xx:         xxx
-;;; --------------------------------
+        $22a9e  xx xx:      xxx + ; $22aa1
+        $22aa0  xx:          xxx
+        ;;;                  ---
 CreditsChangeToMode0
-        $22aa1  xx xx:      xxx #$xx
++       $22aa1  xx xx:      xxx #$xx
         $22aa3  xx xx xx:   xxx $xxxx
         $22aa6  xx:         xxx
 ;;; --------------------------------
@@ -32082,35 +32082,35 @@ CreditsMode_02
         $22aad  xx xx:      xxx $xx
         $22aaf  xx xx:      xxx #$xx
         $22ab1  xx xx:      xxx + ; $22ab4
-        $22ab3  xx:         xxx
-;;; --------------------------------
+        $22ab3  xx:          xxx
+        ;;;                  ---
 +       $22ab4  xx xx:      xxx #$xx
         $22ab6  xx xx xx:   xxx $xxxx
         $22ab9  xx xx:      xxx #$xx
         $22abb  xx xx xx:   xxx $xxxx,x
         $22abe  xx xx:      xxx #$xx
         $22ac0  xx xx:      xxx + ; $22ac8
-        $22ac2  xx xx xx:   xxx $xxxx
-        $22ac5  xx xx xx:   xxx ++ ; $22adc
-;;; --------------------------------
-+       $22ac8  xx:         xxx
-        $22ac9  xx xx:      xxx #$xx
-        $22acb  xx xx:      xxx + ; $22ad5
-        $22acd  xx xx:      xxx #$xx
-        $22acf  xx xx xx:   xxx $xxxx,x
-        $22ad2  xx xx xx:   xxx ++ ; $22adc
-;;; --------------------------------
-+       $22ad5  xx:         xxx
-        $22ad6  xx:         xxx
-        $22ad7  xx xx:      xxx #$xx
-        $22ad9  xx xx xx:   xxx $xxxx,x
+        $22ac2  xx xx xx:     xxx $xxxx
+        $22ac5  xx xx xx:     xxx ++ ; $22adc
+        ;;;                   ---------------
++       $22ac8  xx:          xxx
+        $22ac9  xx xx:       xxx #$xx
+        $22acb  xx xx:       xxx + ; $22ad5
+        $22acd  xx xx:        xxx #$xx
+        $22acf  xx xx xx:     xxx $xxxx,x
+        $22ad2  xx xx xx:     xxx ++ ; $22adc
+        ;;;                   ---------------
++       $22ad5  xx:          xxx
+        $22ad6  xx:          xxx
+        $22ad7  xx xx:       xxx #$xx
+        $22ad9  xx xx xx:    xxx $xxxx,x
 ++      $22adc  xx:         xxx
         $22add  xx xx:      xxx - ;$22abb
         $22adf  xx xx xx:   xxx $xxxx
         $22ae2  xx xx:      xxx #$xx
         $22ae4  xx xx:      xxx + ; $22ae7
-        $22ae6  xx:         xxx
-;;; --------------------------------
+        $22ae6  xx:          xxx
+        ;;;                  ---
 ReturnToMode0
 +       $22ae7  xx xx:      xxx #$xx
         $22ae9  xx xx xx:   xxx $xxxx
@@ -33736,9 +33736,9 @@ ResetNMTBuffer
 ; Waits for NMT write buffer to empty, then resets the index
 ; to zero. They do this because they want to write two entries
 ; without bumping the pointer twice. :shrug:
--       $26092  xx xx:      xxx $xx
-        $26094  xx xx:      xxx $xx
-        $26096  xx xx:      xxx -
+-       $26092  xx xx:       xxx $xx
+        $26094  xx xx:       xxx $xx
+        $26096  xx xx:      xxx - ; $26092
         $26098  xx xx xx:   xxx DisableNMI_alt2
         $2609b  xx xx:      xxx #$xx
         $2609d  xx xx:      xxx $xx
@@ -36428,8 +36428,8 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e47  xx xx xx:   xxx StageNametableWriteFromTable
         $27e4a  xx xx:      xxx #$xx
         $27e4c  xx xx:      xxx #$xx
--       $27e4e  xx xx xx:   xxx $xxxx,y
-        $27e51  xx:         xxx
+-       $27e4e  xx xx xx:    xxx $xxxx,y
+        $27e51  xx:          xxx
         $27e52  xx xx:      xxx - ; $27e4e
         $27e54  xx xx xx:   xxx RequestAttributeTable0Write
         $27e57  xx xx:      xxx #$xx
@@ -36445,28 +36445,28 @@ MainGameModeJump_1e_ThrustCrystalis
         $27e6f  xx xx:      xxx #$xx
         $27e71  xx xx xx:   xxx BankSwitch8k_8000
         ; walk simea to the core of the reactor
--       $27e74  xx xx xx:   xxx $xxxx
-        $27e77  xx xx xx:   xxx WaitForOAMDMA
-        $27e7a  xx xx:      xxx #$xx
-        $27e7c  xx xx xx:   xxx $xxxx
-        $27e7f  xx xx:      xxx #$xx
-        $27e81  xx xx xx:   xxx $xxxx
-        $27e84  xx xx:      xxx #$xx
-        $27e86  xx xx:      xxx $xx
-        $27e88  xx xx:      xxx + ; $27e96
-        $27e8a  xx xx:      xxx #$xx
-        $27e8c  xx xx:      xxx #$xx
-        $27e8e  xx xx xx:   xxx $xxxx
-        $27e91  xx xx:      xxx #$xx
-        $27e93  xx xx xx:   xxx $xxxx
-+       $27e96  xx:         xxx
-        $27e97  xx:         xxx
-        $27e98  xx xx:      xxx $xx
-        $27e9a  xx xx:      xxx $xx
-        $27e9c  xx xx:      xxx $xx
-        $27e9e  xx xx xx:   xxx DrawAllObjectSprites
-        $27ea1  xx xx:      xxx $xx
-        $27ea3  xx xx:      xxx #$xx
+-       $27e74  xx xx xx:    xxx $xxxx
+        $27e77  xx xx xx:    xxx WaitForOAMDMA
+        $27e7a  xx xx:       xxx #$xx
+        $27e7c  xx xx xx:    xxx $xxxx
+        $27e7f  xx xx:       xxx #$xx
+        $27e81  xx xx xx:    xxx $xxxx
+        $27e84  xx xx:       xxx #$xx
+        $27e86  xx xx:       xxx $xx
+        $27e88  xx xx:       xxx + ; $27e96
+        $27e8a  xx xx:        xxx #$xx
+        $27e8c  xx xx:        xxx #$xx
+        $27e8e  xx xx xx:     xxx $xxxx
+        $27e91  xx xx:        xxx #$xx
+        $27e93  xx xx xx:     xxx $xxxx
++       $27e96  xx:          xxx
+        $27e97  xx:          xxx
+        $27e98  xx xx:       xxx $xx
+        $27e9a  xx xx:       xxx $xx
+        $27e9c  xx xx:       xxx $xx
+        $27e9e  xx xx xx:    xxx DrawAllObjectSprites
+        $27ea1  xx xx:       xxx $xx
+        $27ea3  xx xx:       xxx #$xx
         $27ea5  xx xx:      xxx - ; $27e74
         $27ea7  xx xx:      xxx #$xx
         $27ea9  xx xx xx:   xxx $xxxx
@@ -41748,7 +41748,7 @@ AudioOutputVolume
 ;;; Sets the volume max (used as a lookup in the volume table with the envelope)
 AudioJumpTable_8X
         $30532  xx xx:      xxx $xx
-        $30534  xx xx:      xxx + ; $3054c
+        $30534  xx xx:       xxx + ; >rts ($3054c)
         ; The 8x command is in $f3, so remove the `8` (upper 4 bits)
         $30536  xx xx:      xxx $xx
         $30538  xx xx:      xxx #$xx
@@ -64049,7 +64049,7 @@ ScreenModeJumpTable_07
         $3f700  xx xx:      xxx #$xx
         $3f702  xx xx xx:   xxx SetIRQCallback
         ;; --------------------------------
-        ;; Set IRQ callback to the statusbar handler
+        ;; Set IRQ callback to the statusbar handler (01, $3f488)
 +       $3f705  xx xx:      xxx #$xx
         $3f707  xx xx xx:   xxx SetIRQCallback
         $3f70a  xx xx:      xxx #$xx

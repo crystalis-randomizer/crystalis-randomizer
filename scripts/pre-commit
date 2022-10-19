@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# Pre-commit hook
-# Refuse to commit if Crystalis.s exists and is writable
-
-top=$(git rev-parse --show-toplevel)
-if [ -e "$top/Crystalis.s" ]; then
-  "$top/scripts/update.sh" check
-fi

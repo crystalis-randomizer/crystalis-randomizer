@@ -14,8 +14,7 @@ if [ "$1" = "--copy" ]; then
 fi
 
 if [ -d .git/hooks ]; then
-  rm -f .git/hooks/pre-{commit,push}
-  ln -s ../../scripts/pre-commit .git/hooks/pre-commit
+  rm -f .git/hooks/pre-push
   ln -s ../../scripts/pre-push .git/hooks/pre-push
 fi
 

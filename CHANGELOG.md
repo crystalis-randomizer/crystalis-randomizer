@@ -79,6 +79,12 @@
     * Two levels can be gained at the same time now, if scaling is high enough.
     * Enemy HP and name are displayed at the bottom of the HUD.
 * Simple sprite swapping to allow playing as Mesia or other custom sprites.
+* Stat tracking.
+    * Results are displayed at end of the credits.
+    * Pressing Start during the credits will skip the movie and jump straight
+      to the stats.
+    * Various known issues: the checks count is inaccurate, and stats can be
+      corrupted when restarting or using save/load (rather than checkpoint).      
 * Sword is now colored based on the element, making it easy to follow on stream.
 * Wall elements can now optionally provide audible cues (optional `Qw` flag).
 * Flyers now spawn in a different random off-screen location every time.

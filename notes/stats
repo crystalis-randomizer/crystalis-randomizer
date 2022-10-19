@@ -1,0 +1,33 @@
+Merge stats into latest
+
+1. Remove NMI fixup
+   - OAM disable?
+   - Nmt stuff?
+2. Need to understand credits sequence tables (22b95..23458 or so)
+   - Fix deterministic stats change to not poke directly into PRG
+   - (along those lines, we'll want to fix linker to output a patch,
+      will need to replace Link.orig with a slice-getter function,
+      and we can just hardcode a few select bytes in the ROM snapshot)
+   --> comments for The End screen explains format
+       - $fx in the [0..c0) table is some other attribute
+
+could restructure timestamp list to 4 bytes w/ id's interleaved
+should consider mirroring attribute data from segment 11 to 3d?
+
+Three main changes
+0. move *.s to asm/
+1. NMI changes all disable/enable NMI to soft version -> drop
+   - vanilla NMI had two flags to wait for OAM -> consolidate with NMI wait
+2. Move everything in NMI to extended bank
+   - (adds a few cycles, but fewer than we saved elsewhere)
+3. IRQ rewrite
+
+For stattracker.s
+ - put hooks at top, drawing at bottom
+
+Needed tiles to add a few more tiles for border
+ - ground image
+ - bottom 4 tiles of rabbit scene -> were 4 unique grass tiles
+ - double-buffers the final scene w/ text to get instant pop
+
+Need a better PRG space debugger

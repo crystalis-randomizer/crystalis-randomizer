@@ -365,6 +365,7 @@ export class Rom {
     free(a, $0f, 0xa200, 0xa3c0);
     // ItemMenuName
     free(a, $10, 0x911a, 0x9468);
+
     // keep item $49 "        " which is actually used somewhere?
     // writer.alloc(0x21471, 0x214f1); // TODO - do we need any of this?
     // ItemMessageName

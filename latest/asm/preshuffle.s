@@ -238,23 +238,47 @@ PatchStartItemGet:
   lda CheckToItemGetMap,x
   tay
   cmp #$70
-  bcc +
+  bcc @RegularItem
+    ; Mimics are the 16 objects from $70 to $80, so use the Powers of Two lookup to convert from the mimic to
+    ; a mask for the byte. $70-$77 in the lo byte $78-$7f in hi
+.ifdef _STATS_TRACKING
+    cmp #$78
+    bcc +
+      sec
+      sbc #$78
+      tay
+      lda PowersOfTwo,y
+      ora StatsMimicsHi
+      sta StatsMimicsHi
+      bcs @SkipToSpawnMimic ; unconditional
++   sec
+    sbc #$70
+    tay
+    lda PowersOfTwo,y
+    ora StatsMimicsLo
+    sta StatsMimicsLo
+.endif
    ;; spawn mimic instead - need to back out of 3 layers of calls
    ;; TODO - keep track of which mimic so we can set the flag?
-   pla
-   pla
-   pla
-   pla
-   pla
-   pla
-   jmp SpawnMimic
-+ cmp #$49
+@SkipToSpawnMimic:
+    pla
+    pla
+    pla
+    pla
+    pla
+    pla
+    jmp SpawnMimic
+@RegularItem:
+  cmp #$49
   bcc +
    lda OriginalItemGetTable,y  ; NOTE: y>=$49, so this is really [$9daf...)
 + sta $29
   sta $07dc   ; TODO - can we ditch the table at 3d45c now?
+.ifdef _STATS_TRACKING
+  jmp CheckForStatTrackedItems
+.else
   rts         ;      - what about other writes to 07dc?
-
+.endif ; _STATS_TRACKING
 ;; TODO - why is this here?
 
 .org $d3f6              ; Within game mode jump 07 (trigger / chest)
@@ -676,6 +700,15 @@ CheckOpelStatue:
 FREE_UNTIL $b91c
 .endif
 
+.ifdef _STATS_TRACKING
+.org $b91e ; PlayerDeath
+  jsr PatchPlayerDeath
+
+.reloc
+PatchPlayerDeath:
+  inc StatsDeaths
+  jmp StartAudioTrack
+.endif ; _STATS_TRACKING
 
 ;;; Fix the graphics glitch from getting a sword while changed.
 .org $bc04
@@ -3628,6 +3661,16 @@ PrepareGameInitialDataTable:
   .byte 1
   .word ($0051)
   .byte $00
+.ifdef _STATS_TRACKING
+  ; We need to write these stats twice to prevent NMI shenanigans
+.repeat 2
+  .byte PERMANENT_LENGTH
+  .word (StatTrackingBase)
+  .repeat 5
+    .byte $00
+  .endrepeat
+.endrepeat
+.endif ; _STATS_TRACKING
   .byte 0
 .ifdef _MONEY_AT_START
 .pushseg "17"
@@ -3726,44 +3769,3 @@ PatchClearEnemyHPRam:
       pla
 +   jmp $972d ; AdHocSpawnObject
 .endif
-
-
-;;; NOTE: This is an alternative implementation of SelectCHRRomBanks
-;;; that is 4 bytes shorter than the original, but way longer than
-;;; the loop above.
-  ;; ldx #$80
-  ;; stx $53
-  ;; ldx #$00
-  ;; stx $52
-  ;; txa
-  ;; sta ($52,x)
-  ;; tay
-  ;; iny
-  ;; lda $07f0
-  ;; sta ($52),y
-  ;; lda #$01
-  ;; sta ($52,x)
-  ;; lda $07f1
-  ;; sta ($52),y
-  ;; lda #$02
-  ;; sta ($52,x)
-  ;; lda $07f2
-  ;; sta ($52),y
-  ;; lda #$03
-  ;; sta ($52,x)
-  ;; lda $07f3
-  ;; sta ($52),y
-  ;; lda #$04
-  ;; sta ($52,x)
-  ;; lda $07f4
-  ;; sta ($52),y
-  ;; lda #$05
-  ;; sta ($52,x)
-  ;; lda $07f5
-  ;; sta ($52),y
-  ;; lda $50
-  ;; sta ($52,x)
-  ;; rts
-
-;; ScalingLevels = SCALING_LEVELS
-;; .export ScalingLevels

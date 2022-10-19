@@ -8,7 +8,7 @@ import {Address, Data, Segment} from './util.js';
 import {Rom} from '../rom.js';
 import {assertNever} from '../util.js';
 
-const {$0e, $0f, $10, $1a} = Segment;
+const {$0e, $0f, $10, $1a, $fe, $ff} = Segment;
 
 const ITEM_USE_JUMP_TABLE = Address.of($0e, 0x8399);
 const ITEM_USE_DATA_TABLE = Address.of($0e, 0x9be2);
@@ -184,7 +184,7 @@ export class Item extends Entity {
 
     const menuNameEncoded =
         MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(d, e), this.menuName);
-    a.segment($10);
+    a.segment($10, $fe, $ff); // TODO(sdh): consolidate these back into just $10
     a.reloc(`ItemMenuName_${hex(this.id)}`);
     const menuNameAddr = a.pc();
     a.byte(menuNameEncoded, 0xff);

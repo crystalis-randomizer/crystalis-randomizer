@@ -69,9 +69,13 @@ JmpSeg38:
 ;;; Clear out some space in segment 13
 .segment "12", "13"
 
-RELOCATE_SEG38 [$aa16, $aa30) $a7d4 $a7d6
-RELOCATE [$abb4, $abea) $a054
-RELOCATE [$abea, $ac07) $a056
+;;; TODO(sdh): These were commented out by jrowe in stats branch
+;;; I'm not sure why.  They're intended to move some of the title
+;;; movie code into the expanded PRG.
+; RELOCATE_SEG38 [$aa16, $aa30) $a7d4 $a7d6
+; RELOCATE [$abb4, $abea) $a054
+; RELOCATE [$abea, $ac07) $a056
+
 
 ;;; TODO - this does not work?
 ;; RELOCATE_SEG38 [$d659, $d6a8) $d575

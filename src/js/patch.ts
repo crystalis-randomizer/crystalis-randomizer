@@ -199,6 +199,7 @@ function defines(flags: FlagSet,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _SOFT_RESET_SHORTCUT: true,
+    _STATS_TRACKING: flags.hasStatTracking(),
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
     _TINK_MODE: !flags.guaranteeMatchingSword(),
     _TRAINER: flags.trainer(),
@@ -356,6 +357,7 @@ async function shuffleInternal(rom: Uint8Array,
       for (const [slot, item] of fill) {
         parsed.slots[slot & 0xff] = item & 0xff;
       }
+      parsed.slots.setCheckCount(fill.size);
     } else {
       return [rom, -1];
       //console.error('COULD NOT FILL!');
@@ -447,11 +449,12 @@ async function shuffleInternal(rom: Uint8Array,
     const toks = new TokenStream();
     toks.enter(TokenSource.concat(
         new Tokenizer(flagFile, 'flags.s'),
-        await tokenizer('init.s'),
-        await tokenizer('alloc.s'),
-        await tokenizer('preshuffle.s'),
-        await tokenizer('postparse.s'),
-        await tokenizer('postshuffle.s')));
+        await tokenizer('../asm/init.s'),
+        await tokenizer('../asm/alloc.s'),
+        await tokenizer('../asm/stattracker.s'),
+        await tokenizer('../asm/preshuffle.s'),
+        await tokenizer('../asm/postparse.s'),
+        await tokenizer('../asm/postshuffle.s')));
     const pre = new Preprocessor(toks, asm);
     asm.tokens(pre);
     return asm.module();

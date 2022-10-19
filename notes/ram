@@ -156,6 +156,7 @@ while the $28 version copies from RAM $21,20,24,25.
 $0c..$0d
 --------
 Temporary variables for NMI
+ - stats tracker frees $0d but uses it for something else
 
 
 $10..$13
@@ -333,6 +334,8 @@ In IRQ callback mode 7, these are written to the CHR rom banks, rather than $7f0
 
 $60
 ---
+**stats tracker frees this (uses $06 instead)**
+
 If non-zero, exit NMI handler immediately.
  - happens during screen scrolls and transitions
  - set to 1 at 3c73b, 0 at 3c75b

@@ -190,6 +190,10 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {
+  // Check that we haven't done this already (NOTE: this is an ugly hack
+  // that's only required because we're touching the PRG array directly).
+  if (rom.prg[0x22eea] === 0x28) return;
+
   // Change the bottom right 16x16 square of the rabbit hopping through the field
   // in the credits to use a different square. The original had a custom grass
   // graphic that uses 4 tiles and frankly is hard to notice at all.

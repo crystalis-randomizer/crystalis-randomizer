@@ -46,6 +46,8 @@
       Lamp is required to spawn Kensu in the beach house, who holds an item.
     * Riding the dolphin is now required to get into Evil Spirit Island.  If
       you're flying, you'll get a message that you can't get into the cave.
+    * Riding the dolphin is also required to find the underwater item in the
+      channel behind Portoa.
 * Tinking no longer damages enemies at all.
     * `Ns` enables "tink mode", but will also potentially add tinking to logic.
 * New randomization options:

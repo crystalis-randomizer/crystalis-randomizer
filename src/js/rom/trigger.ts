@@ -11,7 +11,7 @@ const UNUSED_TRIGGERS = new Set([
 ]);
 
 export namespace Trigger {
-  export type Custom = 'mezame'|'zombie warp';
+  export type Custom = 'mezame'|'zombie warp'|'channel item';
 }
 
 export class Trigger extends Entity {

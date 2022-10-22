@@ -21,6 +21,7 @@ export function fixDialog(rom: Rom) {
       RepairedStatue,
       SlimedKensu,
       StomFightReward,
+      UndergroundChannelUnderwaterChest,
       ZebuAtWindmill,
     },
     npcs: {
@@ -132,6 +133,14 @@ export function fixDialog(rom: Rom) {
 
   // TODO - shuffle which item reconstructs which other?
   replaceMessage('20:06', 'Statue of Gold', item(RepairedStatue));
+
+  // Find the dolphin underground channel message.
+  const dolphinChannelTrigger = rom.allocatedTriggers.get('channel item');
+  if (dolphinChannelTrigger != null) {
+    replaceMessage(rom.trigger(dolphinChannelTrigger).message.mid,
+                   '[3b:Love Pendant]',
+                   item(UndergroundChannelUnderwaterChest));
+  }
 
   // TODO - consider warping on a random sword? - message 1c:11
 

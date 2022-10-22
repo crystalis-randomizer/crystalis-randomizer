@@ -165,6 +165,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.fogLampNotRequired()) fogLampNotRequired(rom, flags);
 
   evilSpiritIslandRequiresDolphin(rom);
+  channelItemRequiresDolphin(rom);
   simplifyInvisibleChests(rom);
   addCordelWestTriggers(rom, flags);
   if (flags.disableRabbitSkip()) fixRabbitSkip(rom);
@@ -818,6 +819,23 @@ function evilSpiritIslandRequiresDolphin(rom: Rom) {
   rom.messages.parts[0x1d][0x10].text = `The cave entrance appears
 to be underwater. You'll
 need to swim.`;
+}
+
+function channelItemRequiresDolphin(rom: Rom) {
+  const trigger = rom.nextFreeTrigger('channel item');
+  trigger.used = true;
+  trigger.conditions =
+      [rom.flags.CurrentlyRidingDolphin.id,
+       ~rom.flags.UndergroundChannelUnderwaterChest.id]; // ~0x13b
+  const message = rom.messages.alloc();
+  message.text = 'Dolphin: {:HERO:}, I just found a [3b:Love Pendant] under the water!';
+  trigger.message =
+      MessageId.of({part: message.part, index: message.id, action: 0xf});
+  const spawn = rom.locations.UndergroundChannel.spawns.find(s => s.isChest())!;
+  spawn.data[2] = 2; // set to a trigger
+  spawn.yt++; // move it down one tile
+  spawn.id = trigger.id;
+  rom.itemGets.actionGrants.set(trigger.id, 0x3b);
 }
 
 function leafElderInSabreHeals(rom: Rom): void {

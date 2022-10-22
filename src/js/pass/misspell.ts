@@ -73,7 +73,7 @@ const MONSTERS: ReadonlyMap<string, string[]> = new Map([
   ['Mummy', ['Tornel Hugger']],
   ['Robot Sentry', ['C-3PO', 'T-1000', 'Johnny 5']],
   ['Robot Enforcer', ['ED-209', 'R2-D2', 'Agent Smith']],
-  ['Robocopter', ['Cylon Drone', 'Megatron', 'Vision']],
+  ['Robocopter', ['Cylon Drone', 'Megatron', 'Roflcopter', 'Roflcopter', 'Roflcopter']],
   ['DYNA', ['GLaDOS', 'HAL-9000', 'Multivac']],
 ]);
 
@@ -158,6 +158,10 @@ function replaceEnemyName(rom: Rom, replaceFn: ReplaceFn) {
 }
 
 function misspellCharacters(rom: Rom, random: Random) {
+  // While we're at it, let's just add Rachel's name into her dialog.
+  const rachelMessage = rom.messages.parts[0][0x18];
+  rachelMessage.text =
+      'Rachel: ' + rachelMessage.text.replace('is the village of', 'village is');
   // Flatten the map so that characters with more options get
   // overrepresented.  Also add a "random transposition" option.
   const choices: [string, string][] =

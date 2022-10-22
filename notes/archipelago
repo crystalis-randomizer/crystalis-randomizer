@@ -39,3 +39,24 @@ Serializing ROM object
 
 Client
  - knowing which parts of memory are important to check
+
+======
+
+Dealing with the ROM input issue:
+ - a two-pass shuffle would allow minimizing the data in
+   the serialized Rom object.
+What is the required input/output of a pre-shuffle?
+Inputs:
+ - Imported labels that must be provided elsewhere
+Outputs:
+ - (serialized) Rom
+   - possibly just map of extracted data tables
+ - Map of exported labels to address
+ - Map of where the imported labels show up
+ - The patched ROM itself, obvi
+
+This will prevent optimizing the free space, but we could
+potentially be very efficient about defragging early on?
+If there's only a single large chunk of free space in each
+block then we can dispense with the fancy linker and just
+write stupidly.

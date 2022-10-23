@@ -113,5 +113,36 @@ export namespace Cpu {
     txa: {imp: 0x8a},
     txs: {imp: 0x9a},
     tya: {imp: 0x98},
+    // extended instructions
+    slo: {abs: 0x0f, abx: 0x1f, aby: 0x1b, // sometimes `aso`
+          zpg: 0x07, zpx: 0x17, inx: 0x03, iny: 0x13},
+    rla: {abs: 0x2f, abx: 0x3f, aby: 0x3b,
+          zpg: 0x27, zpx: 0x37, inx: 0x23, iny: 0x33},
+    sre: {abs: 0x4f, abx: 0x5f, aby: 0x5b, // sometimes `lse`
+          zpg: 0x47, zpx: 0x57, inx: 0x43, iny: 0x53},
+    rra: {abs: 0x6f, abx: 0x7f, aby: 0x7b,
+          zpg: 0x67, zpx: 0x77, inx: 0x63, iny: 0x73},
+    sax: {abs: 0x8f, zpg: 0x87, zpy: 0x97, inx: 0x83}, // sometimes `axs`
+    lax: {abs: 0xaf, aby: 0xbf, zpg: 0xa7,
+          zpy: 0xb7, inx: 0xa3, iny: 0xb3},
+    dcp: {abs: 0xcf, abx: 0xdf, aby: 0xdb, // sometimes `dcm`
+          zpg: 0xc7, zpx: 0xd7, inx: 0xc3, iny: 0xd3},
+    isc: {abs: 0xef, abx: 0xff, aby: 0xfb, // sometimes `ins`
+          zpg: 0xe7, zpx: 0xf7, inx: 0xe3, iny: 0xf3},
+    alr: {imm: 0x4b},
+    arr: {imm: 0x6b},
+    axs: {imm: 0xcb}, // sometimes `sax`
+    tas: {aby: 0x9b},
+    shy: {abx: 0x9c}, // sometimes `say`
+    shx: {aby: 0x9e}, // sometimes `xas`
+    ahx: {aby: 0x9f, iny: 0x93}, // sometimes `axa`
+    anc: {imm: 0x2b}, // also 0b is same thing
+    las: {aby: 0xbb},
+    // there's also a handful of extra nop's, skb's, and skw's:
+    //   nop: 1a, 3a, 5a, 7a, da, fa
+    //   skb: 80 82 89 c2 e2 04 14 34 44 54 64 d4 f4
+    //   skw: 0c 1c 3c 5c 7c dc fc
+    // and an extra immediate sbc at eb
+    // plus some hlt/kil instructions that we don't bother with.
   });
 }

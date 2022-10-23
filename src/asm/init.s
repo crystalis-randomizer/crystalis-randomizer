@@ -375,10 +375,6 @@ IRQENABLE  = $e001
 ;;; note: this is dangerous if it would result in a register read
 .define SKIP_TWO_BYTES .byte $2c
 
-;;; Undocumented opcode
-.define axs {#imm} \
-  .byte $cb, imm
-
 ;;; Labels (TODO - consider keeping track of bank?)
 .segment "0e"                   ; 1c000
 SetOrClearFlagsFromBytePair_24y = $8112

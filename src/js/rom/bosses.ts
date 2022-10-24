@@ -64,7 +64,7 @@ export class Bosses implements Iterable<Boss> {
     sword: 1,
   });
   readonly Mado1 = new Boss(this, {
-    address: 0x3d820,
+    address: 0x7d820,
     flag: this.rom.flags.Mado1,
     kill: 0x5,
     shuffled: true,

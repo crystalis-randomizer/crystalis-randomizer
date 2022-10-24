@@ -237,11 +237,16 @@ export async function shuffle(rom: Uint8Array,
 
   //rom = watchArray(rom, 0x85fa + 0x10);
   if (EXPAND_PRG && rom.length < 0x80000) {
-    const newRom = new Uint8Array(rom.length + 0x40000);
-    newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
-    newRom.subarray(0x80010).set(rom.subarray(0x40010));
-    newRom[4] <<= 1;
-    rom = newRom;
+    if (rom.length < 0x80000) {
+        const newRom = new Uint8Array(rom.length + 0x40000);
+        newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
+        newRom.subarray(0x80010).set(rom.subarray(0x40010));
+        newRom[4] <<= 1;
+        rom = newRom;
+    }
+    
+    const prg = rom.subarray(0x10);
+    prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
   }
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
@@ -506,10 +511,6 @@ async function shuffleInternal(rom: Uint8Array,
 
   parsed.writeData();
 
-  if (EXPAND_PRG) {
-    const prg = rom.subarray(0x10);
-    prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
-  }
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
   patchGraphics(rom, spriteReplacements);
   return [rom, crc];

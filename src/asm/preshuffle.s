@@ -1859,7 +1859,7 @@ DynaShoot2:
 
 .endif
 
-;;.org $3c010
+;;.org $7c010
 ;;;; Adjusted inventory update - use level instead of sword
 ;;   ldy $0719  ; max charge level
 ;;   lda #$01
@@ -1875,7 +1875,7 @@ DynaShoot2:
 ;;   sta $03e1  ; player attack
 ;;   lda $0421  ; player level
 ;;   cpy #$0f   ; iron necklace - 1
-;;.org $3c02d   ; NOTE - MUST BE EXACT!!!!
+;;.org $7c02d   ; NOTE - MUST BE EXACT!!!!
 
 
 .segment "fe", "ff"
@@ -2254,7 +2254,7 @@ FREE_UNTIL $d280
 
 ;;; Convert a beq to a bcs for mimic spawns - any chest between $70 and $80
 ;;; will now spawn a mimic.
-;;; .org $3d3fd
+;;; .org $7d3fd
 ;;;   .byte $b0
 
 
@@ -2514,7 +2514,7 @@ PatchPrepareScreenMapRead:
 
 .ifdef _BUFF_DEOS_PENDANT
 ;;; Skip the check that the player is stationary.  We could also adjust
-;;; the speed by changing the mask at $3f02b from $3f to $1f to make it
+;;; the speed by changing the mask at $7f02b from $3f to $1f to make it
 ;;; faster, or $7f to slow it down.  Possibly we could start it at $7f and
 ;;; lsr if stationary, so that MP recovers quickly when still, but at half
 ;;; speed when moving?  We might want to consider how this plays with
@@ -2990,7 +2990,7 @@ TrainerStart:
   jsr TrainerGetItems
   lda #$04
   jsr TrainerGetItems
-  lda $6e ; NOTE: could just jmp $3d276 ?? but less hygeinic
+  lda $6e ; NOTE: could just jmp $7d276 ?? but less hygeinic
   pha
    lda #$1a
    jsr BankSwitch8k_8000 ; bank switch 8k 8000
@@ -3141,7 +3141,7 @@ SubtractEnemyHP:
   sbc #$00
   rts
 
-;;; Note: This is moved from $3db22, where we ran out of space.
+;;; Note: This is moved from $7db22, where we ran out of space.
 .reloc
 FinishEquippingConsumable:
     sbc #$1c
@@ -3198,10 +3198,10 @@ CheckToRedisplayUI:
   jmp CheckForPlayerDeath
 .endif
 
-;;; Repurpose $3e148 to skip loading NPCs and just reset pattern table.
-;;; The only difference from $3e144 is that $18 gets set to 1 instead of 0,
-;;; but this value is never read.  Start by changing all jumps to $3e148
-;;; to instead jump to $3e144.  Then we grab some space and have a nonzero
+;;; Repurpose $7e148 to skip loading NPCs and just reset pattern table.
+;;; The only difference from $7e144 is that $18 gets set to 1 instead of 0,
+;;; but this value is never read.  Start by changing all jumps to $7e148
+;;; to instead jump to $7e144.  Then we grab some space and have a nonzero
 ;;; value in $18 return early.
 .ifndef _WARP_FLAGS_TABLE ; Note: _WARP_FLAGS_TABLE patches this differently.
 .org $e6ff
@@ -3277,7 +3277,7 @@ GrantItemThenDisappear:  ; Used by Kensu in granting change (action 0c)
   jmp $d31f
 
 .reloc
-UseIvoryStatue:  ; Move bytes from $3d6ec
+UseIvoryStatue:  ; Move bytes from $7d6ec
   jsr $e144 ; LoadNpcDataForCurrentLocation
   ldx #$0f
   lda #$1a
@@ -3513,12 +3513,12 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 .endif
 
 ;;; TODO - quick select items
-;; .org $3cb62
+;; .org $7cb62
 ;;   jsr ReadControllersAndUpdateStart
-;; .org $3d8ea
+;; .org $7d8ea
 ;;   jsr ReadControllersAndUpdateStart
 ;; 
-;; .org $3fa10
+;; .org $7fa10
 ;; ReadControllersAndUpdateStart:
 ;;   lda $43    ; Pressed buttons last frame
 ;;   and #$30   ; Start and Select
@@ -3548,9 +3548,9 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 
 ;;; TODO - set up an in-game timer?
 ;;; Also display completion percent on end screen?
-;; .org $3f9f8
+;; .org $7f9f8
 ;; UpdateInGameTimer:
-;; .org $3f3b7
+;; .org $7f3b7
 ;;   nop
 ;;   jsr UpdateInGameTimer
 
@@ -3558,7 +3558,7 @@ Jmp11: ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`
 ;;; The following patch fixes a crash where an IRQ right in the middle of
 ;;; loading NPCs can fail to correctly restore the bank select register
 ;;; $8000.  If the IRQ occurs exactly between selecting the bank and setting
-;;; the value (i.e. at $3c430..$3c432) and executes both MaybeUpdateMusic
+;;; the value (i.e. at $7c430..$7c432) and executes both MaybeUpdateMusic
 ;;; (which page-swaps, rewriting $50 to $8000 afterwards, but not restoring
 ;;; $50) and SelectCHRRomBanks (which restores $8000 to the clobbered $50)
 ;;; then the bank swap will fail.  In the case of this crash, it then reads

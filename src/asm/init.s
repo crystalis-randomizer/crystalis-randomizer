@@ -89,10 +89,12 @@ UPDATE_REFS target @ refs
 .segment "1c"   :bank $1c :size $2000 :off $38000 :mem $8000
 .segment "1d"   :bank $1d :size $2000 :off $3a000 :mem $a000
 ;;; Currently no good way to access the post-expanded 1e/1f
+.segment "1e"   :bank $1e :size $2000 :off $3c000 :mem $c000
+.segment "1f"   :bank $1f :size $2000 :off $3e000 :mem $e000
 
 ;;; Note: we moved these when we expanded the rom.
-.segment "fe"   :bank $1e :size $2000 :off $3c000 :mem $c000
-.segment "ff"   :bank $1f :size $2000 :off $3e000 :mem $e000
+.segment "fe"   :bank $1e :size $2000 :off $7c000 :mem $c000
+.segment "ff"   :bank $1f :size $2000 :off $7e000 :mem $e000
 
 ;;; Expanded rom segments??? consider doing these programmatically?
 ;;; Plane 4 - reserved for map data

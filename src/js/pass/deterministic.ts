@@ -97,7 +97,7 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[0x1aa86] = 0xfe; // trigger -> unused spawn
 
   // TODO - these are transitional until we move the logic elsewhere
-  write(prg, 0x3d6d5,
+  write(prg, 0x7d6d5,
         0x25, 0x29,  // 25 statue of onyx use -> 29 gas mask
         0x39, 0x3a,  // 39 glowing lamp use -> 3a statue of gold
         0x3b, 0x47,  // 3b love pendant use -> 47 change
@@ -528,7 +528,7 @@ function fogLampNotRequired(rom: Rom, flags: FlagSet) {
 /**
  * Remove timer spawns from all chests.  Mimics have already been
  * renumbered to be unique (pre-parse).  Note that the renumbering
- * requires an assembly change ($3d3fd in preshuffle.s).
+ * requires an assembly change ($7d3fd in preshuffle.s).
  */
 function fixChests(rom: Rom): void {
   for (const loc of rom.locations) {

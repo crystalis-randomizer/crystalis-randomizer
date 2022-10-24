@@ -191,6 +191,13 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {
+  // Change those 4 freed up tiles to be clear background tiles (one for each color in the palette)
+  const page = 0x54 << 6;
+  const tileOffset = 0x29;
+  for (let i = 0; i < 4; i++) {
+    rom.patterns.set(page, tileOffset + i, Patterns.BLANK_TILES[i]);
+  }
+
   // Check that we haven't done this already (NOTE: this is an ugly hack
   // that's only required because we're touching the PRG array directly).
   if (rom.prg[0x22eea] === 0x28) return;
@@ -201,13 +208,6 @@ function updateGraphicsForStatTracking(rom: Rom): void {
   // Changing this frees up those 4 tiles so we can reuse them as background tiles
   // in the final scene
   rom.prg[0x22eea] = 0x28;
-
-  // Change those 4 freed up tiles to be clear background tiles (one for each color in the palette)
-  const page = 0x54 << 6;
-  const tileOffset = 0x29;
-  for (let i = 0; i < 4; i++) {
-    rom.patterns.set(page, tileOffset + i, Patterns.BLANK_TILES[i]);
-  }
 
   // now replace any of the $29-$2c tiles in $23004 - $23304 with the new color tiles
   const startAddr = 0x23004;

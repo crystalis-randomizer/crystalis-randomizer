@@ -23,6 +23,11 @@ const BOSS_OBJECT_ADDRESS = [
   [0x0b3f1, true], // vampire 2               cc [1]
 ] as const;
 
+// NOTE: This appears to be currently unused code, and as such, I wasn't sure
+//       whether to update the Mado 1 address above when moving the EXPAND_PRG
+//       process. When returning to this code, make sure to double check that.
+//       -CodeGorilla, 10/23/2022
+
 export function shuffleBosses(rom: Rom, random: Random) {
   // TODO - this doesn't actually work, but if it did, we'd need to
   // store it properly in the Rom object, rather than writing it

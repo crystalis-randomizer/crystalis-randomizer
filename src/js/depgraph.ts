@@ -195,7 +195,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .key();
   const ballOfWater           = item(0x09, 'Ball of Water')
                                   .weight(5)
-                                  .direct('Rage', 0x3d337)
+                                  .direct('Rage', 0x7d337)
                                   .npcSpawn(0xc3)
                                   .key();
   const blizzardBracelet      = item(0x0a, 'Blizzard Bracelet')
@@ -247,7 +247,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
   const warpBoots             = item(0x24, 'Warp Boots').consumable();
   const statueOfOnyx          = item(0x25, 'Statue of Onyx')
                                   .chest('Cordel grass')
-                                  .invisible(0x3e3a2)
+                                  .invisible(0x7e3a2)
                                   .key();
   const opelStatue            = item(0x26, 'Opel Statue')
                                   .consumable()
@@ -264,7 +264,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .dialog(0x38, undefined, 4)
                                   .key();
   const gasMask               = item(0x29, 'Gas Mask')
-                                  .direct('Akahana in Brynmaer', 0x3d7fe)
+                                  .direct('Akahana in Brynmaer', 0x7d7fe)
                                   .npcSpawn(0x16, 0x18)
                                   .key();
   const powerRing             = item(0x2a, 'Power Ring').chest().bonus();
@@ -286,7 +286,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                          'Speed Boots' :
                                          'Leather Boots').chest().bonus();
   const shieldRing            = item(0x30, 'Shield Ring')
-                                  .direct('Akahana in waterfall cave', 0x3d2af)
+                                  .direct('Akahana in waterfall cave', 0x7d2af)
                                   // Redundant? just use ~034
                                   //.npcSpawn(0x16, 0x57, 1)
                                   .bonus();
@@ -352,11 +352,11 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
   //                                .fixed();
   const lovePendant           = item(0x3b, 'Love Pendant')
                                   .chest('Underground channel')
-                                  .invisible(0x3e3aa)
+                                  .invisible(0x7e3aa)
                                   .key();
   const kirisaPlant           = item(0x3c, 'Kirisa Plant')
                                   .chest('Kirisa meadow')
-                                  .invisible(0x3e3a6)
+                                  .invisible(0x7e3a6)
                                   .key();
   const ivoryStatue           = item(0x3d, 'Ivory Statue')
                                   .bossDrop('Karmine', 0x09)
@@ -364,7 +364,7 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .key();
   const bowOfMoon             = item(0x3e, 'Bow of Moon')
                                   .fromPerson('Aryllis', 0x23) // not actually used???
-                                  .direct(0x3d6e8)
+                                  .direct(0x7d6e8)
                                   .dialog(0x23, undefined, 1)
                                   .key();
   const bowOfSun              = item(0x3f, 'Bow of Sun')
@@ -378,13 +378,13 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
   const refresh               = magic(0x41, 'Refresh')
                                   .fromPerson('Zebu at windmill', 0x5e)
                                   .requireUnique()
-                                  .direct(0x3d711)
+                                  .direct(0x7d711)
                                   // NOTE: moved from offset 2 because we rearranged
                                   // zebu to always spawn windmill guard
                                   .dialog(0x5e, 0x10, 3)
                                   .trigger(0xb4, 1);
   const paralysis             = magic(0x42, 'Paralysis')
-                                  .direct('Zebu at Mt. Sabre summit', 0x3d655)
+                                  .direct('Zebu at Mt. Sabre summit', 0x7d655)
                                   .requireUnique()
                                   // TODO - require defeating kelbesque?
                                   .trigger(0x8d)
@@ -397,22 +397,22 @@ export const generate = (flags: FlagSet = new FlagSet(), rom?: Rom): WorldGraph 
                                   .fromPerson('Tornel on Mt. Sabre', 0x5f)
                                   .dialog(0x5f, 0x21, 0);
   const recover               = magic(0x45, 'Recover')
-                                  .direct('Asina in Portoa', 0x3d1f9);
+                                  .direct('Asina in Portoa', 0x7d1f9);
                                   // NOTE: no need for second slot because
                                   // recover does not have an ItemGet normally.
   const barrier               = magic(0x46, 'Barrier')
-                                  .direct('Asina on Angry sea', 0x3d6d9)
+                                  .direct('Asina on Angry sea', 0x7d6d9)
                                   .requireUnique()
                                   .trigger(0x84, 0);
   const change                = magic(0x47, 'Change')
-                                  .direct('Kensu in Swan', 0x3d6de)
+                                  .direct('Kensu in Swan', 0x7d6de)
                                   // NOTE: 74 and 7e are redundant, not sure why.
                                   // Ideally we could delete one of them entirely?
                                   .npcSpawn(0x74, 0xf1, 1)
                                   .npcSpawn(0x7e, 0xf1, 1);
   const flight                = magic(0x48, 'Flight')
                                   .weight(15)
-                                  .direct('Kensu in Draygonia Fortress', 0x3d18f);
+                                  .direct('Kensu in Draygonia Fortress', 0x7d18f);
                                   // See recover - no need for second slot.
   const fruitOfPowerVampire2  = fruitOfPower
                                   .bossDrop('Vampire 2', 0x0c, 0x61)

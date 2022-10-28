@@ -202,7 +202,7 @@ export class Flags {
   // unused 042
   // unused 0x043 = dialogProgression('Oak');
   0x044 = obsolete(0x107); // check: ball of fire / insect
-  RescuedChild = fixed(0x045, TRACK); // hardcoded $3e7d5
+  RescuedChild = fixed(0x045, TRACK); // hardcoded $7e7d5
   UsedInsectFlute = fixed(0x046); // custom-added $6488:40
   RescuedLeafElder = movable(0x047);
   0x048 = dialogProgression('Treasure hunter embarked');
@@ -218,7 +218,7 @@ export class Flags {
   GivenStatueToAkahana = movable(0x050); // give it back if unsuccessful?
   0x051 = obsolete(0x146); // check: barrier / angry sea
   TalkedToDwarfMother = movable(0x052, TRACK);
-  LeadingChild = fixed(0x053, TRACK); // hardcoded $3e7c4 and following
+  LeadingChild = fixed(0x053, TRACK); // hardcoded $7e7c4 and following
   // unused 054
   0x055 = dialogProgression('Zebu rescued');
   0x056 = dialogProgression('Tornel rescued');

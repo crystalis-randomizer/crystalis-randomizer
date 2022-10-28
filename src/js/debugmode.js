@@ -21,7 +21,7 @@ export default ({
 
 // Fix the shaking issues by tweaking the delay times in IRQ callbacks.
 export const cheat = buildRomPatch(assemble(`
-.bank $3c000 $c000:$4000 ; fixed bank
+.bank $7c000 $c000:$4000 ; fixed bank
 .bank $1e000 $a000:$2000
 
 .org $1ff46
@@ -35,7 +35,7 @@ export const cheat = buildRomPatch(assemble(`
 
 // Fix the shaking issues by tweaking the delay times in IRQ callbacks.
 export const lime = buildRomPatch(assemble(`
-.bank $3c000 $c000:$4000 ; fixed bank
+.bank $7c000 $c000:$4000 ; fixed bank
 .bank $18000 $8000:$2000
 
 .org $19d22

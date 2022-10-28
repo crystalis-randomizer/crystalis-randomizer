@@ -157,7 +157,7 @@ export class Constraint {
     // be more flexible if we rewrote that offset, but then we wouldn't
     // get both versions of Kensu so easily.
     // NOTE: after we get the chest, we could reset the patterns by
-    //       shunting $3d458
+    //       shunting $7d458
     return new Constraint([new Set([0x51]), ALL, ALL, ALL], [], 0);
   }
 

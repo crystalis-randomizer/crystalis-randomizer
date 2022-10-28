@@ -12,7 +12,7 @@ const BOSS_OBJECT_ADDRESS = [
   [0x0b0f9, true], // kelbesque 1  persondata c2 [1]
   [0x0b0fd, false], // rage        persondata c3 [1]
   [0x3656e, true], // sabera 1     hardcoded
-  [0x3d820, true], // mado 1       hardcoded
+  [0x7d820, true], // mado 1       hardcoded
   [0x0b1f5, true], // kelbesque 2  persondata c5 [1]
   [0x0b1f9, true], // sabera 2     persondata c6 [1]
   [0x0b1fd, true], // mado 2                  c7 [1]

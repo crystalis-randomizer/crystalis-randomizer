@@ -244,7 +244,7 @@ export async function shuffle(rom: Uint8Array,
         newRom[4] <<= 1;
         rom = newRom;
     }
-    
+
     const prg = rom.subarray(0x10);
     prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
   }

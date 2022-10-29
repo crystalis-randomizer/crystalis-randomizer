@@ -1,26 +1,44 @@
-import {assertNever} from '../util.js';
-
-type AddressingMode =
+export type AddressingMode =
   'acc' | 'imp' | 'imm' |
   'rel' | 'abs' | 'abx' | 'aby' |
   'zpg' | 'zpx' | 'zpy' |
   'ind' | 'inx' | 'iny';
 
+type Mnemonic = string;
+
 export interface Cpu {
-  op(mnemonic: string): {[mode in AddressingMode]?: number};
+  op(mnemonic: Mnemonic): {[mode in AddressingMode]?: number};
+  disasm(byte: number): [Mnemonic, AddressingMode]|undefined;
   argLen(mode: AddressingMode): number;
+  format(mode: AddressingMode, arg: string|number): string;
   // TODO - rep/sep mode?
 }
 
 type Table = {[mnemonic: string]: {[mode in AddressingMode]?: number}};
 
 class AbstractCpu {
-  constructor(readonly table: Table) {}
+  private readonly reverse: ReadonlyArray<readonly [Mnemonic, AddressingMode]>;
+
+  constructor(readonly table: Table) {
+    const reverse = [];
+    for (const [mnemonic, ops] of Object.entries(table)) {
+      for (const [mode, op] of Object.entries(ops)) {
+        type Entry = readonly [Mnemonic, AddressingMode];
+        reverse[op!] = [mnemonic, mode as AddressingMode] as Entry;
+      }
+    }
+    this.reverse = reverse;
+  }
 
   op(mnemonic: string) {
     const ops = this.table[mnemonic];
     if (!ops) throw new Error(`Bad mnemonic: ${mnemonic}`);
     return ops;
+  }
+
+  disasm(byte: number): [Mnemonic, AddressingMode]|undefined {
+    const result = this.reverse[byte];
+    return result && [...result];
   }
 
   // TODO - may need to abstract this, too...
@@ -43,7 +61,39 @@ class AbstractCpu {
       case 'inx':
         return 2;
     }
-    return assertNever(mode);
+  }
+
+  format(mode: AddressingMode, arg: string|number) {
+    if (mode === 'acc' || mode === 'imp') return '';
+    if (typeof arg === 'number') {
+      if (mode === 'rel') {
+        const displacement = (arg > 127 ? 256 - arg : arg) + 2;
+        if (displacement < 0) {
+          arg = `* - ${-displacement}`;
+        } else if (displacement > 0) {
+          arg = `* + ${displacement}`;
+        } else {
+          arg = '*';
+        }
+      } else if (mode.startsWith('zp') || mode === 'iny' || mode === 'imm') {
+        arg = `$${(arg & 0xff).toString(16).padStart(2, '0')}`;
+      } else {
+        arg = `$${(arg & 0xffff).toString(16).padStart(4, '0')}`;
+      }
+    }
+    switch (mode) {
+      case 'imm': return `#${arg}`;
+      case 'rel': return arg;
+      case 'zpg': return arg;
+      case 'abs': return arg;
+      case 'zpx': return `${arg},x`;
+      case 'abx': return `${arg},x`;
+      case 'zpy': return `${arg},y`;
+      case 'aby': return `${arg},y`;
+      case 'iny': return `(${arg}),y`;
+      case 'ind': return `(${arg})`;
+      case 'inx': return `(${arg},x)`;
+    }
   }
 }
 

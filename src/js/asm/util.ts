@@ -1,4 +1,8 @@
 // Returns element where fn returns 0, or ~insertion point
+// First parameter is the size to search: [0..n-1] inclusive.
+// Function returns + if we need to increase, - if we need to decrease.
+// To find an element in a list:
+//     binarySearch(list.length, (i) => wanted - list[i]);
 export function binarySearch(n: number, f: (i: number) => number): number {
   if (!n) return ~0;
   const fa = f(0);

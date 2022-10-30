@@ -67,11 +67,11 @@ class AbstractCpu {
     if (mode === 'acc' || mode === 'imp') return '';
     if (typeof arg === 'number') {
       if (mode === 'rel') {
-        const displacement = (arg > 127 ? 256 - arg : arg) + 2;
+        const displacement = (arg > 127 ? arg - 256 : arg) + 2;
         if (displacement < 0) {
-          arg = `* - ${-displacement}`;
+          arg = `*-${-displacement}`;
         } else if (displacement > 0) {
-          arg = `* + ${displacement}`;
+          arg = `*+${displacement}`;
         } else {
           arg = '*';
         }

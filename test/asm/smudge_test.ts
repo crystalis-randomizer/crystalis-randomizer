@@ -1,957 +1,147 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
-import {Cpu} from '../../src/js/asm/cpu';
-import {Expr} from '../../src/js/asm/expr';
-import {Module} from '../../src/js/asm/module';
-import {Assembler} from '../../src/js/asm/assembler';
-import {Token} from '../../src/js/asm/token';
-import * as util from 'util';
-import { Tokenizer } from '../../src/js/asm/tokenizer';
-import { TokenStream } from '../../src/js/asm/tokenstream';
-import { Preprocessor } from '../../src/js/asm/preprocessor';
+import { describe, it } from 'mocha';
+import { expect } from 'chai';
+import { Cpu } from '../../src/js/asm/cpu';
+import * as lib from '../../src/js/asm/smudge';
 
-const [] = [util];
-
-function ident(str: string): Token { return {token: 'ident', str}; }
-function num(num: number): Token { return {token: 'num', num}; }
-function str(str: string): Token { return {token: 'str', str}; }
-function cs(str: string): Token { return {token: 'cs', str}; }
-function op(str: string): Token { return {token: 'op', str}; }
-const {COLON, COMMA, IMMEDIATE, LP, RP} = Token;
-const ORG = cs('.org');
-const RELOC = cs('.reloc');
-const ASSERT = cs('.assert');
-const SEGMENT = cs('.segment');
-
-function off(num: number, chunk = 0): Expr {
-  return {op: 'num', num, meta: {chunk, rel: true}};
+function smudge(src: string): string {
+  return lib.smudge(src, Cpu.P02, prg);
+}
+function clean(src: string): string {
+  return lib.clean(src, Cpu.P02, prg);
 }
 
-const [] = [str, COMMA, LP, RP, ORG, RELOC, ASSERT, SEGMENT];
+const prg = Uint8Array.from([
+  'a9 05',    // 00  lda #$05
+  '85 42',    // 02  sta $42
+  '8d 34 12', // 04  sta $1234
+  'd0 f9',    // 07  bne $0002
+  '20 1c 00', // 09  jsr $001c
+  'b5 14',    // 0c  lda $14,x
+  '9d 56 34', // 0e  sta $3456,x
+  'be 23 78', // 11  ldx $7823,y
+  '96 67',    // 14  stx $67,y
+  '6c cd ab', // 16  jmp ($abcd)
+  '1a 2b 3c', // 19  .byte $1a,$2b,$3c
+  'a1 43 65', // 1c  lda ($6543,x)
+  '0a',       // 1f  asl
+  '91 89',    // 20  sta ($89),y
+  '60',       // 22  rts
+  'a9 05',    // 23  lda #$05
+  '8d 34 12', // 25  sta $1234
+  'b5 14',    // 28  lda $14,x
+  '9d 56 34', // 2a  sta $3456,x
+  '60',       // 2d  rts
+  '22 23 5c', // 2e  .text "\"#\\"
+].join(' ').split(/ /g).map(x => parseInt(x, 16)));
 
-function asm(src: string): Uint8Array {
-  // This is probably more complex than it needs to be... Just be sure to
-  // only have a single .org 0 in the source.
-  const asm = new Assembler(Cpu.P02);
-  const toks = new TokenStream();
-  toks.enter(new Tokenizer(src, 'src.s', {lineContinuations: true}));
-  const pre = new Preprocessor(toks, asm);
-  asm.tokens(pre);
-  const mod = asm.module();
-  return mod.chunks[0].data;
-}
-
-describe('smudge', await function() {
-
-  const prg = asm(`
-.org 0
-   lda #$05
-   
-  `);
-
-
-  const prg = Uint8Array.of(0xad, 0x20, 
-  
-  describe('Simple instructions', function() {
-    it('should handle `lda #$03`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('lda'), IMMEDIATE, num(3)]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0xa9, 3)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `sta $02`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('sta'), num(2)]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0x85, 2)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `ldy $032f`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('ldy'), num(0x32f)]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0xac, 0x2f, 3)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `rts`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('rts')]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0x60)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `lda ($24),y`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('lda'), LP, num(0x24), RP, COMMA, ident('y')]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0xb1, 0x24)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `sta ($0320,x)`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('sta'), LP, num(0x320), COMMA, ident('x'), RP]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0x81, 0x20, 3)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `lsr`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('lsr')]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0x4a)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `lsr a`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('lsr'), ident('A')]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0x4a)}],
-        symbols: [],
-      });
-    });
-
-    it('should handle `ora $480,x`', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('ora'), num(0x480), COMMA, ident('x')]);
-      expect(strip(a.module())).to.eql({
-        segments: [],
-        chunks: [{segments: ['code'], data: Uint8Array.of(0x1d, 0x80, 4)}],
-        symbols: [],
-      });
-    });
+describe('smudge', function() {
+  it('should not affect trivial files', function() {
+    const input = 'abc\ndef\n12345';
+    expect(smudge(input)).to.eql(input);
   });
-
-  describe('Symbols', function() {
-    it('should fill in an immediately-available value', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('val', 0x23);
-      a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xa9, 0x23),
-        }],
-        symbols: [],
-        segments: [],
-      });
-    });
-
-    it('should fill in an immediately-available label', function() {
-      const a = new Assembler(Cpu.P02);
-      a.org(0x9135);
-      a.label('foo');
-      a.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('foo')]);
-      a.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('foo')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          name: 'foo',
-          org: 0x9135,
-          data: Uint8Array.of(0xa2, 0x35, 0xa0, 0x91),
-        }],
-        symbols: [],
-        segments: [],
-      });
-    });
-
-    it('should substitute a forward referenced value', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
-      a.assign('val', 0x23);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xa9, 0xff),
-          subs: [{offset: 1, size: 1, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: {op: 'num', num: 0x23}}],
-        segments: [],
-      });
-    });
-
-    it('should substitute a forward referenced label', function() {
-      const a = new Assembler(Cpu.P02);
-      a.directive([cs('.org'), num(0x8000)]);
-      a.instruction([ident('jsr'), ident('foo')]);
-      a.instruction([ident('lda'), IMMEDIATE, num(0)]);
-      a.label('foo');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          org: 0x8000,
-          data: Uint8Array.of(0x20, 0xff, 0xff,
-                              0xa9, 0x00),
-          subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: {op: 'num', num: 0x8005,
-                          meta: {org: 0x8000, chunk: 0}}}],
-        segments: [],
-      });
-    });
-
-    it('should allow overwriting mutable symbols', function() {
-      const a = new Assembler(Cpu.P02);
-      a.set('foo', 5);
-      a.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
-      a.set('foo', 6);
-      a.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
-
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xa9, 5, 0xa9, 6),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should not allow redefining immutable symbols', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('foo', 5);
-      expect(() => a.assign('foo', 5))
-          .to.throw(Error, /Redefining symbol foo/);
-      expect(() => a.label('foo')).to.throw(Error, /Redefining symbol foo/);
-    });
-
-    it('should not allow redefining labels', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('foo');
-      expect(() => a.assign('foo', 5))
-          .to.throw(Error, /Redefining symbol foo/);
-      expect(() => a.label('foo')).to.throw(Error, /Redefining symbol foo/);
-    });
-
-    it('should substitute a formula', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('val', {op: '+', args: [{op: 'num', num: 1},
-                                       {op: 'sym', sym: 'x'}]});
-      a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
-      a.assign('x', 2);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xa9, 0xff),
-          subs: [{offset: 1, size: 1,
-                  expr: {op: '+', args: [{op: 'num', num: 1},
-                                         {op: 'sym', num: 0}]}}],
-        }],
-        symbols: [{expr: {op: 'num', num: 2}}],
-        segments: [],
-      });
-    });
+  it('should decode data', function() {
+    expect(smudge('.byte [@19@],[@1a@],[@1b@]')).to.eql('.byte $1a,$2b,$3c');
   });
-
-  describe('Cheap locals', function() {
-    it('should handle backward refs', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('@foo');
-      a.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('@foo')]);
-      a.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('@foo')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xa2, 0xff, 0xa0, 0xff),
-          subs: [{
-            offset: 1, size: 1,
-            expr: {op: '<', meta: {size: 1}, args: [off(0)]},
-          }, {
-            offset: 3, size: 1,
-            expr: {op: '>', meta: {size: 1}, args: [off(0)]},
-          }],
-        }],
-        symbols: [],
-        segments: [],
-      });
-    });
-
-    it('should hanle forward refs', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('jsr'), ident('@foo')]);
-      a.instruction([ident('lda'), IMMEDIATE, num(0)]);
-      a.label('@foo');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0x20, 0xff, 0xff,
-                              0xa9, 0x00),
-          subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: off(5)}],
-        segments: [],
-      });
-    });
-
-    it('should not allow using a cheap local name for non-labels', function() {
-      const a = new Assembler(Cpu.P02);
-      expect(() => a.assign('@foo', 5))
-          .to.throw(Error, /Cheap locals may only be labels: @foo/);
-    });
-
-    it('should not allow reusing names in the same cheap scope', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('@foo');
-      expect(() => a.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
-    });
-
-    it('should clear the scope on a non-cheap label', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('@foo');
-      a.instruction([ident('jsr'), ident('@foo')]);
-      a.label('bar');
-      a.instruction([ident('jsr'), ident('@foo')]);
-      a.label('@foo');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0x20, 0xff, 0xff,
-                              0x20, 0xff, 0xff),
-          subs: [
-            {offset: 1, size: 2, expr: off(0)},
-            {offset: 4, size: 2, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: off(6)}],
-        segments: [],
-      });
-    });
-
-    it('should not clear the scope on a symbol', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('@foo');
-      a.assign('bar', 2);
-      expect(() => a.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
-    });
-
-    it('should be an error if a cheap label is never defined', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('jsr'), ident('@foo')]);
-      expect(() => a.label('bar'))
-          .to.throw(Error, /Cheap local label never defined: @foo/);
-      expect(() => a.module())
-          .to.throw(Error, /Cheap local label never defined: @foo/);
-    });
+  it('should decode data with extra formatting', function() {
+    expect(smudge('.byte  [@19@] , [@1a@] , [@1b@] ; comment'))
+        .to.eql('.byte  $1a , $2b , $3c ; comment');
   });
-
-  describe('Anonymous labels', function() {
-    it('should work for forward references', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('bne'), op(':'), op('++')]);
-      a.label(':');
-      a.instruction([ident('bcc'), op(':'), op('+++')]);
-      a.label(':'); // first target
-      a.instruction([ident('lsr')]);
-      a.label(':');
-      a.instruction([ident('lsr')]);
-      a.label(':'); // second target
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
-          subs: [{offset: 1, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(2)]}},
-                 {offset: 3, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 1}, off(4)]}}],
-        }],
-        symbols: [{expr: off(4)},
-                  {expr: off(6)}],
-        segments: []});
-    });
-
-    it('should work for backward references', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label(':'); // first target
-      a.instruction([ident('lsr')]);
-      a.label(':');
-      a.instruction([ident('lsr')]);
-      a.instruction([ident('lsr')]);
-      a.label(':'); // second target
-      a.instruction([ident('bne'), op(':'), op('---')]);
-      a.label(':');
-      a.instruction([ident('bcc'), op(':'), op('--')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0x4a, 0x4a, 0x4a, 0xd0, 0xfb, 0x90, 0xfc),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should allow one label for both forward directions', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('bne'), op(':'), op('+')]);
-      a.label(':');
-      a.instruction([ident('bcc'), op(':'), op('-')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xd0, 0xff, 0x90, 0xfe),
-          subs: [{offset: 1, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(2)]}}],
-        }],
-        symbols: [{expr: off(2)}],
-        segments: []});
-    });
+  it('should decode words', function() {
+    expect(smudge('.word [@19:w@]')).to.eql('.word ($2b1a)');
   });
-
-  describe('Relative labels', function() {
-    it('should work for forward references', function() {
-      const a = new Assembler(Cpu.P02);
-      a.instruction([ident('bne'), op('++')]);
-      a.label('+');
-      a.instruction([ident('bcc'), op('+++')]);
-      a.label('++');
-      a.instruction([ident('lsr')]);
-      a.instruction([ident('lsr')]);
-      a.label('+++');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xd0, 0xff, 0x90, 0xff, 0x4a, 0x4a),
-          subs: [{offset: 1, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(2)]}},
-                 {offset: 3, size: 1,
-                  expr: {op: '-', args: [{op: 'sym', num: 1}, off(4)]}}],
-        }],
-        symbols: [{expr: off(4)},
-                  {expr: off(6)}],
-        segments: []});
-    });
-
-    it('should work for backward references', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('--'); // first target
-      a.instruction([ident('lsr')]);
-      a.instruction([ident('lsr')]);
-      a.instruction([ident('lsr')]);
-      a.label('-'); // second target
-      a.instruction([ident('bne'), op('--')]);
-      a.instruction([ident('bcc'), op('-')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0x4a, 0x4a, 0x4a, 0xd0, 0xfb, 0x90, 0xfc),
-        }],
-        symbols: [], segments: []});
-    });
+  it('should decode text', function() {
+    expect(smudge('.asciiz [@15:2@],[@2b:3@]')).to.eql('.asciiz "gl","V4`"');
   });
-
-  describe('.byte', function() {
-    it('should support numbers', function() {
-      const a = new Assembler(Cpu.P02);
-      a.byte(1, 2, 3);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(1, 2, 3),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support strings', function() {
-      const a = new Assembler(Cpu.P02);
-      a.byte('ab', 'cd');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0x61, 0x62, 0x63, 0x64),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support expressions', function() {
-      const a = new Assembler(Cpu.P02);
-      a.directive([cs('.byte'), num(1), op('+'), num(2)]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(3),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support expressions with backward refs', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('q', 5);
-      a.directive([cs('.byte'), ident('q')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(5),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support expressions with forward refs', function() {
-      const a = new Assembler(Cpu.P02);
-      a.directive([cs('.byte'), ident('q'), op('+'), num(1)]);
-      a.label('q');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff),
-          subs: [{offset: 0, size: 1,
-                  expr: {op: '+', args: [{op: 'sym', num: 0},
-                                         {op: 'num', num: 1,
-                                          meta: {size: 1}}]}}],
-        }],
-        symbols: [{expr: off(1)}],
-        segments: []});
-    });
+  it('should decode text with proper escaping', function() {
+    expect(smudge('.asciiz [@2e:3@]')).to.eql('.asciiz "\\"#\\\\"');
   });
-
-  describe('.res', function() {
-    it('should reserve space', function() {
-      const a = new Assembler(Cpu.P02);
-      a.res(10, 3);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(3, 3, 3, 3, 3, 3, 3, 3, 3, 3),
-        }],
-        symbols: [], segments: []});
-    });
+  it('should decode binary data', function() {
+    expect(smudge('.byte [@19:b@]')).to.eql('.byte %00011010');
   });
-
-  describe('.word', function() {
-    it('should support numbers', function() {
-      const a = new Assembler(Cpu.P02);
-      a.word(1, 2, 0x403);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(1, 0, 2, 0, 3, 4),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support expressions', function() {
-      const a = new Assembler(Cpu.P02);
-      a.directive([cs('.word'), num(1), op('+'), num(2)]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(3, 0),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support expressions with backward refs', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('q', 0x305);
-      a.directive([cs('.word'), ident('q')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(5, 3),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should support expressions with forward refs', function() {
-      const a = new Assembler(Cpu.P02);
-      a.directive([cs('.word'), ident('q'), op('+'), num(1)]);
-      a.label('q');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff, 0xff),
-          subs: [{offset: 0, size: 2,
-                  expr: {op: '+', args: [{op: 'sym', num: 0},
-                                         {op: 'num', num: 1,
-                                          meta: {size: 1}}]}}],
-        }],
-        symbols: [{expr: off(2)}],
-        segments: []});
-    });
+  it('should decode decimal data', function() {
+    expect(smudge('.byte [@19:d@]')).to.eql('.byte 26');
   });
-
-  describe('.segment', function() {
-    it('should change the segment', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segment('01');
-      a.byte(4);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['01'],
-          data: Uint8Array.of(4),
-        }], symbols: [], segments: []});
-    });
-
-    it('should allow multiple segments', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segment('01', '02');
-      a.byte(4);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['01', '02'],
-          data: Uint8Array.of(4),
-        }], symbols: [], segments: []});
-    });
-
-    it('should configure the segment', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('size', 100)
-      a.directive([cs('.segment'), str('03'),
-                   COLON, ident('bank'), num(2), op('+'), num(1),
-                   COLON, ident('size'), ident('size')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [], symbols: [], segments: [{
-          name: '03',
-          bank: 3,
-          size: 100,
-        }]});
-    });
-
-    it('should merge multiple attr lists', function() {
-      const a = new Assembler(Cpu.P02);
-      a.directive([cs('.segment'), str('02'), COLON, ident('bank'), num(2)]);
-      a.directive([cs('.segment'), str('02'), COLON, ident('size'), num(200)]);
-      expect(strip(a.module())).to.eql({
-        chunks: [], symbols: [], segments: [{
-          name: '02',
-          bank: 2,
-          size: 200,
-        }]});
-    });
-
-    it('should track free regions', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segment('02');
-      a.org(0x8000);
-      a.free(0x200);
-      a.org(0x9000);
-      a.free(0x400);
-      expect(strip(a.module())).to.eql({
-        chunks: [], symbols: [], segments: [{
-          name: '02',
-          free: [[0x8000, 0x8200], [0x9000, 0x9400]],
-        }]});
-    });
-
-    it('should allow setting a prefix', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segmentPrefix('cr:');
-      a.directive([cs('.segment'), str('02')]);
-      a.instruction([ident('lsr')]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{segments: ['cr:02'], data: Uint8Array.of(0x4a)}],
-        segments: [], symbols: [],
-      });          
-    });
+  it('should decode instructions', function() {
+    expect(smudge('<@0@>')).to.eql('lda #$05');
   });
-
-  describe('.pushseg/.popseg', function() {
-    it('should switch and restore the segment', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segment('a', 'b');
-      a.byte(4);
-      a.pushSeg('a', 'c');
-      a.byte(5);
-      a.popSeg();
-      a.byte(6);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['a', 'b'],
-          data: Uint8Array.of(4, 6),
-        }, {
-          segments: ['a', 'c'],
-          data: Uint8Array.of(5),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should allow nesting', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segment('a', 'b');
-      a.byte(4);
-      a.pushSeg('a');
-      a.byte(5);
-      a.pushSeg('a', 'c');
-      a.byte(6);
-      a.popSeg();
-      a.byte(7);
-      a.popSeg();
-      a.byte(8);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['a', 'b'],
-          data: Uint8Array.of(4, 8),
-        }, {
-          segments: ['a'],
-          data: Uint8Array.of(5, 7),
-        }, {
-          segments: ['a', 'c'],
-          data: Uint8Array.of(6),
-        }],
-        symbols: [], segments: []});
-    });
-
-    it('should allow switching segments in the middle', function() {
-      const a = new Assembler(Cpu.P02);
-      a.segment('a', 'b');
-      a.byte(4);
-      a.pushSeg('a');
-      a.byte(5);
-      a.segment('a', 'c');
-      a.byte(6);
-      a.segment('a');
-      a.byte(7);
-      a.popSeg();
-      a.byte(8);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['a', 'b'],
-          data: Uint8Array.of(4, 8),
-        }, {
-          segments: ['a'],
-          data: Uint8Array.of(5),
-        }, {
-          segments: ['a', 'c'],
-          data: Uint8Array.of(6),
-        }, {
-          segments: ['a'],
-          data: Uint8Array.of(7),
-        }],
-        symbols: [], segments: []});
-    });
+  it('should retain labels, spaces and comments around instructions', function() {
+    expect(smudge('foo: <@2@>  ; comment')).to.eql('foo: sta $42  ; comment');
+    expect(smudge('  <@c@>  ')).to.eql('  lda $14,x  ');
+    expect(smudge('@bar: <@11@>')).to.eql('@bar: ldx $7823,y');
   });
-
-  describe('.assert', function() {
-    it('should pass immediately when true', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assert({op: 'num', num: 1});
-      expect(strip(a.module())).to.eql({chunks: [], symbols: [], segments: []});
-    });
-
-    it('should fail immediately when false', function() {
-      const a = new Assembler(Cpu.P02);
-      expect(() => a.assert({op: 'num', num: 0}))
-          .to.throw(Error, /Assertion failed/);
-    });
-
-    it('should defer indeterminate assertions to the linker', function() {
-      const a = new Assembler(Cpu.P02);
-      a.label('Foo');
-      a.directive([cs('.assert'), ident('Foo'), op('>'), num(8)]);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          name: 'Foo',
-          data: Uint8Array.of(),
-          asserts: [{op: '>', meta: {size: 1},
-                     args: [off(0), {op: 'num', num: 8, meta: {size: 1}}]}],
-        }],
-        symbols: [], segments: []});
-    });
+  it('should handle relative labels', function() {
+    expect(smudge('++ <@4@>')).to.eql('++ sta $1234');
+    expect(smudge('- <@9@>')).to.eql('- jsr $001c');
+    expect(smudge(': <@e@>')).to.eql(': sta $3456,x');
   });
-
-  describe('.scope', function() {
-    it('should not leak inner symbols to outer scopes', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('bar', 12);
-      a.scope('foo');
-      a.assign('bar', 42);
-      a.byte({op: 'sym', sym: 'bar'});
-      a.endScope();
-      a.byte({op: 'sym', sym: 'bar'});
-
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(42, 12),
-        }],
-        symbols: [], segments: [],
-      });
-    });
-
-    it('should inherit outer definitions', function() {
-      const a = new Assembler(Cpu.P02);
-      a.scope();
-      a.scope('foo');
-      a.byte({op: 'sym', sym: 'bar'});
-      a.endScope();
-      a.scope();
-      a.byte({op: 'sym', sym: 'bar'});
-      a.endScope();
-      a.endScope();
-      a.assign('bar', 14);
-      
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff, 0xff),
-          subs: [
-            {offset: 0, size: 1, expr: {op: 'sym', num: 0}},
-            {offset: 1, size: 1, expr: {op: 'sym', num: 1}},
-          ],
-        }],
-        symbols: [
-          {expr: {op: 'num', num: 14}},
-          {expr: {op: 'sym', num: 0}},
-        ],
-        segments: [],
-      });
-    });
-
-    it('should allow writing into a scope', function() {
-      const a = new Assembler(Cpu.P02);
-      a.scope('foo');
-      a.byte({op: 'sym', sym: 'bar'});
-      a.endScope();
-      a.assign('foo::bar', 13);
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff),
-          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [
-          {expr: {op: 'num', num: 13}},
-        ],
-        segments: [],
-      });
-    });
-
-    it('should allow reading out of a scope', function() {
-      const a = new Assembler(Cpu.P02);
-      a.scope('foo');
-      a.assign('bar', 5);
-      a.endScope();
-      a.byte({op: 'sym', sym: 'foo::bar'});
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0x05),
-        }],
-        symbols: [], segments: [],
-      });
-    });
+  it('should retain explicit arguments', function() {
+    expect(smudge('<@0 a@>')).to.eql('lda #a');
+    expect(smudge('<@2 xyz@>')).to.eql('sta xyz');
+    expect(smudge('<@4 1+2@>')).to.eql('sta 1+2');
+    expect(smudge('<@7 l a b e l@>')).to.eql('bne l a b e l');
+    expect(smudge('<@1f ignored@>')).to.eql('asl');
+    expect(smudge('<@14 103@>')).to.eql('stx 103,y');
+    expect(smudge('<@16 x@>')).to.eql('jmp (x)');
+    expect(smudge('<@20 x@>')).to.eql('sta (x),y');
   });
-
-  describe('.import', function() {
-    it('should work before the reference', function() {
-      const a = new Assembler(Cpu.P02);
-      a.import('foo');
-      a.byte({op: 'sym', sym: 'foo'});
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff),
-          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: {op: 'im', sym: 'foo'}}],
-        segments: [],
-      });
-    });
-
-    it('should work after the reference', function() {
-      const a = new Assembler(Cpu.P02);
-      a.byte({op: 'sym', sym: 'foo'});
-      a.import('foo');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff),
-          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: {op: 'im', sym: 'foo'}}],
-        segments: [],
-      });
-    });
-
-    it('should work in a scope', function() {
-      const a = new Assembler(Cpu.P02);
-      a.scope();
-      a.byte({op: 'sym', sym: 'foo'});
-      a.endScope();
-      a.import('foo');
-      expect(strip(a.module())).to.eql({
-        chunks: [{
-          segments: ['code'],
-          data: Uint8Array.of(0xff),
-          subs: [{offset: 0, size: 1, expr: {op: 'sym', num: 0}}],
-        }],
-        symbols: [{expr: {op: 'im', sym: 'foo'}}],
-        segments: [],
-      });
-    });
-
-    it('should emit nothing if unused', function() {
-      const a = new Assembler(Cpu.P02);
-      a.import('foo');
-      a.byte(2);
-      expect(strip(a.module())).to.eql({
-        chunks: [{segments: ['code'], data: Uint8Array.of(2)}],
-        symbols: [], segments: [],
-      });
-    });
+  it('should handle a relative jump with no explicit args', function() {
+    expect(smudge('<@7@>')).to.eql('bne *-5');
   });
-
-  describe('.export', function() {
-    it('should export a later value', function() {
-      const a = new Assembler(Cpu.P02);
-      a.export('qux');
-      a.assign('qux', 12);
-      expect(strip(a.module())).to.eql({
-        symbols: [{export: 'qux', expr: {op: 'num', num: 12}}],
-        chunks: [], segments: [],
-      });
-    });
-
-    it('should export an earlier value', function() {
-      const a = new Assembler(Cpu.P02);
-      a.assign('qux', 12);
-      a.export('qux');
-      expect(strip(a.module())).to.eql({
-        symbols: [{export: 'qux', expr: {op: 'num', num: 12}}],
-        chunks: [], segments: [],
-      });
-    });
-  });
-
-  // TODO - test all the error cases...
 });
 
-function strip(o: Module): Module {
-  for (const s of o.symbols || []) {
-    stripExpr(s.expr);
-  }
-  for (const c of o.chunks || []) {
-    if (c.name === 'Code') delete c.name;
-    for (const a of c.asserts || []) {
-      stripExpr(a);
-    }
-    for (const s of c.subs || []) {
-      stripExpr(s.expr);
-    }
-  }
-  return o;
-  function stripExpr(e: Expr|undefined) {
-    if (!e) return;
-    delete e.source;
-    for (const a of e.args || []) {
-      stripExpr(a);
-    }
-  }
-}
+describe('clean', function() {
+  it('should not affect trivial files', function() {
+    const input = 'abc\ndef\n12345';
+    expect(clean(input)).to.eql(input);
+  });
+  it('should encode data', function() {
+    expect(clean('.byte $1a,$2b,$3c')).to.eql('.byte [@19@],[@1a@],[@1b@]');
+  });
+  it('should encode noncontiguous data', function() {
+    expect(clean('.byte $6c,$2b,$43')).to.eql('.byte [@16@],[@1a@],[@1d@]');
+  });
+  it('should not encode data with no match', function() {
+    expect(clean('.byte $67,$61,$6c')).to.eql('.byte [@15@],$61,[@16@]');
+  });
+  it('should encode words', function() {
+    expect(clean('.word ($2b1a),($6543)')).to.eql('.word [@19:w@],[@1d:w@]');
+  });
+  it('should not encode words with no match', function() {
+    expect(clean('.word ($1234),($acef)')).to.eql('.word [@5:w@],($acef)');
+  });
+  it('should encode the same word twice if necessary', function() {
+    expect(clean('.word ($7823),($7823)')).to.eql('.word [@12:w@],[@12:w@]');
+  });
+  it('should encode text', function() {
+    expect(clean('.asciiz "gl","V4`"')).to.eql('.asciiz [@15:2@],[@2b:3@]');
+  });
+  it('should encode escaped text', function() {
+    expect(clean('.asciiz "\\"#\\\\"')).to.eql('.asciiz [@2e:3@]');
+  });
+  it('should not encode text with no match', function() {
+    expect(clean('.asciiz "gl","gm","g"'))
+        .to.eql('.asciiz [@15:2@],"gm",[@15:1@]');
+  });
+  it('should encode instructions', function() {
+    expect(clean('lda #$05')).to.eql('<@0@>');
+  });
+  it('should retain labels, spaces and comments around instructions', function() {
+    expect(clean('foo: sta $42  ; comment')).to.eql('foo: <@2@>  ; comment');
+    expect(clean('  lda $14,x  ')).to.eql('  <@c@>  ');
+    expect(clean('@bar: ldx $7823,y')).to.eql('@bar: <@11@>');
+  });
+  it('should handle relative labels', function() {
+    expect(clean('++ sta $1234')).to.eql('++ <@4@>');
+    expect(clean('- jsr $001c')).to.eql('- <@9@>');
+    expect(clean(': sta $3456,x')).to.eql(': <@e@>');
+  });
+  it('should retain explicit arguments', function() {
+    expect(clean('lda #a')).to.eql('<@0 a@>');
+    expect(clean('sta xyz')).to.eql('<@2 xyz@>');
+    expect(clean('sta 1+2')).to.eql('<@2 1+2@>'); // note: can't tell which to use
+    expect(clean('asl')).to.eql('<@1f ignored@>');
+    expect(clean('stx 103,y')).to.eql('<@14 103@>');
+    expect(clean('jmp (x)')).to.eql('<@16 x@>');
+    expect(clean('sta (x),y')).to.eql('<@20 x@>');
+  });
+});

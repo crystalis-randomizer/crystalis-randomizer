@@ -26,16 +26,23 @@ export function clean(contents: string, cpu: Cpu, prg: Uint8Array): string {
 // is actually labeled before we touch it.  We can clean up the labels later.
 // If we find a relative jump without an argument, we replace it with a `*+`
 // expression.
+
+function* lines(str: string): Iterable<string> {
+  let i = 0;
+  while (i < str.length) {
+    const next = (str.indexOf('\n', i) + 1) || str.length;
+    yield str.substring(i, next);
+    i = next;
+  }
+}
+
 class Smudger {
   constructor(private readonly cpu: Cpu, private readonly prg: Uint8Array) {}
 
   smudge(contents: string): string {
     let output = '';
-    while (contents.length) {
-      let newline = contents.indexOf('\n');
-      if (newline < 0) newline = contents.length;
-      output += this.smudgeLine(contents.substring(0, newline));
-      contents = contents.substring(newline);
+    for (const line of lines(contents)) {
+      output += this.smudgeLine(line);
     }
     return output;
   }
@@ -54,12 +61,13 @@ class Smudger {
     // look for data reads
     let smudged = '';
     for (;;) {
-      const match = /^([^;]*?)\[@([0-9a-f]+)(:[0-9]+|:w)?@\](.*)/i.exec(line);
+      const match = /^([^;]*?)\[@([0-9a-f]+)(:[0-9]+|:[wdb])?@\](.*)/i.exec(line);
       if (!match) {
         smudged += line;
         break;
       }
       const [, prefix, addrStr, modifier, suffix] = match;
+//console.log(`prefix: ${prefix}\naddr: ${addrStr}\nmod: ${modifier}\nsuffix: ${suffix}`);
       line = suffix;
       smudged += prefix;
       const addr = parseInt(addrStr, 16);
@@ -87,8 +95,8 @@ function smudgeData(prg: Uint8Array, addr: number, mod: string): string {
     return `($${toHex(value, 4)})`;
   } else if (/:\d+/.test(mod)) {
     const chars = parseInt(mod.substring(1));
-    let result = `"${String.fromCharCode(value)}`;
-    for (let i = 1; i < chars; i++) {
+    let result = '"';
+    for (let i = 0; i < chars; i++) {
       let chr = String.fromCharCode(prg[addr + i]);
       if ('"\\'.includes(chr)) chr = '\\' + chr;
       result += chr;
@@ -230,12 +238,9 @@ class Cleaner {
   }
 
   clean(contents: string): string {
-    const lines = contents.split(/\n/g);
-    for (const line of lines) {
+    for (const line of lines(contents)) {
       this.readLine(line);
-      this.pushStr('\n');
     }
-    this.chunks.pop(); // easiest way to deal with newlines... :-/
 
     // Now fix up all the addresses...
     let pc = 0;
@@ -251,7 +256,7 @@ class Cleaner {
     let match;
 
     // Look for a `; from .*` comment
-    if ((match = /;\s*from\s+\$?([0-9a-f]{4,6}\b/i.exec(line))) {
+    if ((match = /;\s*from\s+\$?([0-9a-f]{4,6})\b/i.exec(line))) {
       // don't delete anything, but set the PC.
       this.push(new CleanAnnotation(parseInt(match[1], 16)));
     }
@@ -262,45 +267,45 @@ class Cleaner {
       line = line.substring(match[0].length);
     }
 
-    // Look for a .byte or .word directive.  Note that byteMatch is constant, so
-    // this is actually an infinite loop - we return out of it when we're done.
-    // Changing to a `while ((match = ...))` style would require an extra level
-    // of nesting because we'd do an `if ((match = ...))` followed by the loop.
-    const byteMatch = /^\s*\.(?:byte|word|text)\s*/.exec(line);
-    while (byteMatch) {
-      this.pushStr(byteMatch[0]);
-      line = line.substring(byteMatch[0].length);
-      // Now look for words, hex/dec/bin bytes, or text
-      const textMatch = /^("(?:[^\\"]|\\.)+")(,?\s*)/.exec(line);
-      const wordMatch = /^(\(\$([0-9a-f]{4})\))(,?\s*)/.exec(line);
-      const hexMatch = /^(\$([0-9a-f]{2}))(,?\s*)/.exec(line);
-      const decMatch = /^([1-9][0-9]*|0)(,?\s*)/.exec(line);
-      const binMatch = /^(%([01]{8}))(,?\s*)/.exec(line);
-      if (textMatch) {
-        const str = JSON.parse(textMatch[1]);
-        const bytes = Array.from({length: str.length}, (_, i) => str.charCodeAt(i) & 255);
-        this.push(new CleanData(textMatch[1], bytes, `:${bytes.length}`));
-        this.pushStr(textMatch[2]);
-      } else if (wordMatch) {
-        const value = parseInt(wordMatch[2], 16);
-        this.push(new CleanData(wordMatch[1], [value & 255, value >>> 8], ':w'));
-        this.pushStr(wordMatch[3]);
-      } else if (hexMatch) {
-        const value = parseInt(hexMatch[2], 16);
-        this.push(new CleanData(hexMatch[1], [value], ''));
-        this.pushStr(hexMatch[3]);
-      } else if (decMatch) {
-        const value = parseInt(decMatch[1]);
-        this.push(new CleanData(decMatch[1], [value], ':d'));
-        this.pushStr(decMatch[2]);
-      } else if (binMatch) {
-        const value = parseInt(binMatch[2]);
-        this.push(new CleanData(binMatch[1], [value], ':b'));
-        this.pushStr(binMatch[3]);
-      } else {
-        // end of the line - no more useful data
-        this.pushStr(line);
-        return;
+    // Look for a .byte or .word directive.
+    if ((match = /^\s*\.(?:byte|word|asciiz)\s*/i.exec(line))) {
+      this.pushStr(match[0]);
+      line = line.substring(match[0].length);
+      for (;;) {
+        // Now look for words, hex/dec/bin bytes, or text
+        let match;
+        if ((match = /^("(?:[^\\"]|\\.)+")(\s*,?\s*)/.exec(line))) { // "text"
+          const str = JSON.parse(match[1]);
+          const bytes = Array.from({length: str.length},
+                                   (_, i) => str.charCodeAt(i) & 255);
+          this.push(new CleanData(match[1], bytes, `:${bytes.length}`));
+          this.pushStr(match[2]);
+          line = line.substring(match[0].length);
+        } else if ((match = /^(\(\$([0-9a-f]{4})\))(\s*,?\s*)/.exec(line))) { // (word)
+          const value = parseInt(match[2], 16);
+          this.push(new CleanData(match[1], [value & 255, value >>> 8], ':w'));
+          this.pushStr(match[3]);
+          line = line.substring(match[0].length);
+        } else if ((match = /^(\$([0-9a-f]{2}))(\s*,?\s*)/.exec(line))) { // $hex
+          const value = parseInt(match[2], 16);
+          this.push(new CleanData(match[1], [value], ''));
+          this.pushStr(match[3]);
+          line = line.substring(match[0].length);
+        } else if ((match = /^([1-9][0-9]*|0)(\s*,?\s*)/.exec(line))) { // decimal
+          const value = parseInt(match[1]);
+          this.push(new CleanData(match[1], [value], ':d'));
+          this.pushStr(match[2]);
+          line = line.substring(match[0].length);
+        } else if ((match = /^(%([01]{8}))(\s*,?\s*)/.exec(line))) { // %binary
+          const value = parseInt(match[2]);
+          this.push(new CleanData(match[1], [value], ':b'));
+          this.pushStr(match[3]);
+          line = line.substring(match[0].length);
+        } else {
+          // end of the line - no more useful data
+          this.pushStr(line);
+          return;
+        }
       }
     }
 

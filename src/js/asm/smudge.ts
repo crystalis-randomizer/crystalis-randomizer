@@ -113,7 +113,7 @@ function smudgeData(prg: Uint8Array, addr: number, mod: string): string {
 
 abstract class CleanChunk {
   constructor(readonly plain: string) {}
-  fix(pc: number, _index: Index): number {
+  fix(pc: number, _index: Index, _prg: Uint8Array): number {
     return pc;
   }
   format(_prg: Uint8Array, _cpu: Cpu): string {
@@ -132,20 +132,29 @@ class CleanSequence extends CleanChunk {
   address = 0;
   constructor(plain: string, readonly bytes: number[]) { super(plain); }
 
-  fix(pc: number, index: Index): number {
-    // TODO - if this.bytes.length > INDEX_SIZE/2 then we need to be smarter.
-    //   => Slice the string and look for follow-up matches?
-
+  fix(pc: number, index: Index, prg: Uint8Array): number {
     // Look for the sequence
-    const addrs = index.get(toHexString(this.bytes)) || [];
-    if (!addrs) return pc;
+    const maxIndex = INDEX_SIZE >>> 1;
+    const addrs = index.get(toHexString(this.bytes.slice(0, maxIndex))) || [];
+    if (!addrs.length) return pc;
     // Find the next match (at or) after pc
     let i = binarySearch(addrs.length, (i) => pc - addrs[i]);
     if (i < 0) i = ~i;
     if (i >= addrs.length) i = 0;
-    if (i < addrs.length) {
-      pc = (this.address = addrs[i]) + this.bytes.length;
+    // Handle long strings
+    if (this.bytes.length > maxIndex) {
+      let j = addrs.length;
+      while (j--) {
+        const prgSlice =
+          prg.subarray(addrs[i] + maxIndex, addrs[i] + this.bytes.length);
+        if (sameArray(this.bytes.slice(maxIndex), prgSlice)) break;
+        i = (i + 1) % addrs.length;
+      }
+      // No match found, so just return.
+      if (j < 0) return pc;
     }
+    // Update address if appropriate.
+    pc = (this.address = addrs[i]) + this.bytes.length;
     return pc;
   }
 }
@@ -247,7 +256,7 @@ class Cleaner {
     // Now fix up all the addresses...
     let pc = 0;
     for (const chunk of this.chunks) {
-      pc = chunk.fix(pc, this.index);
+      pc = chunk.fix(pc, this.index, this.prg);
     }
 
     // Format and concatenate
@@ -382,4 +391,12 @@ function toHex(num: number, digits = 2): string {
 }
 function toHexString(nums: number[]): string {
   return nums.map(x => toHex(x)).join('');
+}
+
+function sameArray(left: ArrayLike<number>, right: ArrayLike<number>): boolean {
+  if (left.length !== right.length) return false;
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) return false;
+  }
+  return true;
 }

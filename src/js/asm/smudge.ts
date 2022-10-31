@@ -67,7 +67,6 @@ class Smudger {
         break;
       }
       const [, prefix, addrStr, modifier, suffix] = match;
-//console.log(`prefix: ${prefix}\naddr: ${addrStr}\nmod: ${modifier}\nsuffix: ${suffix}`);
       line = suffix;
       smudged += prefix;
       const addr = parseInt(addrStr, 16);
@@ -136,7 +135,6 @@ class CleanSequence extends CleanChunk {
   fix(pc: number, index: Index): number {
     // Look for the sequence
     const addrs = index.get(toHexString(this.bytes)) || [];
-//console.log(`bytes: ${toHexString(this.bytes)}; addrs: ${addrs.join(' ')}`);
     if (!addrs) return pc;
     // Find the next match (at or) after pc
     let i = binarySearch(addrs.length, (i) => pc - addrs[i]);
@@ -145,7 +143,6 @@ class CleanSequence extends CleanChunk {
     if (i < addrs.length) {
       pc = (this.address = addrs[i]) + this.bytes.length;
     }
-//console.log(` => address: ${this.address} pc: ${pc}`);
     return pc;
   }
 }
@@ -247,7 +244,6 @@ class Cleaner {
     // Now fix up all the addresses...
     let pc = 0;
     for (const chunk of this.chunks) {
-//console.dir(chunk);
       pc = chunk.fix(pc, this.index);
     }
 
@@ -266,7 +262,6 @@ class Cleaner {
 
     // Look for a label at the front
     if ((match = /^\s*(?:[-+]+:?|[@a-z0-9_]*:)\s*/i.exec(line))) {
-//console.log(`label: ${match[0]}`);
       this.pushStr(match[0]);
       line = line.substring(match[0].length);
     }
@@ -317,7 +312,6 @@ class Cleaner {
     // quotes or semicolons, so this should be fine.
     if ((match = /^(\s*)([a-z]{3})([^;]*?)(\s*(?:;.*)?)$/.exec(line))) {
       const [, prefix, mnemonic, arg, suffix] = match;
-//console.log(`instr ${mnemonic}`);
       const op = parseOp(this.cpu, mnemonic, arg);
       if (op) {
         this.pushStr(prefix);
@@ -348,7 +342,6 @@ function parseOp(cpu: Cpu, mnemonic: string, argStr: string): CleanChunk|undefin
   } else if ((arg = /^ ([^,)]+),y$/.exec(argStr)?.[1])) { // aby/zpy
     return zpgOrAbs(plain, arg, op.zpy, op.aby);
   } else if ((arg = /^ \(([^,)]+)\)$/.exec(argStr)?.[1])) { // ind
-console.log(`ind: ${arg}`);
     return zpgOrAbs(plain, arg, undefined, op.ind);
   } else if ((arg = /^ \(([^,)]+),x\)$/.exec(argStr)?.[1])) { // inx
     return zpgOrAbs(plain, arg, undefined, op.inx);
@@ -385,35 +378,3 @@ function toHex(num: number, digits = 2): string {
 function toHexString(nums: number[]): string {
   return nums.map(x => toHex(x)).join('');
 }
-
-// function arraysMatch(arr1: ArrayLike<number>, arr2: ArrayLike<number>) {
-//   for (let i = 0; i < arr1.length; i++) {
-//     if (arr1[i] !== arr2[i]) return false;
-//   }
-//   return true;
-// }
-
-// type Predicate<T> = (arg: T) => boolean;
-// const addrModeRegexes: Record<string, readonly [RegExp, Predicate<string>]> = {
-//   acc: [/^()$/, () => true], // must be empty
-//   imp: [/^()$/, () => true],
-//   imm: [/^ #(.*)$/, () => true], // no restriction
-//   abs: [/^ ([^,]*)$/, arg => !isEightBit(arg)],
-//   abx: [/^ ([^,]*),x$/, arg => !isEightBit(arg)],
-//   aby: [/^ ([^,]*),y$/, arg => !isEightBit(arg)],
-//   zpg: [/^ ([^,]*)$/, arg => !isSixteenBit(arg)],
-//   zpx: [/^ ([^,]*),x$/, arg => !isSixteenBit(arg)],
-//   zpy: [/^ ([^,]*),y$/, arg => !isSixteenBit(arg)],
-//   ind: [/^ \(([^,]*)\)$/, () => true],
-//   inx: [/^ \(([^,]*),x\)$/, () => true],
-//   iny: [/^ \(([^,]*)\),y$/, () => true],
-// }
-
-// function isEightBit(arg: string): boolean {
-//   return /^\$[0-9a-f]{1,2}$/.test(arg) || /^%[01]{1,8}$/.test(arg) || arg === '0'
-//     || /^[1-9][0-9]*$/.test(arg) && parseInt(arg) < 256;
-// }
-// function isSixteenBit(arg: string): boolean {
-//   return /^\$[0-9a-f]{3,4}$/.test(arg) || /^%[01]{9,16}$/.test(arg)
-//     || /^[1-9][0-9]*$/.test(arg) && parseInt(arg) > 255;
-// }

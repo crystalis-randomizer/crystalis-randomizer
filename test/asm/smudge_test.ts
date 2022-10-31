@@ -139,9 +139,15 @@ describe('clean', function() {
     expect(clean('lda #a')).to.eql('<@0 a@>');
     expect(clean('sta xyz')).to.eql('<@2 xyz@>');
     expect(clean('sta 1+2')).to.eql('<@2 1+2@>'); // note: can't tell which to use
-    expect(clean('asl')).to.eql('<@1f ignored@>');
+    expect(clean('asl')).to.eql('<@1f@>');
     expect(clean('stx 103,y')).to.eql('<@14 103@>');
     expect(clean('jmp (x)')).to.eql('<@16 x@>');
     expect(clean('sta (x),y')).to.eql('<@20 x@>');
+  });
+  it('should use successive versions of the same instruction', function() {
+    expect(clean('lda #$05\nlda #$05\nlda #$05')).to.eql('<@0@>\n<@23@>\n<@0@>');
+  });
+  it('should respect `from` comments', function() {
+    expect(clean('lda #$05 ; from $20')).to.eql('<@23@> ; from $20');
   });
 });

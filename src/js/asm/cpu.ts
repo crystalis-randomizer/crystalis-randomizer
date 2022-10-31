@@ -7,6 +7,7 @@ export type AddressingMode =
 type Mnemonic = string;
 
 export interface Cpu {
+  readonly table: Table;
   op(mnemonic: Mnemonic): {[mode in AddressingMode]?: number};
   disasm(byte: number): [Mnemonic, AddressingMode]|undefined;
   argLen(mode: AddressingMode): number;

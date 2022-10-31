@@ -136,6 +136,7 @@ class CleanSequence extends CleanChunk {
   fix(pc: number, index: Index): number {
     // Look for the sequence
     const addrs = index.get(toHexString(this.bytes)) || [];
+//console.log(`bytes: ${toHexString(this.bytes)}; addrs: ${addrs.join(' ')}`);
     if (!addrs) return pc;
     // Find the next match (at or) after pc
     let i = binarySearch(addrs.length, (i) => pc - addrs[i]);
@@ -144,6 +145,7 @@ class CleanSequence extends CleanChunk {
     if (i < addrs.length) {
       pc = (this.address = addrs[i]) + this.bytes.length;
     }
+//console.log(` => address: ${this.address} pc: ${pc}`);
     return pc;
   }
 }
@@ -245,6 +247,7 @@ class Cleaner {
     // Now fix up all the addresses...
     let pc = 0;
     for (const chunk of this.chunks) {
+//console.dir(chunk);
       pc = chunk.fix(pc, this.index);
     }
 
@@ -256,13 +259,14 @@ class Cleaner {
     let match;
 
     // Look for a `; from .*` comment
-    if ((match = /;\s*from\s+\$?([0-9a-f]{4,6})\b/i.exec(line))) {
+    if ((match = /;\s*from\s+\$?([0-9a-f]{1,6})\b/i.exec(line))) {
       // don't delete anything, but set the PC.
       this.push(new CleanAnnotation(parseInt(match[1], 16)));
     }
 
     // Look for a label at the front
-    if ((match = /^\s*(?:[-+]*:?|\w+:)\s*/.exec(line))) {
+    if ((match = /^\s*(?:[-+]+:?|[@a-z0-9_]*:)\s*/i.exec(line))) {
+//console.log(`label: ${match[0]}`);
       this.pushStr(match[0]);
       line = line.substring(match[0].length);
     }
@@ -311,8 +315,9 @@ class Cleaner {
 
     // Not a data line: see if we can find an opcode.  Args should never have
     // quotes or semicolons, so this should be fine.
-    if ((match = /^(\s*)([a-z]{3})([^;]*?)(\s*(?:;.*))$/.exec(line))) {
+    if ((match = /^(\s*)([a-z]{3})([^;]*?)(\s*(?:;.*)?)$/.exec(line))) {
       const [, prefix, mnemonic, arg, suffix] = match;
+//console.log(`instr ${mnemonic}`);
       const op = parseOp(this.cpu, mnemonic, arg);
       if (op) {
         this.pushStr(prefix);
@@ -326,7 +331,7 @@ class Cleaner {
 }
 
 function parseOp(cpu: Cpu, mnemonic: string, argStr: string): CleanChunk|undefined {
-  const op = cpu.op(mnemonic);
+  const op = cpu.table[mnemonic];
   const plain = mnemonic + argStr;
   let arg;
   if (!op) return undefined;
@@ -334,19 +339,20 @@ function parseOp(cpu: Cpu, mnemonic: string, argStr: string): CleanChunk|undefin
     if (op.acc != null) return new CleanOpSimple(plain, [op.acc]);
     if (op.imp != null) return new CleanOpSimple(plain, [op.imp]);
     return undefined;
-  } else if ((arg = /^ #(.*)$/.exec(argStr)?.[1])) { // imm
+  } else if ((arg = /^ #(.+)$/.exec(argStr)?.[1])) { // imm
     return zpgOrAbs(plain, arg, op.imm);
-  } else if ((arg = /^ ([^,]*)$/.exec(argStr)?.[1])) { // abs/zpg
+  } else if ((arg = /^ ([^,)]+)$/.exec(argStr)?.[1])) { // abs/zpg
     return zpgOrAbs(plain, arg, op.zpg, op.abs);
-  } else if ((arg = /^ ([^,]*),x$/.exec(argStr)?.[1])) { // abx/zpx
+  } else if ((arg = /^ ([^,)]+),x$/.exec(argStr)?.[1])) { // abx/zpx
     return zpgOrAbs(plain, arg, op.zpx, op.abx);
-  } else if ((arg = /^ ([^,]*),y$/.exec(argStr)?.[1])) { // aby/zpy
+  } else if ((arg = /^ ([^,)]+),y$/.exec(argStr)?.[1])) { // aby/zpy
     return zpgOrAbs(plain, arg, op.zpy, op.aby);
-  } else if ((arg = /^ \(([^,]*)\)$/.exec(argStr)?.[1])) { // ind
+  } else if ((arg = /^ \(([^,)]+)\)$/.exec(argStr)?.[1])) { // ind
+console.log(`ind: ${arg}`);
     return zpgOrAbs(plain, arg, undefined, op.ind);
-  } else if ((arg = /^ \(([^,]*),x\)$/.exec(argStr)?.[1])) { // inx
+  } else if ((arg = /^ \(([^,)]+),x\)$/.exec(argStr)?.[1])) { // inx
     return zpgOrAbs(plain, arg, undefined, op.inx);
-  } else if ((arg = /^ \(([^,]*)\),y$/.exec(argStr)?.[1])) { // inx
+  } else if ((arg = /^ \(([^,)]+)\),y$/.exec(argStr)?.[1])) { // inx
     return zpgOrAbs(plain, arg, op.iny);
   } else if (op.rel != null) { // don't bother trying to use it directly
     return new CleanOpPartial(plain, [op.rel], argStr.replace(/^ /, ''));
@@ -355,9 +361,9 @@ function parseOp(cpu: Cpu, mnemonic: string, argStr: string): CleanChunk|undefin
 }
 
 function zpgOrAbs(plain: string, arg: string, zpg?: number, abs?: number): CleanChunk|undefined {
-  if (/\$[0-9a-f]{2}/.test(arg) && zpg != null) {
+  if (/^\$[0-9a-f]{2}$/.test(arg) && zpg != null) {
     return new CleanOpSimple(plain, [zpg, parseNum(arg)!]);
-  } else if (/\${0-9a-f]{4}/.test(arg) && abs != null) {
+  } else if (/^\$[0-9a-f]{4}$/.test(arg) && abs != null) {
     const word = parseNum(arg)!;
     return new CleanOpSimple(plain, [abs, word & 0xff, word >>> 8]);
   }

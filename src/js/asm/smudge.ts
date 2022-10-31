@@ -133,6 +133,9 @@ class CleanSequence extends CleanChunk {
   constructor(plain: string, readonly bytes: number[]) { super(plain); }
 
   fix(pc: number, index: Index): number {
+    // TODO - if this.bytes.length > INDEX_SIZE/2 then we need to be smarter.
+    //   => Slice the string and look for follow-up matches?
+
     // Look for the sequence
     const addrs = index.get(toHexString(this.bytes)) || [];
     if (!addrs) return pc;
@@ -204,7 +207,7 @@ class CleanData extends CleanSequence {
 }
 
 // Maps from hex string to sorted list of addresses, up to 16 bytes long
-const INDEX_SIZE = 6; // 32;
+const INDEX_SIZE = 6;
 type Index = ReadonlyMap<string, ReadonlyArray<number>>;
 class Cleaner {
   private readonly index: Index;
@@ -261,13 +264,15 @@ class Cleaner {
     }
 
     // Look for a label at the front
-    if ((match = /^\s*(?:[-+]+:?|[@a-z0-9_]*:)\s*/i.exec(line))) {
+    // TODO - consider removing the [$ ] and the repeat from this when it's no longer needed for disasm
+    if ((match = /^(?:\s*[-+]+:?|\s*[@$a-z0-9_ ]*:)+\s*/i.exec(line))) {
       this.pushStr(match[0]);
       line = line.substring(match[0].length);
     }
 
     // Look for a .byte or .word directive.
-    if ((match = /^\s*\.(?:byte|word|asciiz)\s*/i.exec(line))) {
+    // TODO - consider removing the (\$[0-9a-f]{5}\s*)? once it's no longer needed
+    if ((match = /^\s*(?:\$[0-9a-f]{5}\s*)?\.(?:byte|word|asciiz)\s*/i.exec(line))) {
       this.pushStr(match[0]);
       line = line.substring(match[0].length);
       for (;;) {
@@ -310,7 +315,7 @@ class Cleaner {
 
     // Not a data line: see if we can find an opcode.  Args should never have
     // quotes or semicolons, so this should be fine.
-    if ((match = /^(\s*)([a-z]{3})([^;]*?)(\s*(?:;.*)?)$/.exec(line))) {
+    if ((match = /^(\s*)([a-z]{3})([^;]*?)(\s*(?:;.*)?)$/s.exec(line))) {
       const [, prefix, mnemonic, arg, suffix] = match;
       const op = parseOp(this.cpu, mnemonic, arg);
       if (op) {
@@ -333,6 +338,8 @@ function parseOp(cpu: Cpu, mnemonic: string, argStr: string): CleanChunk|undefin
     if (op.acc != null) return new CleanOpSimple(plain, [op.acc]);
     if (op.imp != null) return new CleanOpSimple(plain, [op.imp]);
     return undefined;
+  } else if (op.rel != null) { // don't bother trying to use it directly
+    return new CleanOpPartial(plain, [op.rel], argStr.replace(/^ /, ''));
   } else if ((arg = /^ #(.+)$/.exec(argStr)?.[1])) { // imm
     return zpgOrAbs(plain, arg, op.imm);
   } else if ((arg = /^ ([^,)]+)$/.exec(argStr)?.[1])) { // abs/zpg
@@ -347,8 +354,6 @@ function parseOp(cpu: Cpu, mnemonic: string, argStr: string): CleanChunk|undefin
     return zpgOrAbs(plain, arg, undefined, op.inx);
   } else if ((arg = /^ \(([^,)]+)\),y$/.exec(argStr)?.[1])) { // inx
     return zpgOrAbs(plain, arg, op.iny);
-  } else if (op.rel != null) { // don't bother trying to use it directly
-    return new CleanOpPartial(plain, [op.rel], argStr.replace(/^ /, ''));
   }
   return undefined;
 }

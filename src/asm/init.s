@@ -439,6 +439,8 @@ FREE "0b" [$bf00, $c000)        ; 17f00 .. 18000
 FREE "0c" [$83fc, $844d)        ; 183fc .. 1844d
 ;;; empty space at end of npcdata
 FREE "0d" [$aba3, $ac00)        ; 1aba3 .. 1ac00
+;;; empty space at end of objectdata (but mapdata 0 is still after in segment)
+FREE "0d" [$be91, $bff0)        ; 1aba3 .. 1ac00
 
 ;;; 58 bytes of free/unused space at start of itemuse jump
 FREE "0e" [$8399, $83d3)

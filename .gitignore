@@ -20,14 +20,3 @@ node_modules
 tsconfig.tsbuildinfo
 npm-debug.log
 .tsc.out
-.project
-bin/.github/workflows/publish.yml
-bin/.npmignore
-bin/.project
-bin/.travis.yml
-bin/BUILD.md
-bin/CHANGELOG.md
-bin/debug
-bin/deploy_key.enc
-bin/README.md
-bin/TODO

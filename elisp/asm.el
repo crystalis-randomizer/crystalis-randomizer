@@ -117,6 +117,98 @@
                 (backward-char)
                 (insert name " ; ")))))))))
 
+; use (setq asm/org-delta #x8000), for example
+(defvar asm/org-delta 0 "Difference to add when inserting an .org")
+(defun asm/insert-org-before-label ()
+  (interactive)
+  (let (n)
+    (save-excursion
+      (re-search-forward "^ *\\$[0-9a-f]")
+      (backward-char)
+      (insert "0x")
+      (setq n (number-at-point))
+      (delete-backward-char 2))
+    (save-excursion
+      (beginning-of-line)
+      (insert (format ".org $%04x\n" (+ n asm/org-delta))))))
+(defun asm/replace-wordref ()
+  (interactive)
+  (let (a s e)
+    (save-excursion
+      (re-search-forward "; \\$[0-9a-f]")
+      (setq a (word-at-point))
+      (re-search-forward (format "^ *%s *" a))
+      (beginning-of-line)
+      (previous-line)
+      (setq s (point))
+      (search-forward ":")
+      (backward-char)
+      (setq e (point))
+      (setq a (buffer-substring-no-properties s e)))
+    (save-excursion
+      (beginning-of-line)
+      (search-forward "(")
+      (kill-word 1)
+      (insert a))))
+(defun asm/next-label ()
+  (interactive)
+  (re-search-forward "^@?[A-Za-z0-9_]+:"))
+(defun asm/next-full-addr ()
+  (interactive)
+  (re-search-forward " [a-z]\\{3\\} (?\\$[0-9a-f]\\{5\\}"))
+(defun asm/address-at-point ()
+  (interactive)
+  (let (s e)
+    (if (looking-at "[ ,\n]") (backward-char))
+    (forward-word)
+    (setq e (point))
+    (backward-word)
+    (forward-char)
+    (setq s (point))
+    (buffer-substring-no-properties s e)))
+(defun asm-goto-address-at-point ()
+  (interactive)
+    (asm-goto-position (asm/address-at-point)))
+(defun asm/best-label-for-address (a)
+  (let ((narg (string-to-number a 16)) nactual l s e)
+    (save-excursion
+      (asm-goto-position a)
+      (beginning-of-line)
+      (previous-line)
+      (while (or (looking-at " *;") (looking-at " *$"))
+        (previous-line))
+      (if (looking-at "@?[A-Za-z0-9_]+:")
+          (progn (setq s (point))
+                 (search-forward ":")
+                 (backward-char)
+                 (setq e (point))
+                 (setq l (buffer-substring-no-properties s e)))
+        (next-line)
+        (insert "_" a ":\n")
+        (setq l (format "_%s" a)))
+      (re-search-forward "^ *\\$")
+      (setq s (point))
+      (search-forward " ")
+      (setq e (- (point) 1))
+      (setq nactual (string-to-number (buffer-substring-no-properties s e) 16))
+      ;(message (format "label %s arg %x actual %x" l narg nactual))
+      (if (= nactual narg) l
+        (format "%s+%d" l (- narg nactual))))))
+
+(defun asm/label-from-address-at-point ()
+  (interactive)
+  (asm/best-label-for-address (asm/address-at-point)))
+(defun asm-replace-with-label ()
+  (interactive)
+  (let (s e (l (asm/label-from-address-at-point)))
+    (if (looking-at "[ ,\n]") (backward-char))
+    (forward-word)
+    (setq e (point))
+    (backward-word)
+    (setq s (point))
+    (delete-region s e)
+    (insert l)))
+
 (defconst asm/hex (lambda (x) (and x (format "%x" x))))
 
 (defun asm/ordered-p (a b c)
@@ -269,6 +361,39 @@ line if 'name' were defined there."
   (interactive "sAddress: ")
   (goto-char (asm/find-position (string-to-number addr 16))))
 
+
+(defun asm-replace-address-at-point-with-label ()
+  (interactive)
+  (let (a s)
+    (save-excursion
+      (setq a (format "%x" (asm/parse-number)))
+      (asm-goto-position a)
+      (asm-split)
+      (beginning-of-line)
+      (previous-line)
+      (if (looking-at "^[A-Za-z0-9_]+:")
+          (progn
+            (setq s (point))
+            (search-forward ":")
+            (setq a (buffer-substring-no-properties s (- (point) 1))))
+        (setq a (format "_%s" a))
+        (next-line)
+        (insert (format "%s:\n" a))))
+    (forward-char)
+    (search-backward "$")
+    (kill-word 1)
+    (insert a)))
+
+(defun asm-rename-label (new-name)
+  (interactive "sNew name: ")
+  (let (l s)
+    (save-excursion
+      (beginning-of-line)
+      (setq s (point))
+      (search-forward ":")
+      (setq l (buffer-substring-no-properties s (- (point) 1)))
+      (beginning-of-buffer)
+      (replace-string l new-name))))
 
 ;; (defun asm/find-position (pos)
 ;;   "Find the buffer position the given address"
@@ -1359,11 +1484,14 @@ of a non-divisible line, then the entire line will be deleted."
 (define-key asm-mode-map (kbd "C-c a") 'asm-goto-position)
 (define-key asm-mode-map (kbd "C-c .") 'asm-goto-position-at-point)
 (define-key asm-mode-map (kbd "C-c -") 'asm-relativize-jump)
-(define-key asm-mode-map (kbd "C-c l") 'asm-convert-address-to-label)
+; this one is more reliable but less functional
+;(define-key asm-mode-map (kbd "C-c l") 'asm-convert-address-to-label)
+(define-key asm-mode-map (kbd "C-c l") 'asm-replace-with-label)
 (define-key asm-mode-map (kbd "C-c i -") 'asm-insert-break)
 (define-key asm-mode-map (kbd "C-'") 'asm-cycle-define)
 (define-key asm-mode-map (kbd "C-j") 'electric-newline-and-maybe-indent)
 (define-key asm-mode-map (kbd "C-m") 'newline)
+(define-key asm-mode-map (kbd "C-c C-n") 'asm/next-full-addr)
 
 (add-hook 'asm-mode-hook 'sdh-setup-asm-mode)
 
@@ -1371,3 +1499,92 @@ of a non-divisible line, then the entire line will be deleted."
   (setq tab-width 4)
   (setq indent-line-function 'insert-tab)
   (setq asm-indent-level 4))
+
+
+;;;; kmacro for adding a .org before next label
+;;#[256 "\211\301=\203
+;; \301\300B\207\302\300\"\207" [([134217747 94 91 65 45 90 97 45 122 48 45 57 95 93 43 58 return 1 134217848 40 backspace 97 115 109 47 105 110 115 101 114 116 45 111 114 103 45 98 101 102 111 114 101 45 108 97 98 101 108 return down down] 0 "%d") kmacro--extract-lambda kmacro-exec-ring-item] 4 "Keyboard macro.
+
+
+(defun asm-insert-org-before-next-label ()
+  (interactive)
+  (asm/next-label)
+  (beginning-of-line)
+  (asm/insert-org-before-label)
+  (next-line 2))
+(define-key asm-mode-map (kbd "C-2") 'asm-insert-org-before-next-label)
+
+; Make "a1: .word (a2) \n a2: ..."
+(fset 'asm-factor-out-simple-address
+   (kmacro-lambda-form [?\C-c ?\C-w up return C-right ?\C-  C-left right ?\M-w ?\C-a up ?D ?a ?t ?a ?T ?a ?b ?l ?e ?_ ?\C-y ?\C-q ?: left left left left left left left down down ?\C-  C-right ?\M-w ?\C-a return up ?D ?a ?t ?a ?T ?a ?b ?l ?e ?_ ?\C-y ?: ?\C-_ ?\C-q ?: left ?\C-  ?\C-a ?\M-w left left backspace backspace backspace backspace backspace ?\C-y ?\C-_ ?\C-_ C-left ?\C-y ?\) ?  ?\C-q ?\; ?  ?\C-e backspace] 0 "%02x"))
+
+; Cursor at start of label, replaces all other occurrences in buffer
+(fset 'asm-replace-label-everywhere
+   (kmacro-lambda-form [?\C-a ?\C-s ?: return left ?\C-  ?\C-a ?\C-x ?r ?s ?1 ?\C-\M-s ?^ ?  ?+ ?\\ ?$ return ?\C-  left ?\C-  C-right ?\C-x ?r ?s ?2 C-left right ?  ?\C-x ?r ?  ?0 ?\M-< ?\M-x ?r ?e ?p ?l ?a ?c ?e ?  ?s ?t ?r ?i ?n ?g return ?\C-x ?r ?i ?2 return ?\C-x ?r ?i ?1 return ?\C-x ?r ?j ?0 backspace ?\C-a] 0 "%02x"))
+
+; Setup: Register 1 holds the root label (i.e. the address table name), words are correct
+; 5-digit addresses, and numeric (label suffix) comments after each word.
+; Follow up with asm-replace-word-addr-with-label
+(fset 'asm-make-labels-for-address-table
+   (kmacro-lambda-form [?\C-s ?. ?w ?o ?r ?d ?  ?\( return right ?\C-  C-right ?\C-x ?r ?s ?2 ?\C-s ?\; ?  return ?\C-  C-right ?\C-x ?r ?s ?3 ?\C-a ?\C-x ?r ?  ?0 ?\C-c ?a ?\C-x ?r ?i ?2 return ?\C-o ?\C-x ?r ?i ?1 ?\C-x ?r ?i ?3 ?\C-q ?: ?\C-x ?r ?j ?0 down] 0 "%02x"))
+
+
+
+(fset 'asm-indent-dashes
+   (kmacro-lambda-form [?  ?  ?  ?  ?  ?  ?  ?  right right right ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  ?  right up ?\C-r ?: return ?\C-\M-s ?  ?+ return ?\C-  down ?\C-  ?\C-r ?: backspace ?\; right ?\M-x ?r ?e ?p ?l ?a ?c ?e ?  ?s ?t ?r ?i ?n ?g return ?- return ?  return up ?\C-e down ?\C-  ?\C-e ?\C-x ?w ?\C-a] 0 "%d"))
+
+(fset 'asm-replace-next-fulladdr-with-label
+   (kmacro-lambda-form [?\M-x ?a ?s ?m ?/ ?n ?e ?x ?t ?- ?f ?u ?l ?l ?- ?a ?d ?d ?r ?\C-m ?\M-x ?a ?s ?m ?  ?r ?e ?p ?l ?a ?c ?e ?  ?w ?i ?t ?h ?  ?l ?a ?b ?e ?l ?\C-m] 0 "%d"))
+
+
+(fset 'asm-replace-word-addr-with-label
+   (kmacro-lambda-form [?\C-s ?. ?w ?o ?r ?d ?  ?\( ?$ ?\C-a ?\C-x ?r ?  ?0 ?\C-s ?\( ?\C-m right ?\C-  C-right ?\C-x ?r ?s ?1 ?\C-c ?a ?\C-x ?r ?i ?1 ?\C-m ?\C-\[ ?\C-r ?^ ?\[ ?A ?- ?Z ?a ?- ?z ?0 ?- ?9 ?_ ?\] ?+ ?: ?\C-m ?\C-  ?\C-s ?: left ?\C-x ?r ?s ?2 ?\C-x ?r ?j ?0 ?\C-s ?\( ?\C-m ?\C-  ?\C-s ?\) left ?\C-x ?w ?\C-x ?r ?i ?1 ?\C-_ ?\C-x ?r ?i ?2] 0 "%d"))
+
+
+
+
+;;;; kmacro for replacing .word (...) with label
+;; C-s			;; isearch-forward
+;; .word			;; self-insert-command * 5
+;; SPC			;; self-insert-command
+;; ($			;; self-insert-command * 2
+;; C-a			;; sdh-beginning-of-line
+;; C-x r SPC		;; point-to-register
+;; 0			;; self-insert-command
+;; C-s			;; isearch-forward
+;; (			;; self-insert-command
+;; RET			;; newline
+;; <right>			;; right-char
+;; C-SPC			;; set-mark-command
+;; <C-right>		;; forward-word
+;; C-x r s			;; copy-to-register
+;; 1			;; self-insert-command
+;; C-c a			;; asm-goto-position
+;; C-x r i			;; insert-register
+;; 1			;; self-insert-command
+;; RET			;; newline
+;; ESC C-r			;; isearch-backward-regexp
+;; ^[A-Za-z0-9_]+		;; self-insert-command * 14
+;; :			;; asm-colon
+;; RET			;; newline
+;; C-SPC			;; set-mark-command
+;; C-s			;; isearch-forward
+;; :			;; asm-colon
+;; <left>			;; left-char
+;; C-x r s			;; copy-to-register
+;; 2			;; self-insert-command
+;; C-x r j			;; jump-to-register
+;; 0			;; self-insert-command
+;; C-s			;; isearch-forward
+;; (			;; self-insert-command
+;; RET			;; newline
+;; C-SPC			;; set-mark-command
+;; C-s			;; isearch-forward
+;; )			;; self-insert-command
+;; <left>			;; left-char
+;; C-x w			;; delete-region
+;; C-x r i			;; insert-register
+;; 1			;; self-insert-command
+;; C-_			;; undo
+;; C-x r i			;; insert-register
+;; 2			;; self-insert-command

@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use FindBin;
+use File::Basename qw/dirname/;
+
+my $log = 0;
+
+# Start by documenting the call, just so that we can get some diagnostics.
+open LOG, '>', '/tmp/flycheck.log' if $log;
+print LOG "FLYCHECK: @ARGV\n" if $log;
+print LOG "Bin: $FindBin::Bin\n" if $log;
+
+my $root = dirname($FindBin::Bin);
+my $path = $ARGV[0];
+my $rel = $path;
+$rel =~ s|$root/||;
+my $base = $path;
+$base =~ s|\.ts|| or die "Not a .ts file!";
+
+print LOG "Path: $path\n" if $log;
+print LOG "Rel $rel\n" if $log;
+
+chdir $root;
+print LOG ("pwd: " . `pwd`) if $log;
+print LOG "PATH: $ENV{PATH}\n" if $log;
+
+open TSC, '-|', 'npm run tsc 2>&1';
+
+while ($_ = <TSC>) {
+  print LOG "LINE: $_" if $log;
+  next unless /^$rel\(/;
+  s/$rel/$path/g;
+  print STDERR $_;
+}
+close LOG if $log;
+system "rm -f $base.js*";
+close TSC or exit 1;
+
+#print STDERR "$ARGV[0]:5:5: ERROR - something\n";

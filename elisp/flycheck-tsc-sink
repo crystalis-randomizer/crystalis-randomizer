@@ -1,0 +1,37 @@
+#!/usr/bin/perl
+
+# Basic idea: pipe 'run tsc watch' to this - it will keep a file updated
+# with the result of the watch, and flycheck will simply read that file.
+
+use strict;
+use warnings;
+
+use FindBin;
+use File::Basename qw/dirname/;
+
+#open TSC, '-|', 'npm', 'run', 'watch';
+
+my $root = dirname($FindBin::Bin);
+my $out = "$root/.tsc.out";
+my $run = "$root/.tsc.run";
+open FILE, '>', $out;
+
+# Start by documenting the call, just so that we can get some diagnostics.
+while (<>) {
+  if (/^\d+:\d+:\d+.*File change detected/) {
+    #print "touching $run\n";
+    system 'touch', $run;
+    close FILE;
+    open FILE, '>', $out;
+  }
+  if (/^\d+:\d+:\d+.*Watching for file changes/) {
+    #print "deleting $run\n";
+    unlink $run;
+  }
+  s/\ec//g;
+  #print $_;
+  print FILE $_;
+}
+
+close FILE;
+close TSC;

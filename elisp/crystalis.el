@@ -143,13 +143,13 @@
 (defun sdh-ensure-point-after-mark ()
   (interactive)
   (if (< (point) (mark)) (exchange-point-and-mark)))
-(global-set-key (kbd "C-c x") 'sdh-ensure-point-after-mark)
+;(global-set-key (kbd "C-c x") 'sdh-ensure-point-after-mark)
 
 (defun sdh-highlight-region ()
   (interactive)
   (add-text-properties
    (region-beginning) (region-end) '(face font-lock-warning-face)))
-(global-set-key (kbd "C-c 1 h") 'sdh-highlight-region)
+;(global-set-key (kbd "C-c 1 h") 'sdh-highlight-region)
 
 (defun sdh-insert-datatable-label ()
   (interactive)
@@ -163,7 +163,7 @@
       (setq a (buffer-substring-no-properties b e))
       (beginning-of-line)
       (insert "DataTable_" a "\n"))))
-(define-key asm-mode-map (kbd "C-c i d") 'sdh-insert-datatable-label)
+;(define-key asm-mode-map (kbd "C-c i d") 'sdh-insert-datatable-label)
 
 ; assoc
 ; save-excursion doesn't help for switch-to-buffer...?
@@ -261,7 +261,7 @@
    ((looking-at "\\$0[5-9]") (sdh-next-value) (sdh-maybe-asm-join) (sdh-next-value) (sdh-maybe-asm-join))
    ((looking-at "\\$[89abcdef]\\|\\$\\(?:04\\|22\\)\\|\"") (sdh-next-value) (sdh-maybe-asm-join))
    (t (error "unexpected"))))
-(global-set-key (kbd "C-4") 'sdh-process-dialog)
+;(global-set-key (kbd "C-4") 'sdh-process-dialog)
 
 ;; (defun sdh-process-dialog ()
 ;;   (interactive)
@@ -312,7 +312,7 @@
           (if (> f 0) (insert (format " ; %s: %03x" a f))))))
     (goto-char e)
     (next-line 1)))
-(define-key asm-mode-map (kbd "C-c C-t") 'sdh-process-trigger)
+;(define-key asm-mode-map (kbd "C-c C-t") 'sdh-process-trigger)
 
 (defun sdh/next-byte (end)
   (and (re-search-forward "\\(\\.byte \\|,\\)$[0-9a-f][0-9a-f]" end t)
@@ -348,7 +348,7 @@
       (setq b0 (car bs))
       (setq b1 (cadr bs)))
     (insert (format " ; %s" (sdh/format-setflag b0 b1)))))
-(define-key asm-mode-map (kbd "C-c f") 'sdh-insert-setflag)
+;(define-key asm-mode-map (kbd "C-c f") 'sdh-insert-setflag)
 
 (defun sdh/bitp (byte mask)
   (> (logand byte mask) 0))
@@ -461,7 +461,7 @@
           (insert (format "     ;     %s" (sdh/format-setflag b0 b1))))))
     (goto-char e)
     (next-line 1)))
-(define-key asm-mode-map (kbd "C-c C-d") 'sdh-process-dialog)
+;(define-key asm-mode-map (kbd "C-c C-d") 'sdh-process-dialog)
 
 (defun sdh-process-npc-spawn ()
   (interactive)
@@ -495,7 +495,7 @@
           (insert " ; " (sdh/format-flag b0 b1)))))
     (goto-char e)
     (next-line 1)))
-(define-key asm-mode-map (kbd "C-c C-s") 'sdh-process-npc-spawn)
+;(define-key asm-mode-map (kbd "C-c C-s") 'sdh-process-npc-spawn)
 
 
 (defun sdh-cov ()
@@ -539,11 +539,11 @@
        ((= type ?1) (insert " " (sdh/get-npc arg))))
       ;; TODO - add more info - want object names...
 )))
-(define-key asm-mode-map (kbd "C-c C-n") 'annotate-npcdata)
+;(define-key asm-mode-map (kbd "C-c C-n") 'annotate-npcdata)
 
-(define-key asm-mode-map (kbd "C-c s o") 'crystalis-checkout-source)
-(define-key asm-mode-map (kbd "C-c s i") 'crystalis-checkin-source)
-(define-key asm-mode-map (kbd "C-c s m") 'crystalis-merge-source)
+;(define-key asm-mode-map (kbd "C-c s o") 'crystalis-checkout-source)
+;(define-key asm-mode-map (kbd "C-c s i") 'crystalis-checkin-source)
+;(define-key asm-mode-map (kbd "C-c s m") 'crystalis-merge-source)
 
 (defun link-data-table-entry ()
   (interactive)
@@ -581,5 +581,5 @@
     (indent-to-column sdh-indent-column))
   (if (< (current-column) sdh-indent-column)
       (forward-char (- sdh-indent-column (current-column)))))
-(global-set-key (kbd "<C-tab>") 'sdh-indent-to-column)
-(global-set-key (kbd "<M-C-tab>") 'sdh-set-indent-column)
+;(global-set-key (kbd "<C-tab>") 'sdh-indent-to-column)
+;(global-set-key (kbd "<M-C-tab>") 'sdh-set-indent-column)

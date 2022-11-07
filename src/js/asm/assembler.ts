@@ -163,6 +163,12 @@ export class Assembler {
   /** Map of chunk/offset positions of back-referable relative labels. */
   private relativeReverse: Expr[] = [];
 
+  /** List of global symbol indices used by forward refs to rts statements. */
+  private rtsRefsForward: number[] = [];
+
+  /** List of chunk/offset positions of back-referable rts statements. */
+  private rtsRefsReverse: Expr[] = [];
+
   /** All the chunks so far. */
   private chunks: Chunk[] = [];
 
@@ -255,29 +261,43 @@ export class Assembler {
   }
 
   resolveSymbol(name: string): Expr {
-    if (name === '*') {
+    const parsed = parseSymbol(name);
+    if (parsed.type === 'pc') {
       return this.pc();
-    } else if (/^:\++$/.test(name)) {
+    } else if (parsed.type === 'anon' && parsed.num > 0) {
       // anonymous forward ref
-      const i = name.length - 2;
+      const i = parsed.num - 1;
       let num = this.anonymousForward[i];
       if (num != null) return {op: 'sym', num};
       this.anonymousForward[i] = num = this.symbols.length;
       this.symbols.push({id: num});
       return {op: 'sym', num};
-    } else if (/^\++$/.test(name)) {
+    } else if (parsed.type === 'rts' && parsed.num > 0) {
+      // rts forward ref
+      const i = parsed.num - 1;
+      let num = this.rtsRefsForward[i];
+      if (num != null) return {op: 'sym', num};
+      this.rtsRefsForward[i] = num = this.symbols.length;
+      this.symbols.push({id: num});
+      return {op: 'sym', num};
+    } else if (parsed.type === 'rel' && parsed.num > 0) {
       // relative forward ref
-      let num = this.relativeForward[name.length - 1];
+      let num = this.relativeForward[parsed.num - 1];
       if (num != null) return {op: 'sym', num};
       this.relativeForward[name.length - 1] = num = this.symbols.length;
       this.symbols.push({id: num});
       return {op: 'sym', num};
-    } else if (/^:-+$/.test(name)) {
+    } else if (parsed.type === 'anon' && parsed.num < 0) {
       // anonymous back ref
-      const i = this.anonymousReverse.length - name.length + 1;
+      const i = this.anonymousReverse.length + parsed.num;
       if (i < 0) this.fail(`Bad anonymous backref: ${name}`);
       return this.anonymousReverse[i];
-    } else if (/^-+$/.test(name)) {
+    } else if (parsed.type === 'rts' && parsed.num < 0) {
+      // rts back ref
+      const i = this.rtsRefsReverse.length + parsed.num;
+      if (i < 0) this.fail(`Bad rts backref: ${name}`);
+      return this.rtsRefsReverse[i];
+    } else if (parsed.type === 'rel' && parsed.num < 0) {
       // relative back ref
       const expr = this.relativeReverse[name.length - 1];
       if (expr == null) this.fail(`Bad relative backref: ${name}`);
@@ -417,7 +437,6 @@ export class Assembler {
     }
   }
 
-
   directive(tokens: Token[]) {
     // TODO - record line information, rewrap error messages?
     switch (Token.str(tokens[0])) {
@@ -551,6 +570,14 @@ export class Assembler {
       [mnemonic, arg] = args as [string, Arg];
       if (!arg) arg = ['imp'];
       mnemonic = mnemonic.toLowerCase();
+    }
+    if (mnemonic === 'rts') {
+      // NOTE: we special-case this in both the tokenizer and here so that
+      // `rts:+` and `rts:-` work for pointing to an rts instruction.
+      const expr = this.pc();
+      this.rtsRefsReverse.push(expr);
+      const sym = this.rtsRefsForward.shift();
+      if (sym != null) this.symbols[sym].expr = expr;
     }
     // may need to size the arg, depending.
     // cpu will take 'add', 'a,x', and 'a,y' and indicate which it actually is.
@@ -1036,4 +1063,23 @@ export namespace Assembler {
     allowBrackets?: boolean;
     reentrantScopes?: boolean;
   }
+}
+
+type ParsedSymbol = {type: 'pc'|'none'}|{type: 'anon'|'rel'|'rts', num: number};
+function parseSymbol(name: string): ParsedSymbol {
+  if (name === '*') return {type: 'pc'};
+
+  if (/^:\++$/.test(name)) return {type: 'anon', num: name.length - 1};
+  if (/^:\+\d+$/.test(name)) return {type: 'anon', num: parseInt(name.substring(2))};
+  if (/^:-+$/.test(name)) return {type: 'anon', num: 1 - name.length};
+  if (/^:-\d+$/.test(name)) return {type: 'anon', num: -parseInt(name.substring(2))};
+
+  if (/^rts:\++$/.test(name)) return {type: 'rts', num: name.length - 4};
+  if (/^rts:\+\d+$/.test(name)) return {type: 'rts', num: parseInt(name.substring(5))};
+  if (/^rts:-+$/.test(name)) return {type: 'rts', num: 4 - name.length};
+  if (/^rts:-\d+$/.test(name)) return {type: 'rts', num: -parseInt(name.substring(5))};
+
+  if (/^\++$/.test(name)) return {type: 'rel', num: name.length};
+  if (/^-+$/.test(name)) return {type: 'rel', num: -name.length};
+  return {type: 'none'};
 }

@@ -116,6 +116,49 @@ describe('Tokenizer.line', function() {
     ]);
   });
 
+  it('should tokenize relative and anonymous labels', function() {
+    expect(tokenize('bcc :++')).to.eql([
+      [{token: 'ident', str: 'bcc'},
+       {token: 'ident', str: ':++'}],
+    ]);
+    expect(tokenize('bcc :+3')).to.eql([
+      [{token: 'ident', str: 'bcc'},
+       {token: 'ident', str: ':+3'}],
+    ]);
+    expect(tokenize('bne :---')).to.eql([
+      [{token: 'ident', str: 'bne'},
+       {token: 'ident', str: ':---'}],
+    ]);
+    expect(tokenize('beq :-7')).to.eql([
+      [{token: 'ident', str: 'beq'},
+       {token: 'ident', str: ':-7'}],
+    ]);
+    expect(tokenize('beq ++')).to.eql([
+      [{token: 'ident', str: 'beq'},
+       {token: 'op', str: '++'}],
+    ]);
+    expect(tokenize('bvc -')).to.eql([
+      [{token: 'ident', str: 'bvc'},
+       {token: 'op', str: '-'}],
+    ]);
+    expect(tokenize('bpl rts:+4')).to.eql([
+      [{token: 'ident', str: 'bpl'},
+       {token: 'ident', str: 'rts:+4'}],
+    ]);
+    expect(tokenize('bpl rts:++')).to.eql([
+      [{token: 'ident', str: 'bpl'},
+       {token: 'ident', str: 'rts:++'}],
+    ]);
+    expect(tokenize('bpl rts:-3')).to.eql([
+      [{token: 'ident', str: 'bpl'},
+       {token: 'ident', str: 'rts:-3'}],
+    ]);
+    expect(tokenize('bpl rts:-')).to.eql([
+      [{token: 'ident', str: 'bpl'},
+       {token: 'ident', str: 'rts:-'}],
+    ]);
+  });
+
   it('should fail to parse a bad hex number', function() {
     expect(() => {
       tokenize('  adc $1g');

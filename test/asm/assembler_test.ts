@@ -334,7 +334,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('bne'), op(':'), op('++')]);
       a.label(':');
-      a.instruction([ident('bcc'), op(':'), op('+++')]);
+      a.instruction([ident('bcc'), ident(':+3')]);
       a.label(':'); // first target
       a.instruction([ident('lsr')]);
       a.label(':');
@@ -364,7 +364,7 @@ describe('Assembler', function() {
       a.label(':'); // second target
       a.instruction([ident('bne'), op(':'), op('---')]);
       a.label(':');
-      a.instruction([ident('bcc'), op(':'), op('--')]);
+      a.instruction([ident('bcc'), ident(':-2')]);
       expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
@@ -377,7 +377,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('bne'), op(':'), op('+')]);
       a.label(':');
-      a.instruction([ident('bcc'), op(':'), op('-')]);
+      a.instruction([ident('bcc'), ident(':-')]);
       expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],
@@ -388,6 +388,44 @@ describe('Assembler', function() {
         symbols: [{expr: off(2)}],
         segments: []});
     });
+
+    it('should handle rts references', function() {
+      const a = new Assembler(Cpu.P02);
+      a.instruction([ident('rts')]);
+      a.instruction([ident('bne'), ident('rts:-')]);
+      a.instruction([ident('bne'), ident('rts:+')]);
+      a.instruction([ident('rts')]);
+      a.instruction([ident('bne'), ident('rts:+2')]);
+      a.instruction([ident('bne'), ident('rts:-2')]);
+      a.instruction([ident('bne'), ident('rts:++')]);
+      a.instruction([ident('bne'), ident('rts:--')]);
+      a.instruction([ident('rts')]);
+      a.instruction([ident('rts')]);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          data: Uint8Array.of(
+            0x60,
+            0xd0, 0xfd,
+            0xd0, 0xff,
+            0x60,
+            0xd0, 0xff,
+            0xd0, 0xf6,
+            0xd0, 0xff,
+            0xd0, 0xf2,
+            0x60,
+            0x60),
+          subs: [{offset: 4, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 0}, off(5)]}},
+                 {offset: 7, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 1}, off(8)]}},
+                 {offset: 11, size: 1,
+                  expr: {op: '-', args: [{op: 'sym', num: 1}, off(12)]}}],
+        }],
+        symbols: [{expr: off(5)},
+                  {expr: off(15)}],
+        segments: []});
+    });
   });
 
   describe('Relative labels', function() {
@@ -395,7 +433,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('bne'), op('++')]);
       a.label('+');
-      a.instruction([ident('bcc'), op('+++')]);
+      a.instruction([ident('bcc'), ident('+++')]);
       a.label('++');
       a.instruction([ident('lsr')]);
       a.instruction([ident('lsr')]);
@@ -422,7 +460,7 @@ describe('Assembler', function() {
       a.instruction([ident('lsr')]);
       a.label('-'); // second target
       a.instruction([ident('bne'), op('--')]);
-      a.instruction([ident('bcc'), op('-')]);
+      a.instruction([ident('bcc'), ident('-')]);
       expect(strip(a.module())).to.eql({
         chunks: [{
           segments: ['code'],

@@ -141,21 +141,17 @@ describe('Tokenizer.line', function() {
       [{token: 'ident', str: 'bvc'},
        {token: 'op', str: '-'}],
     ]);
-    expect(tokenize('bpl rts:+4')).to.eql([
+    expect(tokenize('bpl :>>>rts')).to.eql([
       [{token: 'ident', str: 'bpl'},
-       {token: 'ident', str: 'rts:+4'}],
+       {token: 'ident', str: ':>>>rts'}],
     ]);
-    expect(tokenize('bpl rts:++')).to.eql([
+    expect(tokenize('bpl :rts')).to.eql([
       [{token: 'ident', str: 'bpl'},
-       {token: 'ident', str: 'rts:++'}],
+       {token: 'ident', str: ':rts'}],
     ]);
-    expect(tokenize('bpl rts:-3')).to.eql([
+    expect(tokenize('bpl :<<rts')).to.eql([
       [{token: 'ident', str: 'bpl'},
-       {token: 'ident', str: 'rts:-3'}],
-    ]);
-    expect(tokenize('bpl rts:-')).to.eql([
-      [{token: 'ident', str: 'bpl'},
-       {token: 'ident', str: 'rts:-'}],
+       {token: 'ident', str: ':<<rts'}],
     ]);
   });
 

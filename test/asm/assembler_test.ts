@@ -392,13 +392,13 @@ describe('Assembler', function() {
     it('should handle rts references', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('rts')]);
-      a.instruction([ident('bne'), ident('rts:-')]);
-      a.instruction([ident('bne'), ident('rts:+')]);
+      a.instruction([ident('bne'), ident(':<rts')]);
+      a.instruction([ident('bne'), ident(':rts')]);
       a.instruction([ident('rts')]);
-      a.instruction([ident('bne'), ident('rts:+2')]);
-      a.instruction([ident('bne'), ident('rts:-2')]);
-      a.instruction([ident('bne'), ident('rts:++')]);
-      a.instruction([ident('bne'), ident('rts:--')]);
+      a.instruction([ident('bne'), ident(':>>rts')]);
+      a.instruction([ident('bne'), ident(':<<rts')]);
+      a.instruction([ident('bne'), ident(':>>rts')]);
+      a.instruction([ident('bne'), ident(':<<rts')]);
       a.instruction([ident('rts')]);
       a.instruction([ident('rts')]);
       expect(strip(a.module())).to.eql({

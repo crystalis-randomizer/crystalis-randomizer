@@ -1074,10 +1074,8 @@ function parseSymbol(name: string): ParsedSymbol {
   if (/^:-+$/.test(name)) return {type: 'anon', num: 1 - name.length};
   if (/^:-\d+$/.test(name)) return {type: 'anon', num: -parseInt(name.substring(2))};
 
-  if (/^rts:\++$/.test(name)) return {type: 'rts', num: name.length - 4};
-  if (/^rts:\+\d+$/.test(name)) return {type: 'rts', num: parseInt(name.substring(5))};
-  if (/^rts:-+$/.test(name)) return {type: 'rts', num: 4 - name.length};
-  if (/^rts:-\d+$/.test(name)) return {type: 'rts', num: -parseInt(name.substring(5))};
+  if (/^:>*rts$/.test(name)) return {type: 'rts', num: Math.max(name.length - 4, 1)};
+  if (/^:<+rts$/.test(name)) return {type: 'rts', num: 4 - name.length};
 
   if (/^\++$/.test(name)) return {type: 'rel', num: name.length};
   if (/^-+$/.test(name)) return {type: 'rel', num: -name.length};

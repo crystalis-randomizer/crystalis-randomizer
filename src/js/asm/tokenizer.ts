@@ -70,13 +70,12 @@ export class Tokenizer implements TokenSource {
 
   private tokenInternal(): Token {
     if (this.buffer.newline()) return {token: 'eol'};
-    // NOTE: this comes first because otherwise the rts: would lex separately.
-    if (this.buffer.token(/^(rts)?:([+-]\d+|[-+]+)/)) return this.strTok('ident');
     if (this.buffer.token(/^@+[a-z0-9_]*/i) ||
         this.buffer.token(/^((::)?[a-z_][a-z0-9_]*)+/i)) {
       return this.strTok('ident');
     }
     if (this.buffer.token(/^\.[a-z]+/i)) return this.strTok('cs');
+    if (this.buffer.token(/^:([+-]\d+|[-+]+|<+rts|>*rts)/)) return this.strTok('ident');
     if (this.buffer.token(/^(:|\++|-+|&&?|\|\|?|[#*/,=~!^]|<[<>=]?|>[>=]?)/)) {
       return this.strTok('op');
     }

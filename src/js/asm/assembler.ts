@@ -712,6 +712,10 @@ export class Assembler {
   // Directive handlers
 
   org(addr: number, name?: string) {
+    if (this._org != null && this._chunk != null &&
+      this._org + this._chunk.data.length === addr) {
+      return; // nothing to do?
+    }
     this._org = addr;
     this._chunk = undefined;
     this._name = name;

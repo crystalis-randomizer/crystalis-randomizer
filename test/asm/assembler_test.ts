@@ -153,6 +153,44 @@ describe('Assembler', function() {
       });
     });
 
+    it('should make a separate chunk for separate .org directives', function() {
+      const a = new Assembler(Cpu.P02);
+      a.org(0x1234);
+      a.instruction([ident('rts')]);
+      a.org(0x5678);
+      a.instruction([ident('ldy'), IMMEDIATE, num(0x12)]);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          org: 0x1234,
+          data: Uint8Array.of(0x60),
+        }, {
+          segments: ['code'],
+          org: 0x5678,
+          data: Uint8Array.of(0xa0, 0x12),
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
+
+    it('should merge chunks when .org is redundant with PC', function() {
+      const a = new Assembler(Cpu.P02);
+      a.org(0x1234);
+      a.instruction([ident('rts')]);
+      a.org(0x1235);
+      a.instruction([ident('ldy'), IMMEDIATE, num(0x12)]);
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['code'],
+          org: 0x1234,
+          data: Uint8Array.of(0x60, 0xa0, 0x12),
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
+
     it('should substitute a forward referenced value', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('lda'), IMMEDIATE, ident('val')]);

@@ -50,7 +50,7 @@ class Smudger {
   private smudgeLine(line: string): string {
     // TODO - consider allowing multiple spaces to signify more space between
     // opcode and argument, along with a format indicator for hex/dec/binary?
-    const match = /^([^;]*?)<@([0-9a-f]+)(?: (.*?))?@>(.*)$/i.exec(line);
+    const match = /^([^;]*?)<@([0-9a-f]+)(?: (.*?))?@>(.*\n?)$/i.exec(line);
     if (match) {
       // code - don't allow a second match on the same line
       const [, prefix, addrStr, argStr, suffix] = match;
@@ -61,7 +61,7 @@ class Smudger {
     // look for data reads
     let smudged = '';
     for (;;) {
-      const match = /^([^;]*?)\[@([0-9a-f]+)(:[0-9]+|:[wdb])?@\](.*)/i.exec(line);
+      const match = /^([^;]*?)\[@([0-9a-f]+)(:[0-9]+|:[wdb])?@\](.*\n?)/i.exec(line);
       if (!match) {
         smudged += line;
         break;

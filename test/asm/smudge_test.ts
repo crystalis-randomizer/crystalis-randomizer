@@ -87,6 +87,11 @@ describe('smudge', function() {
   it('should handle a relative jump with no explicit args', function() {
     expect(smudge('<@7@>')).to.eql('bne *-5');
   });
+  it('should retain newlines', function() {
+    expect(smudge('  .byte [@19@],[@1a@]\n  .byte [@1b@],[@1c@]\n'))
+        .to.eql('  .byte $1a,$2b\n  .byte $3c,$a1\n');
+    expect(smudge('  <@c@>\n  <@e@>\n')).to.eql('  lda $14,x\n  sta $3456,x\n');
+  });
 });
 
 describe('clean', function() {

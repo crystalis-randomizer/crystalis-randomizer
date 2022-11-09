@@ -1505,6 +1505,73 @@ of a non-divisible line, then the entire line will be deleted."
 ;;#[256 "\211\301=\203
 ;; \301\300B\207\302\300\"\207" [([134217747 94 91 65 45 90 97 45 122 48 45 57 95 93 43 58 return 1 134217848 40 backspace 97 115 109 47 105 110 115 101 114 116 45 111 114 103 45 98 101 102 111 114 101 45 108 97 98 101 108 return down down] 0 "%d") kmacro--extract-lambda kmacro-exec-ring-item] 4 "Keyboard macro.
 
+(defun asm-remove-address-and-bytes-old ()
+  (interactive)
+  (beginning-of-line)
+  (cond
+   ((looking-at "\\([-+ ]+\\|@?[A-Za-z0-9_]+: *\\)\\$[0-9a-f]\\{5\\}  \\(        \\|[0-9a-f]\\{2\\}\\(:      \\| [0-9a-f]\\{2\\}\\(:   \\| [0-9a-f]\\{2\\}:\\)\\)\\)   ")
+    (search-forward "$")
+    (backward-char 1)
+    (delete-char 20))
+   ((looking-at " +;+")
+    (while (looking-at "[; ]") (delete-char 1))
+    ;; Figure out where to indent to
+    (insert (make-string (save-excursion
+                           (re-search-backward "^ +[.a-z;]")
+                           (re-search-forward "[.a-z;]")
+                           (- (current-column) 1)) ? ))
+    (insert ";; ")
+    (when (looking-at "-+ *$")
+      (kill-line)
+      (insert "----"))))
+  (beginning-of-line)
+  (next-line))
+
+(defun asm-remove-address-and-bytes (count)
+  (interactive "p")
+  (while (> count 0)
+    (let (i)
+      (beginning-of-line)
+      (cond
+       ((looking-at "\\([-+ ]+\\|@?[A-Za-z0-9_]+: *\\)\\$[0-9a-f]\\{5\\}  \\(        \\|[0-9a-f]\\{2\\}\\(:      \\| [0-9a-f]\\{2\\}\\(:   \\| [0-9a-f]\\{2\\}:\\)\\)\\)   ")
+        ;; Instruction or data line
+        (search-forward "$")
+        (backward-char 1)
+        (delete-char 20))
+       ((looking-at " [; ]+-+ *$")
+        ;; A ---- comment line
+        ;; Replace it with a brand new comment at the same level but only 4 dashes
+        (setq i (save-excursion (re-search-forward "-") (max 8 (- (current-column) 21))))
+        (while (looking-at "[; -]") (delete-char 1))
+        (insert (make-string i ? ) ";; ----"))
+       ((looking-at " [; ]\\{27\\}")
+        ;; A fully-indented comment: text is above instructions
+        ;; Replace with a ;;-delimited comment starting 20 columns earlier
+        (save-excursion
+          (forward-char 28)
+          (re-search-forward "[^ ]")
+          (setq i (- (current-column) 21)))
+        (while (looking-at "[; ]") (delete-char 1))
+        (insert (make-string i ? ) ";; "))
+       ;; Don't do this one because it messes up other spaces, and it's usually already OK
+       ;; ((looking-at " [; ]+")
+       ;;  ;; An indented comment, but the text starts before the instruction
+       ;;  ;; Replace with an 8-column indentation
+       ;;  (while (looking-at "[; ]") (delete-char 1))
+       ;;  (insert "        ;; "))
+       ((looking-at ";;?[^;]")
+        ;; A non-indented comment: make sure there's at least 3 semicolons
+        (while (looking-at ";") (delete-char 1))
+        (insert ";;;"))
+       )
+      (beginning-of-line)
+      (next-line))
+    (setq count (- count 1))))
+(defun asm-remove-16-address-and-bytes ()
+  (interactive)
+  (asm-remove-address-and-bytes 16))
+(define-key asm-mode-map (kbd "C-9") 'asm-remove-16-address-and-bytes)
+
 
 (defun asm-insert-org-before-next-label ()
   (interactive)

@@ -14,7 +14,7 @@ export class Buffer {
 
   lastMatch?: Match;
 
-  constructor(readonly content: string, public line = 0, public column = 0) {
+  constructor(readonly content: string, public line = 1, public column = 0) {
     this.remainder = content;
   }
 
@@ -23,7 +23,8 @@ export class Buffer {
     if (s !== s1) throw new Error(`Non-rooted token: '${s}' vs '${s1}'`);
     this.prefix += s;
     this.remainder = this.remainder.substring(s.length);
-    const lines = s.split(/(\r\n|\n|\r)/g);
+    s = s.replace('\n', s.includes('\r') ? '' : '\r');
+    const lines = s.split(/\r/g);
     if (lines.length > 1) {
       this.line += lines.length - 1;
       this.column = 0;

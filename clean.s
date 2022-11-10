@@ -117,14 +117,6 @@
 .define PlayerMaxMP             $0709
 .define PlayerStatus            $0710
 
-.define EquippedSword           $0711
-.define EquippedMagic           $0712
-.define EquippedArmor           $0713
-.define EquippedShield          $0714
-.define EquippedConsumableItem  $0715 ; includes quest items
-.define EquippedPassiveItem     $0716
-.define EquippedBracelet        $0718
-
 .define CurrentlyInPawnShop     $07dd ; ff if in pawn shop, 00 otherwise
 
 .define Inventory_ScratchSortRow         $60e0
@@ -218,15 +210,15 @@
 .define EquippedArmor $0713
 ;;; 0 for no shield, 1 = carapace ($d), ..., 8 = psycho ($14)
 .define EquippedShield $0714
-;;; 0 for no item, otherwise per ITEM_* constant.
-.define EquippedUseItem $0715
+;;; 0 for no item, otherwise per ITEM_* constant; includes quest items.
+.define EquippedConsumableItem $0715
 ;;; 0 for no item, otherwise per ITEM_* constant.
 .define EquippedPassiveItem $0716
 ;;; 0 for no ball, 1-4 for ball of wind-thunder, 5-8 for bracelet.
 ;;; Does not actually affect how the attack happens, in case it
 ;;; disagrees with $0711 or $0719.  The actual attack is dictated
 ;;; by $0711.
-.define EquippedBall $0718
+.define EquippedBracelet $0718
 ;;; 0 for no ball, 1 for ball, 2 for bracelet; takes into account
 ;;; cross-equippage (i.e. if owned bracelet but not equipped then
 ;;; it's 1, but if a cross-elemental ball is equipped, then it's 0).
@@ -7870,7 +7862,7 @@ MapData:                         ; Not quite sure where this is going - it's use
         .word [@14326:w@]
         .word (MapData_14) ; 14 CordelPlainsWest
         .word (MapData_15) ; 15 CordelPlainsEast ("Maze of Forest"?)
-        .word (MapData_16) ; 16  -- unused copy of 18
+        .word (MapData_18) ; 16  -- unused copy of 18
         .word [@1432e:w@]
         .word (MapData_18) ; 18 Brynmaer
         .word (MapData_19) ; 19 OutsideStomHouse
@@ -8039,7 +8031,7 @@ MapDataPart2:
         .word (MapData_ba) ; ba
         .word (MapData_bb) ; bb =GoaHouse
         .word (MapData_bc) ; bc =GoaInn
-        .word (MapData_bd) ; bd   ---  BROKEN
+        .word (MapData_be-1) ; bd   ---  BROKEN
         .word (MapData_be) ; be =GoaToolShop
         .word (MapData_bf) ; bf =GoaTavern
         .word (MapData_c0) ; c0 =LeafElderHouse
@@ -8052,9 +8044,9 @@ MapDataPart2:
         .word (MapData_c7) ; c7 BrynmaerPawnShop
         .word (MapData_c8) ; c8 BrynmaerInn
         .word (MapData_c9) ; c9 BrynmaerArmorShop
-        .word (MapData_ca) ; ca   --- BROKEN
+        .word (MapData_cb-1) ; ca   --- BROKEN
         .word (MapData_cb) ; cb BrynmaerToolShop
-        .word (MapData_cc) ; cc   --- BROKEN
+        .word (MapData_cd-1) ; cc   --- BROKEN
         .word (MapData_cd) ; cd OakElderHouse
         .word (MapData_ce) ; ce OakMotherHouse
         .word (MapData_cf) ; cf OakToolShop
@@ -8069,7 +8061,7 @@ MapDataPart2:
         .word (MapData_d8) ; d8 PortoaFortuneTeller
         .word (MapData_d9) ; d9 PortoaPawnShop
         .word (MapData_da) ; da PortoaArmorShop
-        .word (MapData_db) ; db  --- BROKEN
+        .word (MapData_de-1) ; db  --- BROKEN
         .word (MapData_dc) ; dc PortoaInn
         .word (MapData_dd) ; dd PortoaToolShop
         .word (MapData_de) ; de =PortoaPalaceLeftWing
@@ -8080,11 +8072,11 @@ MapDataPart2:
         .word (MapData_e3) ; e3 JoelElderHouse
         .word (MapData_e4) ; e4 JoelShed
         .word (MapData_e5) ; e5 JoelToolShop
-        .word (MapData_e6) ; e6  --- BROKEN
+        .word (MapData_e7-1) ; e6  --- BROKEN
         .word (MapData_e7) ; e7 JoelInn
         .word (MapData_e8) ; e8 =ZombieTownHouse
         .word (MapData_e9) ; e9 =ZombieTownHouseBasement
-        .word (MapData_ea) ; ea  --- BROKEN
+        .word (MapData_eb-1) ; ea  --- BROKEN
         .word (MapData_eb) ; eb =SwanToolShop
         .word (MapData_ec) ; ec =SwanStomHut
         .word (MapData_ed) ; ed =SwanInn
@@ -13989,7 +13981,7 @@ MapData_d8:                                ; Portoa - Fortune Teller
         .word (MapData_d8_Layout)
         .word (MapData_d8_Graphics)
         .word (MapData_d8_Entrances)
-        .word (MapData_d8_Entrances)
+        .word (MapData_d8_Exits)
         .word (MapData_d8_Flags)
 MapData_d8_Layout:
         .byte [@176b0@]
@@ -14004,7 +13996,7 @@ MapData_d8_Entrances:
         .byte [@176bd@],[@176be@],[@176bf@],[@176c0@]
         .byte [@176c1@],[@176c2@],[@176c3@],[@176c4@]
         .byte [@176c5@],[@176c6@],[@176c7@],[@176c8@]
-MapData_d8_Entrances:
+MapData_d8_Exits:
         .byte [@176c9@],[@176ca@],[@176cb@],[@176cc@]
         .byte [@176cd@],[@176ce@],[@176cf@],[@176d0@]
         .byte [@176d1@],[@176d2@],[@176d3@],[@176d4@]
@@ -14887,6 +14879,7 @@ MapData_5a_Exits:
         .byte [@17bf0@],[@17bf1@],[@17bf2@],[@17bf3@]
         .byte [@17bf4@],[@17bf5@],[@17bf6@],[@17bf7@]
         .byte [@17bf8@]
+MapData_5a_Flags:
         .byte [@17bf9@]
 ;;; ----------------------------------------------------------------
 .org $bbfa
@@ -14915,6 +14908,7 @@ MapData_5b_Exits:
         .byte [@17c30@],[@17c31@],[@17c32@],[@17c33@]
         .byte [@17c34@],[@17c35@],[@17c36@],[@17c37@]
         .byte [@17c38@]
+MapData_5b_Flags:
         .byte [@17c39@]
 ;;; ----------------------------------------------------------------
 .org $bc3a
@@ -19770,7 +19764,7 @@ ObjectData_IceZombie:                                     ; Object 60
         .byte [@1b41c@]
         .byte [@1b41d@],[@1b41e@],[@1b41f@],[@1b420@],[@1b421@],[@1b422@],[@1b423@],[@1b424@],[@1b425@]
         .byte [@1b426@],[@1b427@],[@1b428@],[@1b429@],[@1b42a@],[@1b42b@],[@1b42c@],[@1b42d@],[@1b42e@]
-        .byte [@1b42f@],[@1b430@],[@1b431@]G
+        .byte [@1b42f@],[@1b430@],[@1b431@]
         .byte [@1b432@],[@1b433@],[@1b434@]
 ;;; ----------------------------------------------------------------
 .org $b435
@@ -20354,7 +20348,9 @@ ObjectData_Vampire2:                                      ; Object a5
         .byte [@1ba97@]
 ;;; ----------------------------------------------------------------
 .org $ba98
-ObjectData_GroundSentry_Laser:                            ; Object be
+ObjectData_GroundSentry_Harpoon:                         ; Object be
+        ;; This is the first child from the brown robots.  It further
+        ;; spawns $f4 (GroundSentry_Laser, adhoc $54).
         .byte [@1ba98@]
         .byte [@1ba99@],[@1ba9a@],[@1ba9b@]
         .byte [@1ba9c@],[@1ba9d@],[@1ba9e@],[@1ba9f@]
@@ -20884,7 +20880,7 @@ InitiateDialog:
           ;; $40 in the first byte indicates we have flag(s) to toggle.  So toggle them.
           <@1c066@>
           <@1c068@>
-           <@1c06a >rts@>
+           beq :>rts
           <@1c06c@>
           <@1c06d SetOrClearFlagsFromBytePair_24y@>
           <@1c070@>
@@ -20939,7 +20935,7 @@ SkipTwoBytesAndContinuationPairs:
         <@1c090@>
         <@1c091@>
         <@1c093@>
-          <@1c095 >rts@> ; $1c09f
+          beq :>rts ; $1c09f
           ;; If :40 was set on the first byte then skip until :40 is set again...
 -        <@1c097@>
          <@1c099@>
@@ -20980,7 +20976,7 @@ NpcSpawnConditionLoop:
          <@1c0c2@>
          <@1c0c3@>
          ;; ff indicates that there are no more conditions, so spawn should happen.
-          <@1c0c5 >>rts@>
+          beq :>>rts
          ;; Otherwise, each condition block is preceded by the location.
          <@1c0c7 CurrentLocation@>
            <@1c0c9 NpcSpawnCondition_AdvanceToNextLocation@> ; $1c0d9
@@ -21301,7 +21297,7 @@ ItemGet:
          ;; 
          <@1c294 SetOrClearFlagsFromBytePair_24y@>
          <@1c297@> ; should always be ff ???
-         <@1c299 >rts@> ; $1c29f
+         bmi :>rts ; $1c29f
          <@1c29b@>        ; DEAD???
         <@1c29d -@> ; $1c26f  ; DEAD???
         <@1c29f@>
@@ -21422,13 +21418,13 @@ ItemUse:
         ;; be used - bail out (TODO - who displays the dialog?).
         <@1c33b@>
         <@1c33d@>
-        <@1c33f >rts@> ; 
+        beq :>rts ; 
         ;; Item actually did something -> ?
         <@1c341 PrepareMessageFrom24y@> ; read next two from ItemData[id] -> $20..$22
         <@1c344 SetOrClearFlagsFromBytePair_24y@>
         <@1c347@>
         <@1c349@>
-        <@1c34b >rts@> ; $1c350
+        beq :>rts ; $1c350
         <@1c34d ItemUse_TradeIn@> ; don't discard shell flute
         <@1c350@>
         ;; ----
@@ -25118,7 +25114,8 @@ ItemGetData_03: ; sword of thunder
         .byte [@1df51@],[@1df52@]
         .byte [@1df53@],[@1df54@] ; Set: 05f chest:03:sword of thunder
         .byte [@1df55@]
-ItemGetData_04;: ; crystalis
+.org $9f56
+ItemGetData_04: ; crystalis
         .byte [@1df56@],[@1df57@]
         .byte [@1df58@],[@1df59@]
         .byte [@1df5a@],[@1df5b@] ; Clear: 000
@@ -26213,7 +26210,7 @@ ObjectActionJump_60_Vampire:
 BossPatternJump_00:              ; Vampire 0
         ;; Start
         <@1e48b ObjectOnScreen@>
-         <@1e48e >rts@>
+         bmi :>rts
         <@1e490 _1fb29@>
         ;; Vampire appears: set up patterns and palettes.
         <@1e493@>
@@ -26228,7 +26225,7 @@ BossPatternJump_00:              ; Vampire 0
         <@1e4a8@>
         <@1e4aa@>
         <@1e4ad@>
-         <@1e4b0 >rts@>
+         beq :>rts
         <@1e4b2@>
         <@1e4b4 ObjectDelay@>
         <@1e4b7 BGM_BOSS@>
@@ -26242,7 +26239,7 @@ BossPatternJump_00:              ; Vampire 0
 BossPatternJump_01:              ; Vampire 1
         ;; Appears to be unused?
         <@1e4c3@>
-         <@1e4c6 >rts@>
+         bne :>rts
         <@1e4c8 ObjectBossMode@>
         <@1e4cb@>
 ;;; --------------------------------
@@ -28021,7 +28018,7 @@ _1f278:
 ;;; --------------------------------
 .org $b2d2
 DataTable_1f2d2: 
-        $1f2d2              .byte [@1f2d2@],[@1f2d3@],[@1f2d4@],[@1f2d5@],[@1f2d6@],[@1f2d7@],[@1f2d8@],[@1f2d9@]
+        .byte [@1f2d2@],[@1f2d3@],[@1f2d4@],[@1f2d5@],[@1f2d6@],[@1f2d7@],[@1f2d8@],[@1f2d9@]
 ;;; --------------------------------
 ;;; Draygon2 (x=$0d) boss modes ($600,x):
 ;;;  01 - walking left/right on top of screen, also shooting balls
@@ -31576,7 +31573,7 @@ MenuMessage_1c:
         ;; UNUSED
         .byte [@20de2:10@],[@20dec@],[@20ded@]
 .org $8dee
-MenuMessage_1e                  ; UNUSED
+MenuMessage_1e:                 ; UNUSED
         .byte [@20dee:12@],[@20dfa@],[@20dfb:1@],[@20dfc@]
 .org $8dfd
 MenuMessage_12:                 ; also 32 and 33
@@ -37792,7 +37789,7 @@ TitleMenuJump_00:
         <@26748@>
 ;;; --------------------------------
 ;;; Look for select/start while on main menu
-TitleMenuJump_01
+TitleMenuJump_01:
         <@26749@>
         <@2674b@>
          <@2674d TitleMenuHandleStart@>
@@ -39699,7 +39696,7 @@ _27cb0:
          <@27d2b@>
          <@27d2d@>
          <@27d2f@>
-         jsr LoadOneObjectData:         ; ... and restore banks afterward
+         <@27d31 LoadOneObjectData@>         ; ... and restore banks afterward
          <@27d34@>
          <@27d36 WriteObjectCoordinatesFrom_34_37@>
          <@27d39@>
@@ -39897,8 +39894,8 @@ MainGameModeJump_1e_ThrustCrystalis:
         <@27ef6@>
         <@27ef8@>
         <@27efa@>
-        jsr LoadOneObjectData:         ; ... and restore banks afterward
-        <@27efc WriteObjectCoordinatesFrom_34_37@>
+        <@27efc LoadOneObjectData@>         ; ... and restore banks afterward
+        <@27eff WriteObjectCoordinatesFrom_34_37@>
         <@27f02@>
         <@27f04@>
         <@27f05@>
@@ -39930,7 +39927,7 @@ MainGameModeJump_1e_ThrustCrystalis:
         <@27f43@>
         <@27f45@>
         <@27f47@>
-        jsr LoadOneObjectData:         ; ... and restore banks afterward
+        <@27f49 LoadOneObjectData@>         ; ... and restore banks afterward
         <@27f4c@>
         <@27f4e@>
         <@27f51@>
@@ -48887,7 +48884,7 @@ Bgm1f_Ch3:
 ;;; The center is $341f0, the $02 surrounded by $00..$07 going around the circle.
 .org $8000
 DisplacementToDirectionTable:
-        .byte [@34000@],[@34001@],[@34002@],[@34003@],[@34004@],[@34005@],[@34006@],[@34007@],[@34008@],[@34009@],[@3400a@],[@3400b@],[@3400c@],[@3400d@],[@3400e@],[@3400f@],
+        .byte [@34000@],[@34001@],[@34002@],[@34003@],[@34004@],[@34005@],[@34006@],[@34007@],[@34008@],[@34009@],[@3400a@],[@3400b@],[@3400c@],[@3400d@],[@3400e@],[@3400f@]
         .byte [@34010@],[@34011@],[@34012@],[@34013@],[@34014@],[@34015@],[@34016@],[@34017@],[@34018@],[@34019@],[@3401a@],[@3401b@],[@3401c@],[@3401d@],[@3401e@],[@3401f@]
         .byte [@34020@],[@34021@],[@34022@],[@34023@],[@34024@],[@34025@],[@34026@],[@34027@],[@34028@],[@34029@],[@3402a@],[@3402b@],[@3402c@],[@3402d@],[@3402e@],[@3402f@]
         .byte [@34030@],[@34031@],[@34032@],[@34033@],[@34034@],[@34035@],[@34036@],[@34037@],[@34038@],[@34039@],[@3403a@],[@3403b@],[@3403c@],[@3403d@],[@3403e@],[@3403f@]
@@ -50449,7 +50446,7 @@ PlayerHit_CheckParalysis:
          <@352d0 RemoveObjectY@> ; and return
         <@352d2 SHIELD_PSYCHO@>
          <@352d4 RemoveObjectY@> ; and return
-        <@352d6 $SFX_PARALYZED@>
+        <@352d6 SFX_PARALYZED@>
         <@352d8 StartAudioTrack@>
         <@352db GAME_MODE_STATUS_MSG@>
         <@352dd GameMode@>
@@ -51120,7 +51117,7 @@ AdHocSpawnObject:
           <@357b1@>
           <@357b2@>
           <@357b4@>
-`        ;; Y looks like %aaaa_ddd0 where aaaa is the low nibble of
+        ;; Y looks like %aaaa_ddd0 where aaaa is the low nibble of
         ;; the spawned object's $6e0, and xddd is the direction (ignoring
         ;; any upper bit)
           <@357b5 AdHocSpawnDisplacements@>
@@ -51274,7 +51271,7 @@ ReadObjectCoordinatesInto_34_37:
 .org $98bc
 FindEmptySpawnSlot:
 -        <@358b9 ObjectActionScript@>
-         <@358bc >sec@> ; then rts
+         <@358bc +@> ; > sec, then rts
          <@358be@>
          <@358bf@>
         <@358c1 -@> ; $358b9
@@ -51295,7 +51292,7 @@ _358cd:
         <@358cd@>
         <@358d0@>
         <@358d2@>
-        jmp LoadOneObjectData:         ; ... and restore banks afterward
+        <@358d4 LoadOneObjectData@>         ; ... and restore banks afterward
 ;;; --------------------------------
 ;;; Input:
 ;;;   x:                Object to work on
@@ -51453,7 +51450,7 @@ CheckDirectionAgainstTerrain:
         ;; this AND means that either if the feature wasn't there or the object
         ;; isn't susceptible to it, then we end up with zero, allowing another
         ;; loop - this seems backwards.
-        <@359d1 -@> ; $3597d
+        <@359d1 @DirLoop@> ; $3597d
         <@359d3@>
         ;; ----
 @BailOut:
@@ -53249,7 +53246,7 @@ ObjectActionJump_50:
          <@36668@>
          <@3666a@>
          <@3666c@>
-         jsr LoadOneObjectData:         ; ... and restore banks afterward
+         <@3666e LoadOneObjectData@>         ; ... and restore banks afterward
          <@36671@>
          <@36673@>
          <@36676@>
@@ -55919,14 +55916,14 @@ ObjectActionJump_70_00:
         <@37a5f SFX_CALM_SEAS@>
         <@37a61 StartAudioTrack@>
         <@37a64@>
-        <@37a66 ObjectActionJump_70_05@>
+        <@37a66 _37a71@>
         <@37a69@>
         <@37a6b@>
         <@37a6d@>
         <@37a70@>
 ;;; --------------------------------
 .org $ba71
-ObjectActionJump_70_05:
+_37a71:
         <@37a71 WaitForNametableFlush@>
         <@37a74 _37ab8@>
         <@37a77@>
@@ -57009,12 +57006,12 @@ DrawMirroredMetasprite:
          <@383bd @Exit@>
           <@383bf@>
           <@383c1 DrawMirroredMetasprite@>
-@Exit
+@Exit:
         <@383c3@>
         <@383c5@>
         ;; ----
 +       <@383c6@>
-        <@383c8 #Exit@>
+        <@383c8 Exit@>
         <@383ca@>
         <@383cb@>
         <@383cc@>
@@ -64279,7 +64276,7 @@ _3ccdd:
             <@3ccf0@>
             <@3ccf2@>
             <@3ccf5@>
-            jsr SetOrClearParalysisFlag:
+            <@3ccf7 SetOrClearParalysisFlag@>
 +         <@3ccfa@>
           <@3ccfd@>
           <@3ccff@> ; ObjectUpdate_1A does not run???
@@ -65420,7 +65417,7 @@ ItemOrTriggerActionJump:                 ; TODO - Label the destinations
         .word (ItemOrTriggerActionJump_1c) ; 1c return statue of onyx
         .word (ItemOrTriggerActionJump_1d) ; 1d
         .word (ItemOrTriggerActionJump_1e) ; 1e
-        .word (ItemOrTriggerActionJump_1e) ; 1f board boat
+        .word (ItemOrTriggerActionJump_1f) ; 1f board boat
 ;;; --------------------------------
 .org $d5a3
 ItemOrTriggerActionJump_Noop:
@@ -65800,7 +65797,7 @@ ItemOrTriggerActionJump_1e:
         <@3d82d@>
 ;;; --------------------------------
 .org $d82e
-ItemOrTriggerActionJump_1e: ; board boat
+ItemOrTriggerActionJump_1f: ; board boat
         ;; Set the action of the boat spawn (slot d => 4:39) to 55
         <@3d82e@>
         <@3d830@>

@@ -174,7 +174,7 @@ export namespace Expr {
       const [op, [,, arity]] = ops.pop()!;
 //console.log('pop', op, arity);
       const args = exprs.splice(exprs.length - arity, arity);
-      if (args.length !== arity) throw new Error('shunting parse failed?');
+      if (args.length !== arity) throw new Error(`shunting parse failed? ${Token.nameAt(tokens[i])}`);
       exprs.push(fixSize({op, args}));
     }
 
@@ -277,7 +277,8 @@ export namespace Expr {
     // Now pop all the ops
     while (ops.length) popOp();
 //console.log('post-pop:', exprs);
-    if (exprs.length !== 1) throw new Error(`shunting parse failed?`);
+    if (!tokens[index]) throw new Error(`No token at ${index}:\n${tokens.map(t => '  ' + Token.nameAt(t) + '\n')}`);
+    if (exprs.length !== 1) throw new Error(`expression parse failed: nonunique result ${Token.nameAt(tokens[index])}`);
     if (tokens[index].source) exprs[0].source = tokens[index].source;
     return [exprs[0], i];
   }

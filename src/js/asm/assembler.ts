@@ -959,6 +959,8 @@ export class Assembler {
     for (const term of Token.parseArgList(tokens, 1)) {
       if (allowString && term.length === 1 && term[0].token === 'str') {
         out.push(term[0].str);
+      } else if (term.length < 1) {
+        this.fail(`Missing term`);
       } else {
         out.push(this.resolve(Expr.parseOnly(term)));
       }

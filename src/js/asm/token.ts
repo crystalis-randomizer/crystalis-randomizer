@@ -75,6 +75,7 @@ export interface NumberToken {
   token: NumberTok;
   num: number;
   source?: SourceInfo;
+  width?: number; // number of bytes in literal
 }
 export interface NullaryToken {
   token: NullTok;

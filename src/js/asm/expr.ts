@@ -234,7 +234,7 @@ export namespace Expr {
         } else if (front.token === 'num') {
           // add number
           const num = front.num;
-          exprs.push({op: 'num', num, meta: size(num)});
+          exprs.push({op: 'num', num, meta: size(num, front)});
           val = false;
         } else {
           // bad token??
@@ -469,7 +469,10 @@ function fixSize(expr: Expr): Expr {
   return expr;
 }
 
-function size(num: number): Expr.Meta {
+function size(num: number, token?: Token): Expr.Meta {
+  if (num < 256 && token && token.token === 'num' && token.width != null) {
+    return {size: token.width};
+  }
   return {size: 0 <= num && num < 256 ? 1 : 2};
 }
 

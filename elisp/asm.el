@@ -1619,7 +1619,7 @@ of a non-divisible line, then the entire line will be deleted."
       (re-search-forward "^\\.org")
       (beginning-of-line)
       (next-line)
-      (while (looking-at "^([A-Za-z0-9_]| *;)")
+      (while (looking-at "^\\([A-Za-z0-9_]\\| *;\\)")
         (next-line))
       (if (looking-at "[-+]")
           (setq looking nil)))))

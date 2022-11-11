@@ -127,7 +127,7 @@ export class Tokenizer implements TokenSource {
 
 function parseHex(str: string): Token {
   if (!/^[0-9a-f]+$/i.test(str)) throw new Error(`Bad hex number: $${str}`);
-  return {token: 'num', num: Number.parseInt(str, 16)};
+  return {token: 'num', num: Number.parseInt(str, 16), width: str.length >>> 1};
 }
 
 function parseDec(str: string): Token {
@@ -142,7 +142,7 @@ function parseOct(str: string): Token {
 
 function parseBin(str: string): Token {
   if (!/^[01]+$/.test(str)) throw new Error(`Bad binary number: %${str}`);
-  return {token: 'num', num: Number.parseInt(str, 2)};
+  return {token: 'num', num: Number.parseInt(str, 2), width: str.length >>> 3};
 }
 
 export namespace Tokenizer {

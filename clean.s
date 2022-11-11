@@ -611,6 +611,7 @@
 .segment "12"   :bank $12 :size $2000 :off $24000 :mem $8000
 .segment "13"   :bank $13 :size $2000 :off $26000 :mem $a000
 .segment "14"   :bank $14 :size $2000 :off $28000 :mem $8000
+.segment "14:a" :bank $14 :size $2000 :off $28000 :mem $a000
 .segment "15"   :bank $15 :size $2000 :off $2a000 :mem $a000
 .segment "16"   :bank $16 :size $2000 :off $2c000 :mem $8000
 ;;; 15..17 store messages, all accessed via the a000 slot
@@ -8061,7 +8062,7 @@ MapDataPart2:
         .word (MapData_d8) ; d8 PortoaFortuneTeller
         .word (MapData_d9) ; d9 PortoaPawnShop
         .word (MapData_da) ; da PortoaArmorShop
-        .word (MapData_de-1) ; db  --- BROKEN
+        .word (MapData_dc-1) ; db  --- BROKEN
         .word (MapData_dc) ; dc PortoaInn
         .word (MapData_dd) ; dd PortoaToolShop
         .word (MapData_de) ; de =PortoaPalaceLeftWing
@@ -18905,7 +18906,7 @@ ObjectDataPart2:
         .word (ObjectData_Object00)
         .word (ObjectData_Vampire2_Bat) ; bc Vampire2_Bat
         .word (ObjectData_Object00)
-        .word (ObjectData_GroundSentry_Laser) ; be
+        .word (ObjectData_GroundSentry_Harpoon) ; be
         .word (ObjectData_Draygon2_Fireball) ; bf Draygon2_Fireball
         .word (ObjectData_ObjectC0) ; c0
         .word (ObjectData_Vampire1_Bat) ; c1 Vampire1_Bat
@@ -20969,7 +20970,7 @@ CheckNpcSpawnCondition:
          <@1c0b9@>
          <@1c0bb NpcSpawnConditionTablePart2+1@> ; $1c6e1
 ++      <@1c0be@>
-.org $80c2
+.org $80c0
 NpcSpawnConditionLoop:
          ;; Now ($24,y) points to the start of a condition.
 --       <@1c0c0@>
@@ -20979,7 +20980,7 @@ NpcSpawnConditionLoop:
           beq :>>rts
          ;; Otherwise, each condition block is preceded by the location.
          <@1c0c7 CurrentLocation@>
-           <@1c0c9 NpcSpawnCondition_AdvanceToNextLocation@> ; $1c0d9
+           <@1c0c9 NpcSpawnConditionLoop_NextLocation@> ; $1c0d9
           ;; We're at the right location - check the flags
 -         <@1c0cb ReadFlagFromBytePair_24y@>
           <@1c0ce +@> ; $1c0d3
@@ -20991,13 +20992,13 @@ NpcSpawnConditionLoop:
          <@1c0d5 -@> ; $1c0cb
         <@1c0d7 NpcSpawnConditionLoop@> ; $1c0c0 unconditional
         ;; ----
-NpcSpawnCondition_AdvanceToEndOfCondition:
+NpcSpawnConditionLoop_NextLocation:
          ;; Advance y until we get to the end of this condition
          <@1c0d9@> ; $24 was set in $1c0ae, at least in one case
          <@1c0db@>
          <@1c0dc@>
          <@1c0dd@>
-        <@1c0de NpcSpawnCondition_AdvanceToEndOfCondition@> ; $1c0d9
+        <@1c0de NpcSpawnConditionLoop_NextLocation@> ; $1c0d9
         <@1c0e0 NpcSpawnConditionLoop@> ; $1c0c0 unconditional
         ;; ----
         <@1c0e2@>
@@ -21269,7 +21270,7 @@ TelepathyResults:
         .byte [@1c24f@],[@1c250@],[@1c251@],[@1c252@],[@1c253@],[@1c254@],[@1c255@],[@1c256@],[@1c257@],[@1c258@],[@1c259@],[@1c25a@],[@1c25b@],[@1c25c@],[@1c25d@],[@1c25e@]
         .byte [@1c25f@],[@1c260@],[@1c261@],[@1c262@],[@1c263@],[@1c264@],[@1c265@],[@1c266@],[@1c267@],[@1c268@],[@1c269@],[@1c26a@],[@1c26b@],[@1c26c@],[@1c26d@],[@1c26e@]
 ;;; --------------------------------
-.org $8271
+.org $826f
 ItemGet:
 -        <@1c26f@>
          <@1c271@>
@@ -21367,8 +21368,8 @@ ItemGet_Bracelet:
          <@1c302@>
          <@1c304 EquippedBracelet@>
 +       <@1c307@>
-;;; --------------------------------
-.org $830b
+        ;; ----
+.org $8308
 ItemGet_FindOpenSlot:
         ;; Inputs:
         ;; $29 - the item id we're trying to gain
@@ -21446,8 +21447,8 @@ ItemUse_TradeIn:
         <@1c367@>
         <@1c368@>
         ;; Look for the item in the inventory
--        <@1c36a@>
-         <@1c36b@>
+        <@1c36a@>
+-        <@1c36b@>
          <@1c36e@>
           <@1c370 DeleteUsedItem@>
          <@1c372@>
@@ -21466,8 +21467,8 @@ DeleteUsedItem:
          <@1c37b@>
          <@1c37e@>
          <@1c381@>
-+       <@1c382 DeleteUsedItem@>
-        <@1c384@>
+         <@1c382 DeleteUsedItem@>
++       <@1c384@>
         <@1c386@>
         <@1c389@> ; which row was it in?
         <@1c38a@>
@@ -21525,9 +21526,9 @@ ItemUseJumpTable:
         .word (ItemUseJump_FruitOfPower) ; 21 fruit of power
         .word (ItemUseJump_MagicRing) ; 22 magic ring
         .word (ItemUseJump_FruitOfRepun) ; 23 fruit of repun
-        .word (ItemUse_RecoverStatus) ; 24 warp boots -> rts
+        .word (ItemUseJump_24_Rts) ; 24 warp boots -> rts
         .word (ItemUseJump_StatueOfOnyx) ; 25 statue of onyx
-        .word (ItemUseJump_40) ; 26 opel statue
+        .word (ItemUseJump_26_Rts) ; 26 opel statue
         .word (ItemUseJump_InsectFlute) ; 27 insect flute
         .word (ItemUseJump_FluteOfLime) ; 28 flute of lime
         .word (ItemUseJump_Invalid)
@@ -21539,7 +21540,7 @@ ItemUseJumpTable:
         .word (ItemUseJump_Invalid)
         .word (ItemUseJump_Invalid)
         .word (ItemUseJump_AlarmFlute) ; 31 alarm flute
-        .word (ItemUseJump_37) ; 32 windmill key
+        .word (ItemUseJump_32) ; 32 windmill key
         .word (ItemUseJump_GiveItem) ; 33 key to prison
         .word (ItemUseJump_GiveItem) ; 34 key to styx
         .word (ItemUseJump_GiveItem) ; 35 fog lamp
@@ -21580,12 +21581,13 @@ ItemUseJump_3b: ; Love Pendant
 ;;; --------------------------------
 .org $8442
 ItemUseJump_40: ; Bow of Truth
-        <@1c442 ItemUseJump_3f@> ; Bow of Sun
+        <@1c442 ItemUseJump_3e@> ; Bow of Sun
         <@1c445@>
         <@1c448 ItemUseJump_InvalidRelay@>
         <@1c44a CurrentLocation@>
         <@1c44c LOC_DRAYGON2@>
         <@1c44e ItemUseJump_InvalidRelay@>
+ItemUseJump_26_Rts:
         <@1c450@>
 ;;; --------------------------------
 .org $8451
@@ -21783,6 +21785,7 @@ ItemUse_RecoverStatus:
          <@1c55d SFX_RECOVER_MAGIC@>
          <@1c55f StartAudioTrack@>
         <@1c562@>
+ItemUseJump_24_Rts:
         <@1c564@>
 ;;; --------------------------------
 .org $8565
@@ -24464,7 +24467,7 @@ ItemGetDataTable:
         .word (ItemGetData_01) ; 01 sword of fire
         .word (ItemGetData_02) ; 02 sword of water
         .word (ItemGetData_03) ; 03 sword of thunder
-        .word (ItemGetData_03) ; 04 crystalis
+        .word (ItemGetData_04) ; 04 crystalis
         .word (ItemGetData_05) ; 05 ball of wind
         .word (ItemGetData_06) ; 06 tornado bracelet
         .word (ItemGetData_07) ; 07 ball of fire
@@ -27439,7 +27442,7 @@ BossPatternJump_1c:              ; Mado 1
 .org $ae43
 BossPatternJump_1d:              ; Mado 2
         <@1ee43@>
-         bne :<rts ; $1ee34
+         bne :<<rts ; $1ee34
         <@1ee48@> ; Switch to pattern 3
         <@1ee4b@>
         <@1ee4d@>
@@ -28186,7 +28189,7 @@ BossPatternJump_2c:              ; Draygon2 1
         <@1f416@>
         <@1f419 _1e8ff@>
         <@1f41c@>
-        <@1f41f +@> ; $1f424
+        beq :>rts ; $1f424
         <@1f421 _1f4c8@>
         ;; ----
         <@1f424@>
@@ -29372,7 +29375,7 @@ DataTable_1fdcb:
         .byte [@1fdcb@],[@1fdcc@],[@1fdcd@],[@1fdce@],[@1fdcf@],[@1fdd0@],[@1fdd1@],[@1fdd2@],[@1fdd3@]
         .byte [@1fdd4@],[@1fdd5@],[@1fdd6@],[@1fdd7@],[@1fdd8@],[@1fdd9@],[@1fdda@]
 ;;; --------------------------------
-.org $bdde
+.org $bddb
 MainGameModeJump_0d_StartScreen:
          <@1fddb WaitForOAMDMA@>
          <@1fdde _1febf@>
@@ -29945,7 +29948,7 @@ InventoryMenu_LoadSelectedPage2:
 +       <@202ae@>
         <@202b0@>
         <@202b2@>
-        <@202b4 -@> ; $20296
+        <@202b4 InventoryMenu_LoadSelectedPage2@> ; $20296
         <@202b6@>
 ;;; --------------------------------
 .org $82b7
@@ -30279,7 +30282,7 @@ Inventory_SortRows:
         <@20543@>
         ;; copy item to the scratch sort row
 -        <@20545 Inventory@>      ; $6430,x
-         <@20548 ScratchSortRow@> ; $60e0,y
+         <@20548 Inventory_ScratchSortRow@> ; $60e0,y
          <@2054b@>
          <@2054c@>
          <@2054d@>
@@ -30671,7 +30674,7 @@ LoadInventoryTiles:
         <@207e6@>
         <@207e9@>
 ;;; --------------------------------
-.org $c7ea
+.org $87ea
 _207ea:
         <@207ea@>
         <@207ec DataTable_20bf3@>
@@ -31409,7 +31412,7 @@ MenuMessageTable:
         .word (MenuMessage_06)
         ;; 1e
         .byte [@20c93@],[@20c94@]
-        .word (MenuMessage_1c)
+        .word (MenuMessage_1e)
         ;; 1f
         .byte [@20c97@],[@20c98@]
         .word (MenuMessage_0c)
@@ -34943,24 +34946,24 @@ CreditsMode_02:
 +       <@22ab4@>
         <@22ab6@>
         <@22ab9@>
-        <@22abb@>
-        <@22abe@>
-        <@22ac0 +@> ; $22ac8
-          <@22ac2@>
-          <@22ac5 ++@> ; $22adc
-          ;; ----
-+        <@22ac8@>
-         <@22ac9@>
-         <@22acb +@> ; $22ad5
-          <@22acd@>
-          <@22acf@>
-          <@22ad2 ++@> ; $22adc
-          ;; ----
-+        <@22ad5@>
-         <@22ad6@>
-         <@22ad7@>
-         <@22ad9@>
-++      <@22adc@>
+-        <@22abb@>
+         <@22abe@>
+         <@22ac0 +@> ; $22ac8
+           <@22ac2@>
+           <@22ac5 ++@> ; $22adc
+           ;; ----
++         <@22ac8@>
+          <@22ac9@>
+          <@22acb +@> ; $22ad5
+           <@22acd@>
+           <@22acf@>
+           <@22ad2 ++@> ; $22adc
+           ;; ----
++         <@22ad5@>
+          <@22ad6@>
+          <@22ad7@>
+          <@22ad9@>
+++       <@22adc@>
         <@22add -@> ;$22abb
         <@22adf@>
         <@22ae2@>
@@ -35262,7 +35265,7 @@ OAMWriteTable:
         .word (OAMWriteTable_01)
         .word (OAMWriteTable_02)
         .word (OAMWriteTable_03)
-        .word (OAMWriteTable_00)
+        .word (OAMWriteTable_04)
         .word (OAMWriteTable_05)
         .word (OAMWriteTable_06)
         .word (OAMWriteTable_07) ; THE END
@@ -35270,8 +35273,12 @@ OAMWriteTable:
         .word (OAMWriteTable_09)
 ;;;----------------
 .org $b472
+OAMWriteTable_04:
+        .byte [@23472@]
+;;;----------------
+.org $b473
 OAMWriteTable_00:
-        .byte [@23472@],[@23473@],[@23474@],[@23475@],[@23476@],[@23477@],[@23478@],[@23479@],[@2347a@],[@2347b@],[@2347c@],[@2347d@],[@2347e@],[@2347f@]
+        .byte [@23473@],[@23474@],[@23475@],[@23476@],[@23477@],[@23478@],[@23479@],[@2347a@],[@2347b@],[@2347c@],[@2347d@],[@2347e@],[@2347f@]
         .byte [@23480@],[@23481@],[@23482@],[@23483@],[@23484@],[@23485@],[@23486@],[@23487@],[@23488@],[@23489@],[@2348a@],[@2348b@],[@2348c@],[@2348d@],[@2348e@],[@2348f@]
         .byte [@23490@],[@23491@],[@23492@],[@23493@],[@23494@],[@23495@],[@23496@],[@23497@],[@23498@],[@23499@],[@2349a@],[@2349b@],[@2349c@],[@2349d@],[@2349e@],[@2349f@]
         .byte [@234a0@],[@234a1@],[@234a2@],[@234a3@],[@234a4@],[@234a5@],[@234a6@],[@234a7@],[@234a8@],[@234a9@],[@234aa@],[@234ab@],[@234ac@],[@234ad@],[@234ae@],[@234af@]
@@ -35751,7 +35758,7 @@ EnableSpritesAndLeftColumnRendering:
         <@24195@>
         <@24197@>
 ;;; --------------------------------
-.org $819a
+.org $8198
 WaitForOAMDMA_alt2:
 -        <@24198@>
         <@2419a -@> ; $24198
@@ -36610,6 +36617,8 @@ DataTable_254c0:
 ;;; The format seems to be 5-byte chunks, where the first byte is the offset
 ;;; into the sprite table and the rest go into 200,x .. 203,x.
 ;;; This is used for the main menu screen (Start/Continue)
+.org $98c2
+DataTable_258c2:
         .byte [@258c2@],[@258c3@],[@258c4@],[@258c5@],[@258c6@]
         .byte [@258c7@],[@258c8@],[@258c9@],[@258ca@],[@258cb@]
         .byte [@258cc@],[@258cd@],[@258ce@],[@258cf@],[@258d0@]
@@ -36883,7 +36892,7 @@ TitleMovieFlushSound:
         <@2608e@>
         <@26091@>
 ;;; --------------------------------
-.org $a094
+.org $a092
 ResetNMTBuffer:
 ;;; Waits for NMT write buffer to empty, then resets the index
 ;;; to zero. They do this because they want to write two entries
@@ -37055,19 +37064,19 @@ _261aa:
           <@261e0@>
           <@261e3@>
           <@261e6@>
-           <@261e9 +@> ; $26207
+           <@261e9 ++@> ; $26207
           ;; ----
 +        <@261ec@>
-         <@261ef +@> ; $26207
+         <@261ef ++@> ; $26207
           <@261f1@>
           <@261f3@>
           <@261f6@>
           <@261f9@>
           <@261fc@>
-          <@261ff +@> ; $26207
+          <@261ff ++@> ; $26207
            <@26201@>
            <@26204@>
-+        <@26207@>
+++       <@26207@>
          <@2620a@>
          <@2620d@>
         <@2620f -@> ; $261be
@@ -37724,7 +37733,7 @@ TitleMovieJump_5:                ; Preparing main title menu (6f0=5)
 ;;; Initial address for ($82) when main menu starts
 .org $a6dd
 DataTable_266dd:
-        .word (DataTable_254c0) ; $258c2
+        .word (DataTable_258c2) ; $258c2
 ;;; --------------------------------
 .org $a6df
 TitleMovieJump_6:                ; Main title menu: Start/Continue (6f0=6)
@@ -37749,7 +37758,7 @@ _266f9:
         <@266fb MainLoopMode@>
         <@266fd@>
 ;;; --------------------------------
-.org $a700
+.org $a6fe
 TitleMenuJump_00:
 -        <@266fe@>
          <@26700@>
@@ -39228,7 +39237,7 @@ MainGameModeJump_03_DeathAnimation:
         <@27917 +@> ; $2791c
          <@27919 ActivateOpelStatue@>
 ;;; --------------------------------
-.org $b91e
+.org $b91c
 PlayerDeath:
 +       <@2791c@>
         <@2791e StartAudioTrack@>
@@ -39310,7 +39319,7 @@ ActivateOpelStatue:
          <@279d6 UpdateHPDisplayForOpelStatue@>
         <@279d9 --@> ; $279bd
         ;; ----
-+       <@279dc ++@> ; $279fb
++       <@279dc UpdateHPDisplayForOpelStatue@>
         <@279df@> ; MP
         <@279e1 DisplayNumberInternal@>
         <@279e4@>
@@ -40336,7 +40345,7 @@ MessageTable_Part13:
 MessageTable_Part14:
         .word (Message_14_00) ; 00
         .word (Message_14_01) ; 01
-        .word (Message_19_05) ; 02
+        .word (Message_13_14) ; 02
         .word (Message_14_03) ; 03
         .word (Message_14_04) ; 04
         .word (Message_14_05) ; 05
@@ -40621,7 +40630,7 @@ MessageTableBanks:
 ;;; This is the primary entry point to the message table.  Since the table is
 ;;; so long, it is split into 34 parts, each with at most 32 elements.
 ;;; STRIP: word=$20000
-.segment "14","15"
+.segment "14","14:a"
 .org $8422
 MessageTableParts:
         .word (MessageTable_Part00) ; 00
@@ -41164,7 +41173,7 @@ DrawMessageBoxBackgroundAllRows:
 ;;;    $20,$21  Should point to correct nametable row already
 ;;;    $24,$25  Must be pre-initialized to (#$20, #$0)
 ;;;    $22.#23  Increment for PPUADDR between frames.
-.org $87f1
+.org $87ef
 DrawMessageBoxBackgroundRows:
         ;; Wait for nametable flush in NMI
 -        <@287ef@>
@@ -42631,7 +42640,7 @@ DataTable_29b0e:
 ;;; When these spawn, the "source object" is taken into account to determine
 ;;; position and direction.
 ;;; QUESTION: how do the multiple-spawns get the right directions?
-.org $9c00
+.org $bc00                    ; NOTE: These are loaded from the a000 bank (14:a)
 AdHocSpawns:
         .byte [@29c00@],[@29c01@],[@29c02@],[@29c03@]
         .byte [@29c04@],[@29c05@],[@29c06@],[@29c07@] ; 01 Wind attack 1
@@ -42737,7 +42746,7 @@ AdHocSpawnsPart2:
 ;;; is stored in $30, which is ..., and the second byte is
 ;;; added to 0 (normally) or 2 (if origin slowed by terrain).
 ;;; So basically, this is a displacement vector.
-.org $9d80
+.org $bd80                      ; NOTE: loaded from a000 bank (14:a)
 AdHocSpawnDisplacements:
         ;; 0: no displacement
         .byte [@29d80@],[@29d81@] ; 0, up
@@ -44629,10 +44638,7 @@ Message_19_05:
         .byte [@2dfc0@],[@2dfc1@],[@2dfc2@],[@2dfc3@],[@2dfc4@],[@2dfc5@],[@2dfc6@],[@2dfc7@],[@2dfc8@],[@2dfc9@],[@2dfca@],[@2dfcb@],[@2dfcc@],[@2dfcd@],[@2dfce@],[@2dfcf@]
         .byte [@2dfd0@],[@2dfd1@],[@2dfd2@],[@2dfd3@],[@2dfd4@],[@2dfd5@],[@2dfd6@],[@2dfd7@],[@2dfd8@],[@2dfd9@],[@2dfda@],[@2dfdb@],[@2dfdc@],[@2dfdd@],[@2dfde@],[@2dfdf@]
         .byte [@2dfe0@],[@2dfe1@],[@2dfe2@],[@2dfe3@],[@2dfe4@],[@2dfe5@],[@2dfe6@],[@2dfe7@],[@2dfe8@],[@2dfe9@],[@2dfea@],[@2dfeb@],[@2dfec@],[@2dfed@],[@2dfee@],[@2dfef@]
-        .byte [@2dff0@],[@2dff1@],[@2dff2@],[@2dff3@]
-.org $bff4
-Message_14_02:
-        .byte [@2dff4@],[@2dff5@],[@2dff6@],[@2dff7@],[@2dff8@],[@2dff9@],[@2dffa@],[@2dffb@],[@2dffc@],[@2dffd@],[@2dffe@],[@2dfff@]
+        .byte [@2dff0@],[@2dff1@],[@2dff2@],[@2dff3@],[@2dff4@],[@2dff5@],[@2dff6@],[@2dff7@],[@2dff8@],[@2dff9@],[@2dffa@],[@2dffb@],[@2dffc@],[@2dffd@],[@2dffe@],[@2dfff@]
 
 .segment "17"
 .org $a000
@@ -50467,7 +50473,7 @@ RemoveObjectY:
         ;; ----
 PlayerHit_CheckStone:
         <@352fb STATUS_STONE@>
-         <@352fd PlayerHit_CheckPoison@>
+         <@352fd PlayerHit_CheckMPDrain@>
         ;; Projectile causes stone (prevented by certain shields),
         ;; but no damage, so don't return back to damage calculation.
         <@352ff PlayerStatus@>
@@ -51268,7 +51274,7 @@ ReadObjectCoordinatesInto_34_37:
 ;;; Increment 'y' until either finding an empty spawn slot, or
 ;;; else reaching $10, exclusive (e.g. $1f).  Returns carry set
 ;;; and 'y' pointing to an empty slot if it was successful.
-.org $98bc
+.org $98b9
 FindEmptySpawnSlot:
 -        <@358b9 ObjectActionScript@>
          <@358bc +@> ; > sec, then rts
@@ -51427,7 +51433,7 @@ CheckDirectionAgainstTerrain:
                <@359af PlayerStatus@>
                <@359b2 +++@> ; $359c4
         ;; At this point we know we're on a dolphin - so water becomes passable.
-              <@359b4 -@> ; $3597d
+              <@359b4 @DirLoop@> ; $3597d
         ;; Carry clear - if no terrain blockers, return directly.
              <@359b6@>
              <@359b8 +@> ; $359be -> rts
@@ -54177,7 +54183,7 @@ ObjectActionJump_30:
         <@36cf0@>
         <@36cf1 PowersOfTwo@>
         <@36cf4@>
-         beq :<rts ; $36cd8
+         beq :<<rts ; $36cd8
         <@36cf9@>
         <@36cfc@>
         <@36cfe +@> ; $36d03
@@ -55804,7 +55810,7 @@ _37955:
          <@3799a@>
         <@3799d@>
 ;;; --------------------------------
-.org $b9aa
+.org $b99e
 -       <@3799e@>
         <@379a1@>
         bpl :>rts ; $379a9
@@ -56279,7 +56285,7 @@ ObjectActionJump_70_0a:
 .org $bd29
 ObjectActionJump_70_08:          ; dyna pod
         <@37d29@> ; eye knockback - was it just hit?
-        <@37d2c +@> ; $37d68
+        <@37d2c ++@> ; $37d68
          <@37d2e@>
          <@37d30 +@> ; $37d35
         ;; Once every 8 seconds, if eye wasn't hit, increment 640,x
@@ -56307,11 +56313,11 @@ ObjectActionJump_70_08:          ; dyna pod
         <@37d52@>
         <@37d53@> ; Dyna Bubble
         <@37d55 AdHocSpawnObject@>
-;;; --------------------------------
+        ;; ----
 DataTable_37d58: 
         .byte [@37d58@],[@37d59@],[@37d5a@],[@37d5b@],[@37d5c@],[@37d5d@],[@37d5e@],[@37d5f@],[@37d60@],[@37d61@],[@37d62@],[@37d63@],[@37d64@],[@37d65@],[@37d66@],[@37d67@]
-;;; -------------------------------- 
-+       <@37d68@>
+        ;; ----
+++      <@37d68@>
         <@37d6a@>
         bne :<rts ; $37d40
         <@37d6e@>
@@ -56959,7 +56965,7 @@ DrawMetasprite:
          <@38373@>
          <@38374@>
          <@38375@>
-         <@38376 -@> ; $38331
+         <@38376 ---@> ; $38331
         ;; ----
 +++     <@38379@> ; $380.x:40 controls the positive bit
         <@3837b --@> ; $38358 - back-jump if we're at normal speed
@@ -57011,7 +57017,7 @@ DrawMirroredMetasprite:
         <@383c5@>
         ;; ----
 +       <@383c6@>
-        <@383c8 Exit@>
+        <@383c8 @Exit@>
         <@383ca@>
         <@383cb@>
         <@383cc@>
@@ -62661,7 +62667,7 @@ WaitForOAMDMA:
         <@3c173@>
         <@3c175@>
 ;;; --------------------------------
-.org $c179
+.org $c176
 WaitForMultipleOAMDMA:
         ;; [in y] - Number of frames to wait.
 -        <@3c176 WaitForOAMDMA@>
@@ -63337,7 +63343,7 @@ WaitForNametableFlush:
         <@3c67a WaitForNametableFlush@>
         <@3c67c@>
 ;;; --------------------------------
-.org $c67f
+.org $c67d
 WriteNametableDataToPpu:
         ;; called from $3f40a (maybe others)
         ;; Check if we even need to update anything - $b may lead $a
@@ -63452,7 +63458,7 @@ WriteNametableDataToPpu:
 ;;; check to see if theres already a queued update in that spot
 ;;;
 ;;; [in] A - Offset into the buffer at $6000 that will be written to
-.org $c730
+.org $c72b
 WaitForNametableBufferAvailable:
 --      <@3c72b@>
 -       <@3c72d@>
@@ -64556,7 +64562,7 @@ _3ce89:
 ++      <@3cee0@>
         <@3cee2 +@> ; $3cf13
          <@3cee4 WaitForOAMDMA@>
-         <@3cee7 STORM_ATTACK@>
+         <@3cee7 SFX_STORM_ATTACK@>
          <@3cee9 StartAudioTrack@>
          <@3ceec _3cf28@>
          <@3ceef@>
@@ -65115,7 +65121,7 @@ WaitForDialogToBeDismissedInternal:
          <@3d35e BankSwitch8k_8000@>
          <@3d361 DrawMessageBoxBackground@>
          <@3d364 WaitForOAMDMA@>
-         <@3d367 SCREEN_MODE_NORMAL@>
+         <@3d367 SCREEN_MODE_TEXT@>
          <@3d369 ScreenMode@>
          <@3d36b SCREEN_MODE_NTBOSS@>
          <@3d36d +@> ; $3d371
@@ -65562,10 +65568,10 @@ ItemOrTriggerActionJump_09:  ; Spawn Dolphin
         <@3d69a@>
         <@3d69c DolphinSpawnTable+4@>
         <@3d69f@>
-        <@3d71b SFX_FLUTE@>
-        <@3d742 StartAudioTrack@>
+        <@3d6a2 SFX_FLUTE@>
+        <@3d6a4 StartAudioTrack@>
         ;; ----
-        <@3d745@>
+        <@3d6a7@>
 ;;; --------------------------------
 .org $d6a8
 DolphinSpawnTable:
@@ -65573,51 +65579,51 @@ DolphinSpawnTable:
 ;;; The fifth byte is an index into the MovementScriptTable.
 ;;; Indexed by either the last entrance ($6d) or else hardcoded
 ;;; above for some locations ($64 and $68).
-        .byte [@3d8f4@],[@3daf0@],[@3e87b@],[@3e8b4@],[@3e9d4@] ; 00 on boat
-        .byte [@3ea25@],[@3ea5a@],[@3ef25@],[@3ef30@],[@3ef6c@] ; 01 underground channel
-        .byte [@3f253@],[@3f2af@],[@3fab3@],[@3fbf4@],[@3fbf9@] ; 02 evil spirit island
-        .byte [@3fcfb@],[@3fd59@],[@3fd7b@],[@3fd91@],[@3fdaf@]
-        .byte [@1c70@],[@1cb0@],[@2557@],[@2d20@],[@2d40@] ; 04 joel beach
-        .byte [@2d7c@],[@2df0@],[@2f32@],[@2ff0@],[@2ff4@]
-        .byte [@3014@],[@40f3@],[@5ffc@],[@5fff@],[@6088@]
-        .byte [@6edc@],[@73f5@],[@774a@],[@7ef7@],[@8f88@] ; 07 swan beach
-        .byte [@c774@],[@e5f8@],[@f826@],[@f8f1@],[@ff03@] ; 08 cabin
+        .byte [@3d6a8@],[@3d6a9@],[@3d6aa@],[@3d6ab@],[@3d6ac@] ; 00 on boat
+        .byte [@3d6ad@],[@3d6ae@],[@3d6af@],[@3d6b0@],[@3d6b1@] ; 01 underground channel
+        .byte [@3d6b2@],[@3d6b3@],[@3d6b4@],[@3d6b5@],[@3d6b6@] ; 02 evil spirit island
+        .byte [@3d6b7@],[@3d6b8@],[@3d6b9@],[@3d6ba@],[@3d6bb@]
+        .byte [@3d6bc@],[@3d6bd@],[@3d6be@],[@3d6bf@],[@3d6c0@] ; 04 joel beach
+        .byte [@3d6c1@],[@3d6c2@],[@3d6c3@],[@3d6c4@],[@3d6c5@]
+        .byte [@3d6c6@],[@3d6c7@],[@3d6c8@],[@3d6c9@],[@3d6ca@]
+        .byte [@3d6cb@],[@3d6cc@],[@3d6cd@],[@3d6ce@],[@3d6cf@] ; 07 swan beach
+        .byte [@3d6d0@],[@3d6d1@],[@3d6d2@],[@3d6d3@],[@3d6d4@] ; 08 cabin
 ;;; --------------------------------
 .org $d6d5
 ItemOrTriggerActionJump_06:     ; also 11
         ;; reload NpcData for location
-        <@ff57 LoadNpcDataForCurrentLocation@>
+        <@3d6d5 LoadNpcDataForCurrentLocation@>
 ;;; --------------------------------
 .org $d6d8
 ItemOrTriggerActionJump_0b:
-        <@1048b INV_MAGIC_BARRIER@>
-        <@10739 GrantItemInRegisterA@>
+        <@3d6d8 INV_MAGIC_BARRIER@>
+        <@3d6da GrantItemInRegisterA@>
 ;;; --------------------------------
 .org $d6dd
 ItemOrTriggerActionJump_0c:
-        <@1078b INV_MAGIC_CHANGE@>
-        <@10a07 GrantItemInRegisterA@>
-        <@1c895@>
-        <@1cd21 _3d31f@>
+        <@3d6dd INV_MAGIC_CHANGE@>
+        <@3d6df GrantItemInRegisterA@>
+        <@3d6e2@>
+        <@3d6e4 _3d31f@>
 ;;; --------------------------------
 .org $d6e7
 ItemOrTriggerActionJump_0d:
-        <@1cf38 INV_BOW_OF_MOON@>
-        <@1cfba GrantItemInRegisterA@>
+        <@3d6e7 INV_BOW_OF_MOON@>
+        <@3d6e9 GrantItemInRegisterA@>
 ;;; --------------------------------
 .org $d6ec
 ItemOrTriggerActionJump_0e:
-        <@1d00f ReloadNpcDataForCurrentLocation@>
-        <@1fd17@>
-        <@1fd22@>
-        <@1fd24 BankSwitch8k_8000@>
-        <@1fd29 ReadObjectCoordinatesInto_34_37@>
-        <@3c7ec@>
-        <@3d209@>
-        <@3d20b WriteObjectCoordinatesFrom_34_37@>
-        <@3d20e@>
-        <@3d210@>
-        <@3d212 LoadOneObjectDataInternal@>
+        <@3d6ec ReloadNpcDataForCurrentLocation@>
+        <@3d6ef@>
+        <@3d6f1@>
+        <@3d6f3 BankSwitch8k_8000@>
+        <@3d6f6 ReadObjectCoordinatesInto_34_37@>
+        <@3d6f9@>
+        <@3d6fb@>
+        <@3d6fd WriteObjectCoordinatesFrom_34_37@>
+        <@3d700@>
+        <@3d702@>
+        <@3d704 LoadOneObjectDataInternal@>
         <@3d707@>
         <@3d709@>
         <@3d70c@>
@@ -65859,7 +65865,7 @@ JumpTable_3d885:
         .word (ItemUse)
         .word (TriggerSquare)
 ;;; --------------------------------
-.org $d88e
+.org $d88b
 WaitForAudio:
          <@3d88b WaitForOAMDMA@>
         ;; Wait for an audio cue to finish???
@@ -66755,7 +66761,7 @@ JumpTable_3df0e_06:
         <@3df24 _3dded@>
         <@3df27 SFX_CURSOR_MOVE@>
         <@3df29 StartAudioTrack@>
-        <@3df2c JumpTable_3df0e_05@>
+        <@3df2c JumpTable_3df0e_04@>
 ;;; --------------------------------
 .org $df2f
 JumpTable_3df0e_00: 
@@ -67696,7 +67702,7 @@ ExitTypeJump_2_Warp:
         <@3e53e _3e61b@>
         <@3e541 _3e439@>
 ;;; --------------------------------
-.org $e547
+.org $e544
 ExitTypeJump_3_Pit:
         ;; Fall into pit
 -       <@3e544 WaitForOAMDMA@>
@@ -68812,7 +68818,7 @@ PrepareNametableStageForVerticalScrollInternal:
 ;;; Returns the Y-th bit of $62f0 bitset in A (and Z).
 ;;; This was set based on the flags table...
 .org $ec6c
-CheckMapFlags_Y:
+CheckMapFlag_Y:
         <@3ec6c@>
         <@3ec6d@>
         <@3ec6e@>
@@ -69148,7 +69154,7 @@ WriteMetatileAttributesForVerticalScroll:
         <@3ee2e MapTilesToAttributesForVerticalScroll@>
 ;;; --------------------------------
 .org $ee31
-WriteMetatileAttributsForHorizontalScroll:
+WriteMetatileAttributesForHorizontalScroll:
         ;; Initialize ($10) and ($10),y based on $67 and $34
         ;; Note the similarity to vertical, which reads $36 (ylo) instead of
         ;; $34 (xlo) and then does a lookup into $3ef07 before doing some
@@ -69207,7 +69213,7 @@ WriteMetatileAttributsForHorizontalScroll:
 ;;;   $14: remaining bits not present in $12 | $13.
 ;;; Output:
 ;;;   $6100 populated with attributes.
-.org $ee83
+.org $ee80
 MapTilesToAttributesForVerticalScroll:
 -        <@3ee80 LoadMetatileAttribute@>
          <@3ee83@>
@@ -69229,7 +69235,7 @@ MapTilesToAttributesForVerticalScroll:
         <@3eea1 -@> ; $3ee80
         <@3eea3@>
 ;;; --------------------------------
-.org $eea7
+.org $eea4
 MapTilesToAttributesForHorizontalScroll:
 -       <@3eea4 LoadMetatileAttribute@>
         <@3eea7@>
@@ -70090,7 +70096,7 @@ HandleIRQ:
 ;;; --------------------------------
 ;;; Decrement x to -1, the slow way.  Why? Probably something about
 ;;; killing cycles so that the status bar shows up in the right spot?
-.org $f452
+.org $f451
 KillSomeCycles:
 -       <@3f451@>
         <@3f452 -@> ; $3f451
@@ -70140,7 +70146,7 @@ VerticalScreenWrapHandler:
         <@3f487@>
 ;;; --------------------------------
 .org $f488
-IRQCallback_01:
+HandleStatusBarAndNextFrame:      ; IRQ callback 01
         <@3f488 IRQDISABLE@>
         <@3f48b PPUSTATUS@>
         <@3f48e@> ; X = 9 always
@@ -70245,7 +70251,7 @@ MessageBoxTopHandler:
         <@3f54a@>
 ;;; --------------------------------
 .org $f54b
-IRQCallback_03:
+MessageBoxBottomHandler:        ; IRQ callback 03
         <@3f54b@>
         <@3f54e KillSomeCycles@>
         <@3f551@>
@@ -70323,7 +70329,7 @@ IRQCallback_04: ; UNUSED
         <@3f60c@>
         <@3f60d@>
 ;;; --------------------------------
-.org $f611
+.org $f60e
 IRQCallback_05: ; UNUSED
 +       <@3f60e IRQDISABLE@>
         <@3f611 MaybeUpdateMusic@>

@@ -171,8 +171,10 @@ export namespace Token {
     // TODO - definition vs usage?
   }
 
-  export function nameAt(arg: Token): string {
-    return name(arg) + at(arg);
+  export function nameAt(arg: {source?: SourceInfo}|undefined): string {
+    if (!arg) return 'at unknown';
+    const token = arg as Token;
+    return (token.token ? name(token) : '') + at(arg);
   }
 
   export function expectEol(token: Token|undefined, name = 'end of line') {

@@ -30,6 +30,17 @@ class Symbol {
   ref?: {source?: SourceInfo}; // TODO - plumb this through
 }
 
+interface ResolveOpts {
+  // Whether to create a forward reference for missing symbols.
+  allowForwardRef?: boolean;
+  // Reference token.
+  ref?: {source?: SourceInfo};
+}
+
+interface FwdRefResolveOpts extends ResolveOpts {
+  allowForwardRef: true;
+}
+
 abstract class BaseScope {
   //closed = false;
   readonly symbols = new Map<string, Symbol>();
@@ -44,9 +55,11 @@ abstract class BaseScope {
   //   - shallow - don't recurse up the chain, for assignment only??
   // Might just mean allowForwardRef is actually just a mode string?
   //  * ca65's .definedsymbol is more permissive than .ifconst
-  resolve(name: string, allowForwardRef: true): Symbol;
-  resolve(name: string, allowForwardRef?: boolean): Symbol|undefined;
-  resolve(name: string, allowForwardRef?: boolean): Symbol|undefined {
+  resolve(name: string, opts: FwdRefResolveOpts): Symbol;
+  resolve(name: string, opts?: ResolveOpts): Symbol|undefined;
+  resolve(name: string, opts: ResolveOpts = {}):
+      Symbol|undefined {
+    const {allowForwardRef = false, ref} = opts;
     const [tail, scope] = this.pickScope(name);
     let sym = scope.symbols.get(tail);
 //console.log('resolve:',name,'sym=',sym,'fwd?',allowForwardRef);
@@ -60,7 +73,7 @@ abstract class BaseScope {
     //const symbol = {id: this.symbolArray.length};
 //console.log('created:',symbol);
     //this.symbolArray.push(symbol);
-    const symbol: Symbol = {};
+    const symbol: Symbol = {ref};
     scope.symbols.set(tail, symbol);
     if (tail !== name) symbol.scoped = true;
     return symbol;
@@ -214,7 +227,7 @@ export class Assembler {
     let scope: Scope|undefined = this.currentScope;
     const unscoped = !sym.includes('::');
     do {
-      const s = scope.resolve(sym, false);
+      const s = scope.resolve(sym, {allowForwardRef: false});
       if (s) return Boolean(s.expr);
     } while (unscoped && (scope = scope.parent));
     return false;
@@ -222,14 +235,14 @@ export class Assembler {
 
   constantSymbol(sym: string): boolean {
     // If there's a symbol in a different scope, it's not actually constant.
-    const s = this.currentScope.resolve(sym, false);
+    const s = this.currentScope.resolve(sym, {allowForwardRef: false});
     return Boolean(s && s.expr && !(s.id! < 0));
   }
 
   referencedSymbol(sym: string): boolean {
     // If not referenced in this scope, we don't know which it is...
     // NOTE: this is different from ca65.
-    const s = this.currentScope.resolve(sym, false);
+    const s = this.currentScope.resolve(sym, {allowForwardRef: false});
     return s != null; // NOTE: this counts definitions.
   }
 
@@ -254,13 +267,14 @@ export class Assembler {
   resolve(expr: Expr): Expr {
     return Expr.traverse(expr, (e, rec) => {
       while (e.op === 'sym' && e.sym) {
-        e = this.resolveSymbol(e.sym);
+        e = this.resolveSymbol(e);
       }
       return Expr.evaluate(rec(e));
     });
   }
 
-  resolveSymbol(name: string): Expr {
+  resolveSymbol(symbol: Expr): Expr {
+    const name = symbol.sym!;
     const parsed = parseSymbol(name);
     if (parsed.type === 'pc') {
       return this.pc();
@@ -304,7 +318,7 @@ export class Assembler {
       return expr;
     }
     const scope = name.startsWith('@') ? this.cheapLocals : this.currentScope;
-    const sym = scope.resolve(name, true);
+    const sym = scope.resolve(name, {allowForwardRef: true, ref: symbol});
     if (sym.expr) return sym.expr;
     // if the expression is not yet known then refer to the symbol table,
     // adding it if necessary.
@@ -336,7 +350,7 @@ export class Assembler {
         if (sym.expr || sym.id == null) continue;
         if (scope.parent) {
           // TODO - record where it was referenced?
-          if (sym.scoped) throw new Error(`Symbol '${name}' undefined`);
+          if (sym.scoped) throw new Error(`Symbol '${name}' undefined: ${Token.nameAt(sym.ref)}`);
           const parentSym = scope.parent.symbols.get(name);
           if (!parentSym) {
             // just alias it directly in the parent scope
@@ -382,7 +396,7 @@ export class Assembler {
     }
 
     for (const [name, sym] of this.currentScope.symbols) {
-      if (!sym.expr) throw new Error(`Symbol '${name}' undefined`);
+      if (!sym.expr) throw new Error(`Symbol '${name}' undefined: ${Token.nameAt(sym.ref)}`);
     }
   }
 
@@ -533,7 +547,7 @@ export class Assembler {
     // unclear whether we want to allow defining symbols in outside scopes:
     //   ::foo = 43
     // FWIW, ca65 _does_ allow this, as well as foo::bar = 42 after the scope.
-    let sym = scope.resolve(ident, !mut);
+    let sym = scope.resolve(ident, {allowForwardRef: !mut, ref: token});
     if (sym && (mut !== (sym.id! < 0))) {
       this.fail(`Cannot change mutability of ${ident}`, token);
     } else if (mut && expr.op != 'num') {

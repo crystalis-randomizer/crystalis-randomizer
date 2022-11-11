@@ -1609,6 +1609,21 @@ of a non-divisible line, then the entire line will be deleted."
 
 
 
+;; The macros had a problem where a +/- label on the same
+;; line as a named label, the .org will be incorrect.  Find
+;; these cases so we can fix them.
+(defun asm-find-problem ()
+  (interactive)
+  (let ((looking t))
+    (while looking
+      (re-search-forward "^\\.org")
+      (beginning-of-line)
+      (next-line)
+      (while (looking-at "^([A-Za-z0-9_]| *;)")
+        (next-line))
+      (if (looking-at "[-+]")
+          (setq looking nil)))))
+
 
 ;;;; kmacro for replacing .word (...) with label
 ;; C-s			;; isearch-forward

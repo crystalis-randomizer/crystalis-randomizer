@@ -160,7 +160,11 @@ class LinkChunk {
       }
     }
     if (eligibleSegments.length !== 1) {
-      throw new Error(`Non-unique segment: [${eligibleSegments}]`);
+      throw new Error(`Non-unique segment for ${this.name}:\n${''
+          }Segments: ${this.segments.join(',')}, ${''
+          }org: $${this.org?.toString(16)}, ${''
+          }offset: $${this.offset?.toString(16)}\n${''
+          }Eligible: [${eligibleSegments}]`);
     }
     const segment = eligibleSegments[0];
     if (this._org >= segment.memory + segment.size) {

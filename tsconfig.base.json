@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "allowJs": false,
-    "target": "es2018",
-    "incremental": true,
+    "target": "es2020",
     "inlineSourceMap": true,
     "inlineSources": true,
     "removeComments": true,
+    "noEmit": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
     "noImplicitReturns": true,

@@ -19,15 +19,12 @@ if [ -d .git/hooks ]; then
 fi
 
 find src -type f | while read src; do
+  case "$src" in
+    (*build_info.js) ;; # keep this one...
+    (*.ts|*.js|*.map|*#|*.scrap|*.md|*draft-dot-ts) continue ;;
+  esac
   dist=dist/${src#src/}
   count=$(dirname "$dist")
-  ts=${src%.map}
-  ts=${ts%.ts}
-  ts=${ts%.js}.ts
-  if [ -e "$ts" ]; then
-    # Don't link js/map files if a ts file exists
-    continue
-  fi
   # echo "src: $src ; dist: $dist ; count: $count ; ts: $ts"
   rel=$src
   while [ "$count" != "$(dirname "$count")" ]; do
@@ -42,12 +39,15 @@ find src -type f | while read src; do
   fi
 done
 
-if ! $copy; then
-  for file in main check tracker edit/index; do
-    mkdir -p "$(dirname "dist/js/$file")"
-    ln -s "$file.js" "dist/js/$file.min.js"
-  done
-  # CLI files need to be executable, but typescript won't preserve that
-  touch dist/js/cli.js
-  chmod +x dist/js/cli.js
-fi
+mkdir -p dist/js
+
+# TODO - make bundles for view/*, handle cli.js
+# if ! $copy; then
+#   for file in main check tracker edit/index; do
+#     mkdir -p "$(dirname "dist/js/$file")"
+#     ln -s "$file.js" "dist/js/$file.min.js"
+#   done
+#   # CLI files need to be executable, but typescript won't preserve that
+#   touch dist/js/cli.js
+#   chmod +x dist/js/cli.js
+# fi

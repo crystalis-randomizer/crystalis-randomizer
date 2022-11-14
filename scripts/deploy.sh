@@ -38,25 +38,17 @@ if [ -d "deploy/$dir" ]; then
   rm -rf "deploy/$dir"
 fi
 
-dirs="asm edit logic maze pass rom spoiler view"
 # Make directories and copy the relevant files.
-mkdir -p "deploy/$dir/asm"
 mkdir -p "deploy/$dir/view"
+mkdir -p "deploy/$dir/js/view"
 mkdir -p "deploy/$dir/css/view"
 mkdir -p "deploy/$dir/images/spritesheets"
-for sub in $dirs; do
-  mkdir -p "deploy/$dir/js/$sub"
-  cp dist/js/$sub/*.js "deploy/$dir/js/$sub/"
-done
 cp dist/js/*.js "deploy/$dir/js/"
-cp dist/asm/*.s "deploy/$dir/asm/"
 cp dist/css/*.css "deploy/$dir/css/"
 cp dist/css/view/*.css "deploy/$dir/css/view/"
 cp dist/images/*.png "deploy/$dir/images/"
 cp dist/images/spritesheets/*.nss "deploy/$dir/images/spritesheets/"
 
-# Clobber the *.min.js files.
-cp dist/*.js "deploy/$dir/js/"
 # Prepend the analytics tag to each .html file.
 for a in dist/*.html dist/view/*.html; do
   cat dist/ga.tag ${a} >| "deploy/$dir/${a#dist/}"
@@ -65,17 +57,16 @@ done
 # Also make the minimum necessary dirs for permalinks
 sha=sha/$commit
 mkdir -p "deploy/$sha/js"
-mkdir -p "deploy/$sha/asm"
 mkdir -p "deploy/$sha/css"
 echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
 echo '<script type="module">document.body.classList.add("permalink")</script>' \
      > deploy/$sha/help.html
 cat deploy/$dir/index.html >> deploy/$sha/index.html
 cat deploy/$dir/help.html >> deploy/$sha/help.html
-cp deploy/$dir/js/main.min.js deploy/$sha/js/main.min.js
-cp deploy/$dir/js/build_info.js deploy/$sha/js/build_info.js
+cp deploy/$dir/js/main.js deploy/$sha/js/
+cp deploy/$dir/js/build_info.js deploy/$sha/js/
+cp deploy/$dir/js/chunk-*.js deploy/$sha/js/
 cp deploy/$dir/css/main.css deploy/$sha/css/main.css
-cp deploy/$dir/asm/*.s deploy/$sha/asm/
 scripts/dedupe.sh deploy/$sha deploy/sha/files
 
 # Link stable and current if necessary.

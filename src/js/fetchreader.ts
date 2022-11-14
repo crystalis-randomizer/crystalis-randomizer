@@ -2,7 +2,7 @@
 // Static file content can be appended for compiled mode.
 
 export class FetchReader {
-  constructor(readonly path: string = 'js/') {}
+  constructor(readonly path: string = 'asm/') {}
   async read(file: string) {
     if (file in STATIC) return STATIC[file];
     const response = await fetch(this.path + file);

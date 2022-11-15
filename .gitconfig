@@ -1,0 +1,4 @@
+[filter "disasm"]
+        clean = js65 --clean
+        smudge = js65 --smudge
+        required

@@ -103,5 +103,6 @@ Try it out at https://crystalisrandomizer.com
 
 * steve_hacks: programming, design
 * Mattrick_: development, playtesting
+* jroweboy: programming
 * Dragondarch: playtesting
 * crossproduct: playtesting, tracker graphics

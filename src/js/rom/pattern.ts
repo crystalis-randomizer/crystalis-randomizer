@@ -1,7 +1,7 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {reverseBits, seq, tuple} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {reverseBits, seq, tuple} from './util';
 
 export class Pattern extends Entity {
 

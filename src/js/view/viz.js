@@ -1,4 +1,4 @@
-import {RegionMap} from './regionmap.js';
+import {RegionMap} from './regionmap';
 
 // Wrapper around canvas with a few extra perks:
 //   1. scalable

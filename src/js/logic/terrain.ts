@@ -1,6 +1,6 @@
-import {Rom} from '../rom.js';
-import {DefaultMap, iters} from '../util.js';
-import {Condition, Requirement} from './requirement.js';
+import {Rom} from '../rom';
+import {DefaultMap, iters} from '../util';
+import {Condition, Requirement} from './requirement';
 
 export class Terrains {
 

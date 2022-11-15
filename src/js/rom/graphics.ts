@@ -1,9 +1,9 @@
-import { Rom } from '../rom.js';
-import { DefaultMap } from '../util.js';
-import { Location, Spawn } from './location.js';
-import { Constraint } from './constraint.js';
-import { Random } from '../random.js';
-import { ObjectData } from './objectdata.js';
+import { Rom } from '../rom';
+import { DefaultMap } from '../util';
+import { Location, Spawn } from './location';
+import { Constraint } from './constraint';
+import { Random } from '../random';
+import { ObjectData } from './objectdata';
 
 ////////////////////////////////////////////////////////////////
 

@@ -1,4 +1,4 @@
-import { Rom } from '../rom.js';
+import { Rom } from '../rom';
 
 /** Checks that there are no triggers on top of each other. */
 export function checkTriggers(rom: Rom) {

@@ -1,12 +1,12 @@
-import { CaveShuffle } from './cave.js';
-import { GridCoord, GridIndex, N, S } from './grid.js';
-import { Monogrid, Cursor } from './monogrid.js';
-import { Result, OK } from './maze.js';
-import { Metalocation, Pos } from '../rom/metalocation.js';
-import { Metascreen } from '../rom/metascreen.js';
-import { TwoStageCaveShuffle } from './twostage.js';
-import { seq } from '../rom/util.js';
-import { DefaultMap } from '../util.js';
+import { CaveShuffle } from './cave';
+import { GridCoord, GridIndex, N, S } from './grid';
+import { Monogrid, Cursor } from './monogrid';
+import { Result, OK } from './maze';
+import { Metalocation, Pos } from '../rom/metalocation';
+import { Metascreen } from '../rom/metascreen';
+import { TwoStageCaveShuffle } from './twostage';
+import { seq } from '../rom/util';
+import { DefaultMap } from '../util';
 
 export class RiverCaveShuffle extends TwoStageCaveShuffle {
   // basic problem: missing |- and -| pieces.

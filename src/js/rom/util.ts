@@ -483,7 +483,7 @@ export abstract class DataTuple implements Iterable<number> {
 
 export const watchArray = (arr: Data<unknown>, watch: number) => {
   const arrayChangeHandler = {
-    get(target: any, property: string | number) {
+    get(target: any, property: string|number|symbol) {
       // console.log('getting ' + property + ' for ' + target);
       // property is index in this case
       let v = target[property];
@@ -504,7 +504,7 @@ export const watchArray = (arr: Data<unknown>, watch: number) => {
       if (typeof v === 'function') v = v.bind(target);
       return v;
     },
-    set(target: any, property: string | number, value: any, receiver: any) {
+    set(target: any, property: string|number|symbol, value: any, _receiver: any) {
       // console.log('setting ' + property + ' for '/* + target*/ + ' with value ' + value);
       // tslint:disable-next-line:triple-equals
       if (property == watch) {

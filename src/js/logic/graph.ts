@@ -1,10 +1,10 @@
-import {Bits} from '../bits.js';
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Spoiler} from '../rom/spoiler.js';
-import {hex} from '../rom/util.js';
-import {Keyed, ArrayMap, MutableArrayBiMap, iters, spread} from '../util.js';
-import {die} from '../assert.js';
+import {Bits} from '../bits';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Spoiler} from '../rom/spoiler';
+import {hex} from '../rom/util';
+import {Keyed, ArrayMap, MutableArrayBiMap, iters, spread} from '../util';
+import {die} from '../assert';
 
 /** Input for the graph. */
 export interface LocationList {

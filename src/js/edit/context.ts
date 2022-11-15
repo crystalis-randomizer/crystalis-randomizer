@@ -1,5 +1,5 @@
-import {Rom} from '../rom.js';
-import {Graphics} from './graphics.js';
+import {Rom} from '../rom';
+import {Graphics} from './graphics';
 
 interface Data {
   location?: number;

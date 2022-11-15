@@ -1,5 +1,5 @@
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 export function crumblingPlatforms(rom: Rom, random: Random) {
   // TODO - assert 8d is unused? ask rom.objects for the next unused one?

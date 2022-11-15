@@ -110,7 +110,7 @@ export class Random {
     }
     if (!Array.isArray(iterable)) throw new Error('impossible');
     for (let i = 0; i < iterable.length; i++) {
-      const j = i + this.nextInt(iterable.length - i);
+      const j: number = i + this.nextInt(iterable.length - i);
       yield j in arr ? arr[j] : iterable[j];
       arr[j] = i in arr ? arr[i] : iterable[i];
     }

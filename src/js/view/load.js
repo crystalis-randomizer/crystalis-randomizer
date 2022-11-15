@@ -1,9 +1,9 @@
-import * as patch from '../patch.js';
-import {FetchReader} from '../fetchreader.js';
-import {FlagSet} from '../flagset.js';
-import {prepareScreens} from '../pass/shufflemazes.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import * as patch from '../patch';
+import {FetchReader} from '../fetchreader';
+import {FlagSet} from '../flagset';
+import {prepareScreens} from '../pass/shufflemazes';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 export async function loadRom() {
   const hash = new Map(location.hash.replace(/^#/, '').split('&').map(term => {

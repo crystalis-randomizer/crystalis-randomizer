@@ -1,7 +1,7 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {tuple} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {tuple} from './util';
 
 // const EFFECTS = {
 //   0xb3: 0xb3,

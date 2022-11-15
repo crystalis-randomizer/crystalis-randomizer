@@ -1,7 +1,7 @@
-import { Random } from '../random.js';
-import { UnionFind } from '../unionfind.js';
-import { Pos } from '../rom/metalocation.js';
-import { hex } from '../rom/util.js';
+import { Random } from '../random';
+import { UnionFind } from '../unionfind';
+import { Pos } from '../rom/metalocation';
+import { hex } from '../rom/util';
 
 export type GridIndex = number & {__grid_index__: never};
 export type GridCoord = number & {__grid_coord__: never};

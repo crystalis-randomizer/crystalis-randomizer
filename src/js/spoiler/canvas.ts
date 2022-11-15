@@ -1,6 +1,6 @@
-import {die} from '../assert.js';
-import {Rom} from '../rom.js';
-import { seq } from '../rom/util.js';
+import {die} from '../assert';
+import {Rom} from '../rom';
+import { seq } from '../rom/util';
 
 // Wrapper around a canvas with built-in capability to do some useful
 // things like displaying specific sprites and text.  Also understands

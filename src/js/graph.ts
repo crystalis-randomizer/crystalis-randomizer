@@ -1,5 +1,5 @@
-import {Rom} from './rom.js';
-import {Deque} from './util.js';
+import {Rom} from './rom';
+import {Deque} from './util';
 
 declare const NODE_ID: unique symbol;
 

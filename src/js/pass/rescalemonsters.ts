@@ -1,7 +1,7 @@
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {seq} from '../rom/util.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
+import {seq} from '../rom/util';
 
 export function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random) {
 

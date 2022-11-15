@@ -1,5 +1,5 @@
-import {iters} from '../util.js';
-import {TileId} from './tileid.js';
+import { StrictIterator, iters } from '../util';
+import { TileId } from './tileid';
 
 // NOTE: This could be exported into a non-game-specific library.
 
@@ -63,11 +63,11 @@ export namespace Requirement {
   }
 
   export function isOpen(r: Requirement): boolean {
-    const outer = r[Symbol.iterator]();
+    const outer = r[Symbol.iterator]() as StrictIterator<Iterable<Condition>>;
     const {value, done} = outer.next();
     if (done || !outer.next().done) return false;
     const inner = value[Symbol.iterator]();
-    return inner.next().done;
+    return Boolean(inner.next().done);
   }
 
   export function isClosed(r: Requirement): boolean {

@@ -3,18 +3,18 @@
 // Basic idea:
 // input for locations, array of checkboxes for flags, canvas for display
 
-import {View} from './view.js';
-import {Rom} from '../rom.js';
-import {Random} from '../random.js';
-import {ImageBuffer} from './imagebuffer.js';
-import {loadRom} from './load.js';
+import {View} from './view';
+import {Rom} from '../rom';
+import {Random} from '../random';
+import {ImageBuffer} from './imagebuffer';
+import {loadRom} from './load';
 
 //import {shuffleCave} from '../maze/cave.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
 //import {shuffleGoa1} from '../maze/goa.js';
 //import {shuffleGoa} from '../pass/shufflegoa.js';
-import {prepareScreens} from '../pass/shufflemazes.js';
-import {fixTilesets} from '../rom/screenfix.js';
+import {prepareScreens} from '../pass/shufflemazes';
+import {fixTilesets} from '../rom/screenfix';
 
 // TODO - move colors to view.js?
 //   - maybe the API I want is drawTile(x, y, id, attr)?

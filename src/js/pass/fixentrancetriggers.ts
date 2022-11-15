@@ -1,8 +1,8 @@
-import { Rom } from '../rom.js';
-import { ConnectionType } from '../rom/metascreendata.js';
-import { Location, Spawn } from '../rom/location.js';
-import { Pos, ExitSpec } from '../rom/metalocation.js';
-import { Flag } from '../rom/flags.js';
+import { Rom } from '../rom';
+import { ConnectionType } from '../rom/metascreendata';
+import { Location, Spawn } from '../rom/location';
+import { Pos, ExitSpec } from '../rom/metalocation';
+import { Flag } from '../rom/flags';
 
 /**
  * Moves entrance-based triggers that should be attached to

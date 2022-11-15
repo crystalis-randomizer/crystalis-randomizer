@@ -1,16 +1,16 @@
 // Perform initial cleanup/setup of the ROM.
 
-import {FlagSet} from '../flagset.js';
-import {Rom} from '../rom.js';
-import {Spawn} from '../rom/location.js';
-import {MessageId} from '../rom/messageid.js';
-import {GlobalDialog, LocalDialog} from '../rom/npc.js';
-import {ShopType} from '../rom/shop.js';
-import {Trigger} from '../rom/trigger.js';
-import {hex, Mutable} from '../rom/util.js';
-import {assert} from '../util.js';
-import {Monster} from '../rom/monster.js';
-import {Patterns} from '../rom/pattern.js';
+import {FlagSet} from '../flagset';
+import {Rom} from '../rom';
+import {Spawn} from '../rom/location';
+import {MessageId} from '../rom/messageid';
+import {GlobalDialog, LocalDialog} from '../rom/npc';
+import {ShopType} from '../rom/shop';
+import {Trigger} from '../rom/trigger';
+import {hex, Mutable} from '../rom/util';
+import {assert} from '../util';
+import {Monster} from '../rom/monster';
+import {Patterns} from '../rom/pattern';
 
 const [] = [hex]; // generally useful
 

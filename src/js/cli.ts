@@ -1,16 +1,16 @@
-#!/usr/bin/env -S node -r esm --inspect 
+#!/usr/bin/env -S node --inspect 
 
-import './build_info.js'; // side effect global set (affects version module)
+import './build_info'; // side effect global set (affects version module)
 
-import {EXPECTED_CRC32} from './rom.js';
-import {FlagSet, Preset} from './flagset.js';
-import {crc32} from './crc32.js';
+import {EXPECTED_CRC32} from './rom';
+import {FlagSet, Preset} from './flagset';
+import {crc32} from './crc32';
 import * as fs from 'fs';
-import * as patch from './patch.js';
-import {UsageError, breakLines} from './util.js';
-import {NodeReader} from './nodereader.js';
-import * as version from './version.js';
-import {disableAsserts} from './assert.js';
+import * as patch from './patch';
+import {UsageError, breakLines} from './util';
+import {BundleReader} from './bundlereader';
+import * as version from './version';
+import {disableAsserts} from './assert';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -124,7 +124,7 @@ const main = (...args: string[]) => {
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset, new NodeReader());
+        await patch.shuffle(orig, s, flagset, new BundleReader());
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;

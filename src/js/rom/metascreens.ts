@@ -1,14 +1,14 @@
-import {Rom} from '../rom.js';
+import {Rom} from '../rom';
 //import {Screen} from './screen.js';
-import {Mutable} from './util.js';
-import {DefaultMap, hex1} from '../util.js';
-import {Metascreen, Uid} from './metascreen.js';
+import {Mutable} from './util';
+import {DefaultMap, hex1} from '../util';
+import {Metascreen, Uid} from './metascreen';
 import {MetascreenData, bottomEdge, bottomEdgeHouse, cave, door, downStair,
         icon, leftEdge, readScreen,
         rightEdge, seamlessDown, seamlessUp, topEdge, upStair, waterfallCave,
        } from './metascreendata.js';
-import {Metatileset, Metatilesets} from './metatileset.js';
-import {ScreenFix /*, withRequire*/} from './screenfix.js';
+import {Metatileset, Metatilesets} from './metatileset';
+import {ScreenFix /*, withRequire*/} from './screenfix';
 
 const DEBUG = false;
 

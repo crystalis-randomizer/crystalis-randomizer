@@ -1,4 +1,4 @@
-import {Context, GetSet} from './context.js';
+import {Context, GetSet} from './context';
 
 /** Picker element for background attributes. */
 export class BackgroundAttrs {

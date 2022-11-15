@@ -1,4 +1,4 @@
-import {DefaultMap} from './util.js';
+import {DefaultMap} from './util';
 
 export class UnionFind<T> {
 

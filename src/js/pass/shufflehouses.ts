@@ -26,13 +26,13 @@
 //     in any gaps.
 
 
-import { Random } from '../random.js';
-import { Rom } from '../rom.js';
-import { ExitSpec, Metalocation } from '../rom/metalocation.js';
-import { HouseType } from '../rom/location.js';
-import { ConnectionType } from '../rom/metascreendata.js';
-import { FlagSet } from '../flagset.js';
-import { DefaultMap } from '../util.js';
+import { Random } from '../random';
+import { Rom } from '../rom';
+import { ExitSpec, Metalocation } from '../rom/metalocation';
+import { HouseType } from '../rom/location';
+import { ConnectionType } from '../rom/metascreendata';
+import { FlagSet } from '../flagset';
+import { DefaultMap } from '../util';
 
 interface House {
   type: HouseType;

@@ -1,15 +1,15 @@
-import { Location } from './location.js'; // import type
-import { Exit, Flag as LocationFlag, Pit, ytDiff, ytAdd, Entrance } from './locationtables.js';
-import { Flag } from './flags.js';
-import { Metascreen, Uid } from './metascreen.js';
-import { Metatileset } from './metatileset.js';
-import { hex } from './util.js';
-import { Rom } from '../rom.js';
-import { DefaultMap, Table, iters, format } from '../util.js';
-import { UnionFind } from '../unionfind.js';
-import { ConnectionType } from './metascreendata.js';
-import { Random } from '../random.js';
-import { Monster } from './monster.js';
+import { Location } from './location'; // import type
+import { Exit, Flag as LocationFlag, Pit, ytDiff, ytAdd, Entrance } from './locationtables';
+import { Flag } from './flags';
+import { Metascreen, Uid } from './metascreen';
+import { Metatileset } from './metatileset';
+import { hex } from './util';
+import { Rom } from '../rom';
+import { DefaultMap, Table, iters, format } from '../util';
+import { UnionFind } from '../unionfind';
+import { ConnectionType } from './metascreendata';
+import { Random } from '../random';
+import { Monster } from './monster';
 
 const [] = [hex];
 

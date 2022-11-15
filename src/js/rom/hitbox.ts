@@ -1,7 +1,7 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {signed, tuple, unsigned} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {signed, tuple, unsigned} from './util';
 
 // A pattern page sequence for animating background tiles.  ID in 0..3
 export class Hitbox extends Entity {

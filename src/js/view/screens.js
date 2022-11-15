@@ -5,8 +5,8 @@
 // TODO -
 //  for each tileeffects/screen combo, find edges and exits and connections
 
-import {Canvas} from './canvas.js';
-import {loadRom} from './load.js';
+import {Canvas} from './canvas';
+import {loadRom} from './load';
 
 const run = async () => {
   const rom = await loadRom();

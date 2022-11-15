@@ -1,4 +1,4 @@
-import {Token, TokenSource} from './token.js';
+import {Token, TokenSource} from './token';
 
 type Frame = [TokenSource|undefined, Token[][]];
 

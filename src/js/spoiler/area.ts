@@ -1,9 +1,9 @@
-import {LocationMap} from './locationmap.js';
-import {Terrain, debugLabel} from '../logic/terrain.js';
-import {AreaData, WorldData} from '../logic/world.js';
-import {Rom} from '../rom.js';
-import {Location} from '../rom/location.js';
-import {hex} from '../rom/util.js';
+import {LocationMap} from './locationmap';
+import {Terrain, debugLabel} from '../logic/terrain';
+import {AreaData, WorldData} from '../logic/world';
+import {Rom} from '../rom';
+import {Location} from '../rom/location';
+import {hex} from '../rom/util';
 
 // Basic idea: a simple controller with a navigable canvas.
 //   Checks: [Leaf Elder ▽]

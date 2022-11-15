@@ -4,8 +4,8 @@
  * a front-end to manage and select the files.
  */
 
-import {child} from './utils.js';
-import {Component} from './component.js';
+import {child} from './utils';
+import {Component} from './component';
 
 /** @record */
 export class File {

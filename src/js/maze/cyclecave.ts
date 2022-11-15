@@ -1,6 +1,6 @@
-import { CaveShuffle } from './cave.js';
-import { GridCoord } from './grid.js';
-import { Result } from './maze.js';
+import { CaveShuffle } from './cave';
+import { GridCoord } from './grid';
+import { Result } from './maze';
 
 export class CycleCaveShuffle extends CaveShuffle {
   maxAttempts = 400;

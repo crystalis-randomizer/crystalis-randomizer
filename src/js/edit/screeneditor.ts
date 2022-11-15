@@ -1,7 +1,7 @@
-import {BackgroundAttrs} from './backgroundattrs.js';
-import {Context} from './context.js';
-import {Screen} from './screen.js';
-import {TilesetPalette} from './tilesetpalette.js';
+import {BackgroundAttrs} from './backgroundattrs';
+import {Context} from './context';
+import {Screen} from './screen';
+import {TilesetPalette} from './tilesetpalette';
 
 export class ScreenEditor {
 

@@ -1,8 +1,8 @@
-import {Module} from '../asm/module.js';
-import {die} from '../assert.js';
-import {Rom} from '../rom.js';
-import {Flag} from './flags.js';
-import {Npc} from './npc.js';
+import {Module} from '../asm/module';
+import {die} from '../assert';
+import {Rom} from '../rom';
+import {Flag} from './flags';
+import {Npc} from './npc';
 import {Mutable, Address, Segment,
         readLittleEndian, upperCamelToSpaces} from './util.js';
 

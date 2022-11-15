@@ -1,21 +1,21 @@
-import {Assembler} from '../asm/assembler.js';
-import {Expr} from '../asm/expr.js';
-import {Module} from '../asm/module.js';
-import {Area, Areas} from './area.js';
-import {Entity} from './entity.js';
-import {Metalocation} from './metalocation.js';
-import {Screen} from './screen.js';
+import {Assembler} from '../asm/assembler';
+import {Expr} from '../asm/expr';
+import {Module} from '../asm/module';
+import {Area, Areas} from './area';
+import {Entity} from './entity';
+import {Metalocation} from './metalocation';
+import {Screen} from './screen';
 import {Segment,
         concatIterables, free, group, hex, initializer,
         readLittleEndian, seq, tuple, varSlice,
         upperCamelToSpaces} from './util.js';
-import {Rom} from '../rom.js';
-import {UnionFind} from '../unionfind.js';
-import {assertNever, iters, DefaultMap} from '../util.js';
-import {Monster} from './monster.js';
-import {Random} from '../random.js';
+import {Rom} from '../rom';
+import {UnionFind} from '../unionfind';
+import {assertNever, iters, DefaultMap} from '../util';
+import {Monster} from './monster';
+import {Random} from '../random';
 
-import {Entrance, Exit, Flag, Pit, Spawn} from './locationtables.js';
+import {Entrance, Exit, Flag, Pit, Spawn} from './locationtables';
 export {Entrance, Exit, Flag, Pit, Spawn}; // TODO - remove the re-export
 
 const {$0a, $0b, $0c, $0d} = Segment;

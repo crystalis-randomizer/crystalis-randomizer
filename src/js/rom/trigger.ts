@@ -1,8 +1,8 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {MessageId} from './messageid.js';
-import {addr, hex, readBigEndian} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {MessageId} from './messageid';
+import {addr, hex, readBigEndian} from './util';
 
 const UNUSED_TRIGGERS = new Set([
   0x83, 0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,

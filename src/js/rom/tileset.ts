@@ -1,9 +1,9 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {Metatile} from './metatile.js';
-import {TileEffects} from './tileeffects.js';
-import {seq, tuple} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {Metatile} from './metatile';
+import {TileEffects} from './tileeffects';
+import {seq, tuple} from './util';
 
 export class Tilesets implements Iterable<Tileset> {
 

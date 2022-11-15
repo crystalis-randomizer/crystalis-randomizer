@@ -1,7 +1,7 @@
 // Utilities for rendering flags.
 
-import { CharacterSet, Sprite, generateThumbnailImage } from './characters.js';
-import {FlagSection, FlagSet, Preset} from './flagset.js';
+import { CharacterSet, Sprite, generateThumbnailImage } from './characters';
+import {FlagSection, FlagSet, Preset} from './flagset';
 
 export function renderPresets(presets: HTMLElement) {
   let first = true;

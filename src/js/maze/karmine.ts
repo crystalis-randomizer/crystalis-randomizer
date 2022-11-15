@@ -1,8 +1,8 @@
-import { Grid, GridCoord, GridIndex, E, S, N, W } from './grid.js';
-import { Result, OK } from '../maze/maze.js';
-import { CaveShuffle } from './cave.js';
-import { Pos, Metalocation } from '../rom/metalocation.js';
-import { Location } from '../rom/location.js';
+import { Grid, GridCoord, GridIndex, E, S, N, W } from './grid';
+import { Result, OK } from '../maze/maze';
+import { CaveShuffle } from './cave';
+import { Pos, Metalocation } from '../rom/metalocation';
+import { Location } from '../rom/location';
 
 export function karmine(upstairs: Location, main: Location,
                         kensu: Location): CaveShuffle[] {

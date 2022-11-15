@@ -1,12 +1,12 @@
-import {Assembler} from '../asm/assembler.js';
-import {Module} from '../asm/module.js';
-import {Entity, EntityArray} from './entity.js';
-import {MessageId} from './messageid.js';
+import {Assembler} from '../asm/assembler';
+import {Module} from '../asm/module';
+import {Entity, EntityArray} from './entity';
+import {MessageId} from './messageid';
 import {hex, readString, tuple,
   ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS, relocExportLabel} from './util.js';
-import {Address, Data, Segment} from './util.js';
-import {Rom} from '../rom.js';
-import {assertNever} from '../util.js';
+import {Address, Data, Segment} from './util';
+import {Rom} from '../rom';
+import {assertNever} from '../util';
 
 const {$0e, $0f, $10, $1a, $fe, $ff} = Segment;
 

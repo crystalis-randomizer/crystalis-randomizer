@@ -2,9 +2,9 @@
 //  - see if we can improve/streamline the UI a bit
 //  - build tiles and text into base canvas class?
 
-import {Canvas} from './canvas.js';
-import {Rom} from '../rom.js';
-import {loadRom} from './load.js';
+import {Canvas} from './canvas';
+import {Rom} from '../rom';
+import {loadRom} from './load';
 
 const run = async () => {
   const showUnused = /unused/.test(window.location.hash);

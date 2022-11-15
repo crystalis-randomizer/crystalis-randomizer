@@ -1,5 +1,5 @@
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 export function randomizeThunderWarp(rom: Rom, random: Random) {
   // TODO - flag for adding zombie town warp point?  given effect on flags,

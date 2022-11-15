@@ -1,7 +1,7 @@
-import {Random} from '../random.js';
-import {iters} from '../util.js';
-import {Location, Spawn} from './location.js';
-import {seq} from './util.js';
+import {Random} from '../random';
+import {iters} from '../util';
+import {Location, Spawn} from './location';
+import {seq} from './util';
 
 // Constraint for pattern and palette pages.
 // Allows multiple possibilities, and a callback when one is picked.

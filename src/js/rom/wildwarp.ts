@@ -1,6 +1,6 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Address, Segment, tuple} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Address, Segment, tuple} from './util';
 
 // List of wild warp locations.
 export class WildWarp {

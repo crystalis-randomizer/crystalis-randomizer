@@ -1,6 +1,6 @@
-import {Rom} from '../rom.js';
-import { UnionFind } from '../unionfind.js';
-import { Exit } from '../rom/location.js';
+import {Rom} from '../rom';
+import { UnionFind } from '../unionfind';
+import { Exit } from '../rom/location';
 
 // There's an oddity where map screens that can be fallen into (i.e.
 // via a pit) can have their exits skipped over while the screen is

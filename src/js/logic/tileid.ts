@@ -1,4 +1,4 @@
-import {Location} from '../rom/location.js';
+import {Location} from '../rom/location';
 
 // 24-bit unique ID for a single tile:
 //   LLLLLLLL YYYYXXXX yyyyxxxx

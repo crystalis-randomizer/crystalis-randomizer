@@ -1,7 +1,7 @@
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {Item} from '../rom/item.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
+import {Item} from '../rom/item';
 
 // Shuffle the palettes.
 export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {

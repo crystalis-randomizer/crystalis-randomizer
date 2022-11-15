@@ -1,11 +1,11 @@
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {Constraint} from '../rom/constraint.js';
-import {Graphics} from '../rom/graphics.js';
-import {Location} from '../rom/location.js';
-import {Monster} from '../rom/monster.js';
-import {SCALED_MONSTERS} from './rescalemonsters.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
+import {Constraint} from '../rom/constraint';
+import {Graphics} from '../rom/graphics';
+import {Location} from '../rom/location';
+import {Monster} from '../rom/monster';
+import {SCALED_MONSTERS} from './rescalemonsters';
 
 export function shuffleMonsters(rom: Rom, flags: FlagSet, random: Random) {
   // TODO: once we have location names, compile a spoiler of shuffled monsters

@@ -1,9 +1,9 @@
-import {Cpu} from './cpu.js';
-import {Expr} from './expr.js';
-import * as mod from './module.js';
-import {SourceInfo, Token, TokenSource} from './token.js';
-import {Tokenizer} from './tokenizer.js';
-import {assertNever} from '../util.js';
+import {Cpu} from './cpu';
+import {Expr} from './expr';
+import * as mod from './module';
+import {SourceInfo, Token, TokenSource} from './token';
+import {Tokenizer} from './tokenizer';
+import {assertNever} from '../util';
 
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;

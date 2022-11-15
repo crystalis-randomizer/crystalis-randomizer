@@ -2,9 +2,9 @@
 //      - even for unused screens, find locations in same tileset for pat/pal
 //      - expose exits, etc
 
-import {Canvas} from './canvas.js';
-import {loadRom} from './load.js';
-import {DefaultMap, hex1} from '../util.js';
+import {Canvas} from './canvas';
+import {loadRom} from './load';
+import {DefaultMap, hex1} from '../util';
 
 window.show = function(arr) { console.log(Array.from({length: 15},(_,r) => arr.slice(16*r,16*r+16).map(x=>x.toString(16).padStart(2,0)).join(' ')).join('\n')); };
 

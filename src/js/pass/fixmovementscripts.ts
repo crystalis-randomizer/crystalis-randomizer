@@ -1,7 +1,7 @@
-import {Rom} from '../rom.js';
-import {Entrance} from '../rom/location.js';
-import {DolphinSpawnScript} from '../rom/npc.js';
-import {seq} from '../rom/util.js';
+import {Rom} from '../rom';
+import {Entrance} from '../rom/location';
+import {DolphinSpawnScript} from '../rom/npc';
+import {seq} from '../rom/util';
 
 /** Fixes movement scripts to work based on where NPCs ended up. */
 export function fixMovementScripts(rom: Rom) {

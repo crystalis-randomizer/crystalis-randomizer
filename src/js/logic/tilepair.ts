@@ -1,4 +1,4 @@
-import {TileId} from './tileid.js';
+import {TileId} from './tileid';
 
 // 48-bit connection between two tiles.
 export type TilePair = number & {__tilePair__: never};

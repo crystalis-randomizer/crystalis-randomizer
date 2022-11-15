@@ -1,8 +1,8 @@
 // Base class for all the different entity types.
 
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {hex} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {hex} from './util';
 
 export class Entity {
   constructor(readonly rom: Rom, readonly id: number) {}

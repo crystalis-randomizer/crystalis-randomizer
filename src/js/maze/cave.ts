@@ -1,10 +1,10 @@
-import { GridCoord, GridIndex, E, S } from './grid.js';
-import { seq, hex } from '../rom/util.js';
-import { Metascreen } from '../rom/metascreen.js';
-import { Metalocation, Pos } from '../rom/metalocation.js';
-import { AbstractMazeShuffle, OK, Result, Survey } from '../maze/maze.js';
-import { UnionFind } from '../unionfind.js';
-import { DefaultMap } from '../util.js';
+import { GridCoord, GridIndex, E, S } from './grid';
+import { seq, hex } from '../rom/util';
+import { Metascreen } from '../rom/metascreen';
+import { Metalocation, Pos } from '../rom/metalocation';
+import { AbstractMazeShuffle, OK, Result, Survey } from '../maze/maze';
+import { UnionFind } from '../unionfind';
+import { DefaultMap } from '../util';
 
 const [] = [hex];
 

@@ -1,7 +1,7 @@
-import {Expr} from '../asm/expr.js';
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {MessageId} from './messageid.js';
+import {Expr} from '../asm/expr';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {MessageId} from './messageid';
 import {Address, Data, Segment, hex, readString,
         seq, free, tuple} from './util.js';
 

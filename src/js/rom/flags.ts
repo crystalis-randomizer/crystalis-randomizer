@@ -1,10 +1,10 @@
-import {Item} from './item.js';
-import {Location} from './location.js';
-import {Npc} from './npc.js';
-import {Trigger} from './trigger.js';
-import {hex, hex3, upperCamelToSpaces, Writable} from './util.js';
-import {Condition, Requirement} from '../logic/requirement.js';
-import {Rom} from '../rom.js';
+import {Item} from './item';
+import {Location} from './location';
+import {Npc} from './npc';
+import {Trigger} from './trigger';
+import {hex, hex3, upperCamelToSpaces, Writable} from './util';
+import {Condition, Requirement} from '../logic/requirement';
+import {Rom} from '../rom';
 
 const DEBUG = false;
 

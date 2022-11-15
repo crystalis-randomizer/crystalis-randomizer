@@ -1,7 +1,7 @@
-import {Rom} from '../rom.js';
-import {Context} from './context.js';
-import {ScreenEditor} from './screeneditor.js';
-import {addSwampDoors} from '../maze/swamp.js';
+import {Rom} from '../rom';
+import {Context} from './context';
+import {ScreenEditor} from './screeneditor';
+import {addSwampDoors} from '../maze/swamp';
 
 (window as any).global = window;
 

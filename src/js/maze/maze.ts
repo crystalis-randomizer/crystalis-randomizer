@@ -1,10 +1,10 @@
-import { Grid, GridCoord, GridIndex } from './grid.js';
-import { Random } from '../random.js';
-import { hex } from '../rom/util.js';
-import { Metalocation, Pos, ExitSpec } from '../rom/metalocation.js';
-import { Location } from '../rom/location.js';
-import { ConnectionType } from '../rom/metascreendata.js';
-import { Rom } from '../rom.js';
+import { Grid, GridCoord, GridIndex } from './grid';
+import { Random } from '../random';
+import { hex } from '../rom/util';
+import { Metalocation, Pos, ExitSpec } from '../rom/metalocation';
+import { Location } from '../rom/location';
+import { ConnectionType } from '../rom/metascreendata';
+import { Rom } from '../rom';
 
 const [] = [hex];
 

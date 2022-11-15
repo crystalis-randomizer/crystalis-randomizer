@@ -1,6 +1,6 @@
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 // NOTE: the ! prefix indicates it is used when community jokes are
 // not enabled.  This is a much smaller set.  Everything WITHOUT an

@@ -1,8 +1,8 @@
-import {Assembler} from '../asm/assembler.js';
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {tuple} from './util.js';
+import {Assembler} from '../asm/assembler';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {tuple} from './util';
 
 export class Screen extends Entity {
 

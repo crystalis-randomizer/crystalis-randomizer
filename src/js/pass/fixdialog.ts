@@ -1,10 +1,10 @@
-import {Rom} from '../rom.js';
-import {Flag} from '../rom/flags.js';
-import {Item} from '../rom/item.js';
-import {Npc} from '../rom/npc.js';
-import {hex} from '../rom/util.js';
-import {buildTradeInMap} from './shuffletrades.js';
-import {fail} from '../assert.js';
+import {Rom} from '../rom';
+import {Flag} from '../rom/flags';
+import {Item} from '../rom/item';
+import {Npc} from '../rom/npc';
+import {hex} from '../rom/util';
+import {buildTradeInMap} from './shuffletrades';
+import {fail} from '../assert';
 
 /** Finds references to given items and replaces it with the actual items. */
 export function fixDialog(rom: Rom) {

@@ -1,7 +1,7 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity, EntityArray} from './entity.js';
-import {readLittleEndian, seq, tuple} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity, EntityArray} from './entity';
+import {readLittleEndian, seq, tuple} from './util';
 
 
 export class Shops extends EntityArray<Shop> {

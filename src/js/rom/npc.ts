@@ -1,13 +1,13 @@
-import {Assembler} from '../asm/assembler.js';
-import {Module} from '../asm/module.js';
-import {Entity, EntityArray} from './entity.js';
-import {Entrance} from './locationtables.js';
-import {Location} from './location.js';
-import {MessageId} from './messageid.js';
+import {Assembler} from '../asm/assembler';
+import {Module} from '../asm/module';
+import {Entity, EntityArray} from './entity';
+import {Entrance} from './locationtables';
+import {Location} from './location';
+import {MessageId} from './messageid';
 import {DIALOG_FLAGS, SPAWN_CONDITION_FLAGS,
         Address, Data, Segment,
   hex, readBigEndian, seq, tuple, upperCamelToSpaces, free} from './util.js';
-import {Rom} from '../rom.js';
+import {Rom} from '../rom';
 
 const {$04, $05, $0e, $1b, $fe} = Segment;
 

@@ -1,6 +1,6 @@
-import {Rom} from '../rom.js';
-import {HARDCODED_MESSAGES} from '../rom/messages.js';
-import {hex} from '../rom/util.js';
+import {Rom} from '../rom';
+import {HARDCODED_MESSAGES} from '../rom/messages';
+import {hex} from '../rom/util';
 
 const run = async () => {
   const rom = await Rom.load();

@@ -1,7 +1,7 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {tuple} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {tuple} from './util';
 
 // An entry of the ad-hoc spawn table, which can be spawned arbitrarily
 // by AdHocSpawnObject (provided there's an available spawn slot in range).

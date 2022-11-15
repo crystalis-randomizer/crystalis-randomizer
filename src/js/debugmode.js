@@ -1,6 +1,6 @@
-import {assemble, buildRomPatch} from './6502.js';
-import {Rom} from './rom.js';
-import {Random} from './random.js';
+import {assemble, buildRomPatch} from './6502';
+import {Rom} from './rom';
+import {Random} from './random';
 
 // TODO - to shuffle the monsters, we need to find the sprite palttes and
 // patterns for each monster.  Each location supports up to two matchups,

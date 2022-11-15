@@ -1,8 +1,8 @@
-import {Metascreen} from './metascreen.js';
-import {ScreenFix} from './screenfix.js';
-import {Metatilesets} from './metatileset.js';
-import {seq} from './util.js';
-import {Rom} from '../rom.js';
+import {Metascreen} from './metascreen';
+import {ScreenFix} from './screenfix';
+import {Metatilesets} from './metatileset';
+import {seq} from './util';
+import {Rom} from '../rom';
 
 /**
  * Metadata about the metascreen.  Because these are created per Metascreens

@@ -7,8 +7,8 @@
 // Comments are preserved, and some special comments are understood to direct
 // the cleaner where to look to find references.
 
-import { Cpu } from './cpu.js';
-import { binarySearch } from './util.js';
+import { Cpu } from './cpu';
+import { binarySearch } from './util';
 
 export function smudge(contents: string, cpu: Cpu, prg: Uint8Array): string {
   return new Smudger(cpu, prg).smudge(contents);

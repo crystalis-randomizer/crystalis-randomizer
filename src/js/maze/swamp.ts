@@ -1,11 +1,11 @@
-import { Monogrid } from './monogrid.js';
-import { Metalocation, Pos } from '../rom/metalocation.js';
-import { CaveShuffle } from './cave.js';
-import { OK, Result } from './maze.js';
-import { seq } from '../rom/util.js';
-import { Metascreen } from '../rom/metascreen.js';
-import { Rom } from '../rom.js';
-import { ScreenFix } from '../rom/screenfix.js';
+import { Monogrid } from './monogrid';
+import { Metalocation, Pos } from '../rom/metalocation';
+import { CaveShuffle } from './cave';
+import { OK, Result } from './maze';
+import { seq } from '../rom/util';
+import { Metascreen } from '../rom/metascreen';
+import { Rom } from '../rom';
+import { ScreenFix } from '../rom/screenfix';
 
 export class SwampShuffle extends CaveShuffle {
 

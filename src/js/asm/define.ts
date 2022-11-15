@@ -1,4 +1,4 @@
-import {Token} from './token.js';
+import {Token} from './token';
 
 const DEBUG = false;
 

@@ -1,7 +1,7 @@
-import { Assembler } from '../asm/assembler.js';
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Segment, relocExportLabel} from './util.js';
+import { Assembler } from '../asm/assembler';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Segment, relocExportLabel} from './util';
 
 const {$0e} = Segment;
 

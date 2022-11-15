@@ -1,6 +1,6 @@
-import { Entity, EntityArray } from './entity.js';
-import type { ObjectData } from './objectdata.js';
-import { Rom } from '../rom.js';
+import { Entity, EntityArray } from './entity';
+import type { ObjectData } from './objectdata';
+import { Rom } from '../rom';
 
 interface ActionScriptData {
   hasChild?: boolean;

@@ -1,4 +1,4 @@
-import {DataTuple, hex} from './util.js';
+import {DataTuple, hex} from './util';
 
 export class MessageId extends DataTuple {
   static size = 2;

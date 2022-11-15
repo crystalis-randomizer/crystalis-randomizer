@@ -1,7 +1,7 @@
-import { ObjectData } from './objectdata.js';
-import { Placement } from './objectaction.js';
-import { hex } from './util.js';
-import type { Objects } from './objects.js';
+import { ObjectData } from './objectdata';
+import { Placement } from './objectaction';
+import { hex } from './util';
+import type { Objects } from './objects';
 
 export interface MonsterData {
   id: number,

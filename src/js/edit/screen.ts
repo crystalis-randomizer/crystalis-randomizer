@@ -1,9 +1,9 @@
 // screen editor
 
-import {Rom} from '../rom.js';
-import {makeInput} from './backgroundattrs.js';
-import {Context} from './context.js';
-import {Graphics} from './graphics.js';
+import {Rom} from '../rom';
+import {makeInput} from './backgroundattrs';
+import {Context} from './context';
+import {Graphics} from './graphics';
 
 export class Screen {
   // Selection context w/ current screen/tileset/patterns/etc?

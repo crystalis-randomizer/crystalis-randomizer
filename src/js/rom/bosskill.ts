@@ -1,7 +1,7 @@
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity} from './entity.js';
-import {readLittleEndian, writeLittleEndian} from './util.js';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity} from './entity';
+import {readLittleEndian, writeLittleEndian} from './util';
 
 // Data for when a boss is killed
 export class BossKill extends Entity {

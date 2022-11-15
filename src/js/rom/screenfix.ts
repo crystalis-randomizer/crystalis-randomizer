@@ -1,6 +1,6 @@
-import { Rom } from '../rom.js';
-import { Metascreen } from './metascreen.js';
-import { iters } from '../util.js';
+import { Rom } from '../rom';
+import { Metascreen } from './metascreen';
+import { iters } from '../util';
 
 // Simple tileset-only fixes that unlock some screen-tileset combinations
 export enum ScreenFix {

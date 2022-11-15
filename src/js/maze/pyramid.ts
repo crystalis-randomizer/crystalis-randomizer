@@ -1,8 +1,8 @@
-import { Location } from '../rom/location.js';
-import { Random } from '../random.js';
-import { Rom } from '../rom.js';
-import { Metalocation } from '../rom/metalocation.js';
-import { MazeShuffle } from './maze.js';
+import { Location } from '../rom/location';
+import { Random } from '../random';
+import { Rom } from '../rom';
+import { Metalocation } from '../rom/metalocation';
+import { MazeShuffle } from './maze';
 
 // TODO - we could do a bit more map gen: randomize which hall has the inner
 // stair (or make more of them), add some dead ends instead of stairs, add

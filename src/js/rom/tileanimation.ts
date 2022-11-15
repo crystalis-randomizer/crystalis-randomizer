@@ -1,6 +1,6 @@
-import {Entity} from './entity.js';
-import {tuple} from './util.js';
-import {Rom} from '../rom.js';
+import {Entity} from './entity';
+import {tuple} from './util';
+import {Rom} from '../rom';
 
 // A pattern page sequence for animating background tiles.  ID in 0..3
 export class TileAnimation extends Entity {

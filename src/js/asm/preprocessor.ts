@@ -1,8 +1,8 @@
-import {Define} from './define.js';
-import {Expr} from './expr.js';
-import {Macro} from './macro.js';
-import {Token, TokenSource} from './token.js';
-import {TokenStream} from './tokenstream.js';
+import {Define} from './define';
+import {Expr} from './expr';
+import {Macro} from './macro';
+import {Token, TokenSource} from './token';
+import {TokenStream} from './tokenstream';
 
 // TODO - figure out how to actually keep track of stack depth?
 //  - might need to insert a special token at the end of an expansion

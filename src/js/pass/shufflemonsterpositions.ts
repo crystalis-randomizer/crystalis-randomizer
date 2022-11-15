@@ -1,5 +1,5 @@
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 export function shuffleMonsterPositions(rom: Rom, random: Random) {
   for (const loc of rom.locations) {

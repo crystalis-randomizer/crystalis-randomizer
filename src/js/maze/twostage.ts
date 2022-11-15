@@ -1,9 +1,9 @@
-import { Monogrid } from './monogrid.js';
-import { GridCoord, GridIndex } from './grid.js';
-import { CaveShuffle } from './cave.js';
-import { OK, Result } from './maze.js';
-import { Mutable, hex, seq } from '../rom/util.js';
-import { Metalocation } from '../rom/metalocation.js';
+import { Monogrid } from './monogrid';
+import { GridCoord, GridIndex } from './grid';
+import { CaveShuffle } from './cave';
+import { OK, Result } from './maze';
+import { Mutable, hex, seq } from '../rom/util';
+import { Metalocation } from '../rom/metalocation';
 
 export abstract class TwoStageCaveShuffle extends CaveShuffle {
   maxAttempts = 250;

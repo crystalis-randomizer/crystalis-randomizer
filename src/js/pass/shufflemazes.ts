@@ -1,22 +1,22 @@
-import { FlagSet } from '../flagset.js';
+import { FlagSet } from '../flagset';
 import { CaveShuffle, CryptEntranceShuffle,
          WideCaveShuffle } from '../maze/cave.js';
 // import {extendGoaScreens/*, shuffleGoa1*/} from '../maze/goa.js';
 //import {shuffleSwamp} from '../maze/swamp.js';
 //import {shufflePyramid} from '../maze/pyramid.js';
-import { Random } from '../random.js';
-import { Rom } from '../rom.js';
-import { bridgeCaveShuffle } from '../maze/doublecave.js';
-import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave.js';
+import { Random } from '../random';
+import { Rom } from '../rom';
+import { bridgeCaveShuffle } from '../maze/doublecave';
+import { CycleCaveShuffle, TightCycleCaveShuffle } from '../maze/cyclecave';
 import { RiverCaveShuffle, StyxRiverCaveShuffle, WaterfallRiverCaveShuffle,
          OasisCaveShuffle, OasisEntranceCaveShuffle } from '../maze/rivercave.js';
-import { SwampShuffle, addSwampDoors } from '../maze/swamp.js';
-import { SaberaPalaceShuffle } from '../maze/twostage.js';
-import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa.js';
-import { PyramidShuffle } from '../maze/pyramid.js';
-import { wideArenaExits } from '../rom/screenfix.js';
-import { KarmineBasementShuffle, karmine } from '../maze/karmine.js';
-import { MazeShuffles } from '../maze/maze.js';
+import { SwampShuffle, addSwampDoors } from '../maze/swamp';
+import { SaberaPalaceShuffle } from '../maze/twostage';
+import { LabyrinthShuffle, fixLabyrinthScreens } from '../maze/goa';
+import { PyramidShuffle } from '../maze/pyramid';
+import { wideArenaExits } from '../rom/screenfix';
+import { KarmineBasementShuffle, karmine } from '../maze/karmine';
+import { MazeShuffles } from '../maze/maze';
 
 export function shuffleMazes(rom: Rom, flags: FlagSet, random: Random) {
   // TODO - consolidate free flags?  Find a list of what's used...

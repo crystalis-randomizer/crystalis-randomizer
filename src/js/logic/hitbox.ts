@@ -1,5 +1,5 @@
-import {Location, Spawn} from '../rom/location.js';
-import {TileId} from './tileid.js';
+import {Location, Spawn} from '../rom/location';
+import {TileId} from './tileid';
 
 // Hitbox is an iterable of (dy, dx) coordinates.
 export type Hitbox = Iterable<TileId>; //Iterable<readonly [number, number]>;

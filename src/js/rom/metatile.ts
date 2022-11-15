@@ -1,5 +1,5 @@
-import {Metascreen} from './metascreen.js';
-import {Tileset} from './tileset.js';
+import {Metascreen} from './metascreen';
+import {Tileset} from './tileset';
 
 /**
  * A single map tile, composed of four CHR tiles, that can be

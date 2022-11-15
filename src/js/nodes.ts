@@ -1,10 +1,10 @@
 // TODO - rename to nodes.js ?
 
-import {Bits} from './bits.js';
-import {Edge, Graph, Node, NodeId, SparseDependencyGraph, SparseRoute} from './graph.js';
-import {Random} from './random.js';
-import {Rom} from './rom.js';
-import {hex} from './rom/util.js';
+import {Bits} from './bits';
+import {Edge, Graph, Node, NodeId, SparseDependencyGraph, SparseRoute} from './graph';
+import {Random} from './random';
+import {Rom} from './rom';
+import {hex} from './rom/util';
 
 // TODO - move the options into these nodes...?
 //  - then the Dt flag will determine whether to connect or not?

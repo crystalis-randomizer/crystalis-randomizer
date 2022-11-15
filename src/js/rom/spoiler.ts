@@ -1,4 +1,4 @@
-import {Rom} from '../rom.js';
+import {Rom} from '../rom';
 
 /**
  * Stores organized information about the shuffle, including

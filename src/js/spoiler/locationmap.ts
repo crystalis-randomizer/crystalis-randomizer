@@ -1,10 +1,10 @@
 // Renders a single location.
 
-import {Canvas} from './canvas.js';
-import {Rom} from '../rom.js';
-import {Location} from '../rom/location.js';
-import {Screen} from '../rom/screen.js';
-import {TileId} from '../logic/tileid.js';
+import {Canvas} from './canvas';
+import {Rom} from '../rom';
+import {Location} from '../rom/location';
+import {Screen} from '../rom/screen';
+import {TileId} from '../logic/tileid';
 
 export interface LocationMouseData {
   target: LocationMap;

@@ -6,14 +6,14 @@
 // pairs of exits, maintaining a graph of areas.  By defining the
 // areas coarser or finer, we can control the craziness.
 
-import { Random } from '../random.js';
-import { Rom } from '../rom.js';
-import { ExitSpec, Pos } from '../rom/metalocation.js';
-import { Location } from '../rom/location.js';
-import { ConnectionType } from '../rom/metascreendata.js';
-import { FlagSet } from '../flagset.js';
-import { DefaultMap } from '../util.js';
-import { UnionFind } from '../unionfind.js';
+import { Random } from '../random';
+import { Rom } from '../rom';
+import { ExitSpec, Pos } from '../rom/metalocation';
+import { Location } from '../rom/location';
+import { ConnectionType } from '../rom/metascreendata';
+import { FlagSet } from '../flagset';
+import { DefaultMap } from '../util';
+import { UnionFind } from '../unionfind';
 
 interface Area {
   name: string;

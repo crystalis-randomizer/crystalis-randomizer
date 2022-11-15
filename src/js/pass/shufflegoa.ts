@@ -3,10 +3,10 @@
 // The door at the top of karmine points down, whereas all others are up.
 // We need a way to change the direction of each.
 
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {Metalocation, Pos} from '../rom/metalocation.js';
-import {ConnectionType} from '../rom/metascreendata.js';
+import {Random} from '../random';
+import {Rom} from '../rom';
+import {Metalocation, Pos} from '../rom/metalocation';
+import {ConnectionType} from '../rom/metascreendata';
 
 type Exit = [Metalocation, Pos, ConnectionType];
 type Exit2 = [Metalocation, Pos, ConnectionType,

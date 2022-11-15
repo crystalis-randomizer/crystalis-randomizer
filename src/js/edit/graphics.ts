@@ -1,5 +1,5 @@
-import {Rom} from '../rom.js';
-import {DefaultMap} from '../util.js';
+import {Rom} from '../rom';
+import {DefaultMap} from '../util';
 
 export class Graphics {
 

@@ -1,11 +1,11 @@
 // import {FlagSet} from '../flagset.js';
 // import {Random} from '../random.js';
-import { Rom } from '../rom.js';
-import { ObjectData } from './objectdata.js';
-import { Monster } from './monster.js';
-import { lowerCamelToSpaces } from './util.js';
-import { EntityArray } from './entity.js';
-import { Module } from '../asm/module.js';
+import { Rom } from '../rom';
+import { ObjectData } from './objectdata';
+import { Monster } from './monster';
+import { lowerCamelToSpaces } from './util';
+import { EntityArray } from './entity';
+import { Module } from '../asm/module';
 
 // Manual data about monsters.  Every monster needs at least an ID-to-name mapping,
 // We also can't expect to get the difficulty mapping automatically, so that's

@@ -1,4 +1,4 @@
-import {child} from './utils.js';
+import {child} from './utils';
 
 // A component of the grid.  Handles drag-and-drop rearrangement, closing, etc.
 export class Component {

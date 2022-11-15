@@ -1,10 +1,10 @@
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {Flag, Spawn} from '../rom/locationtables.js';
-import {Location} from '../rom/location.js';
-import {Metalocation} from '../rom/metalocation.js';
-import {cloneArray} from '../rom/util.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
+import {Flag, Spawn} from '../rom/locationtables';
+import {Location} from '../rom/location';
+import {Metalocation} from '../rom/metalocation';
+import {cloneArray} from '../rom/util';
 
 type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
 

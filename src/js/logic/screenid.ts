@@ -1,5 +1,5 @@
-import {Location} from '../rom/location.js';
-import {TileId} from './tileid.js';
+import {Location} from '../rom/location';
+import {TileId} from './tileid';
 
 // 16-bit unique ID for a single screen:
 //   LLLLLLLL YYYYXXXX

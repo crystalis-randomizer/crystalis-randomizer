@@ -1,4 +1,4 @@
-import {child} from './utils.js';
+import {child} from './utils';
 
 export class Menu {
   constructor(name) {

@@ -1,8 +1,8 @@
-import {Assembler} from '../asm/assembler.js';
-import {Module} from '../asm/module.js';
-import {Rom} from '../rom.js';
-import {Entity, EntityArray} from './entity.js';
-import {MessageId} from './messageid.js';
+import {Assembler} from '../asm/assembler';
+import {Module} from '../asm/module';
+import {Rom} from '../rom';
+import {Entity, EntityArray} from './entity';
+import {MessageId} from './messageid';
 import {ITEM_GET_FLAGS, Address, Segment,
   hex, readLittleEndian, relocExportLabel} from './util.js';
 

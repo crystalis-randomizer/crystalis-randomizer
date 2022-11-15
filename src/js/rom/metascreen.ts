@@ -1,9 +1,9 @@
 import {Connection, ConnectionType, Feature, MetascreenData,
         featureMask} from './metascreendata.js';
-import {Metatileset, Metatilesets} from './metatileset.js';
-import {Screen} from './screen.js';
-import {Rom} from '../rom.js';
-import {DefaultMap, hex1} from '../util.js';
+import {Metatileset, Metatilesets} from './metatileset';
+import {Screen} from './screen';
+import {Rom} from '../rom';
+import {DefaultMap, hex1} from '../util';
 
 export type Uid = number & {__uid__: never};
 

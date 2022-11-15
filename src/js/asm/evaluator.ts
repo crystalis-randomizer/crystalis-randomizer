@@ -1,4 +1,4 @@
-import {Expr} from './expr.js';
+import {Expr} from './expr';
 
 interface Environment {
   pc(): number|undefined; // ??? - undef in a reloc context outside linker

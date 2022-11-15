@@ -1,8 +1,8 @@
 /** @fileoverview Apply large-scale map toggles. */
 
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 export function toggleMaps(_rom: Rom, _flags: FlagSet, _random: Random) {
   // removeEarlyWall(rom, flags, random);

@@ -1,7 +1,7 @@
-import {FlagSet} from '../flagset.js';
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
-import {iters} from '../util.js';
+import {FlagSet} from '../flagset';
+import {Random} from '../random';
+import {Rom} from '../rom';
+import {iters} from '../util';
 
 export function shuffleMimics(rom: Rom, flags: FlagSet, random: Random) {
   // NOTE: if flags.preserveUniqueChecks() then only do nonunique chests

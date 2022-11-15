@@ -1,18 +1,22 @@
-#!/usr/bin/env -S node -r esm --inspect
+#!/usr/bin/env -S node --inspect
 
-import { promises as fs } from 'fs';
+import * as crypto from 'node:crypto';
+import * as fs from 'node:fs/promises';
+import { Assembler } from './assembler';
 import { Cpu } from './cpu';
-import { Assembler } from './assembler.js';
-import { Linker } from './linker.js';
+import { Linker } from './linker';
 //import { Module } from './module.js';
-import { Preprocessor } from './preprocessor.js';
-import { TokenSource } from './token.js';
-import { TokenStream } from './tokenstream.js';
-import { Tokenizer } from './tokenizer.js';
+import { Preprocessor } from './preprocessor';
+import { clean, smudge } from './smudge';
+import { TokenSource } from './token';
+import { Tokenizer } from './tokenizer';
+import { TokenStream } from './tokenstream';
 
 async function main() {
+  let op: ((src: string, cpu: Cpu, prg: Uint8Array) => string)|undefined = undefined;
   let files: string[] = [];
   let outfile: string|undefined = undefined;
+  let rom: string|undefined = undefined;
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i];
     if (arg === '--help') {
@@ -20,6 +24,14 @@ async function main() {
     } else if (arg === '-o') {
       if (outfile) usage();
       outfile = process.argv[++i];
+    } else if (arg === '--clean') {
+      op = clean;
+    } else if (arg === '--smudge') {
+      op = smudge;
+    } else if (arg === '--rom') {
+      rom = process.argv[++i];
+    } else if (arg.startsWith('--rom=')) {
+      rom = arg.substring(6);
     } else {
       files.push(arg);
     }
@@ -29,6 +41,40 @@ async function main() {
   }
   if (!outfile) outfile = '/dev/stdout';
 
+  if (op) {
+    if (files.length > 1) usage(1, '--smudge and --clean only allow one input');
+    const src = String(await fs.readFile(files[0]));
+    let fullRom!: Uint8Array;
+    if (rom) {
+      fullRom = Uint8Array.from(await fs.readFile(rom));
+    } else {
+      const match = /smudge sha1 ([0-9a-f]{40})/.exec(src);
+      if (!match) throw usage(1, 'no sha1 tag, must specify rom');
+      const shaTag = match[1];
+      const dirs = await fs.opendir('.');
+      for await (const dir of dirs) {
+        if (/\.nes$/.test(dir.name)) {
+          const data = await fs.readFile(dir.name);
+          const sha = Array.from(
+              new Uint8Array(await crypto.subtle.digest('SHA-1', data)),
+              x => x.toString(16).padStart(2, '0')).join('');
+          if (sha === shaTag) {
+            fullRom = Uint8Array.from(data);
+            break;
+          }
+        }
+      }
+      if (!fullRom) usage(1, `could not find rom with sha ${shaTag}`);
+    }
+
+    // TODO - read the header properly
+    const prg = fullRom.subarray(0x10, 0x40010);
+    await fs.writeFile(outfile, op(src, Cpu.P02, prg));
+    return;
+  }
+
+  // assemble
+  if (rom) usage(1, '--rom only allowed with --smudge or --clean');
   async function tokenizer(path: string) {
     return new Tokenizer(String(await fs.readFile(path)), path,
                          {lineContinuations: true});
@@ -51,8 +97,10 @@ async function main() {
   await fs.writeFile(outfile, data);
 }
 
-function usage(code = 1) {
+function usage(code = 1, message = '') {
+  if (message) console.error(`js65: ${message}`);
   console.error(`Usage: js65 [-o FILE] [FILE...]`);
+  console.error(`       js65 (--smudge|--clean) [--rom=<rom>] [FILE]`);
   process.exit(code);
 }
 

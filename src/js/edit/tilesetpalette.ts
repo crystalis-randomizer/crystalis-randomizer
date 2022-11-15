@@ -1,8 +1,8 @@
 // tileset palette
 
-import {Rom} from '../rom.js';
-import {Context} from './context.js';
-import {Graphics} from './graphics.js';
+import {Rom} from '../rom';
+import {Context} from './context';
+import {Graphics} from './graphics';
 
 export class TilesetPalette {
   // Selection context w/ current screen/tileset/patterns/etc?

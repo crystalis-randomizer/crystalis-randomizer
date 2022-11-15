@@ -1,9 +1,9 @@
-import { CaveShuffle } from './cave.js';
-import { GridCoord, coordToPos } from './grid.js';
-import { Location } from '../rom/location.js';
-import { Pos } from '../rom/metalocation.js';
-import { iters } from '../util.js';
-import { Result, OK } from './maze.js';
+import { CaveShuffle } from './cave';
+import { GridCoord, coordToPos } from './grid';
+import { Location } from '../rom/location';
+import { Pos } from '../rom/metalocation';
+import { iters } from '../util';
+import { Result, OK } from './maze';
 
 // Basic idea: Overpass runs underpass first.
 // Underpass saves its result, is read by overpass attempt.

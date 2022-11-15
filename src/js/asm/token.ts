@@ -1,4 +1,4 @@
-import {assertNever} from '../util.js';
+import {assertNever} from '../util';
 
 export interface TokenSource {
   next(): Token[]|undefined;

@@ -1,5 +1,5 @@
-import {Random} from '../random.js';
-import {Rom} from '../rom.js';
+import {Random} from '../random';
+import {Rom} from '../rom';
 
 // TODO - we need a consistent way to refer to bosses...
 //  - maybe bosses.fromNpcId(), bosses.fromObjectId(), bosses.fromBossKill()

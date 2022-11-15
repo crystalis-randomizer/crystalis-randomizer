@@ -1,10 +1,10 @@
-import { Module } from '../asm/module.js';
-import { Entity } from './entity.js';
-import { Location } from './location.js';
-import { readLittleEndian, readLengthDelimitedString } from './util.js';
-import { Constraint } from './constraint.js';
-import type { Objects } from './objects.js';
-import { Expr } from '../asm/expr.js';
+import { Module } from '../asm/module';
+import { Entity } from './entity';
+import { Location } from './location';
+import { readLittleEndian, readLengthDelimitedString } from './util';
+import { Constraint } from './constraint';
+import type { Objects } from './objects';
+import { Expr } from '../asm/expr';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {

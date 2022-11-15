@@ -1,4 +1,4 @@
-import {Rom} from '../rom.js';
+import {Rom} from '../rom';
 
 export function writeLocationsFromMeta(rom: Rom) {
   const {locations} = rom;

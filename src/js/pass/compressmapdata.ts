@@ -1,5 +1,5 @@
-import {Rom} from '../rom.js';
-import {Location} from '../rom/location.js';
+import {Rom} from '../rom';
+import {Location} from '../rom/location';
 
 export function compressMapData(rom: Rom) {
   if (rom.compressedMapData) return;

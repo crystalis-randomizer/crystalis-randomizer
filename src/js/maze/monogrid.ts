@@ -1,7 +1,7 @@
-import { Random } from '../random.js';
-import { Grid, GridCoord } from './grid.js';
-import { Multiset } from '../util.js';
-import { UnionFind } from '../unionfind.js';
+import { Random } from '../random';
+import { Grid, GridCoord } from './grid';
+import { Multiset } from '../util';
+import { UnionFind } from '../unionfind';
 
 /** A simpler grid of a single type of edge. */
 export class Monogrid {

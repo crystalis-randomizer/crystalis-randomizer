@@ -1,9 +1,9 @@
-import {Rom} from '../rom.js';
-import {Metascreen} from './metascreen.js';
-import {Metatile} from './metatile.js';
-import {TileEffects} from './tileeffects.js';
-import {Tileset} from './tileset.js';
-import {DefaultMap} from '../util.js';
+import {Rom} from '../rom';
+import {Metascreen} from './metascreen';
+import {Metatile} from './metatile';
+import {TileEffects} from './tileeffects';
+import {Tileset} from './tileset';
+import {DefaultMap} from '../util';
 import {ConnectionType, Feature, featureMask,
         MetascreenData} from './metascreendata.js';
 

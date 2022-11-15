@@ -1,12 +1,12 @@
-import { CaveShuffle } from './cave.js';
-import { Result, OK } from './maze.js';
-import { Rom } from '../rom.js';
-import { Random } from '../random.js';
-import { GridCoord, E, N, S, W } from './grid.js';
-import { ScreenFix } from '../rom/screenfix.js';
-import { DefaultMap } from '../util.js';
-import { Metascreen } from '../rom/metascreen.js';
-import { Metalocation, Pos } from '../rom/metalocation.js';
+import { CaveShuffle } from './cave';
+import { Result, OK } from './maze';
+import { Rom } from '../rom';
+import { Random } from '../random';
+import { GridCoord, E, N, S, W } from './grid';
+import { ScreenFix } from '../rom/screenfix';
+import { DefaultMap } from '../util';
+import { Metascreen } from '../rom/metascreen';
+import { Metalocation, Pos } from '../rom/metalocation';
 
 // TODO - needs more loops...
 

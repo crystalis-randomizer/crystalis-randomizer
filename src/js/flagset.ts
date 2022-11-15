@@ -1,5 +1,5 @@
-import {UsageError, DefaultMap} from './util.js';
-import {Random} from './random.js';
+import {UsageError, DefaultMap} from './util';
+import {Random} from './random';
 
 interface FlagOpts {
   name: string;

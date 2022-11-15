@@ -1,4 +1,4 @@
-import {DataTuple, hex} from './util.js';
+import {DataTuple, hex} from './util';
 
 /** A single screen entrance coordinate. */
 export class Entrance extends DataTuple {

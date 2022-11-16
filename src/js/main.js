@@ -1,12 +1,11 @@
 import * as patch from './patch';
 import * as render from './render';
 import * as version from './version';
-import {crc32} from './crc32';
-import {EXPECTED_CRC32} from './rom';
-import {FlagSet} from './flagset';
-import {ProgressTracker} from './progress';
-import {BundleReader} from './bundlereader';
-import {FetchReader} from './fetchreader';
+import { crc32 } from './crc32';
+import { EXPECTED_CRC32 } from './rom';
+import { FlagSet } from './flagset';
+import { ProgressTracker } from './progress';
+import { BundleReader } from './bundlereader';
 import { CharacterSet, Sprite, parseNssFile } from './characters';
 
 // global state

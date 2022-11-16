@@ -1,6 +1,8 @@
 import { Assembler } from './asm/assembler';
 import { Cpu } from './asm/cpu';
+import { Linker } from './asm/linker';
 import { Preprocessor } from './asm/preprocessor';
+import { smudge } from './asm/smudge';
 import { TokenSource } from './asm/token';
 import { TokenStream } from './asm/tokenstream';
 import { Tokenizer } from './asm/tokenizer';
@@ -163,6 +165,9 @@ export async function shuffle(rom: Uint8Array,
     }
 
     const prg = rom.subarray(0x10);
+    const src = smudge(await reader.read('crystalis.s'), Cpu.P02, prg);
+    const assembled = Linker.assemble(src);
+    prg.subarray(0, assembled.length).set(assembled);
     prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
   }
 

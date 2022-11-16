@@ -10,6 +10,8 @@ import postshuffle from '../asm/postshuffle.s?br';
 import preshuffle from '../asm/preshuffle.s?br';
 // @ts-ignore
 import stattracker from '../asm/stattracker.s?br';
+// @ts-ignore
+import crystalis from '../asm/crystalis.s?br';
 
 // @ts-ignore
 import decompress from 'brotli/decompress';
@@ -19,7 +21,7 @@ import decompress from 'brotli/decompress';
 // Static file content can be appended for compiled mode.
 
 const files: Record<string, Uint8Array> =
-    {alloc, init, postparse, postshuffle, preshuffle, stattracker};
+    {crystalis, alloc, init, postparse, postshuffle, preshuffle, stattracker};
 
 export class BundleReader {
   constructor(readonly path: string = 'js/') {}

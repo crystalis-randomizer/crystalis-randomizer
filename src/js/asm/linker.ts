@@ -1,7 +1,12 @@
-import {IntervalSet, SparseByteArray, binaryInsert} from './util';
-import {Expr} from './expr';
-import {Chunk, Module, Segment, Substitution, Symbol} from './module';
-import {Token} from './token';
+import { Assembler } from './assembler';
+import { Cpu } from './cpu';
+import { Expr } from './expr';
+import { Chunk, Module, Segment, Substitution, Symbol } from './module';
+import { Preprocessor } from './preprocessor';
+import { Token } from './token';
+import { Tokenizer } from './tokenizer';
+import { TokenStream } from './tokenstream';
+import { IntervalSet, SparseByteArray, binaryInsert } from './util';
 
 export interface Export {
   value: number;
@@ -11,6 +16,24 @@ export interface Export {
 }
 
 export class Linker {
+  // TODO - accept a list of [filename, contents]?
+  static assemble(contents: string): Uint8Array {
+    const source = new Tokenizer(contents, 'contents.s',
+                                 {lineContinuations: true});
+    const asm = new Assembler(Cpu.P02);
+    const toks = new TokenStream();
+    toks.enter(source);
+    const pre = new Preprocessor(toks, asm);
+    asm.tokens(pre);
+    const linker = new Linker();
+    //linker.base(this.prg, 0);
+    linker.read(asm.module());
+    const out = linker.link();
+    const data = new Uint8Array(out.length);
+    out.apply(data);
+    return data;
+  }
+
   static link(...files: Module[]): SparseByteArray {
     const linker = new Linker();
     for (const file of files) {

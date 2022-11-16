@@ -2,6 +2,8 @@
 
 set -ex
 
+cli='node -r source-map-support/register dist/js/cli.js'
+
 # Ignore tests if the most recent commit has a message NO_SQ=1
 if git log -n 1 | grep -q NO_SQ=1; then exit 0; fi
 
@@ -14,8 +16,7 @@ file=${1-test/testdata}
 # Try all the presets
 for preset in $(dist/js/cli.js --list-presets); do
   # Now run the CLI on it.
-  dist/js/cli.js --seed=1 --preset=$preset --output=test/test_out \
-                      --force "$file" || {
+  $cli --seed=1 --preset=$preset --output=test/test_out --force "$file" || {
     echo "Failed to shuffle: @$preset seed 1" >&2
     exit 1
   }

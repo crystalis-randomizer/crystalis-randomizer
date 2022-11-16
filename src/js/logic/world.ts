@@ -184,6 +184,7 @@ export class World {
         ShootingStatue, ShootingStatueSouth, StormBracelet,
         Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind,
         TornadoBracelet, TravelSwamp, TriggerSkip,
+        UsedBowOfMoon, UsedBowOfSun,
         WildWarp,
       },
       items: {
@@ -194,6 +195,8 @@ export class World {
     const start = this.entrance(MezameShrine);
     const enterOak = this.entrance(Oak);
     this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
+    this.addCheck([start], BowOfMoon.r, [UsedBowOfMoon.id]);
+    this.addCheck([start], BowOfSun.r, [UsedBowOfSun.id]);
     this.addCheck([start], and(AbleToRideDolphin, ShellFlute),
                   [CurrentlyRidingDolphin.id]);
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
@@ -1220,18 +1223,25 @@ export class World {
   processBoss(location: Location, spawn: Spawn) {
     // Bosses will clobber the entrance portion of all tiles on the screen,
     // and will also add their drop.
-    if (spawn.id === 0xc9 || spawn.id === 0xca) return; // statues
+    const {bosses} = this.rom;
+    const {Rage, StatueOfSun, StatueOfMoon} = bosses;
+    const isStatueOfMoon = spawn.id === 0xc9;
+    const isStatueOfSun = spawn.id === 0xca;
     const isRage = spawn.id === 0xc3;
     const boss =
-        isRage ? this.rom.bosses.Rage :
-        this.rom.bosses.fromLocation(location.id);
+        isRage ? Rage :
+        isStatueOfMoon ? StatueOfMoon :
+        isStatueOfSun ? StatueOfSun :
+        bosses.fromLocation(location.id);
     const tile = TileId.from(location, spawn);
     if (!boss || !boss.flag) throw new Error(`Bad boss at ${location.name}`);
     const screen = tile & ~0xff;
     const bossTerrain = this.terrainFactory.boss(boss.flag.id, isRage);
     const hitbox = seq(0xf0, (t: number) => (screen | t) as TileId);
     this.addTerrain(hitbox, bossTerrain);
-    this.addBossCheck(hitbox, boss);
+    if (!isStatueOfMoon && !isStatueOfSun) {
+      this.addBossCheck(hitbox, boss);
+    }
   }
 
   addBossCheck(hitbox: Hitbox, boss: Boss,

@@ -56,7 +56,7 @@ if [ "$2" = "-e" ]; then encrypt=true; fi
 if $encrypt; then
   # Now re-encrypt the data.
   KEY=$(echo $(openssl rand -base64 218) | sed 's/ //g')
-  openssl enc -aes-256-cbc -a -salt -in test/testdata -out test/testdata.enc -pass "pass:$KEY"
+  openssl enc -aes-256-cbc -a -salt -in test/testdata -out test/testdata.enc -pass "pass:$KEY" -md sha256
   echo
   echo "Replace TESTDATA key with the following:"
   echo $KEY

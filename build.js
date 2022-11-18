@@ -29,7 +29,7 @@ async function run() {
     // Delete all the chunks from dist/js?
     const dir = await fs.opendir('dist/js');
     for await (const entry of dir) {
-      if (/^chunk-.*\.js$/.test(entry.name)) {
+      if (/^(chunk|bundlereader)-.*\.js$/.test(entry.name)) {
         await fs.unlink(`dist/js/${entry.name}`);
       }
     }

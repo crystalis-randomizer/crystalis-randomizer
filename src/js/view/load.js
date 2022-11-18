@@ -1,5 +1,4 @@
 import * as patch from '../patch';
-import { BundleReader } from '../bundlereader';
 import { FlagSet } from '../flagset';
 import { prepareScreens } from '../pass/shufflemazes';
 import { Random } from '../random';
@@ -18,6 +17,7 @@ export async function loadRom() {
     const seedStr = hash.get('seed') ?? Math.floor(Math.random() * 0x100000000).toString(16);
     const seed = patch.parseSeed(seedStr);
     const romData = await Rom.loadBytes();
+    const {BundleReader} = await import('../bundlereader');
     await patch.shuffle(romData, seed, flags, new BundleReader());
     return window.rom;
   } else {

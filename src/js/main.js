@@ -5,7 +5,6 @@ import { crc32 } from './crc32';
 import { EXPECTED_CRC32 } from './rom';
 import { FlagSet } from './flagset';
 import { ProgressTracker } from './progress';
-import { BundleReader } from './bundlereader';
 import { CharacterSet, Sprite, parseNssFile } from './characters';
 
 // global state
@@ -228,6 +227,7 @@ const shuffleRom = async (seed) => {
   const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
   const sprite = await CharacterSet.get("simea").get(selectedsimeaSprite);
   try {
+    const {BundleReader} = await import('./bundlereader');
     [shuffled, crc] =
         await patch.shuffle(
           orig, seed, flagsClone, new BundleReader(), [sprite], log, progressTracker);

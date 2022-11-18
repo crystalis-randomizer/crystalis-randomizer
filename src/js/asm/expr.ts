@@ -174,7 +174,7 @@ export namespace Expr {
       const [op, [,, arity]] = ops.pop()!;
 //console.log('pop', op, arity);
       const args = exprs.splice(exprs.length - arity, arity);
-      if (args.length !== arity) throw new Error(`shunting parse failed? ${Token.nameAt(tokens[i])}`);
+      if (args.length !== arity) throw new Error(`shunting parse failed? ${Token.nameAt(tokens[i])}\n  Expected ${arity} but only found ${args.map(e => e.op).join(' ')}\n  Full tokens:\n    ${tokens.map(Token.nameAt).join('\n    ')}`);
       exprs.push(fixSize({op, args}));
     }
 

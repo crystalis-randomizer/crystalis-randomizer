@@ -35,6 +35,15 @@ fi
 
 # If the branch exists, wipe it out.
 if [ -d "deploy/$dir" ]; then
+  # but first, make a note of its hash
+  prev=$(grep HASH "deploy/$dir/js/build_info.js")
+  prev=${prev#*: \'}
+  suffix=${prev#???????}
+  prev=${prev%$suffix}
+  if [ -d "deploy/sha/$prev" ]; then
+    perl -i -pe "print \"  'PREV': '$prev',\n\" if /\\}/;" \
+         dist/js/build_info.js
+  fi
   rm -rf "deploy/$dir"
 fi
 

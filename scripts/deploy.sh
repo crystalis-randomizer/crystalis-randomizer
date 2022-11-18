@@ -35,6 +35,16 @@ fi
 
 # If the branch exists, wipe it out.
 if [ -d "deploy/$dir" ]; then
+  # but first, make a note of its hash
+  prev=$(grep HASH "deploy/$dir/js/build_info.js")
+  prev=${prev#*: \'}
+  suffix=${prev#???????}
+  prev=${prev%$suffix}
+  if [ -d "deploy/sha/$prev" ]; then
+    sed -i '' "/}/ i\\
+  'PREV': '$prev',\\
+" dist/js/build_info.js
+  fi
   rm -rf "deploy/$dir"
 fi
 

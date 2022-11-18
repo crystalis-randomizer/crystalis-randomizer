@@ -107,6 +107,15 @@ const initVersion = () => {
           `${prefix}${version.LABEL} (${version.DATE.toDateString()})`;
     }
   }
+  if (version.PREV) {
+    // This is pretty hacky.
+    const nav = document.querySelector('nav');
+    const prev = document.createElement('a');
+    prev.textContent = 'Older';
+    prev.href = `/sha/${version.PREV}`;
+    prev.style.float = 'right';
+    nav.appendChild(prev);
+  }
   document.body.classList.add('js-works');
   document.body.classList.remove('js-broken');
   if (version.STATUS == 'rc') {

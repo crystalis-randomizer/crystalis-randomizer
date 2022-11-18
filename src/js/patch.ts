@@ -676,7 +676,7 @@ function blackoutMode(rom: Rom) {
     rom.metatilesets.pyramid.tilesetId,
   ]);
   for (const loc of rom.locations) {
-    if (indoors.has(loc.tileset)) loc.tilePatterns.fill(0x9a);
+    if (indoors.has(loc.tileset)) loc.tilePalettes.fill(0x9a);
   }
 }
 

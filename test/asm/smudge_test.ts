@@ -155,4 +155,13 @@ describe('clean', function() {
   it('should respect `from` comments', function() {
     expect(clean('lda #$05 ; from $20')).to.eql('<@23@> ; from $20');
   });
+  it('should respect `push` and `pop`', function() {
+    expect(clean('; @(@\nlda #$05 ; from $20\n; @)@\nlda #$05'))
+        .to.eql('; @(@\n<@23@> ; from $20\n; @)@\n<@0@>');
+  });
+  it('should merge preprocessor branches', function() {
+    expect(clean('.if 1\nlda #$05\n.elseif 2\nsta $1234\n' +
+                 '.else\nasl\n.endif\nsta $42'))
+        .to.eql('.if 1\n<@0@>\n.elseif 2\n<@4@>\n.else\n<@1f@>\n.endif\n<@2@>');
+  });
 });

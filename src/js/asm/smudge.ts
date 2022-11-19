@@ -27,6 +27,42 @@ export function clean(contents: string, cpu: Cpu, prg: Uint8Array): string {
 // If we find a relative jump without an argument, we replace it with a `*+`
 // expression.
 
+class PcStack {
+  stack: number[][] = [[0]];
+
+  pc(): number {
+    const top = this.stack[this.stack.length - 1];
+    return top[top.length - 1];
+  }
+  push() {
+    this.stack.push([this.pc()]);
+  }
+  pop() {
+    if (this.stack.length < 2) return;
+    this.stack.pop();
+  }
+  merge() {
+    if (this.stack.length < 2) return;
+    const top = this.stack.pop();
+    if (!top) return;
+    this.set(Math.min(...top));
+  }
+  alt() {
+    if (this.stack.length < 2) return;
+    const prev = this.stack[this.stack.length - 2];
+    this.stack[this.stack.length - 1].push(prev[prev.length - 1]);
+  }
+  set(a: number) {
+    const top = this.stack[this.stack.length - 1];
+    top[top.length - 1] = a;
+  }
+  advance(delta: number) {
+    const top = this.stack[this.stack.length - 1];
+    top[top.length - 1] += delta;
+  }
+}
+
+
 function* lines(str: string): Iterable<string> {
   let i = 0;
   while (i < str.length) {
@@ -113,17 +149,21 @@ function smudgeData(prg: Uint8Array, addr: number, mod: string): string {
 
 abstract class CleanChunk {
   constructor(readonly plain: string) {}
-  fix(pc: number, _index: Index, _prg: Uint8Array): number {
-    return pc;
-  }
+  fix(_pc: PcStack, _index: Index, _prg: Uint8Array) {}
   format(_prg: Uint8Array, _cpu: Cpu): string {
     return this.plain;
   }
 }
 
-class CleanAnnotation extends CleanChunk {
-  constructor(readonly address: number) { super(''); }
-  fix() { return this.address; }
+class CleanPc extends CleanChunk {
+  constructor(readonly fix: (pc: PcStack) => void) { super(''); }
+  static set(address: number) {
+    return new CleanPc(pc => pc.set(address));
+  }
+  static push = new CleanPc(pc => pc.push());
+  static alt = new CleanPc(pc => pc.alt());
+  static pop = new CleanPc(pc => pc.pop());
+  static merge = new CleanPc(pc => pc.merge());
 }
 
 class CleanStr extends CleanChunk {}
@@ -132,13 +172,13 @@ class CleanSequence extends CleanChunk {
   address = 0;
   constructor(plain: string, readonly bytes: number[]) { super(plain); }
 
-  fix(pc: number, index: Index, prg: Uint8Array): number {
+  fix(pc: PcStack, index: Index, prg: Uint8Array) {
     // Look for the sequence
     const maxIndex = INDEX_SIZE >>> 1;
     const addrs = index.get(toHexString(this.bytes.slice(0, maxIndex))) || [];
-    if (!addrs.length) return pc;
+    if (!addrs.length) return;
     // Find the next match (at or) after pc
-    let i = binarySearch(addrs.length, (i) => pc - addrs[i]);
+    let i = binarySearch(addrs.length, (i) => pc.pc() - addrs[i]);
     if (i < 0) i = ~i;
     if (i >= addrs.length) i = 0;
     // Handle long strings
@@ -151,11 +191,10 @@ class CleanSequence extends CleanChunk {
         i = (i + 1) % addrs.length;
       }
       // No match found, so just return.
-      if (j < 0) return pc;
+      if (j < 0) return;
     }
     // Update address if appropriate.
-    pc = (this.address = addrs[i]) + this.bytes.length;
-    return pc;
+    pc.set((this.address = addrs[i]) + this.bytes.length);
   }
 }
 
@@ -177,17 +216,17 @@ class CleanOpPartial extends CleanChunk {
     super(plain);
   }
 
-  fix(pc: number, index: Index): number {
+  fix(pc: PcStack, index: Index) {
     const optAddrs = [];
     for (const o of this.options) {
       const addrs = index.get(toHex(o)) || [];
-      if (!addrs) return pc;
-      let i = binarySearch(addrs.length, (i) => pc - addrs[i]);
+      if (!addrs) return;
+      let i = binarySearch(addrs.length, (i) => pc.pc() - addrs[i]);
       if (i < 0) i = ~i;
       if (i < addrs.length) optAddrs.push(addrs[i]);
     }
-    if (!optAddrs.length) return pc;
-    return (this.address = Math.min(...optAddrs)) + 1;
+    if (!optAddrs.length) return;
+    pc.set((this.address = Math.min(...optAddrs)) + 1);
   }
 
   format(prg: Uint8Array, cpu: Cpu): string {
@@ -254,9 +293,9 @@ class Cleaner {
     }
 
     // Now fix up all the addresses...
-    let pc = 0;
+    let pc = new PcStack();
     for (const chunk of this.chunks) {
-      pc = chunk.fix(pc, this.index, this.prg);
+      chunk.fix(pc, this.index, this.prg);
     }
 
     // Format and concatenate
@@ -269,8 +308,13 @@ class Cleaner {
     // Look for a `; from .*` comment
     if ((match = /;\s*from\s+\$?([0-9a-f]{1,6})\b/i.exec(line))) {
       // don't delete anything, but set the PC.
-      this.push(new CleanAnnotation(parseInt(match[1], 16)));
+      this.push(CleanPc.set(parseInt(match[1], 16)));
     }
+    if (/^\s+\.if/.test(line)) this.push(CleanPc.push);
+    if (/^\s+\.else/.test(line)) this.push(CleanPc.alt);
+    if (/^\s+\.endif/.test(line)) this.push(CleanPc.merge);
+    if (/@\(@/.test(line)) this.push(CleanPc.push);
+    if (/@\)@/.test(line)) this.push(CleanPc.pop);
 
     // Look for a label at the front
     // TODO - consider removing the [$ ] and the repeat from this when it's no longer needed for disasm

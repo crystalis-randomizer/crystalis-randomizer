@@ -3773,8 +3773,6 @@ PatchClearEnemyHPRam:
 ;; ScalingLevels = SCALING_LEVELS
 ;; .export ScalingLevels
 
-
-.ifdef _BABY_ELEPHANT
 .segment "18", "19"
 
 SONG_INDEX = $0c
@@ -4118,5 +4116,3 @@ SpecialSongNoise:
   .byte $a4
   ; end
   .byte SONG_INDEX
-
-.endif ; _BABY_ELEPHANT

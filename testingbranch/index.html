@@ -12,7 +12,7 @@
 <title>Crystalis Randomizer</title>
 <link rel="stylesheet" href="css/main.css">
 <script src="js/build_info.js"></script>
-<script type="module" src="js/main.min.js"></script>
+<script type="module" src="js/main.js"></script>
 <script>
 // Display a message if the main script hasn't already removed it.
 setTimeout(function() {
@@ -25,7 +25,7 @@ setTimeout(function() {
 <nav>
   <a class="img if-not-permalink" href="/"><img src="images/crystalis-sword.png"></a>
   <a href="index">Play</a>
-  <a class="if-not-permalink" id="track-url" href="track">Track</a>
+  <!-- a class="if-not-permalink" id="track-url" href="track">Track</a -->
   <a href="help">Help</a>
   <!-- TODO: better process for stable version numbers. -->
   <span class="version"></span>
@@ -136,6 +136,19 @@ setTimeout(function() {
     <div>
       <h2>Play As</h2>
       <div id="simea-sprite-options" class="flex-row"></div>
+      <h2>Custom</h2>
+      <div class="flex-row">
+        <!-- loadSpriteSelectionsFromStorage will populate the list of saved sprites -->
+        <div id="simea-sprite-custom" class="flex-row" style="width: 100%;"></div>
+        <div class="flex-row">
+          <label class="file-picker button">
+            Load Custom Sprite `.nss` File
+            <input type="file" accept=".nss" id="upload-sprite" style="display: none;">
+          </label>
+        </div>
+        <!-- Uncomment this (and the JS code that references this) to debug spritesheet loading -->
+        <!-- <img id="test-spritesheet-upload" width=1024 height=1024> -->
+      </div>
     </div>
   </section>
 

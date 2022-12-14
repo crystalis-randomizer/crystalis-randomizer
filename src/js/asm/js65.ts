@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node --inspect
+#!/usr/bin/env -S node
 
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs/promises';

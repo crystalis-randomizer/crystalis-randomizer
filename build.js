@@ -7,7 +7,8 @@ const brotliPlugin = require('esbuild-plugin-brotli');
 // NOTE: we could easily write a custom 'watch' command that runs this
 // on all saves, and also zips/bundles everything, etc...?
 
-const prod = process.env.NODE_ENV === 'production';
+const js65Only = process.argv.includes('--js65');
+const prod = process.env.NODE_ENV === 'production' || js65Only;
 
 async function build(entryPoints, opts) {
   const result = await esbuild.build({
@@ -39,8 +40,7 @@ async function run() {
 
   try {
     // Run the build
-    await Promise.all([
-      // Web sources
+    const web = js65Only ? [] : [
       build([
         'main.js',
         'check.js',
@@ -52,9 +52,11 @@ async function run() {
       ], {
         splitting: true,
         format: 'esm',
-      }),
+      })];
+    await Promise.all([
+      ...web,
       build([
-        'cli.ts',
+        ...(js65Only ? [] : ['cli.ts']),
         'asm/js65.ts',
       ], {
         platform: 'node',

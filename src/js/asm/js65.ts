@@ -1,7 +1,7 @@
 #!/usr/bin/env -S node
 
 import * as crypto from 'node:crypto';
-import * as fs from 'node:fs/promises';
+import * as fs from 'node:fs';
 import { Assembler } from './assembler';
 import { Cpu } from './cpu';
 import { Linker } from './linker';
@@ -43,18 +43,19 @@ async function main() {
 
   if (op) {
     if (files.length > 1) usage(1, '--smudge and --clean only allow one input');
-    const src = String(await fs.readFile(files[0]));
+    const src = String(fs.readFileSync(files[0]));
+    console.error(`read ${src.length} bytes from ${files[0]}`);
     let fullRom!: Uint8Array;
     if (rom) {
-      fullRom = Uint8Array.from(await fs.readFile(rom));
+      fullRom = Uint8Array.from(fs.readFileSync(rom));
     } else {
       const match = /smudge sha1 ([0-9a-f]{40})/.exec(src);
       if (!match) throw usage(1, 'no sha1 tag, must specify rom');
       const shaTag = match[1];
-      const dirs = await fs.opendir('.');
+      const dirs = await fs.promises.opendir('.');
       for await (const dir of dirs) {
         if (/\.nes$/.test(dir.name)) {
-          const data = await fs.readFile(dir.name);
+          const data = fs.readFileSync(dir.name);
           const sha = Array.from(
               new Uint8Array(await crypto.subtle.digest('SHA-1', data)),
               x => x.toString(16).padStart(2, '0')).join('');
@@ -69,14 +70,14 @@ async function main() {
 
     // TODO - read the header properly
     const prg = fullRom.subarray(0x10, 0x40010);
-    await fs.writeFile(outfile, op(src, Cpu.P02, prg));
+    fs.writeFileSync(outfile, op(src, Cpu.P02, prg));
     return;
   }
 
   // assemble
   if (rom) usage(1, '--rom only allowed with --smudge or --clean');
   async function tokenizer(path: string) {
-    return new Tokenizer(String(await fs.readFile(path)), path,
+    return new Tokenizer(String(await fs.promises.readFile(path)), path,
                          {lineContinuations: true});
   }
 
@@ -94,7 +95,7 @@ async function main() {
   const data = new Uint8Array(out.length);
   out.apply(data);
   //const exports = linker.exports();
-  await fs.writeFile(outfile, data);
+  fs.writeFileSync(outfile, data);
 }
 
 function usage(code = 1, message = '') {

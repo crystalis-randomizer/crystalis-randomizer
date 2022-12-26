@@ -44,7 +44,6 @@ async function main() {
   if (op) {
     if (files.length > 1) usage(1, '--smudge and --clean only allow one input');
     const src = String(fs.readFileSync(files[0]));
-    console.error(`read ${src.length} bytes from ${files[0]}`);
     let fullRom!: Uint8Array;
     if (rom) {
       fullRom = Uint8Array.from(fs.readFileSync(rom));

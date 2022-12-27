@@ -1,1 +1,2 @@
-src/asm/crystalis.s     filter=disasm
+vanilla/*.s     filter=disasm
+src/asm/*.s     filter=disasm

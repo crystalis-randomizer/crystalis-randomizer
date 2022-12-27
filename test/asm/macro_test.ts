@@ -6,7 +6,6 @@ import {Tokenizer} from '../../src/js/asm/tokenizer';
 import * as util from 'util';
 
 const [] = [util];
-//const value = require('../dist/js/asm/value.js');
 
 const nullId = {next() { return 1; }};
 

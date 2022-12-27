@@ -6,6 +6,7 @@ deploy
 deploy_key
 deploy_key.pub
 dist
+target
 .vscode
 
 # testing

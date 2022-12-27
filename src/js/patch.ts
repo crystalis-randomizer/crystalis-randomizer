@@ -165,11 +165,12 @@ export async function shuffle(rom: Uint8Array,
     }
 
     const prg = rom.subarray(0x10);
-    const src = smudge(await reader.read('crystalis.s'), Cpu.P02, prg);
-    const assembled = Linker.assemble(src);
-    prg.subarray(0, assembled.length).set(assembled);
+    // const src = smudge(await reader.read('crystalis.s'), Cpu.P02, prg);
+    // const assembled = Linker.assemble(src);
+    // prg.subarray(0, assembled.length).set(assembled);
     prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
   }
+  const origPrg = rom.slice(0x10); // do this before any mutation
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
@@ -182,7 +183,7 @@ export async function shuffle(rom: Uint8Array,
   const attemptErrors = [];
   for (let i = 0; i < 5; i++) { // for now, we'll try 5 attempts
     try {
-      return await shuffleInternal(rom, originalFlags, seed, random, reader, log, progress, sprites);
+      return await shuffleInternal(rom, originalFlags, seed, random, reader, log, progress, sprites, origPrg);
     } catch (error) {
       attemptErrors.push(error);
       console.error(`Attempt ${i + 1} failed: ${error.stack}`);
@@ -199,6 +200,7 @@ async function shuffleInternal(rom: Uint8Array,
                                log: {spoiler?: Spoiler}|undefined,
                                progress: ProgressTracker|undefined,
                                spriteReplacements: Sprite[],
+                               origPrg: Uint8Array,
                               ): Promise<readonly [Uint8Array, number]>  {
   const originalFlagString = String(originalFlags);
   const flags = originalFlags.filterRandom(random);
@@ -367,8 +369,8 @@ async function shuffleInternal(rom: Uint8Array,
 
   async function asm(pass: 'early' | 'late') {
     async function tokenizer(path: string) {
-      return new Tokenizer(await reader.read(path), path,
-                           {lineContinuations: true});
+      const src = smudge(await reader.read(path), Cpu.P02, origPrg);
+      return new Tokenizer(src, path, {lineContinuations: true});
     }
 
     const flagFile = defines(flags, pass);

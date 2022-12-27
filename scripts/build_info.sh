@@ -2,12 +2,14 @@
 
 set -ex
 
+mkdir -p target/build
 case "$GITHUB_REF" in
   (refs/tags/*) GITHUB_TAG=${GITHUB_REF#refs/tags/} ;;
   (refs/heads/*) GITHUB_BRANCH=${GITHUB_REF#refs/heads/} ;;
   (*)
     # No point cloning the repo if not on a branch or tag
     echo "Nothing to do" >&2
+    touch target/build/build_info.js
     exit 0
     ;;
 esac
@@ -57,7 +59,7 @@ esac
   echo "  'DATE': new Date($(date +%s000)),"
   echo "};"
   echo "if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;"
-} >| "src/js/build_info.js"
+} >| "target/build/build_info.js"
 
 # Intended use: 'eval $(build_info.sh)'
 if [ -n "$GITHUB_ENV" ]; then

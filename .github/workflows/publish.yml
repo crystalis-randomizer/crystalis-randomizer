@@ -20,8 +20,5 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: npm ci
       - run: scripts/build_info.sh
-      - run: scripts/link.sh --copy
       - run: npm test || ( touch failed; false )
-        env:
-          NODE_ENV: production
       - run: test ! -e failed && scripts/deploy.sh

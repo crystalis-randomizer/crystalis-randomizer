@@ -1,6 +1,6 @@
 #!/usr/bin/env -S node --inspect 
 
-import './build_info'; // side effect global set (affects version module)
+import '../../target/build/build_info'; // side effect global set (affects version module)
 
 import {EXPECTED_CRC32} from './rom';
 import {FlagSet, Preset} from './flagset';

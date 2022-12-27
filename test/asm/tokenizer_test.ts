@@ -3,7 +3,6 @@ import {expect} from 'chai';
 import {Token} from '../../src/js/asm/token';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
 import * as util from 'util';
-//const value = require('../dist/js/asm/value.js');
 
 const [] = [util];
 

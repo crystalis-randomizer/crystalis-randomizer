@@ -258,6 +258,7 @@ class CleanData extends CleanSequence {
 const INDEX_SIZE = 6;
 type Index = ReadonlyMap<string, ReadonlyArray<number>>;
 class Cleaner {
+  private on = true;
   private readonly index: Index;
   private chunks: CleanChunk[] = [];
 
@@ -303,6 +304,14 @@ class Cleaner {
   }
 
   private readLine(line: string): void {
+    // Handle "smudge off" and "smudge on" comments.
+    if (/smudge off/.test(line)) this.on = false;
+    if (/smudge on/.test(line)) this.on = true;
+    if (!this.on) {
+      this.pushStr(line);
+      return;
+    }
+
     let match;
 
     // Look for a `; from .*` comment

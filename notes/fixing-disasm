@@ -1,0 +1,29 @@
+Fixing the disassembly
+----------------------
+
+There's a number of problems here.
+1. Should we have a single source of truth with both the vanilla source _and_
+   the fixed version at the same time?  This requires a lot of complicated
+   macros to expand, etc.  On the other hand, keeping two separate sources
+   curated is also problematic.
+2. How does the Rom object parse work?  We have a deterministic pre-parse pass
+   where we fix up a handful of data tables (among other things) that would
+   cause parsing to train-wreck (though it's grown to be quite a bit more than
+   that by now).  We at least need to keep the table fixes, even if we'll read
+   the tables from the vanilla rom.
+    * one option would be to read the tables from the "fixed" rom anyway.
+    * but some of these tables would be harder to construct, or might not
+      make as much sense in the revised version?
+
+We'll have a _lot_ of switching, e.g. moving map screens around, compressing
+the mapdata and dialogs, etc.
+
+We could also just omit certain tables entirely if we had a separate version?
+Or go back to more of a patching assembler, but use the smudger to allow just
+wholesale copying of entire routines as needed?
+
+----
+
+It probably makes sense to parse the Rom object directly from the original PRG
+bytes.  The current plan is to keep/use individual patches, but we'll start
+copying more of the original sources into those patches and keep them smudged.

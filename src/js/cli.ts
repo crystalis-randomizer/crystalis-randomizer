@@ -8,7 +8,6 @@ import {crc32} from './crc32';
 import * as fs from 'fs';
 import * as patch from './patch';
 import {UsageError, breakLines} from './util';
-import {BundleReader} from './bundlereader';
 import * as version from './version';
 import {disableAsserts} from './assert';
 
@@ -124,7 +123,7 @@ const main = (...args: string[]) => {
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset, new BundleReader());
+        await patch.shuffle(orig, s, flagset);
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;

@@ -75,8 +75,7 @@ cat deploy/$dir/index.html >> deploy/$sha/index.html
 cat deploy/$dir/help.html >> deploy/$sha/help.html
 cp deploy/$dir/js/main.js deploy/$sha/js/
 cp deploy/$dir/js/build_info.js deploy/$sha/js/
-cp deploy/$dir/js/chunk-*.js deploy/$sha/js/
-cp deploy/$dir/js/bundlereader-*.js deploy/$sha/js/
+cp deploy/$dir/js/*-????????.js deploy/$sha/js/
 cp deploy/$dir/css/main.css deploy/$sha/css/main.css
 scripts/dedupe.sh deploy/$sha deploy/sha/files
 

@@ -1,5 +1,4 @@
-
-
+import { spritesheets } from './data';
 
 class NssFile {
   readonly filename: string;
@@ -153,7 +152,6 @@ export class Sprite {
 
 export class CharacterSet {
   private static instance: CharacterSet;
-  private readonly simeaReplacements = new Map<string, Promise<Sprite>>();
   private readonly mapping: Map<string, Map<string, Promise<Sprite>>> = new Map();
 
   public static get(which: string): Map<string, Promise<Sprite>> {
@@ -162,9 +160,13 @@ export class CharacterSet {
   }
 
   constructor() {
-    this.simeaReplacements.set("Simea", Sprite.init("Simea", "simea", loadNssFileFromServer("images/spritesheets/Simea.nss"), "The original main character of Crystalis"));
-    this.simeaReplacements.set("Mesia", Sprite.init("Mesia", "simea", loadNssFileFromServer("images/spritesheets/Mesia.nss"), "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy"));
-    this.mapping.set("simea", this.simeaReplacements);
+    // TODO(sdh): figue out how to have this just automatically pick up the
+    // files from the Makefile glob (we need a way to convey the mapping and
+    // the description in the NSS file contents - probably doable?)
+    this.mapping.set("simea", new Map([
+      ["Simea", Sprite.init("Simea", "simea", loadNssFile("Simea.nss"), "The original main character of Crystalis")],
+      ["Mesia", Sprite.init("Mesia", "simea", loadNssFile("Mesia.nss"), "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy")],
+    ]));
   }
 }
 
@@ -191,7 +193,7 @@ export class CustomTilesetMapping {
     return this.instance.paletteMapping.get(which)!;
   }
 
-  constructor() {
+  private constructor() {
     this.simeaChrMapping = this.generateSimeaMapping();
     this.simeaPaletteMapping = this.generateSimeaPalette();
     this.chrMapping.set("simea", this.simeaChrMapping);
@@ -524,8 +526,8 @@ export class CustomTilesetMapping {
   }
 }
 
-async function loadNssFileFromServer(path: string): Promise<NssFile> {
-  const data = await (await fetch(path)).text();
+async function loadNssFile(path: string): Promise<NssFile> {
+  const data = spritesheets()[path];
   // remove the rest of the path that is before the filename.nss
   const filename = path.replace(/^.*[\\\/]/, '');
   return parseNssFile(filename, data);

@@ -1,6 +1,6 @@
-interface TarRecord {
+export interface TarRecord<V = Uint8Array> {
   filename: string;
-  contents: Uint8Array;
+  contents: V;
 }
 
 interface TypedArray {

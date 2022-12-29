@@ -227,10 +227,9 @@ const shuffleRom = async (seed) => {
   const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
   const sprite = await CharacterSet.get("simea").get(selectedsimeaSprite);
   try {
-    const {BundleReader} = await import('./bundlereader');
     [shuffled, crc] =
         await patch.shuffle(
-          orig, seed, flagsClone, new BundleReader(), [sprite], log, progressTracker);
+          orig, seed, flagsClone, [sprite], log, progressTracker);
   } catch (err) {
     document.body.classList.add('failure');
     const errorText = document.getElementById('error-text');

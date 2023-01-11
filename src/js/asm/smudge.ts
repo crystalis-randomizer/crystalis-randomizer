@@ -306,7 +306,7 @@ class Cleaner {
   private readLine(line: string): void {
     // Handle "smudge off" and "smudge on" comments.
     if (/smudge off/.test(line)) this.on = false;
-    if (/smudge on/.test(line)) this.on = true;
+    if (/smudge (on|from)/.test(line)) this.on = true;
     if (!this.on) {
       this.pushStr(line);
       return;
@@ -315,7 +315,7 @@ class Cleaner {
     let match;
 
     // Look for a `; from .*` comment
-    if ((match = /;\s*from\s+\$?([0-9a-f]{1,6})\b/i.exec(line))) {
+    if ((match = /(?:;|smudge)\s*from\s+\$?([0-9a-f]{1,6})\b/i.exec(line))) {
       // don't delete anything, but set the PC.
       this.push(CleanPc.set(parseInt(match[1], 16)));
     }

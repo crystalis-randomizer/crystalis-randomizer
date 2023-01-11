@@ -28,8 +28,8 @@ WEB_ENTRY_POINTS_FULL = $(addprefix src/js/,$(WEB_ENTRY_POINTS))
 WEB_ENTRY_OUTS = $(WEB_ENTRY_POINTS:.ts=.js)
 WEB_JS_DBG = $(addprefix $(DBGDIR)/js/,$(WEB_ENTRY_OUTS))
 WEB_JS_REL = $(addprefix $(RELDIR)/js/,$(WEB_ENTRY_OUTS))
-LINK_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
-LINK_FILES = $(filter $(LINK_PATTERNS),$(shell find src -type f))
+STATIC_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
+STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
 JS_FILES = $(shell find src/js -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
 ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
@@ -38,12 +38,20 @@ NSS_COPIES = $(NSS_FILES:src/images/spritesheets/%=$(DATADIR)/%)
 DATA_TAR = $(BLDDIR)/data.tar
 DATA_TBR = $(BLDDIR)/data.tar.br
 BUILD_INFO  = $(BLDDIR)/build_info.js
-DBG_LINKS = $(LINK_FILES:src/%=target/debug/%)
-REL_LINKS = $(LINK_FILES:src/%=target/release/%)
-DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(WEB_JS_DBG) $(DBG_LINKS)
-REL_OUTS = $(JS65_REL) $(CLI_REL) $(WEB_JS_REL) $(REL_LINKS)
+DBG_INFO = $(DBGDIR)/js/build_info.js
+REL_INFO = $(RELDIR)/js/build_info.js
+DBG_STATIC = $(STATIC_FILES:src/%=target/debug/%)
+REL_STATIC = $(STATIC_FILES:src/%=target/release/%)
+DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
+REL_OUTS = $(JS65_REL) $(CLI_REL) $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
 TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES)
 
+x:
+	@echo pat: $(STATIC_PATTERNS)
+	@echo
+	@echo files: $(STATIC_FILES)
+	@echo
+	@echo dbg: $(DBG_STATIC)
 
 .PHONY: all debug release clean web-debug web-release
 
@@ -60,6 +68,10 @@ $(BROTLI): src/js/tools/brotli.js
 	@mkdir -p $(@D)
 	install -m 755 $< $@
 
+$(DBG_INFO):
+	touch $@
+$(REL_INFO):
+	touch $@
 
 # NOTE: There's not a standard cross-platform way to transform paths
 # (Mac uses BSD tar, which wants `-s`, while GNU wants `--transform`)
@@ -73,11 +85,10 @@ $(DATA_TBR): $(BROTLI) $(DATA_TAR)
 $(BUILD_INFO): scripts/build_info.sh
 	$<
 
-$(DBG_LINKS): target/debug/%:
+$(DBG_STATIC): target/debug/%: src/%
 	@mkdir -p $(@D)
-	@rm -f $@
-	@ln -s ../../src/$(@:target/debug/%=%) $@
-$(REL_LINKS): target/release/%: src/%
+	cp $< $@
+$(REL_STATIC): target/release/%: src/%
 	@mkdir -p $(@D)
 	cp $< $@
 

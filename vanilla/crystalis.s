@@ -30288,7 +30288,7 @@ Inventory_SortRows:
          <@2054c@>
          <@2054d@>
         <@2054f -@> ; $20545
-Inventory_BubbleSortRow:
+@BubbleSortRow:
         <@20551@>
         <@20553 Inventory_RowWidths@>
         <@20556@>
@@ -30296,7 +30296,7 @@ Inventory_BubbleSortRow:
         <@20559@>
 -        <@2055b@>
          <@2055e@>
-          <@2055f Inventory_BubbleSortRow_CheckFinished@>
+          <@2055f @BubbleSortRow_CheckFinished@>
          <@20561@>
         <@20564 -@> ; $2055b
         <@20566@>
@@ -30309,9 +30309,9 @@ Inventory_BubbleSortRow:
         <@20573@>
         <@20575 -@> ; $2055b
         ;; ----
-Inventory_BubbleSortRow_CheckFinished:
+@BubbleSortRow_CheckFinished:
         <@20578@>
-        <@2057a Inventory_BubbleSortRow@>
+        <@2057a @BubbleSortRow@>
         <@2057c@>
         <@2057e Inventory_RowWidths@>
         <@20581@>

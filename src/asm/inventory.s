@@ -7,6 +7,8 @@
 ;;;  3. Optionally disabling sorting quest item row (for unidentified items)
 ;;;  4. Optionally patch out sword charge glitch
 ;;;  5. Change a few accessories' details/calculations
+;;;  6. Patch a handful of spots to call into a PostInventoryMenu hook
+;;;  7. Prevent equipping Opel Statue
 
 .segment "10", "fe", "ff"  ; TODO - is 11 valid here, too?
 
@@ -200,16 +202,31 @@ ReloadInventoryAfterLoad:
    ldy $0713  ; equipped armor
    lda ArmorDefense,y
    ldy #$10   ; iron necklace
-   jsr ComputeDefense
+   jsr @ComputeDefense
    sta $0401  ; armor defense
    ldy $0714  ; equipped shield
    lda ShieldDefense,y
    ldy #$14   ; shield ring
-   jsr ComputeDefense
+   jsr @ComputeDefense
    sta $0400  ; shield defense
    nop
    nop
 .assert * = $c04f ; NOTE: must be exact!
+
+.reloc
+@ComputeDefense:
+  cpy $0716   ; equipped worn item
+  php         ; remember whether it was equal or not
+   clc
+   adc $0421  ; add the level
+   cmp $61    ; compare to 4*level
+   bcc +      ; if less then skip
+    lda $61   ; if greater then cap
++ plp         ; pull the Z flag
+  bne +       ; if not wearing correct item then skip
+   clc
+   adc $62    ; add 2*level
++ rts
 
 
 .org $c0f8
@@ -245,4 +262,99 @@ ApplySpeedBoots:
   sta $07e8
   jsr PostInventoryMenu
   rts
+.endif
+
+;;; Patch MainGameModeJump_12_Inventory
+.org $d91f
+  jsr PostInventoryMenu
+.org $d971
+  jsr PostInventoryMenu
+
+
+;;; Call this instead of 3c008 after the inventory menu
+.reloc
+PostInventoryMenu:
+  ;; Change 'lda' (ad) to 'jsr' (20) to enable these
+.ifdef _AUTO_EQUIP_BRACELET
+  jsr AutoEquipBracelets
+.endif
+  lda $0711 ; Equipped sword
+  cmp #$05  ; Crystalis
+  bne +
+   lda #2
+   sta $0719
++ jmp UpdateEquipmentAndStatus  ; Defined in vanilla (init.s)
+
+.reloc
+AutoEquipBracelets:
+  lda $6428
+  bpl +
+   ;; deselect all
+-  lda #$80
+   sta $642b
+   lda #0
+   sta $0718
+   sta $0719
+   rts
++ tay
+  cmp $6430,y ; check for crystalis
+   bne -
+  lda $643c,y ; which power-up do we have?
+   bmi -
+  ;; need to store $718 (0=nothing, 1..4=ball, 5..8=bracelet), $719 (0..2), $642b (0..3)
+  lsr
+  lda #$01
+  bcs +
+   lda #$02
++ sta $719
+  and #$02
+  asl
+  sta $61
+  tya
+  sta $642b
+  sec
+  adc $61
+  sta $0718
+  rts
+
+
+
+.ifdef _FIX_OPEL_STATUE
+;;; Prevent ever "equipping" opel statue
+OpelStatueReturn = $db0d
+.org $db0e
+SetEquippedConsumableItem:
+    ;; Figure out what's equipped
+    ldy SelectedConsumableIndex
+    bmi +
+    lda InvConsumables,y
+    cmp #ITEM_OPEL_STATUE
+    bne ++
++   ldy SelectedQuestItemIndex
+    bmi OpelStatueReturn
+    lda InvQuest,y
+++  sec
+    jmp @FinishEquippingConsumable
+FREE_UNTIL $db28
+
+;;; Note: This is moved from $7db22, where we ran out of space.
+.reloc
+@FinishEquippingConsumable:
+    sbc #$1c
+    sta EquippedConsumableItem
+    rts
+.endif
+
+
+
+.ifdef _BUFF_DEOS_PENDANT
+;;; Skip the check that the player is stationary.  We could also adjust
+;;; the speed by changing the mask at $7f02b from $3f to $1f to make it
+;;; faster, or $7f to slow it down.  Possibly we could start it at $7f and
+;;; lsr if stationary, so that MP recovers quickly when still, but at half
+;;; speed when moving?  We might want to consider how this plays with
+;;; refresh and psycho armor...
+.org $f026
+  nop
+  nop
 .endif

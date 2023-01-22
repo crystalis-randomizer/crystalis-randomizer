@@ -2,51 +2,23 @@
 ;;; smudge off
 
 ;;; Patches to NPC dialog (and item use, triggers, etc).
-;;;  1. Handle the case of already-owned items more gracefully (??)
-;;;  2. Consolidate item-giving to be more consistent via a table
+;;;  1. Update to better handle arbitrary item IDs
+;;;  2. Fix "give money" effect to work when player already has some cash
 ;;;  3. Windmill guard in Leaf can now give either an item and/or cash
+;;;  4. Take advantage of GrantItemTable (defined in itemget.s)
+;;;  5. Update some followup actions to handle repurposed ReloadLocationGraphics
+;;;  6. Fix Kensu's chest-dropping action to check PersonData instead of
+;;;     hardcoding the item ID
 
 .segment "fe", "ff"
 
-;;; TODO - use this in several more places (i.e. dialog action jump 10 ??)
-.reloc
-WriteCoordsAndLoadOneObject:
-  jsr $9897 ; WriteObjectCoordinatesFrom_34_37
-  jmp $ff80 ; LoadOneObjectData
-
 .org $d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
   bpl GrantItemInRegisterA ; change from bne to handle sword of wind
-
-.org $d22b
-GrantItemInRegisterA:
-  jsr PatchGrantItemInRegisterA
-
-.reloc
-PatchGrantItemInRegisterA:
-  ;; Version of GrantItemInRegisterA that bails out if the
-  ;; item is already owned.
-  sta $057f
-  lsr
-  lsr
-  lsr
-  tax
-  lda $057f
-  and #$07
-  tay
-  lda SlotFlagsStart,x
-  and PowersOfTwo,y
-  beq +
-   pla
-   pla
-+ rts
-
 
 ;;; Fix bug in dialog action 9 where carrying from the low byte of money
 ;;; would just increment the low byte again instead of the high byte.
 .org $d273
   inc $0703
-
-
 
 .ifdef _ZEBU_STUDENT_GIVES_ITEM
 ;;; This is hairy - if there's money at the start then we really should just
@@ -100,3 +72,9 @@ FREE_UNTIL $d280
   stx $061e
   nop
 .assert * = $d31c
+
+
+;;; Switch from e148 since we need to also reload NPCs
+.org $d21a
+  jmp $e144
+

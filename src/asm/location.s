@@ -1,10 +1,15 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
 
-;;; Patches to warp (teleport, warp boots, and wild warp)
+;;; Patches to location change routines, including both normal exits and
+;;; warps/teleports/wild warp:
 ;;;  1. Add a twelfth warp point
 ;;;  2. Set warp points on entering location, rather than by trigger
+;;;     - specifically, these flags are now handled with a table
 ;;;  3. Optionally disable wild warp
+;;;  4. Allow teleporting out of tower and boss fights (optionally)
+;;;  5. Repurposes a second entry point into ReloadNpcDataForCurrentLocation
+;;;     to just ReloadLocationGraphics (but not respawn everything).
 
 .segment "fe", "ff"
 
@@ -135,4 +140,71 @@ SetWarpFlagForLocation:
 .ifdef _DISABLE_WILD_WARP
 .org $cbc7
   rts
+.endif
+
+.ifdef _ALLOW_TELEPORT_OUT_OF_BOSS
+.org $db31
+  .byte $00   ; don't jump
+.endif
+
+.ifdef _ALLOW_TELEPORT_OUT_OF_TOWER
+.org $db39
+  .byte $00   ; don't jump away to prevent warp, just goto next line
+
+;; Make sure the down stair always spawns outside Mesia's room
+.pushseg "1b", "fe", "ff"
+.org $a48f
+  lda $d0  ; player y hi
+  ldy $b0  ; player y lo
+  cpy #$20 ; set carry if below 2nd tile
+  adc #0   ; add carry bit if needed
+  tay      ; y is row to start clearing flags for
+  ;; if we have crystalis then unlock from 0
+  lda $6430
+  cmp #4
+  bne +
+    ldy #0
+  ;; set all the flags from y down to the bottom
++ lda #$ff
+  bne +  ; (while ... do) instead of (do ... while)
+-  sta $62f0,y
+   iny
++  cpy #4
+  bne -
+  ;; if we're on the top screen (5c) then double-return
+  lda $6c
+  cmp #$5c
+  bne +
+   lda #0
+   sta $04a0,x
+   pla
+   pla
+   ;; TODO - do we still need to call SpawnTowerEscalator here?
++ rts
+FREE_UNTIL $a4c6 ; currently saves ~12 bytes?
+.popseg
+
+.endif
+
+
+;;; Repurpose $7e148 to skip loading NPCs and just reset pattern table.
+;;; The only difference from $7e144 is that $18 gets set to 1 instead of 0,
+;;; but this value is never read.  Start by changing all jumps to $7e148
+;;; to instead jump to $7e144.  Then we grab some space and have a nonzero
+;;; value in $18 return early.  This is in ReadMapDataGraphicsTable.
+.org $e19a  ; in the middle of CheckForNpcSpawn
+  lda $18
+  beq $e1ae ; >rts
+  lda ($10),y  ; npc[1]: sign bit indicates a timer spawn
+  dey
+  asl
+  bcs $e1af ; skip the rts
+  jsr $e1b6 ; TryNpcSpawn
+  inx
+  jmp $e18f ; Check next NPC spawn.
+FREE_UNTIL $e1ae
+
+.ifndef _WARP_FLAGS_TABLE ; Note: _WARP_FLAGS_TABLE patches this differently.
+.org $e6ff
+  jmp $e144
 .endif

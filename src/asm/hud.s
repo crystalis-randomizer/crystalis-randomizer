@@ -197,5 +197,52 @@ UpdateStatusBarDisplays:
 
 .ifdef _UPDATE_HUD
 .org $cb65  ; inside GameModeJump_08_Normal
-  jsr CheckToRedisplayUI ; was jsr CheckForPlayerDeath
+  jsr @CheckToRedisplayUI ; was jsr CheckForPlayerDeath
+
+.reloc
+@CheckToRedisplayUI:
+  lda ShouldRedisplayUI
+  beq @CheckEnemyDespawned
+  lsr ShouldRedisplayUI
+  bcc +
+    lda #$06
+    jsr DisplayNumber
++ 
+
+.ifdef _ENEMY_HP
+  lsr ShouldRedisplayUI
+  bcc @CheckEnemyDespawned
+    jsr UpdateEnemyHPDisplay
+    bne @Exit ; unconditional (no need to check enemy despawn)
+.endif ; _ENEMY_HP
+
+; Check to see if the current enemy slot is nonzero, but the action script
+; is zero, if so, then its despawned and we can delete it.
+@CheckEnemyDespawned:
+.ifdef _ENEMY_HP
+  ldx CurrentEnemySlot
+  beq @Exit
+    lda ObjectActionScript,x
+    bne @Exit
+      sta CurrentEnemySlot
+      jsr UpdateEnemyHPDisplay
+.endif ; _ENEMY_HP
+
+@Exit:
+  jmp CheckForPlayerDeath
+.endif
+
+
+.ifdef _ENEMY_HP
+;; Clear out the SRAM that stores the enemy HP data
+.org $f39f ; Patches on cold/warm boot
+  jsr PatchClearEnemyHPRam
+.reloc
+PatchClearEnemyHPRam:
+  lda #0
+  ldy #EnemyHPRamLen-1 ; - 1 to account for bpl
+-   sta EnemyHPRamStart,y
+    dey
+    bpl -
+  jmp $f0a4 ; ValidateSaveFiles
 .endif

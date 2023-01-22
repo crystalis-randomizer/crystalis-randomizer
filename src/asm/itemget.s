@@ -8,6 +8,11 @@
 ;;;  4. Make bracelets progressive
 ;;;  5. Indicate which consumable item is in chest when invntory full
 ;;;  6. Add new items to overflow buffer if inventory full
+;;;  7. Simplify invisible chests to read from spawn table instead of logic
+;;;  8. Reset graphics after picking up a (boss) chest
+;;;  9. Add an "item grant" table to streamline actions that given items
+;;; 10. Handle the case of already-owned items more gracefully
+
 
 .segment "0e", "fe", "ff"
 
@@ -275,3 +280,93 @@ ItemGet_FindOpenSlotWithOverflow:
 ;;; will now spawn a mimic.
 ;;; .org $7d3fd
 ;;;   .byte $b0
+
+
+.segment "fe", "ff"
+
+
+.ifdef _SIMPLIFY_INVISIBLE_CHESTS
+;;; We co-opt the unused npcdata[2]:20 bit to signify invisible chests
+.org $e39f
+  lda $2e
+  and #$20
+  beq $e3ad  ; normal chest
+  bne $e3b0  ; invisible chest
+  ;; 6 free bytes now
+.endif
+
+
+.org $d458
+    ;; Once we pick up a chest, reset the graphics?
+    jmp ReloadLocationGraphicsAfterChest
+
+.reloc
+ReloadLocationGraphicsAfterChest:
+    ;; After player picks up a chest, reload the location's graphics.
+    ;; NOTE: we make an exception for Stom's house, since it needs to
+    ;;       keep the modified pattern (4e instead of 4d)
+    ;;       TODO - this is pretty crummy, consider finding a better solution
+    lda $6c
+    cmp #$1e
+    beq +
+     jsr $e148 ; reload just graphics, not objects
++   jmp $d552 ; ExecuteItemOrTriggerAction
+
+
+;;; This lives in the dialog followup action code section, but we
+;;; want to change how it behaves by bailing out if the item is
+;;; already owned.
+.org $d22b
+GrantItemInRegisterA:
+  jsr @PatchGrantItemInRegisterA
+
+.reloc
+@PatchGrantItemInRegisterA:
+  ;; Version of GrantItemInRegisterA that bails out if the
+  ;; item is already owned.
+  sta $057f
+  lsr
+  lsr
+  lsr
+  tax
+  lda $057f
+  and #$07
+  tay
+  lda SlotFlagsStart,x
+  and PowersOfTwo,y
+  beq +
+   pla
+   pla
++ rts
+
+
+;;; ================================================================
+
+;;; This is a (ff-terminated) key-value table mapping item/trigger ID to
+;;; itemget ID.  It's written directly by the randomizer, so we just import
+;;; it here.  Factoring this out into a table both streamlines the process
+;;; for granting items, but also makes it much easier to change which item
+;;; comes from which check (or swapping out trigger/item effects).
+.import GrantItemTable
+;;   .byte $25,$29  ; 25 statue of onyx use -> 29 gas mask
+;;   .byte $39,$3a  ; 39 glowing lamp use -> 3a statue of gold
+;;   .byte $3b,$47  ; 3b love pendant use -> 47 change
+;;   .byte $3c,$3e  ; 3c kirisa plant use -> 3e bow of moon
+;;   .byte $84,$46  ; 84 angry sea trigger -> 46 barrier
+;;   .byte $b2,$42  ; b2 summit trigger -> 42 paralysis
+;;   .byte $b4,$41  ; b4 windmill cave trigger -> 41 refresh
+;;   .byte $ff      ; for bookkeeping purposes, not actually used
+
+;; .assert * = $d6e4
+
+.reloc
+GrantItemFromTable:
+  ldy #$00
+  lda $34
+-  iny
+   iny
+   ;; beq >rts    ; do we need a safety?
+   cmp GrantItemTable-2,y
+  bne -
++ lda GrantItemTable-1,y
+  jmp GrantItemInRegisterA

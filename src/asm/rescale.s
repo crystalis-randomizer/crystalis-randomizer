@@ -57,7 +57,7 @@
 ++   jsr KnockbackObject
      lda #SFX_MONSTER_HIT
 +++ jsr StartAudioTrack
-    jsr SubtractEnemyHP
+    jsr @SubtractEnemyHP
      bcc KillObject
     lsr
 .ifdef _ENEMY_HP
@@ -71,6 +71,21 @@
 .endif ; _ENEMY_HP
 ;;; NOTE: must finish before 35152
 FREE_UNTIL $9152
+
+.reloc
+@SubtractEnemyHP:
+  ;; NOTE: we could probably afford to move a few of these back if needed
+  lda ObjectElementalDefense,y
+  and #$0f
+  cmp #$0f
+  sec
+   beq +   ; don't damage anything that's invincible.
+  lda ObjectHP,y
+  sbc $63
+  sta ObjectHP,y
++ lda $61
+  sbc #$00
+  rts
 
 
 ;;; Change sacred shield to block curse instead of paralysis

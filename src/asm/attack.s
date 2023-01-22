@@ -5,6 +5,8 @@
 ;;;  1. Change EXP to a count down (on enemy death)
 ;;;  2. Update displayed enemy name and HP on hit
 ;;;  3. Fix coin sprites
+;;;  4. Fix the MP check for level 3 sword to allow going to zero
+;;;  5. Immediately despawn blizzard shots when firing a second time
 
 ;;; TODO - consider splitting this up into separate files?
 ;;;      - EXP reversal could go into hud.s?
@@ -490,4 +492,37 @@ FREE "1a" [$8bfe, $8c0e) ; this table is no longer read, free up 16 bytes
    inc $0300,x
 + rts
 FREE_UNTIL $ba2c
+.endif
+
+
+.ifdef _FIX_SWORD_MANA_CHECK
+.segment "1a"
+.org $9c9a
+  lda $0708 ; player mp
+  cmp $8bd8,y ; cost
+  bcs $9ca7 ; skip switching to level 2
+.endif
+
+.ifdef _FIX_BLIZZARD_SPAWN
+.segment "1a","fe","ff"
+.org $9cba
+  jsr @AdHocSpawnSwordShot
+
+.reloc
+@AdHocSpawnSwordShot:
+    ;; Check for 0b (blizzard) and clear sword spawns if found
+    cmp #$0b
+    bne +
+      pha
+      txa
+      pha
+      lda #$00
+      ldx #$07
+-       sta $4a4,x
+        dex
+      bpl -
+      pla
+      tax
+      pla
++   jmp $972d ; AdHocSpawnObject
 .endif

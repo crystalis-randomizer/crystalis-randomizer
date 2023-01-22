@@ -4,7 +4,7 @@
 ;;; Patches to save-game and checkpointing routines.  Includes
 ;;;  1. Pity HP/MP
 ;;;  2. Fix warp boots reuse glitch
-;;;  3. 
+;;;  3. Refactor how the initial game data is set up
 
 .segment "17", "fe", "ff"
 
@@ -76,3 +76,89 @@ MaybeSetCheckpoint:
 
 .org $bc09
 MaybeSetCheckpointActual:
+
+
+.segment "fe", "ff"
+
+;;; ================================================================
+;;; When initializing a new game, we need more space for custom
+;;; values.  Instead of a bunch of sta $07xx to zero things out,
+;;; use a table.
+
+.org $c96d
+  ldx #$00
+-- lda PrepareGameInitialDataTable,x
+    beq +
+   sta $12
+   inx
+   lda PrepareGameInitialDataTable,x
+   sta $10
+   inx
+   lda PrepareGameInitialDataTable,x
+   sta $11
+   inx
+   ldy #$00
+-   lda PrepareGameInitialDataTable,x
+    sta ($10),y
+    inx
+    iny
+    dec $12
+   bne -
+  beq --
++ jsr $c9ff ; PopulateInitialObjects
+  jmp $c008
+FREE_UNTIL $c9da
+
+.reloc
+PrepareGameInitialDataTable:
+  ;; Initial location/entrance
+  .byte 2
+  .word ($006c)
+  .byte $00,$01
+  ;; Main loop mode and game mode
+  .byte 2
+  .word ($0040)
+  .byte $01,$00
+  ;; Various values in the 700 block
+  .byte 8
+  .word ($0702)
+  .ifdef _MONEY_AT_START
+    .byte 100
+  .else
+    .byte 0
+  .endif
+  .byte $00,$1e,$00,$00,$00,$22,$22
+  ;; A few more values in 7xx
+  .byte 11
+  .word ($0710)
+  .byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+  ;; Some other one-off values
+  .byte 2
+  .word ($0743)
+  .byte $00,$00
+  .byte 1
+  .word ($07e8)
+  .byte $00
+  .byte 4
+  .word ($0002)
+  .byte $00,$00,$00,$00
+  .byte 1
+  .word ($0051)
+  .byte $00
+.ifdef _STATS_TRACKING
+  ; We need to write these stats twice to prevent NMI shenanigans
+.repeat 2
+  .byte PERMANENT_LENGTH
+  .word (StatTrackingBase)
+  .repeat 5
+    .byte $00
+  .endrepeat
+.endrepeat
+.endif ; _STATS_TRACKING
+  .byte 0
+.ifdef _MONEY_AT_START
+.pushseg "17"
+.org $be80
+  .byte 100
+.popseg
+.endif

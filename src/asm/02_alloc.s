@@ -140,3 +140,30 @@ JmpSeg38:
 .popseg
 
 .endif ; EXPAND_PRG
+
+
+.segment "0e"
+
+.org $8157
+  .word (PowersOfTwo) ; no need for multiple copies
+
+
+;;; Rewrite the page boundary to avoid code crossing it.
+;;; This is equivalent to the original, but 6 bytes shorter
+;;; and doesn't cross the boundary (TODO - why did we care
+;;; about that??? maybe it was something about a limitation
+;;; in how the assembler handles cross-segment chunks?)
+.segment "12", "13"
+.org $9fef
+  ;; Need to fit this in 17 bytes
+  sta $09     ; 85 09
+  ldy #$03    ; a0 04
+- sta $06f0,y ; 99 f0 06
+  sta $0002,y ; 99 02 00
+  dey         ; 88
+  bpl -       ; 10 f7
+  jmp $a005   ; 4c 05 a0
+FREE_UNTIL $a000
+.org $a000
+FREE_UNTIL $a005
+

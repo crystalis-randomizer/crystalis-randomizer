@@ -5,6 +5,7 @@
 ;;;  1. Disable statue glitch and trigger skip glitch
 ;;;  2. Set up a flag for "currently riding dolphin"
 ;;;  3. Make rabbit boots charge while walking
+;;;  4. Switch pain land check from leather boots to hazmat
 
 .segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
 
@@ -20,6 +21,23 @@
 .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
 .org $9e00
   jsr CheckRabbitBoots
+
+.pushseg "fe", "ff"
+.reloc
+CheckRabbitBoots:
+  lda EquippedPassiveItem
+  cmp #ITEM_RABBIT_BOOTS ; require rabbit boots
+  bne +
+  lda $06c0
+  cmp #$10 ; don't charge past level 2
+  bcs +
+  rts
+  ;; return instead to after the charge is increased
++ pla
+  pla
+  jmp $9e39 ; 35e39
+.popseg
+
 .endif
 
 .ifdef _DISABLE_TRIGGER_SKIP
@@ -65,6 +83,9 @@
 .org $d29d ; Just set dolphin status bit => also set the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
+.org $e7b3 ; just cleared dolphin status => also clear the flag
+  jsr UpdatePlayerStatusAndDolphinFlag
+
 ;;; NOTE: this is 23 bytes.  If we do anything else with flags
 ;;; it would make sense to write a pair of functions SetFlag
 ;;; and ClearFlag that take an offset in Y and a bit in A (with
@@ -85,3 +106,10 @@ UpdatePlayerStatusAndDolphinFlag:
   and $648d
   sta $648d
   rts
+
+
+.ifdef _HAZMAT_SUIT
+.org $ef66
+  ;; Check for gas mask instead of leather boots for pain terrain
+  cmp #$0d
+.endif

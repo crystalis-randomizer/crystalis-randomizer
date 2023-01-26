@@ -787,6 +787,30 @@ describe('Assembler', function() {
         }],
         symbols: [], segments: []});
     });
+
+    it('should restore the program counter', function() {
+      const a = new Assembler(Cpu.P02);
+      a.segment('a', 'b');
+      a.org(100);
+      a.byte(4);
+      a.pushSeg('a', 'c');
+      a.org(10);
+      a.byte(5);
+      a.popSeg();
+      a.byte(6);
+      a.byte(a.pc());
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          segments: ['a', 'b'],
+          org: 100,
+          data: Uint8Array.of(4, 6, 102),
+        }, {
+          segments: ['a', 'c'],
+          org: 10,
+          data: Uint8Array.of(5),
+        }],
+        symbols: [], segments: []});
+    });
   });
 
   describe('.assert', function() {

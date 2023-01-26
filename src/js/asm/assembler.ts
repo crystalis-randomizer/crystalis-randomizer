@@ -1,10 +1,10 @@
-import {Cpu} from './cpu';
-import {Expr} from './expr';
-import * as mod from './module';
-import {SourceInfo, Token, TokenSource} from './token';
-import {Tokenizer} from './tokenizer';
-import {assertNever} from '../util';
 
+import { assertNever } from '../util';
+import { Cpu } from './cpu';
+import { Expr } from './expr';
+import * as mod from './module';
+import { SourceInfo, Token, TokenSource } from './token';
+import { Tokenizer } from './tokenizer';
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;
 
@@ -199,6 +199,9 @@ export class Assembler {
 
   /** Current source location, for error messages. */
   private _source?: SourceInfo;
+
+  /** Token for reporting errors. */
+  private errorToken?: Token;
 
   constructor(readonly cpu = Cpu.P02, readonly opts: Assembler.Options = {}) {}
 
@@ -453,27 +456,32 @@ export class Assembler {
 
   directive(tokens: Token[]) {
     // TODO - record line information, rewrap error messages?
-    switch (Token.str(tokens[0])) {
-      case '.org': return this.org(this.parseConst(tokens));
-      case '.reloc': return this.parseNoArgs(tokens), this.reloc();
-      case '.assert': return this.assert(this.parseExpr(tokens));
-      case '.segment': return this.segment(...this.parseSegmentList(tokens));
-      case '.byte': return this.byte(...this.parseDataList(tokens, true));
-      case '.res': return this.res(...this.parseResArgs(tokens));
-      case '.word': return this.word(...this.parseDataList(tokens));
-      case '.free': return this.free(this.parseConst(tokens), tokens[0]);
-      case '.segmentprefix': return this.segmentPrefix(this.parseStr(tokens));
-      case '.import': return this.import(...this.parseIdentifierList(tokens));
-      case '.export': return this.export(...this.parseIdentifierList(tokens));
-      case '.scope': return this.scope(this.parseOptionalIdentifier(tokens));
-      case '.endscope': return this.parseNoArgs(tokens), this.endScope();
-      case '.proc': return this.proc(this.parseRequiredIdentifier(tokens));
-      case '.endproc': return this.parseNoArgs(tokens), this.endProc();
-      case '.pushseg': return this.pushSeg(...this.parseSegmentList(tokens));
-      case '.popseg': return this.parseNoArgs(tokens), this.popSeg();
-      case '.move': return this.move(...this.parseMoveArgs(tokens));
+    this.errorToken = tokens[0];
+    try {
+      switch (Token.str(tokens[0])) {
+        case '.org': return this.org(this.parseConst(tokens));
+        case '.reloc': return this.parseNoArgs(tokens), this.reloc();
+        case '.assert': return this.assert(this.parseExpr(tokens));
+        case '.segment': return this.segment(...this.parseSegmentList(tokens));
+        case '.byte': return this.byte(...this.parseDataList(tokens, true));
+        case '.res': return this.res(...this.parseResArgs(tokens));
+        case '.word': return this.word(...this.parseDataList(tokens));
+        case '.free': return this.free(this.parseConst(tokens));
+        case '.segmentprefix': return this.segmentPrefix(this.parseStr(tokens));
+        case '.import': return this.import(...this.parseIdentifierList(tokens));
+        case '.export': return this.export(...this.parseIdentifierList(tokens));
+        case '.scope': return this.scope(this.parseOptionalIdentifier(tokens));
+        case '.endscope': return this.parseNoArgs(tokens), this.endScope();
+        case '.proc': return this.proc(this.parseRequiredIdentifier(tokens));
+        case '.endproc': return this.parseNoArgs(tokens), this.endProc();
+        case '.pushseg': return this.pushSeg(...this.parseSegmentList(tokens));
+        case '.popseg': return this.parseNoArgs(tokens), this.popSeg();
+        case '.move': return this.move(...this.parseMoveArgs(tokens));
+      }
+      this.fail(`Unknown directive: ${Token.nameAt(tokens[0])}`);
+    } finally {
+      this.errorToken = undefined;
     }
-    this.fail(`Unknown directive: ${Token.nameAt(tokens[0])}`);
   }
 
   label(label: string|Token) {
@@ -803,7 +811,7 @@ export class Assembler {
 
   free(size: number, token?: Token) {
     // Must be in .org for a single segment.
-    if (this._org == null) this.fail(`.free in .reloc mode`, token);
+    if (this._org == null) this.fail(`.free in .reloc mode`);
     const segments = this.segments.length > 1 ? this.segments.filter(s => {
       const data = this.segmentData.get(s);
       if (!data || data.memory == null || data.size == null) return false;
@@ -812,9 +820,9 @@ export class Assembler {
       return true;
     }) : this.segments;
     if (segments.length !== 1) {
-      this.fail(`.free with non-unique segment: ${this.segments}`, token);
+      this.fail(`.free with non-unique segment: ${this.segments}`);
     } else if (size < 0) {
-      this.fail(`.free with negative size: ${size}`, token);
+      this.fail(`.free with negative size: ${size}`);
     }
     // If we've got an open chunk, end it.
     if (this._chunk) {
@@ -892,6 +900,7 @@ export class Assembler {
   popSeg() {
     if (!this.segmentStack.length) this.fail(`.popseg without .pushseg`);
     [this.segments, this._chunk] = this.segmentStack.pop()!;
+    this._org = this._chunk?.org;
   }
 
   move(size: number, source: Expr) {
@@ -1040,6 +1049,7 @@ export class Assembler {
   // Diagnostics
 
   fail(msg: string, at?: {source?: SourceInfo}): never {
+    if (!at && this.errorToken) at = this.errorToken;
     if (at?.source) throw new Error(msg + Token.at(at));
     if (!this._source && this._chunk?.name) {
       throw new Error(msg + `\n  in ${this._chunk.name}`);

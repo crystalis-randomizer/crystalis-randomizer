@@ -26,6 +26,8 @@ export interface Chunk<T extends number[]|Uint8Array|string> {
   subs?: Substitution[];
   /** Assertions within this chunk. Each expression must be nonzero. */
   asserts?: Expr[];
+  /** How overwriting previously-written fixed-position data is handled. */
+  overwrite?: 'forbid'|'allow'|'require'; // NOTE: only set programmatically?
 }
 
 export interface Symbol {

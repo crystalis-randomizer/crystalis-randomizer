@@ -108,8 +108,8 @@ class LinkSegment {
     this.bank = segment.bank ?? 0;
     this.addressing = segment.addressing ?? 2;
     this.size = segment.size ?? fail(`Size must be specified: ${name}`);
-    this.offset = segment.offset ?? fail(`OFfset must be specified: ${name}`);
-    this.memory = segment.memory ?? fail(`OFfset must be specified: ${name}`);
+    this.offset = segment.offset ?? fail(`Offset must be specified: ${name}`);
+    this.memory = segment.memory ?? fail(`Offset must be specified: ${name}`);
   }
 
   // offset = org + delta
@@ -410,6 +410,7 @@ class Link {
       this.addRawSegment(segment);
     }
     for (const chunk of file.chunks || []) {
+      // TODO - for .org chunks, check (over)write expectations ...?
       const lc = new LinkChunk(this, this.chunks.length, chunk, dc, ds);
       this.chunks.push(lc);
     }

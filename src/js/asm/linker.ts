@@ -1,7 +1,7 @@
 import { Assembler } from './assembler';
 import { Cpu } from './cpu';
 import { Expr } from './expr';
-import { Chunk, Module, Segment, Substitution, Symbol } from './module';
+import { Chunk, Module, OverwriteMode, Segment, Substitution, Symbol } from './module';
 import { Preprocessor } from './preprocessor';
 import { Token } from './token';
 import { Tokenizer } from './tokenizer';
@@ -146,6 +146,8 @@ class LinkChunk {
   private _offset?: number;
   private _segment?: LinkSegment;
 
+  private readonly _overwrite: OverwriteMode;
+
   constructor(readonly linker: Link,
               readonly index: number,
               chunk: Chunk<Uint8Array>,
@@ -161,6 +163,7 @@ class LinkChunk {
     this.asserts = (chunk.asserts || [])
         .map(e => translateExpr(e, chunkOffset, symbolOffset));
     if (chunk.org) this._org = chunk.org;
+    this._overwrite = chunk.overwrite || 'allow';
   }
 
   get org() { return this._org; }
@@ -193,10 +196,11 @@ class LinkChunk {
     if (this._org >= segment.memory + segment.size) {
       throw new Error(`Chunk does not fit in segment ${segment.name}`);
     }
-    this.place(this._org, segment);
+    this.place(this._org, segment, this._overwrite);
   }
 
-  place(org: number, segment: LinkSegment) {
+  // NOTE: overwrite is only passed for direct placements!
+  place(org: number, segment: LinkSegment, overwrite?: OverwriteMode) {
     this._org = org;
     this._segment = segment;
     const offset = this._offset = org + segment.delta;
@@ -221,6 +225,29 @@ class LinkChunk {
       }
     } else {
       full.set(offset, data);
+    }
+
+    if (overwrite && data.length) {
+      // Regardless of the check mode, it's a direct write so record it
+      let overwritten: boolean|null = false;
+      const [next] = this.linker.written.tail(offset);
+      if (next?.[0] <= offset && next[1] >= offset + data.length) {
+        overwritten = true;
+      } else if (next?.[0] < offset + data.length) {
+        overwritten = null;
+      }
+      let error = '';
+      if (overwrite === 'require' && overwritten !== true) {
+        error = 'required to overwrite but did not.';
+      } else if (overwrite === 'forbid' && overwritten !== false) {
+        error = 'forbidden to overwrite but did anyway.';
+      }
+      if (error) {
+        throw new Error(`Chunk at ${segment.name}:$${
+            org.toString(16).padStart(4, '0')} (offset $${
+            offset.toString(16).padStart(5, '0')} was ${error}`);
+      }
+      this.linker.written.add(offset, offset + data.length);
     }
 
     // Retry the follow-ons
@@ -376,10 +403,12 @@ function translateSymbol(s: Symbol, dc: number, ds: number): Symbol {
 class Link {
   data = new SparseByteArray();
   orig = new SparseByteArray();
+
   // Maps symbol to symbol # // [symbol #, dependent chunks]
   exports = new Map<string, number>(); // readonly [number, Set<number>]>();
   chunks: LinkChunk[] = [];
   symbols: Symbol[] = [];
+  written = new IntervalSet();
   free = new IntervalSet();
   rawSegments = new Map<string, Segment[]>();
   segments = new Map<string, LinkSegment>();
@@ -410,7 +439,6 @@ class Link {
       this.addRawSegment(segment);
     }
     for (const chunk of file.chunks || []) {
-      // TODO - for .org chunks, check (over)write expectations ...?
       const lc = new LinkChunk(this, this.chunks.length, chunk, dc, ds);
       this.chunks.push(lc);
     }

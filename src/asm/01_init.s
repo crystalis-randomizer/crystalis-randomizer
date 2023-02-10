@@ -502,11 +502,6 @@ FREE "14" [$8520, $8528)
 
 ;;; DMC changes, remove unused DMC configurations.
 FREE "18" [$8be0, $8c0c)
-;;; Patch the DMC Sample to start with FF to eliminate the buzz
-.pushseg "ff"
-.org $fa00
-  .byte $ff
-.popseg
 
 FREE "1b" [$a086, $a0a3)
 
@@ -530,11 +525,3 @@ FREE "ff" [$ffe3, $fffa)
 .segment "ff"
 .org $fa00
   .byte $ff
-
-;;; Patch the end of ItemUse to check for a few more items.
-.segment "0e"
-.org $834d
-  jmp PatchTradeInItem
-
-.org $8156                      ; 1c157
-  lda PowersOfTwo,x ; no need for multiple copies

@@ -436,6 +436,8 @@ export class IntervalSet implements Iterable<readonly [number, number]> {
     this.data.splice(s, e - s, ...entries);
   }
 
+  // Given a point, returns an iterator over the intervals to the
+  // right of that point (possibly slicing any containing interval).
   tail(x: number): IterableIterator<readonly [number, number]> {
     let index = this._find(x);
     if (index < 0) index = ~index;

@@ -360,6 +360,7 @@ async function shuffleInternal(rom: Uint8Array,
   async function asm(pass: 'early' | 'late') {
     const flagFile = defines(flags, pass);
     const asm = new Assembler(Cpu.P02);
+    asm.overwriteMode = 'forbid';
     const toks = new TokenStream();
     toks.enter(TokenSource.concat(
         new Tokenizer(flagFile, 'flags.s'),

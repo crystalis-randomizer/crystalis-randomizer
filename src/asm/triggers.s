@@ -17,6 +17,7 @@
 
 .segment "0e", "0f"
 
+;;; Patch the end of ItemUse to check for a few more items.
 .org $834d
   jmp PatchTradeInItem
 

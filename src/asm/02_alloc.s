@@ -141,13 +141,6 @@ JmpSeg38:
 
 .endif ; EXPAND_PRG
 
-
-.segment "0e"
-
-.org $8157
-  .word (PowersOfTwo) ; no need for multiple copies
-
-
 ;;; Rewrite the page boundary to avoid code crossing it.
 ;;; This is equivalent to the original, but 6 bytes shorter
 ;;; and doesn't cross the boundary (TODO - why did we care

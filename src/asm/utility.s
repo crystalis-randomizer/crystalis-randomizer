@@ -2,9 +2,17 @@
 ;;; smudge off
 
 ;;; Utility routines
-;;;  1. 16-bit multiplication
-;;;  2. Write coordinates and load an object (used by various triggers/dialogs)
-;;;  3. Efficient way to (effectively) `jsr ($11)`
+;;;  1. Consolidate redundant PowersOfTwo tables
+;;;  2. 16-bit multiplication
+;;;  3. Write coordinates and load an object (used by various triggers/dialogs)
+;;;  4. Efficient way to (effectively) `jsr ($11)`
+
+.segment "0e"
+
+;;; TODO - just reassign the label and free??
+.org $8156                      ; 1c156
+  lda PowersOfTwo,x ; no need for multiple copies
+
 
 .segment "fe", "ff"
 

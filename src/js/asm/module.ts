@@ -27,8 +27,11 @@ export interface Chunk<T extends number[]|Uint8Array|string> {
   /** Assertions within this chunk. Each expression must be nonzero. */
   asserts?: Expr[];
   /** How overwriting previously-written fixed-position data is handled. */
-  overwrite?: 'forbid'|'allow'|'require'; // NOTE: only set programmatically?
+  overwrite?: OverwriteMode; // NOTE: only set programmatically?
 }
+
+// Default is "allow"
+export type OverwriteMode = 'forbid'|'allow'|'require';
 
 export interface Symbol {
   /** Name to export this symbol as, for importing into other objects. */

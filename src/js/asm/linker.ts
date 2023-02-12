@@ -238,19 +238,16 @@ class LinkChunk {
       }
       let error = '';
       if (overwrite === 'require' && overwritten !== true) {
-        error = 'required to overwrite but did not.';
+        error = `required to overwrite ${data.length} bytes but did not.`;
       } else if (overwrite === 'forbid' && overwritten !== false) {
-        error = 'forbidden to overwrite but did anyway.';
+        error = `forbidden to overwrite ${data.length} but did anyway.`;
       }
       if (error) {
         error = `Chunk at ${segment.name}:$${
             org.toString(16).padStart(4, '0')} (offset $${
             offset.toString(16).padStart(5, '0')} was ${error}`;
-        if (NO_THROW) {
-          console.error(error);
-        } else {
-          throw new Error(error);
-        }
+        if (!NO_THROW) throw new Error(error);
+        if (!QUIET) console.error(error);
       }
       this.linker.written.add(offset, offset + data.length);
     }
@@ -804,3 +801,4 @@ class Link {
 
 const DEBUG = false;
 const NO_THROW = true; // for overwrite
+const QUIET = false; // temporary for overwrite

@@ -541,7 +541,7 @@ FREE "ff" [$ffe3, $fffa)
     .res $f0
   .endrep
 .endmacro
-  
+
 .segment "00","01"
 RESERVE_MAPS
 .segment "02","03"

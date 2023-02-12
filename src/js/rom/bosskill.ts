@@ -14,7 +14,7 @@ export class BossKill extends Entity {
 
   constructor(rom: Rom, id: number) {
     super(rom, id);
-    this.base = readLittleEndian(rom.prg, this.pointer);
+    this.base = readLittleEndian(rom.prg, this.pointer); // 0f:b98a?
     this.data = rom.prg.slice(this.base + 0x14000, this.base + 0x14015);
     this.palettes = this.data.subarray(5, 13);
     this.patterns = this.data.subarray(13, 19);

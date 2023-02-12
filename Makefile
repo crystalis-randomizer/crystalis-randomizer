@@ -16,6 +16,7 @@ LOADERFLAGS = --loader:.br=binary
 
 # Hand-written list of entry points (relative to src/js)
 WEB_ENTRY_POINTS = main.js check.js $(addprefix view/,$(VIEW_ENTRY_POINTS))
+WEB_DBG_ENTRY_POINTS = patch.ts debug.js
 VIEW_ENTRY_POINTS = maps.js messages.js screens.js sprites.js tileset.js
 
 # Output directories
@@ -25,8 +26,11 @@ CLI_DBG = $(DBGDIR)/bin/cryr
 CLI_REL = $(RELDIR)/bin/cryr
 # Process entry points
 WEB_ENTRY_POINTS_FULL = $(addprefix src/js/,$(WEB_ENTRY_POINTS))
+WEB_DBG_ENTRY_POINTS_FULL = $(addprefix src/js/,$(WEB_DBG_ENTRY_POINTS))
 WEB_ENTRY_OUTS = $(WEB_ENTRY_POINTS:.ts=.js)
-WEB_JS_DBG = $(addprefix $(DBGDIR)/js/,$(WEB_ENTRY_OUTS))
+WEB_DBG_ENTRY_OUTS = $(WEB_DBG_ENTRY_POINTS:.ts=.js)
+WEB_JS_DBG = $(addprefix $(DBGDIR)/js/,$(WEB_ENTRY_OUTS)) \
+	     $(addprefix $(DBGDIR)/js/,$(WEB_DBG_ENTRY_OUTS))
 WEB_JS_REL = $(addprefix $(RELDIR)/js/,$(WEB_ENTRY_OUTS))
 STATIC_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
 STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
@@ -53,7 +57,7 @@ x:
 	@echo
 	@echo dbg: $(DBG_STATIC)
 
-.PHONY: all debug release clean web-debug web-release
+.PHONY: all debug release clean web-debug web-release x
 
 release: $(REL_OUTS)
 debug: $(DBG_OUTS)
@@ -102,7 +106,8 @@ $(NSS_COPIES): target/build/data/%: src/images/spritesheets/%
 $(WEB_JS_DBG): $(JS_FILES) $(DATA_TBR)
 	rm -f $(DBGDIR)/js/*-????????.js
 	$(ESBUILD) $(WEBFLAGS) $(DBGFLAGS) $(LOADERFLAGS) \
-		--outdir=$(DBGDIR)/js $(WEB_ENTRY_POINTS_FULL)
+		--outdir=$(DBGDIR)/js $(WEB_ENTRY_POINTS_FULL) \
+	        $(WEB_DBG_ENTRY_POINTS_FULL)
 
 $(WEB_JS_REL): $(JS_FILES) $(DATA_TBR)
 	rm -f $(RELDIR)/js/*-????????.js

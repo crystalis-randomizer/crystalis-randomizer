@@ -312,7 +312,9 @@ export class ItemGet extends Node {
 
   bossDrop(name: string, bossId: number, itemGetIndex: number = this.id): BossDrop {
     return new BossDrop(this.graph, name, this, itemGetIndex, [(rom, slot) => {
-      rom.bossKills[bossId].itemDrop = slot.itemIndex;
+      // TODO - this stopped working when we rearranged bossKills
+      // rom.bossKills[bossId].itemDrop = slot.itemIndex;
+      throw new Error(`whoops`);
     }]);
   }
 

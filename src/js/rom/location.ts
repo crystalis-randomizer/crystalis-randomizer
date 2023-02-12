@@ -904,47 +904,6 @@ export class Location extends Entity {
 
     a.org(0x8300 + (this.id << 1), `MapData_${id}_Ptr`);
     a.word($mapData);
-
-    // If this is a boss room, write the restoration.
-    const bossId = this.bossId();
-    if (bossId != null && this.id !== 0x5f) { // don't restore dyna
-      // This table should restore pat0 but not pat1
-      let pats = [spritePat[0], undefined];
-      if (this.id === 0xa6) pats = [0x53, 0x50]; // draygon 2
-      const bossBase = this.rom.bossKills[bossId].base;
-      // Set the "restore music" byte for the boss, but if it's Draygon 2, set
-      // it to zero since no music is actually playing, and if the music in the
-      // teleporter room happens to be the same as the music in the crypt, then
-      // resetting to that means it will just remain silent, and not restart.
-      const restoreBgm = this.id === 0xa6 ? 0 : this.bgm;
-      const bossRestore = [
-        ,,, restoreBgm,,
-        ...this.tilePalettes,,,, this.spritePalettes[0],,
-        ,,,, /*pats[0]*/, /*pats[1]*/,
-        this.animation,
-      ];
-      const [] = [pats]; // avoid error
-
-      // if (readLittleEndian(writer.rom, bossBase) === 0xba98) {
-      //   // escape animation: don't clobber patterns yet?
-      // }
-      a.segment('0f');
-      for (let j = 0; j < bossRestore.length; j++) {
-        const restored = bossRestore[j];
-        if (restored == null) continue;
-        a.org(bossBase + j, `Boss_${bossId}_${j}`);
-        a.byte(restored);
-      }
-      // later spot for pal3 and pat1 *after* explosion
-      const bossBase2 = 0xb7c1 + 5 * bossId; // 1f7c1
-      a.org(bossBase2, `Boss_${bossId}_Post`);
-      a.byte(spritePal[1]);
-      // NOTE: This ruins the treasure chest.
-      // TODO - add some asm after a chest is cleared to reload patterns?
-      // Another option would be to add a location-specific contraint to be
-      // whatever the boss 
-      //writer.rom[bossBase2 + 1] = this.spritePatterns[1];
-    }
   }
 
   allScreens(): Set<Screen> {

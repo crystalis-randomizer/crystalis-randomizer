@@ -146,6 +146,9 @@ export class Npcs extends EntityArray<Npc> {
   write(): Module[] {
     // Write all the NPCs
     const a = this.rom.assembler();
+    free(a, $0e, 0x877a, 0x895d); // NpcSpawnConditions
+    free(a, $0e, 0x8ae5, 0x98f4); // NpcDialog
+    
     for (const npc of this) {
       if (!npc || !npc.used) continue;
       npc.assemble(a);

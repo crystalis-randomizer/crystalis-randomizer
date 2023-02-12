@@ -1,3 +1,4 @@
+import { Assembler } from '../asm/assembler';
 import {Module} from '../asm/module';
 import {Rom} from '../rom';
 import {Entity} from './entity';
@@ -19,6 +20,14 @@ export class Tilesets implements Iterable<Tileset> {
 
   [Symbol.iterator](): IterableIterator<Tileset> {
     return this.tilesets[Symbol.iterator]();
+  }
+
+  write(): Module[] {
+    const a = this.rom.assembler();
+    for (const ts of this) {
+      ts.assemble(a);
+    }
+    return [a.module()];
   }
 }
 
@@ -63,13 +72,12 @@ export class Tileset extends Entity {
     return new Metatile(this, id);
   }
 
-  write(): Module[] {
+  assemble(a: Assembler) {
     const attr = seq(0x40, i => {
       const j = i << 2;
       return (this.attrs[j] & 3) | (this.attrs[j + 1] & 3) << 2 |
              (this.attrs[j + 2] & 3) << 4 | (this.attrs[j + 3] & 3) << 6;
     });
-    const a = this.rom.assembler();
     const name = `Tileset_${this.id.toString(16).padStart(2, '0')}`;
     a.segment('08', '09');
     a.org(0x8000 | this.map << 8, `${name}_Tiles`);
@@ -78,7 +86,6 @@ export class Tileset extends Entity {
     a.byte(...attr);
     a.org(0xbe00 | this.map << 3, `${name}_Alternates`);
     a.byte(...this.alternates);
-    return [a.module()];
   }
 
   effects(): TileEffects {

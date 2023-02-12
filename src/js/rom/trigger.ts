@@ -1,8 +1,11 @@
+import { Assembler } from '../asm/assembler';
 import {Module} from '../asm/module';
 import {Rom} from '../rom';
 import {Entity} from './entity';
 import {MessageId} from './messageid';
-import {addr, hex, readBigEndian} from './util';
+import { addr, free, hex, readBigEndian, Segment } from './util';
+
+const {$0f} = Segment;
 
 const UNUSED_TRIGGERS = new Set([
   0x83, 0x87, 0x88, 0x89, 0x8f, 0x93, 0x96, 0x98, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f,
@@ -12,6 +15,37 @@ const UNUSED_TRIGGERS = new Set([
 
 export namespace Trigger {
   export type Custom = 'mezame'|'zombie warp'|'channel item';
+}
+
+export class Triggers implements Iterable<Trigger> {
+  private readonly triggers: Trigger[] = [];
+  readonly [id: number]: Trigger;
+
+  constructor(readonly rom: Rom) {
+    for (let i = 0; i < 0x43; i++) {
+      this.triggers.push(((this as any)[i] = new Trigger(this.rom, 0x80 | i)));
+    }
+  }
+
+  [Symbol.iterator]() {
+    return this.triggers[Symbol.iterator]();
+  }
+
+  // TODO: Move more from rom.ts into here
+
+  write(): Module[] {
+    const a = this.rom.assembler();
+
+    // TriggerData
+    // NOTE: There's some free space at 1e3c0..1e3f0, but we use this for the
+    // CheckBelowBoss triggers.
+    free(a, $0f, 0xa200, 0xa3c0);
+    
+    for (const t of this) {
+      t.assemble(a);
+    }
+    return [a.module()];
+  }
 }
 
 export class Trigger extends Entity {
@@ -77,9 +111,8 @@ export class Trigger extends Entity {
     return bytes;
   }
 
-  write(): Module[] {
-    if (!this.used) return [];
-    const a = this.rom.assembler();
+  assemble(a: Assembler) {
+    if (!this.used) return;
     const name = `Trigger_${hex(this.id)}`;
     a.segment('0f');
     a.reloc(name);
@@ -87,7 +120,6 @@ export class Trigger extends Entity {
     a.byte(...this.bytes());
     a.org(0xa17a + 2 * (this.id & 0x7f), name + '_Ptr');
     a.word(addr);
-    return [a.module()];
       // TODO - need to hit telepathy, npc spawns, dialogs, itemget
       // (checkbelowboss) as well at the same time as this!
   }

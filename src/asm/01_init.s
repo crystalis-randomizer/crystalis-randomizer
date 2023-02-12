@@ -602,16 +602,12 @@ RESERVE_MAPS
 
 ;;; Boss kills
 .segment "0f"
-.org $b98a
-  .res 2
-.org $b99f
-  .res 2
-.org $b9b4
-  .res 2
-.org $b9b4
-  .res 2
+.org $b95d
+  .res 14 ; location indexes for 14 bosses
+.org $b96b
+  .res 28 ; pointers for 14 bosses (actual data is reloc)
 
-;;; Triggers
+;;; Triggers (main table)
 .segment "0f"
 .org $a17a
   .res $100

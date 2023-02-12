@@ -3,7 +3,8 @@ import {Module} from '../asm/module';
 import {Entity, EntityArray} from './entity';
 import {MessageId} from './messageid';
 import {hex, readString, tuple,
-  ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS, relocExportLabel} from './util.js';
+  ITEM_USE_FLAGS, ITEM_CONDITION_FLAGS, relocExportLabel, free
+} from './util.js';
 import {Address, Data, Segment} from './util';
 import {Rom} from '../rom';
 import {assertNever} from '../util';
@@ -439,6 +440,12 @@ export class Items extends EntityArray<Item> {
 
   write(): Module[] {
     const a = this.rom.assembler();
+    // ItemGetData (to 1e065) + ItemUseData
+    free(a, $0e, 0x9de6, 0xa000);
+    free(a, $0f, 0xa000, 0xa106);
+    // ItemMenuName
+    free(a, $10, 0x911a, 0x9468);
+
     ARMOR_DEFENSE_TABLE.loc(a);
     a.byte(...this.armorDefense);
     SHIELD_DEFENSE_TABLE.loc(a);

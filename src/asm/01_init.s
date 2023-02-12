@@ -1,6 +1,8 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
 
+;;; Initialization. This must come before all other modules.
+
 .define FREE {seg [start, end)} \
     .pushseg seg .eol \
     .org start .eol \
@@ -525,3 +527,96 @@ FREE "ff" [$ffe3, $fffa)
 .segment "ff"
 .org $fa00
   .byte $ff
+
+;;; Explicitly declare some addresses we're writing directly.
+;;; NOTE: Many of these could be made .reloc and then just export
+;;; the address?
+
+;;; Map screens
+.macro RESERVE_MAPS
+  .repeat 32, I
+  .org ($8000+(I<<8))
+    .res $f0
+  .org ($a000+(I<<8))
+    .res $f0
+  .endrep
+.endmacro
+  
+.segment "00","01"
+RESERVE_MAPS
+.segment "02","03"
+RESERVE_MAPS
+.segment "04","05"
+RESERVE_MAPS
+.segment "06","07"
+RESERVE_MAPS
+
+.undefine RESERVE_MAPS
+
+;;; New extended map screens
+.segment "20","21"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+.segment "22","23"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+.segment "24","25"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+.segment "26","27"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+.segment "2a","2b"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+.segment "2c","2d"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+.segment "2e","2f"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+
+;;; Location tables
+.segment "0a"
+.org $8300
+  .res $200
+
+;;; Spawn tables
+.segment "0c"
+.org $9201
+  .res $200
+
+;;; Boss kills
+.segment "0f"
+.org $b98a
+  .res 2
+.org $b99f
+  .res 2
+.org $b9b4
+  .res 2
+.org $b9b4
+  .res 2
+
+;;; Triggers
+.segment "0f"
+.org $a17a
+  .res $100
+
+;;; Checkpoint locations table
+.segment "17"
+.org $bf00
+  .res $100

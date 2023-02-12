@@ -600,6 +600,17 @@ RESERVE_MAPS
 .org $9201
   .res $200
 
+;;; NPC spawn conditions, dialog
+.segment "0e"
+.org $85e0
+  .res $112 ; NOTE: gap between 86f2..86fc repurposed
+.org $86fc
+  .res 2    ; Mesia
+.org $8760
+  .res 26   ; Boss spawns
+.org $895d
+  .res ($8ae5 - *)  ; Dialog
+
 ;;; Boss kills
 .segment "0f"
 .org $b95d

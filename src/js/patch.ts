@@ -55,6 +55,33 @@ export interface ProgressTracker {
   addCompleted(tasks: number): void;
 }
 
+// Pull in all the patches we want to apply automatically.
+// NOTE: This is only used by jsnesx's ?patch= parameter.
+// TODO - make a debugger window for patches.
+// TODO - this needs to be a separate non-compiled file.
+export default ({
+  async apply(rom: Uint8Array, hash: {[key: string]: unknown}, path: string): Promise<Uint8Array> {
+    // Look for flag string and hash
+    let flags;
+    if (!hash.seed) {
+      // TODO - send in a hash object with get/set methods
+      hash.seed = parseSeed('').toString(16);
+      window.location.hash += '&seed=' + hash.seed;
+    }
+    if (hash.flags) {
+      flags = new FlagSet(String(hash.flags));
+    } else {
+      flags = new FlagSet('@FullShuffle');
+    }
+    for (const key in hash) {
+      if (hash[key] === 'false') hash[key] = false;
+    }
+    const [result,] =
+        await shuffle(rom, parseSeed(String(hash.seed)), flags);
+    return result;
+  },
+});
+
 export function parseSeed(seed: string): number {
   if (!seed) return Random.newSeed();
   if (/^[0-9a-f]{1,8}$/i.test(seed)) return Number.parseInt(seed, 16);

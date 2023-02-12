@@ -216,9 +216,11 @@ export class Item extends Entity {
 
     // If Aryllis wants this then set it as the item that requires change
     if (this.itemUseData.some(u => u.tradeNpc() === this.rom.npcs.Aryllis.id)) {
-      a.segment('fe');
-      a.org(0xd4b5); // hard-coded check in otherwise-untouched assembly code
-      a.byte(this.id - 0x1c); // equipped item id
+      a.assign('ARYLLIS_WANT', this.id);
+      a.export('ARYLLIS_WANT');
+      // a.segment('fe');
+      // a.org(0xd4b5); // hard-coded check in otherwise-untouched assembly code
+      // a.byte(this.id - 0x1c); // equipped item id
     }
 
     // writer.write([...stringToBytes(this.messageName), 0],

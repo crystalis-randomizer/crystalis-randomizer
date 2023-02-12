@@ -335,7 +335,9 @@ export class Rom {
 
   assembler(): Assembler {
     // TODO - consider setting a segment prefix
-    return new Assembler();
+    const asm = new Assembler();
+    asm.overwriteMode = 'require';
+    return asm;
   }
 
   writeData(data = this.prg) {

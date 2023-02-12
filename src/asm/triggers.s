@@ -14,6 +14,7 @@
 ;;;     (itemget.s) and other things.
 ;;;  7. Refactor ivory statue slightly (maybe just freeing space?)
 ;;;  8. Combine bow-use actions into a single script
+;;;  9. Allow arbitrary item to be Aryllis turn-in (Change required to use)
 
 .segment "0e", "0f"
 
@@ -260,3 +261,8 @@ DestroyStatue:
 
 .org $d853
   jsr Jmp11
+
+;;; Aryllis turn-in item check
+.import ARYLLIS_WANT
+.org $d4b4
+  cmp #(ARYLLIS_WANT - $1c)

@@ -243,9 +243,14 @@ class LinkChunk {
         error = 'forbidden to overwrite but did anyway.';
       }
       if (error) {
-        throw new Error(`Chunk at ${segment.name}:$${
+        error = `Chunk at ${segment.name}:$${
             org.toString(16).padStart(4, '0')} (offset $${
-            offset.toString(16).padStart(5, '0')} was ${error}`);
+            offset.toString(16).padStart(5, '0')} was ${error}`;
+        if (NO_THROW) {
+          console.error(error);
+        } else {
+          throw new Error(error);
+        }
       }
       this.linker.written.add(offset, offset + data.length);
     }
@@ -798,3 +803,4 @@ class Link {
 }
 
 const DEBUG = false;
+const NO_THROW = true; // for overwrite

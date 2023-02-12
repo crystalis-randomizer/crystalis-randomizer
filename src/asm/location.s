@@ -10,6 +10,7 @@
 ;;;  4. Allow teleporting out of tower and boss fights (optionally)
 ;;;  5. Repurposes a second entry point into ReloadNpcDataForCurrentLocation
 ;;;     to just ReloadLocationGraphics (but not respawn everything).
+;;;  6. Add an import for configuring thunder sword warp
 
 .segment "fe", "ff"
 
@@ -79,6 +80,10 @@ LocationChangePreSpawnHook:
 ;;; (3) leveraging the trigger table to get the effects.
 ;;; Triggers are difficult to use, however, and we don't really
 ;;; have any other use cases for now, so we'll go the easy route.
+
+.import TownWarpTable
+.org $dc8c
+  lda TownWarpTable,y
 
 .ifdef _TWELFTH_WARP_POINT
 .define FIRST_WARP_POINT $f4
@@ -208,3 +213,11 @@ FREE_UNTIL $e1ae
 .org $e6ff
   jmp $e144
 .endif
+
+
+;;; Import thunder sword warp info
+.import thunderSwordWarpLocation, thunderSwordWarpEntrance
+.org $d5c9
+  lda #thunderSwordWarpLocation
+.org $d5cd
+  lda #thunderSwordWarpEntrance

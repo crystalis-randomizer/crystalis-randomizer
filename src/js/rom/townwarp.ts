@@ -20,12 +20,10 @@ export class TownWarp {
     ADDRESS.loc(a);
     a.label('TownWarpTable');
     a.byte(...this.locations);
-    a.org(0xdc8c);
-    a.instruction('lda', 'TownWarpTable,y');
-    a.org(0xd5c9);
-    a.instruction('lda', '#' + this.thunderSwordWarp[0]);
-    a.org(0xd5cd);
-    a.instruction('lda', '#' + this.thunderSwordWarp[1]);
+    a.assign('thunderSwordWarpLocation', this.thunderSwordWarp[0]);
+    a.assign('thunderSwordWarpEntrance', this.thunderSwordWarp[1]);
+    a.export('TownWarpTable',
+             'thunderSwordWarpLocation', 'thunderSwordWarpEntrance');
     return [a.module()];
   }
 }

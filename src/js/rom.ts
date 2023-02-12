@@ -39,6 +39,7 @@ import {Trigger} from './rom/trigger';
 import {Segment, hex, seq, free} from './rom/util';
 import {WildWarp} from './rom/wildwarp';
 import {UnionFind} from './unionfind';
+import { Cpu } from './asm/cpu';
 
 const {$0e, $0f, $10} = Segment;
 
@@ -335,9 +336,7 @@ export class Rom {
 
   assembler(): Assembler {
     // TODO - consider setting a segment prefix
-    const asm = new Assembler();
-    asm.overwriteMode = 'require';
-    return asm;
+    return new Assembler(Cpu.P02, {overwriteMode: 'require'});
   }
 
   writeData(data = this.prg) {

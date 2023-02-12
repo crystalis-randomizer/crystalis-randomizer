@@ -203,9 +203,6 @@ export class Assembler {
   /** Token for reporting errors. */
   private errorToken?: Token;
 
-  /** The overwrite mode. */
-  private _overwriteMode: mod.OverwriteMode = 'allow';
-
   constructor(readonly cpu = Cpu.P02, readonly opts: Assembler.Options = {}) {}
 
   private get chunk(): Chunk {
@@ -215,11 +212,7 @@ export class Assembler {
   }
 
   get overwriteMode() {
-    return this._overwriteMode;
-  }
-  set overwriteMode(mode: mod.OverwriteMode) {
-    this._overwriteMode = mode;
-    if (this._chunk) this._chunk.overwrite = mode;
+    return this.opts.overwriteMode || 'allow';
   }
 
   private ensureChunk() {
@@ -232,7 +225,7 @@ export class Assembler {
       if (this._org != null) this._chunk.org = this._org;
       if (this._name) this._chunk.name = this._name;
       this.chunks.push(this._chunk);
-      this._chunk.overwrite = this._overwriteMode;
+      this._chunk.overwrite = this.overwriteMode;
     }
   }
 
@@ -1104,6 +1097,7 @@ export namespace Assembler {
   export interface Options {
     allowBrackets?: boolean;
     reentrantScopes?: boolean;
+    overwriteMode?: mod.OverwriteMode;
   }
 }
 

@@ -10,6 +10,7 @@
 ;;;  6. Fix coin sprites
 ;;;  7. Fix the MP check for level 3 sword to allow going to zero
 ;;;  8. Immediately despawn blizzard shots when firing a second time
+;;;  9. Make slime mutation based on an imported symbol
 
 ;;; TODO - consider splitting this up into separate files?
 ;;;      - EXP reversal could go into hud.s?
@@ -632,3 +633,8 @@ FREE_UNTIL $ba2c
       pla
 +   jmp $972d ; AdHocSpawnObject
 .endif
+
+;;; Slimes mutate based on a configurable element 
+.import slimeMutationElement
+.org $922c
+  cmp #slimeMutationElement

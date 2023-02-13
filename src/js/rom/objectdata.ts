@@ -88,9 +88,8 @@ export class ObjectData extends Entity {
         e >>= 1;
         b++;
       }
-      a.segment('1a');
-      a.org(0x922d); // $3522d
-      a.byte(b);
+      a.assign('slimeMutationElement', b);
+      a.export('slimeMutationElement');
     }
 
     if (this.rom.writeMonsterNames) {
@@ -103,9 +102,9 @@ export class ObjectData extends Entity {
         a.byte(this.displayName.length);
         a.byte(...this.displayName);
       }
-      a.org(0xa000 | this.id); // EnemyNameTableLo
+      a.org(0xa000 | this.id, `EnemyNameTableLo_${this.id}`);
       a.byte(addr != null ? Expr.loByte(addr) : 0);
-      a.org(0xa100 | this.id); // EnemyNameTableHi
+      a.org(0xa100 | this.id, `EnemyNameTableHi_${this.id}`);
       a.byte(addr != null ? Expr.hiByte(addr) : 0);
     }
 

@@ -600,6 +600,11 @@ RESERVE_MAPS
 .org $9201
   .res $200
 
+;;; Object data table index
+.segment "0d"
+.org $ac00
+  .res $200
+
 ;;; NPC spawn conditions, dialog
 .segment "0e"
 .org $85e0
@@ -627,6 +632,11 @@ RESERVE_MAPS
 .segment "17"
 .org $bf00
   .res $100
+
+;;; Enemy names index table (for HUD)
+.segment "3d"
+.org $a000
+  .res $200
 
 .segment "fe"
 ;;; Wild warp table

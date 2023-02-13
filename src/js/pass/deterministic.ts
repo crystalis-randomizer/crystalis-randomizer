@@ -1216,6 +1216,8 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // 6. Don't free villagers from using prison key
   remove(KeyToPrison.itemUseData[0].flags,
          ~flags.LeafVillagersCurrentlyAbducted.id);
+  remove(KeyToPrison.itemUseData[0].flags,
+         flags.LeafVillagersRescued.id);
   // rom.prg[0x1e0a3] = 0xc0;
   // rom.prg[0x1e0a4] = 0x00;
 

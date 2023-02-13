@@ -14,10 +14,11 @@ export class WildWarp {
   write(): Module[] {
     const a = this.rom.assembler();
     ADDRESS.loc(a);
-    a.label('WildWarpLocations');
+    // a.label('WildWarpLocations');
     a.byte(...this.locations);
-    a.org(0xcbd9);
-    a.instruction('lda', 'WildWarpLocations,y');
+    // Why did we write this?  It isn't actually a change...?
+    // a.org(0xcbd9);
+    // a.instruction('lda', 'WildWarpLocations,y');
     return [a.module()];
   }
 }

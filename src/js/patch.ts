@@ -647,6 +647,9 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
         l.id &&
         // don't warp into shops
         !l.isShop() &&
+        // don't warp into water
+        l !== rom.locations.EvilSpiritIsland1 &&
+        l !== rom.locations.UndergroundChannel &&
         // don't warp into tower
         (l.id & 0xf8) !== 0x58 &&
         // don't warp to either side of Draygon 2

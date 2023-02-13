@@ -188,6 +188,8 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
 
   if (flags.hasStatTracking()) updateGraphicsForStatTracking(rom);
+
+  fixWildWarp(rom);
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {
@@ -1345,4 +1347,12 @@ function hardcoreMode(rom: Rom) {
   for (const loc of rom.locations) {
     loc.checkpoint = loc.saveable = false;
   }
+}
+
+function fixWildWarp(rom: Rom) {
+  // Swap out underground channel for ESI 2, since the former doesn't
+  // actually allow you to move (without flight), but our logic can't
+  // account for that fact - so it's a softlock risk if progression
+  // is on the sea but the player doesn't have any other access.
+  replace(rom.wildWarp.locations, 0x64, 0x69);
 }

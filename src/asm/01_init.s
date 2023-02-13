@@ -627,3 +627,8 @@ RESERVE_MAPS
 .segment "17"
 .org $bf00
   .res $100
+
+.segment "fe"
+;;; Wild warp table
+.org $cbec
+  .res 16

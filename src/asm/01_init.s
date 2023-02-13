@@ -534,10 +534,8 @@ FREE "ff" [$ffe3, $fffa)
 
 ;;; Map screens
 .macro RESERVE_MAPS
-  .repeat 32, I
+  .repeat 64, I
   .org ($8000+(I<<8))
-    .res $f0
-  .org ($a000+(I<<8))
     .res $f0
   .endrep
 .endmacro
@@ -550,8 +548,91 @@ RESERVE_MAPS
 RESERVE_MAPS
 .segment "06","07"
 RESERVE_MAPS
-
 .undefine RESERVE_MAPS
+
+;;; NPC data
+.segment "04","05"
+.repeat 64, I
+.org ($8000 + (I<<8) + $f0)
+  .res 16
+.endrep
+
+;;; Tileset
+.segment "08","09"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
+
+;;; MapData index table (and shop screens)
+.segment "0a"
+.org $8000 
+  .res $300 ; Shop screens
+.org $8300
+  .res $200 ; MapData
+
+;;; Spawn tables
+.segment "0c"
+.org $9201
+  .res $200
+
+;;; Object data table index
+.segment "0d"
+.org $ac00
+  .res $200
+
+.segment "0e"
+
+;;; ItemUseJump (this is a mess because we free chunks of it)
+.org $83d3
+  .res ($83eb - *)
+.org $83fb
+  .res ($841b - *)
+
+;;; NPC spawn conditions
+.org $85e0
+  .res $112 ; NOTE: gap between 86f2..86fc repurposed
+.org $86fc
+  .res 2    ; Mesia
+.org $8760
+  .res 26   ; Boss spawns
+.org $895d
+  .res ($8ae5 - *)  ; Dialog
+
+;;; Telepathy
+.org $8213
+  .res 7            ; Required level
+.org $822f
+  .res $40          ; Result table (i.e. the RNG)
+.org $98f4
+  .res $100         ; Location table
+  .res ($9b00 - *)  ; Main table
+
+;;; Item tables
+.org $9b00
+  .res ($9be2 - *)  ; Item Get indirection
+  .res ($9c82 - *)  ; Item Use indirection
+  ;; NOTE: [9c82 .. 9daf] is freed above (made more efficient in asm)
+.org $9daf
+  .res ($9de6 - *)  ; get-to-item table
+  ;; NOTE: [9de6 .. a106] is freed in item.ts
+
+;;; Triggers (main table)
+.segment "0f"
+.org $a17a
+  .res $100
+
+;;; Boss kills
+.segment "0f"
+.org $b95d
+  .res 14 ; location indexes for 14 bosses
+.org $b96b
+  .res 28 ; pointers for 14 bosses (actual data is reloc)
+
+;;; Checkpoint locations table
+.segment "17"
+.org $bf00
+  .res $100
 
 ;;; New extended map screens
 .segment "20","21"
@@ -574,6 +655,11 @@ RESERVE_MAPS
   .res $2000
 .org $a000
   .res $2000
+.segment "28","29"
+.org $8000
+  .res $2000
+.org $a000
+  .res $2000
 .segment "2a","2b"
 .org $8000
   .res $2000
@@ -589,49 +675,6 @@ RESERVE_MAPS
   .res $2000
 .org $a000
   .res $2000
-
-;;; Location tables
-.segment "0a"
-.org $8300
-  .res $200
-
-;;; Spawn tables
-.segment "0c"
-.org $9201
-  .res $200
-
-;;; Object data table index
-.segment "0d"
-.org $ac00
-  .res $200
-
-;;; NPC spawn conditions, dialog
-.segment "0e"
-.org $85e0
-  .res $112 ; NOTE: gap between 86f2..86fc repurposed
-.org $86fc
-  .res 2    ; Mesia
-.org $8760
-  .res 26   ; Boss spawns
-.org $895d
-  .res ($8ae5 - *)  ; Dialog
-
-;;; Boss kills
-.segment "0f"
-.org $b95d
-  .res 14 ; location indexes for 14 bosses
-.org $b96b
-  .res 28 ; pointers for 14 bosses (actual data is reloc)
-
-;;; Triggers (main table)
-.segment "0f"
-.org $a17a
-  .res $100
-
-;;; Checkpoint locations table
-.segment "17"
-.org $bf00
-  .res $100
 
 ;;; Enemy names index table (for HUD)
 .segment "3d"

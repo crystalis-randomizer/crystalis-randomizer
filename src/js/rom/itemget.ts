@@ -58,6 +58,7 @@ export class ItemGets extends EntityArray<ItemGet> {
 
   write(): Module[] {
     const a = this.rom.assembler();
+    // NOTE: ItemGetData_* is free'd by item.ts
     for (const itemget of this) {
       itemget.assemble(a);
     }

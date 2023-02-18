@@ -817,10 +817,18 @@ function addZombieWarp(rom: Rom) {
 }
 
 function evilSpiritIslandRequiresDolphin(rom: Rom) {
-  rom.trigger(0x8a).conditions = [~rom.flags.CurrentlyRidingDolphin.id];
-  rom.messages.parts[0x1d][0x10].text = `The cave entrance appears
-to be underwater. You'll
-need to swim.`;
+  const {flags: {CurrentlyRidingDolphin},
+         locations: {AngrySea, EvilSpiritIsland1}} = rom;
+  rom.trigger(0x8a).conditions = [~CurrentlyRidingDolphin.id];
+  rom.messages.parts[0x1d][0x10].text = `This cave ceiling is too
+low to fly in.`;
+  removeIf(AngrySea.spawns, (s) => s.isTrigger() && s.id === 0x8a);
+  EvilSpiritIsland1.spawns.push(Spawn.of({
+    x: 0x050,
+    y: 0x0b0,
+    type: 2,
+    id: 0x8a,
+  }));
 }
 
 function channelItemRequiresDolphin(rom: Rom) {
@@ -892,16 +900,6 @@ function patchLimeTreeLake(rom: Rom, flags: FlagSet): void {
 }
 
 function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
-  function remove<T>(arr: T[], elem: T): void {
-    const index = arr.indexOf(elem);
-    if (index < 0) throw new Error(`Could not find element ${elem} in ${arr}`);
-    arr.splice(index, 1);
-  }
-  function removeIf<T>(arr: T[], pred: (elem: T) => boolean): void {
-    const index = arr.findIndex(pred);
-    if (index < 0) throw new Error(`Could not find element in ${arr}`);
-    arr.splice(index, 1);
-  }
 
   // function dialog(id: number, loc: number = -1): LocalDialog[] {
   //   const result = rom.npcs[id].localDialogs.get(loc);
@@ -1355,4 +1353,16 @@ function fixWildWarp(rom: Rom) {
   // account for that fact - so it's a softlock risk if progression
   // is on the sea but the player doesn't have any other access.
   replace(rom.wildWarp.locations, 0x64, 0x69);
+}
+
+function remove<T>(arr: T[], elem: T): void {
+  const index = arr.indexOf(elem);
+  if (index < 0) throw new Error(`Could not find element ${elem} in ${arr}`);
+  arr.splice(index, 1);
+}
+
+function removeIf<T>(arr: T[], pred: (elem: T) => boolean): void {
+  const index = arr.findIndex(pred);
+  if (index < 0) throw new Error(`Could not find element in ${arr}`);
+  arr.splice(index, 1);
 }

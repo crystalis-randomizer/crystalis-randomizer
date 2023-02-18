@@ -150,7 +150,6 @@ export class Metascreens {
     }
     const clone = oldScreen.clone(newId);
     this.rom.screens.setScreen(newId, clone);
-    oldScreen.used = false;
     if (oldId < 0) {
       this.rom.screens.deleteScreen(oldId);
       if (sourceDefinition && newId >= 0) {
@@ -158,6 +157,13 @@ export class Metascreens {
       }
     }
     this.rom.locations.renumberScreen(oldId, newId);
+    // update the `used` bit on the old screen if we've taken out all the uses.
+    for (const t of this.rom.metatilesets) {
+      for (const s of t) {
+        if (s.sid === oldId) return;
+      }
+    }
+    oldScreen.used = false;
   }
 
   readonly overworldEmpty = this.metascreen({

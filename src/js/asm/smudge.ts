@@ -332,6 +332,18 @@ class Cleaner {
       line = line.substring(match[0].length);
     }
 
+    // Look for an assignment
+    if ((match = /^(\s*[a-z0-9_]+\s*=\s*)([$%]?[0-9a-f]+)(\s*(?:;.*)?\n?)$/i.exec(line))) {
+      const value = parseNum(match[2]);
+      if (value != null) {
+        this.pushStr(match[1]);
+        const mod = match[2].startsWith('$') ? '' : match[2].startsWith('%') ? ':b' : ':d';
+        this.push(new CleanData(match[2], [value], mod));
+        if (match[3]) this.pushStr(match[3]);
+        return;
+      }
+    }
+
     // Look for a .byte or .word directive.
     // TODO - consider removing the (\$[0-9a-f]{5}\s*)? once it's no longer needed
     if ((match = /^\s*(?:\$[0-9a-f]{5}\s*)?\.(?:byte|word|asciiz)\s*/i.exec(line))) {

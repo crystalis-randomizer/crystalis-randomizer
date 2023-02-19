@@ -164,4 +164,12 @@ describe('clean', function() {
                  '.else\nasl\n.endif\nsta $42'))
         .to.eql('.if 1\n<@0@>\n.elseif 2\n<@4@>\n.else\n<@1f@>\n.endif\n<@2@>');
   });
+  it('should clean simple assignments', function() {
+    expect(clean('lda <var,x\nvar = $14'))
+        .to.eql('<@c <var@>\nvar = [@d@]');
+  });
+  it('should clean assignments with comments', function() {
+    expect(clean('lda <var,x\n  var = $14 ; comment\n; a'))
+        .to.eql('<@c <var@>\n  var = [@d@] ; comment\n; a');
+  });
 });

@@ -824,8 +824,8 @@ function evilSpiritIslandRequiresDolphin(rom: Rom) {
 low to fly in.`;
   removeIf(AngrySea.spawns, (s) => s.isTrigger() && s.id === 0x8a);
   EvilSpiritIsland1.spawns.push(Spawn.of({
-    x: 0x050,
-    y: 0x0b0,
+    x: 0x058,
+    y: 0x0a0,
     type: 2,
     id: 0x8a,
   }));

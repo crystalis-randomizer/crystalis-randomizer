@@ -624,15 +624,43 @@ RESERVE_MAPS
 
 ;;; Boss kills
 .segment "0f"
+.org $b7c1
+  .res 14 * 5 ; graphics restore table
 .org $b95d
   .res 14 ; location indexes for 14 bosses
 .org $b96b
   .res 28 ; pointers for 14 bosses (actual data is reloc)
 
+;;; Inventory item data
+.segment "10"
+.org $8ff0
+  .res $4b ; bitmap data about droppability, palette, etc
+  .res $4b ; equipped item id
+  .res $4a * 2 ; menu name addresses
+
+;;; Ad hoc spawn table
+.segment "14"
+.org $9c00
+  .res $60 * 4
+
 ;;; Checkpoint locations table
 .segment "17"
 .org $bf00
   .res $100
+
+;;; Attack/defese/misc data
+.segment "1a"
+.org $8bc0
+  .res 9 ; armor defense
+.org $8bc9
+  .res 9 ; shield defense
+.org $8bde
+  .res 32 ; coin amounts
+.org $9691
+  .res 24 * 4 ; hitboxes
+.org $97e4
+  .res 64 ; RNG table
+
 
 ;;; New extended map screens
 .segment "20","21"
@@ -685,3 +713,6 @@ RESERVE_MAPS
 ;;; Wild warp table
 .org $cbec
   .res 16
+;;; Town warp table
+.org $dc58
+  .res 12

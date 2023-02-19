@@ -45,7 +45,7 @@ export class Slots extends Array<number> {
 
   write(): Module[] {
     const a = this.rom.assembler();
-    relocExportLabel(a, [$0e], 'CheckToItemGetMap');
+    relocExportLabel(a, 'CheckToItemGetMap', [$0e]);
     this.exportDigits(a, "CHECK_COUNT", this.checkCount);
     this.exportDigits(a, "MIMIC_COUNT", this.mimicCount);
     a.byte(...this);

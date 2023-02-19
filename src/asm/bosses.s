@@ -147,8 +147,10 @@ SpawnDraygon:
 @HandleKensuChestInit: ; if we jumped here then C is set
   jsr HandleKensuChest
 
-.org $b7d0
-  .byte $00  
+;;; NOTE: The following is apparently important for kensu chest, but we need
+;;;       to set it programmatically instead.
+;; .org $b7d0
+;;   .byte $00
 
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
 .org $bd27

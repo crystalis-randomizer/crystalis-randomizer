@@ -1151,6 +1151,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
 
   // Kensu in lighthouse ($74/$7e @ $62) ~ redundant flag
   //dialog(0x74, 0x62)[0].flags = [];
+  rom.bossKills.kensuLighthouse.data2[0] = 0;
 
   // Azteca ($83) in pyramid ~ bow of truth redundant flag
   //dialog(0x83)[0].condition = ~0x240;  // 240 NOT bow of truth

@@ -145,7 +145,8 @@ PatchStartItemGet:
     pla
     jmp SpawnMimic
 @RegularItem:
-  cmp #$49
+  .import itemGet_getToItemThreshold
+  cmp #itemGet_getToItemThreshold
   bcc +
    lda OriginalItemGetTable,y  ; NOTE: y>=$49, so this is really [$9daf...)
 + sta $29

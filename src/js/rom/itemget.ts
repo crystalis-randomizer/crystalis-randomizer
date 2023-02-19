@@ -4,7 +4,8 @@ import {Rom} from '../rom';
 import {Entity, EntityArray} from './entity';
 import {MessageId} from './messageid';
 import {ITEM_GET_FLAGS, Address, Segment,
-  hex, readLittleEndian, relocExportLabel} from './util.js';
+  hex, readLittleEndian, relocExportLabel, exportValue,
+} from './util.js';
 
 const {$0e, $0f, $14, $fe, $ff} = Segment;
 
@@ -59,10 +60,11 @@ export class ItemGets extends EntityArray<ItemGet> {
   write(): Module[] {
     const a = this.rom.assembler();
     // NOTE: ItemGetData_* is free'd by item.ts
+    exportValue(a, 'itemGet_getToItemThreshold', GET_TO_ITEM_THRESHOLD);
     for (const itemget of this) {
       itemget.assemble(a);
     }
-    relocExportLabel(a, [$14, $fe, $ff], 'GrantItemTable');
+    relocExportLabel(a, 'GrantItemTable', [$14, $fe, $ff]);
     //GRANT_ITEM_TABLE.loc(a);
     for (const [key, value] of this.actionGrants) {
       a.byte(key, value);
@@ -143,8 +145,10 @@ export class ItemGet extends Entity {
 
   assemble(a: Assembler) {
     // First write (itemget -> item) mapping
-    this.itemPointer.loc(a);
-    a.byte(this.itemId);
+    if (this.id >= GET_TO_ITEM_THRESHOLD) {
+      this.itemPointer.loc(a);
+      a.byte(this.itemId);
+    }
 
     const table = [
       this.inventoryRowStart, this.inventoryRowLength,
@@ -153,7 +157,7 @@ export class ItemGet extends Entity {
       this.key ? 0xfe : 0xff,  // TODO: remove this byte when no longer needed
     ];
     a.segment($0e.name, $0f.name);
-    a.reloc(`ItemGetData ${hex(this.id)}`);
+    a.reloc(`ItemGetData_${hex(this.id)}`);
     const tableAddr = a.pc();
     a.byte(...table);
     this.tablePointer.loc(a);

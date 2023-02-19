@@ -9,6 +9,9 @@
 ;;;  5. Update some followup actions to handle repurposed ReloadLocationGraphics
 ;;;  6. Fix Kensu's chest-dropping action to check PersonData instead of
 ;;;     hardcoding the item ID
+;;;  7. Add an import for DolphinSpawnTable and allow switching out the indexes
+;;;     into the movement script table (because of entrance number changes?)
+;;;  8. Add imports for medical herb and fruit of power heal values.
 
 .segment "fe", "ff"
 
@@ -78,3 +81,37 @@ FREE_UNTIL $d280
 .org $d21a
   jmp $e144
 
+
+;;; Allow more dynamically changing dolphin spawn routines
+.pushseg "1b"
+.import MovementScriptTable
+.org $ae52
+  lda MovementScriptTable,y
+.org $ae57
+  lda MovementScriptTable+1,y
+.popseg
+
+.import DolphinSpawnTable
+.import dolphinSpawnIndexESI, dolphinSpawnIndexChannel
+.org $d663
+  ldy 5 * dolphinSpawnIndexChannel
+.org $d66b
+  ldy 5 * dolphinSpawnIndexESI
+.org $d679
+  lda DolphinSpawnTable,y
+.org $d68d
+  lda DolphinSpawnTable+1,y
+.org $d692
+  lda DolphinSpawnTable+2,y
+.org $d697
+  lda DolphinSpawnTable+3,y
+.org $d69c
+  lda DolphinSpawnTable+4,y
+
+;;; Allow dynamically changing Medical Herb and Fruit of Power values
+.segment "0e"
+.import itemValueMedicalHerb, itemValueFruitOfPower
+.org $84e9
+  adc #itemValueMedicalHerb
+.org $850b
+  adc #itemValueFruitOfPower

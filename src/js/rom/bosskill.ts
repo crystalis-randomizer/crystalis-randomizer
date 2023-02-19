@@ -16,6 +16,8 @@ export class BossKills implements Iterable<BossKill> {
     }
   }
 
+  get kensuLighthouse() { return this.bossKills[3]; }
+
   [Symbol.iterator]() {
     return this.bossKills[Symbol.iterator]();
   }

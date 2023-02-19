@@ -628,6 +628,7 @@ interface IAssembler {
   free(size: number): void;
   reloc(name?: string): void;
   label(name: string): void;
+  assign(name: string, value: number): void;
   export(name: string): void;
 }
 
@@ -637,10 +638,20 @@ export function free(a: IAssembler, seg: Segment, start: number, end: number) {
   a.free(end - start);
 }
 
-export function relocExportLabel(a: IAssembler, seg: Segment[], name: string) {
-  a.segment(...seg.map(s => s.name));
+export function exportLabel(a: IAssembler, name: string) {
+  a.label(name);
+  a.export(name);
+}
+
+export function relocExportLabel(a: IAssembler, name: string, seg?: Segment[]) {
+  if (seg?.length) a.segment(...seg.map(s => s.name));
   a.reloc(name);
   a.label(name);
+  a.export(name);
+}
+
+export function exportValue(a: IAssembler, name: string, value: number) {
+  a.assign(name, value);
   a.export(name);
 }
 

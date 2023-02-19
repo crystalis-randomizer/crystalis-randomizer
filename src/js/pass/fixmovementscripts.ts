@@ -26,6 +26,9 @@ function fixAkahanaExits(_rom: Rom) {
 }
 
 
+// This is required because we're potentially moving entrances around.
+// It might be better just to find the closest available beach square
+// and summon directly to there, a little more dynamically?
 function fixDolphinSpawns(rom: Rom) {
   const {
     locations: {

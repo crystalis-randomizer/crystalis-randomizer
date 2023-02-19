@@ -6,7 +6,8 @@ import {Location} from './location';
 import {MessageId} from './messageid';
 import {DIALOG_FLAGS, SPAWN_CONDITION_FLAGS,
         Address, Data, Segment,
-  hex, readBigEndian, seq, tuple, upperCamelToSpaces, free} from './util.js';
+  hex, readBigEndian, seq, tuple, upperCamelToSpaces, free, relocExportLabel
+} from './util.js';
 import {Rom} from '../rom';
 
 const {$04, $05, $0e, $1b, $fe} = Segment;
@@ -164,12 +165,7 @@ export class Npcs extends EntityArray<Npc> {
       a.byte(...movement.steps, movement.terminate);
       pointerTable.push(addr);
     }
-    const pointerTableAddr = (a.reloc('MovementScriptTable'), a.pc());
-    a.word(...pointerTable);
-    MOVEMENT_SCRIPT_TABLE_POINTER.loc(a, 'MovementScriptTablePtr');
-    a.word(pointerTableAddr);
-    MOVEMENT_SCRIPT_TABLE_POINTER.plus(5).loc(a, 'MovementScriptTablePlus1Ptr');
-    a.word({op: '+', args: [pointerTableAddr, {op: 'num', num: 1}]});
+    relocExportLabel(a, 'MovementScriptTable');
     // Return the result
     return [a.module()];
   }
@@ -537,7 +533,8 @@ export class Dolphin extends Npc {
     // Write the new table (after trimming any empties at the end).
     a.segment('fe', 'ff');
     a.reloc('DolphinSpawnTable');
-    const table = a.pc();
+    a.label('DolphinSpawnTable');
+    a.export('DolphinSpawnTable');
     while (!this.spawnScripts[this.spawnScripts.length - 1].entrance.used) {
       this.spawnScripts.pop();
     }
@@ -551,17 +548,9 @@ export class Dolphin extends Npc {
       }
     }
     // Write the addresses and hardcoded indices into the itemuse code.
-    DOLPHIN_CHANNEL_SPAWN.loc(a, 'DolphinChannelSpawn');
-    a.byte(this.channelSpawn * 5);
-    DOLPHIN_EVIL_SPIRIT_ISLAND_SPAWN.loc(a, 'DolphinEvilSpiritIslandSpawn');
-    a.byte(this.evilSpiritIslandSpawn * 5);
-    DOLPHIN_SPAWN_TABLE_POINTER.loc(a, 'DolphinSpawnTablePtr');
-    a.word(table);
-    for (let i = 0; i < 4; i++) {
-      DOLPHIN_SPAWN_TABLE_POINTER_1.plus(5 * i)
-          .loc(a, `DolphinSpawnTablePlus${i + 1}Ptr`);
-      a.word({op: '+', args: [table, {op: 'num', num: i + 1}]});    
-    }
+    a.assign('dolphinSpawnIndexChannel', this.channelSpawn);
+    a.assign('dolphinSpawnIndexESI', this.evilSpiritIslandSpawn);
+    a.export('dolphinSpawnIndexChannel', 'dolphinSpawnIndexESI');
   }
 }
 
@@ -586,7 +575,6 @@ export namespace MovementScript {
 const DOLPHIN_CHANNEL_SPAWN = Address.of($fe, 0xd664);
 const DOLPHIN_EVIL_SPIRIT_ISLAND_SPAWN = Address.of($fe, 0xd66c);
 const DOLPHIN_SPAWN_TABLE_POINTER = Address.of($fe, 0xd67a);
-const DOLPHIN_SPAWN_TABLE_POINTER_1 = Address.of($fe, 0xd68e); // +5, 10, 15
 const MOVEMENT_SCRIPT_TABLE_POINTER = Address.of($1b, 0xae53);
 
 function mustBeInt(x: number): number {

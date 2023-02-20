@@ -52,6 +52,8 @@ mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/js/view"
 mkdir -p "deploy/$dir/css/view"
 mkdir -p "deploy/$dir/images/spritesheets"
+cp target/build/build_info.js "deploy/$dir/js/"
+cat target/build/build_info.js >&2
 cp target/release/js/*.js "deploy/$dir/js/"
 cp target/build/build_info.js "deploy/$dir/js/" # Clobber empty file from target/release
 cp target/release/css/*.css "deploy/$dir/css/"

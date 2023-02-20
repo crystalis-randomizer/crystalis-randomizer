@@ -36,13 +36,13 @@ fi
 # If the branch exists, wipe it out.
 if [ -d "deploy/$dir" ]; then
   # but first, make a note of its hash
-  prev=$(grep HASH "deploy/$dir/js/build_info.js")
+  prev=$(grep HASH "deploy/$dir/js/build_info.js" || true)
   prev=${prev#*: \'}
   suffix=${prev#???????}
   prev=${prev%$suffix}
   if [ -d "deploy/sha/$prev" ]; then
     perl -i -pe "print \"  'PREV': '$prev',\n\" if /\\}/;" \
-         target/release/js/build_info.js
+         target/build/build_info.js
   fi
   rm -rf "deploy/$dir"
 fi
@@ -52,8 +52,8 @@ mkdir -p "deploy/$dir/view"
 mkdir -p "deploy/$dir/js/view"
 mkdir -p "deploy/$dir/css/view"
 mkdir -p "deploy/$dir/images/spritesheets"
-cp target/build/build_info.js "deploy/$dir/js/"
 cp target/release/js/*.js "deploy/$dir/js/"
+cp target/build/build_info.js "deploy/$dir/js/" # Clobber empty file from target/release
 cp target/release/css/*.css "deploy/$dir/css/"
 cp target/release/css/view/*.css "deploy/$dir/css/view/"
 cp target/release/images/*.png "deploy/$dir/images/"

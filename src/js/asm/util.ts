@@ -452,3 +452,13 @@ export class IntervalSet implements Iterable<readonly [number, number]> {
     };
   }
 }
+
+const map = new WeakMap<object, number>();
+let index = 0;
+export function hash(o: object): string {
+  let id = map.get(o);
+  if (!id) {
+    map.set(o, id = ++index);
+  }
+  return `${o.constructor.name || 'object'}@${id.toString(36)}`;
+}

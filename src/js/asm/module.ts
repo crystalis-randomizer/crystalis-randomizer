@@ -68,6 +68,10 @@ export namespace Segment {
     if (free.length) seg.free = free;
     return seg;
   }
+  export function includesOrg(s: Segment, addr: number): boolean {
+    if (s.memory == null || s.size == null) return false;
+    return addr >= s.memory && addr < (s.memory + s.size);
+  }
 }
 
 export interface Substitution {

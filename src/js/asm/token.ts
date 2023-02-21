@@ -360,6 +360,32 @@ export namespace Token {
     delete t.source;
     return t;
   }
+
+  export function format(toks: readonly Token[]): string {
+    return toks.map(t => {
+      switch (t.token) {
+        case 'grp': return `{ ${format(t.inner)} }`;
+        case 'lb': return '[';
+        case 'lc': return '{';
+        case 'lp': return '(';
+        case 'rb': return ']';
+        case 'rc': return '}';
+        case 'rp': return ')';
+        case 'eol': return '.eol';
+        case 'eof': throw new Error(`Cannot format EOF`);
+        case 'num': return '$' + t.num.toString(16).padStart(t.num < 256 ? 2 : 4, '0');
+        case 'ident': return t.str;
+        case 'op': return t.str;
+        case 'cs': return t.str;
+        case 'str': return `"${t.str.replace(/[\\"]/g, '\\$&')}"`;
+        default: return checkExhaustive(t);
+      }
+    }).join(' ');
+  }
+}
+
+function checkExhaustive(arg: never): never {
+  throw new Error(`was supposed to be exhaustive but got ${arg}`);
 }
 
 // interface Expr {

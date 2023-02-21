@@ -5,6 +5,8 @@ RELDIR = $(TARGET)/release
 DBGDIR = $(TARGET)/debug
 BLDDIR = $(TARGET)/build
 BROTLI = $(BLDDIR)/brotli
+EXTRACT_REFS = $(BLDDIR)/extract-refs
+EXTRACT_SYMBOLS = $(BLDDIR)/extract-symbols
 DATADIR = $(BLDDIR)/data
 
 # Flags
@@ -39,6 +41,8 @@ ASM_FILES = $(shell find src/asm -type f -name '*.s')
 ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
 NSS_FILES = $(shell find src/images/spritesheets -type f -name '*.nss')
 NSS_COPIES = $(NSS_FILES:src/images/spritesheets/%=$(DATADIR)/%)
+REFS_JSON = $(BLDDIR)/data/refs.json
+SYMBOL_TABLE = $(BLDDIR)/symbols.json
 DATA_TAR = $(BLDDIR)/data.tar
 DATA_TBR = $(BLDDIR)/data.tar.br
 BUILD_INFO  = $(BLDDIR)/build_info.js
@@ -48,7 +52,7 @@ DBG_STATIC = $(STATIC_FILES:src/%=target/debug/%)
 REL_STATIC = $(STATIC_FILES:src/%=target/release/%)
 DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
 REL_OUTS = $(JS65_REL) $(CLI_REL) $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
-TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES)
+TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON)
 
 x:
 	@echo pat: $(STATIC_PATTERNS)
@@ -71,6 +75,13 @@ clean:
 $(BROTLI): src/js/tools/brotli.js
 	@mkdir -p $(@D)
 	install -m 755 $< $@
+
+$(EXTRACT_REFS): $(JS_FILES)
+	@mkdir -p $(@D)
+	$(ESBUILD) $(NODEFLAGS) --outfile=$@ src/js/tools/extract-refs.ts
+$(EXTRACT_SYMBOLS): $(JS_FILES)
+	@mkdir -p $(@D)
+	$(ESBUILD) $(NODEFLAGS) --outfile=$@ src/js/tools/extract-symbols.ts
 
 $(DBG_INFO):
 	touch $@
@@ -102,6 +113,12 @@ $(ASM_COPIES): target/build/data/%: src/asm/%
 $(NSS_COPIES): target/build/data/%: src/images/spritesheets/%
 	@mkdir -p $(@D)
 	cp $< $@
+
+$(REFS_JSON): vanilla/crystalis.s $(EXTRACT_REFS) $(SYMBOL_TABLE)
+	$(EXTRACT_REFS) -s $(SYMBOL_TABLE) -o $@ $<
+
+$(SYMBOL_TABLE): $(ASM_FILES) $(EXTRACT_SYMBOLS)
+	$(EXTRACT_SYMBOLS) -o $@ $(ASM_FILES)
 
 $(WEB_JS_DBG): $(JS_FILES) $(DATA_TBR)
 	rm -f $(DBGDIR)/js/*-????????.js

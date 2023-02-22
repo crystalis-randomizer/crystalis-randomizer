@@ -39,12 +39,13 @@ import { fixTilesets } from './rom/screenfix';
 import { Shop, ShopType } from './rom/shop';
 import { Spoiler } from './rom/spoiler';
 import { hex, seq, watchArray } from './rom/util';
-import { sources } from './data';
+import { sources, refs } from './data';
 import { DefaultMap } from './util';
 import * as version from './version';
 import { shuffleAreas } from './pass/shuffleareas';
 import { checkTriggers } from './pass/checktriggers';
 import { Sprite } from './characters';
+import { RefsJson } from './tools/extract-refs';
 
 const EXPAND_PRG: boolean = true;
 const ASM = ModuleId('asm');
@@ -385,9 +386,11 @@ async function shuffleInternal(rom: Uint8Array,
   // file that runs afterwards all on its own.
 
   async function asm(pass: 'early' | 'late') {
+    // First synthesize the flags file
     const flagFile = defines(flags, pass);
     const asm = new Assembler(Cpu.P02, {overwriteMode: 'forbid'});
     const toks = new TokenStream();
+    // Then read all the patch sources
     toks.enter(TokenSource.concat(
         new Tokenizer(flagFile, 'flags.s'),
         ...sources()
@@ -397,6 +400,45 @@ async function shuffleInternal(rom: Uint8Array,
                 {lineContinuations: true}))));
     const pre = new Preprocessor(toks, asm);
     asm.tokens(pre);
+    // Last apply all the fallbacks
+    const refsJson = refs();
+    let segments: readonly string[] = [];
+    for (const label of refsJson.labels) {
+      if (!asm.definedSymbol(label.name)) {
+        //console.error(`LABEL: ${label.name}`);
+        if (segments.length !== label.segments.length ||
+            segments.some((s, i) => s !== label.segments[i])) {
+          asm.segment(...(segments = label.segments));
+        }
+        asm.org(label.org);
+        asm.label(label.name);
+      }
+    }
+    for (const ref of refsJson.refs) {
+      // TODO - I might run into problems if an expression has multiple
+      // symbols and only one is redefined in the patch sources.  We may
+      // need to mark _all_ conflated symbols as also relevant, and also
+      // consider non-label assignments???  For now, don't worry about it.
+
+      // NOTE: Handle PRG expansion here.
+      const offset = ref.offset + (ref.offset >= 0x3c000 ? 0x40000 : 0);
+      if (!asm.isWritten(offset)) {
+        //console.error(`REF ${offset.toString(16)} in ${ref.segments.join(',')}`, ref.expr);
+        if (segments.length !== ref.segments.length ||
+            segments.some((s, i) => s !== ref.segments[i])) {
+          asm.segment(...(segments = ref.segments));
+        }
+        asm.org(ref.org);
+        if (ref.bytes === 1) {
+          asm.byte(ref.expr);
+        } else if (ref.bytes === 2) {
+          asm.word(ref.expr);
+        } else {
+          throw new Error(`bad bytes: ${ref.bytes}`);
+        }
+      }
+    }
+    // Done
     return asm.module();
   }
 

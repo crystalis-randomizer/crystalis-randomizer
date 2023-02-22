@@ -1,5 +1,8 @@
 // General utilities for rom package.
 
+import { Expr } from '../asm/expr';
+import { refsBySymbol } from '../data';
+
 export function upperCamelToSpaces(upperCamel: string): string {
   return upperCamel.replace(/([a-z])([A-Z0-9])/g, '$1 $2')
       .replace(/Of/g, 'of')
@@ -657,4 +660,18 @@ export function exportValue(a: IAssembler, name: string, value: number) {
 
 export function cloneArray<T extends ReadonlyArray<any>>(arr: T): Mutable<T> {
   return [...arr] as Mutable<T>;
+}
+
+export function readValue(symbol: string, prg: Uint8Array) {
+  const values = new Set<number>();
+  for (const ref of refsBySymbol().get(symbol) || []) {
+    const inv = Expr.invert(ref.expr, symbol, prg[ref.offset]);
+    if (inv != null) values.add(inv);
+  }
+  if (values.size !== 1) {
+    throw new Error(`Could not determine unique value for ${symbol}: got [${
+        [...values].map(x => `$${x.toString(16).padStart(2, '0')}`).join(', ')
+        }]`);
+  }
+  return values[Symbol.iterator]().next().value;
 }

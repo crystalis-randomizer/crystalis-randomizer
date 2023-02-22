@@ -83,7 +83,7 @@
 
 .pushseg "13", "fe", "ff"
 .org $baca
-InitializeStatusBarNametable:
+;;; InitializeStatusBarNametable: ; NOTE: NOT the same as the vanilla label
 .ifdef _ENEMY_HP
   jsr RedrawEnemyHPDisplayAfterClear
 .endif ; _ENEMY_HP

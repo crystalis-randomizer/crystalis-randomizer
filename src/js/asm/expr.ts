@@ -66,6 +66,7 @@ export namespace Expr {
     return t(expr);
   }
 
+  // TODO - does this actually work???
   export function traversePost(expr: Expr, f: Rec): Expr {
     return traverse(expr, (expr, rec) => f(rec(expr)));
   }
@@ -129,11 +130,10 @@ export namespace Expr {
 
   /** Strip source info from the expression. */
   export function strip(expr: Expr) {
-    return traversePost(expr, (e) => {
-      const out = {...e};
-      delete out.source;
-      return out;
-    });
+    const out = {...expr};
+    if (out.args) out.args = out.args.map(strip);
+    delete out.source;
+    return out;
   }
 
   /** Searches for symbols in the expression. */

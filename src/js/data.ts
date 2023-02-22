@@ -2,7 +2,9 @@
 import data from '../../target/build/data.tar.br';
 // @ts-ignore
 import decompress from 'brotli/decompress';
-import {TarRecord, untar} from './untar';
+import { TarRecord, untar } from './untar';
+import { RefsJson, Ref } from './tools/extract-refs';
+import { Expr } from './asm/expr';
 
 function comparing<T, S extends number|string>(key: (arg: T) => S): (left: T, right: T) => number {
   return (a, b) => {
@@ -52,3 +54,20 @@ export const spritesheets = memoize(() =>
         .filter(({filename}) => filename.endsWith('.nss'))
         .map(({filename, contents}) => [filename, decode(contents)])),
     clone);
+
+export const refs = memoize(() => {
+  const f = files().find(({filename}) => filename === 'refs.json')!;
+  return JSON.parse(decode(f.contents)) as RefsJson;
+});
+
+export const refsBySymbol = memoize((): ReadonlyMap<string, readonly Ref[]> => {
+  const map = new Map<string, Ref[]>();
+  for (const ref of refs().refs) {
+    const syms = Expr.symbols(ref.expr);
+    if (syms.length !== 1) continue;
+    let vals = map.get(syms[0]);
+    if (!vals) map.set(syms[0], vals = []);
+    vals.push(ref);
+  }
+  return map;
+});

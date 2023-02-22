@@ -4,6 +4,7 @@ import { Expr } from './expr';
 import * as mod from './module';
 import { SourceInfo, Token, TokenSource } from './token';
 import { Tokenizer } from './tokenizer';
+import { IntervalSet } from './util';
 type Chunk = mod.Chunk<number[]>;
 type Module = mod.Module;
 
@@ -190,6 +191,9 @@ export class Assembler {
   /** All the chunks so far. */
   private chunks: Chunk[] = [];
 
+  /** Set of offsets definitely written/freed so far. */
+  private written = new IntervalSet();
+
   /** Currently active chunk */
   private _chunk: Chunk|undefined = undefined;
 
@@ -244,6 +248,7 @@ export class Assembler {
   definedSymbol(sym: string): boolean {
     // In this case, it's okay to traverse up the scope chain since if we
     // were to reference the symbol, it's guaranteed to be defined somehow.
+    if (this.globals.get(sym) === 'import') return true;
     let scope: Scope|undefined = this.currentScope;
     const unscoped = !sym.includes('::');
     do {
@@ -748,6 +753,7 @@ export class Assembler {
     // Emit some bytes.
     if (arglen) expr = this.resolve(expr); // BEFORE opcode (in case of *)
     const {chunk} = this;
+    this.markWritten(1 + arglen);
     chunk.data.push(op);
     if (arglen) {
       this.append(expr, arglen);
@@ -755,6 +761,22 @@ export class Assembler {
     if (!chunk.name) chunk.name = `Code`;
     // TODO - for relative, if we're in the same chunk, just compare
     // the offset...
+  }
+
+  private markWritten(size: number) {
+    if (this._chunk?.org == null) return;
+    // NOTE: it's possible the chunk has spilled over into the next segment.
+    // We just ignore this by asking for the offset of the _start_ of the
+    // chunk, rather than the current position.  This is consistent with how
+    // the linker works, but can lead to issues with free'd parts, etc.
+    // Fortunately, the risk is relatively small because it's only relevant
+    // for statically-placed chunks, and (one would hope) we know what we're
+    // doing there.
+    const offset = this.orgToOffset(this._chunk.org);
+    if (offset != null) {
+      this.written.add(offset + this._chunk.data.length,
+                       offset + this._chunk.data.length + size);
+    }
   }
 
   append(expr: Expr, size: number) {
@@ -833,7 +855,12 @@ export class Assembler {
 
   byte(...args: Array<Expr|string|number>) {
     const {chunk} = this;
+    this.markWritten(args.length);
     for (const arg of args) {
+      // TODO - if we ran off the end of the segment, make a new chunk???
+      // For now, we're avoiding needing to worry about it because orgToOffset
+      // and markWritten are based on the start of the chunk, rather than where
+      // it ends; but this is still a potential source of bugs!
       if (typeof arg === 'number') {
         this.writeNumber(chunk.data, 1, arg);
       } else if (typeof arg === 'string') {
@@ -851,6 +878,7 @@ export class Assembler {
 
   word(...args: Array<Expr|number>) {
     const {chunk} = this;
+    this.markWritten(2 * args.length);
     for (const arg of args) {
       if (typeof arg === 'number') {
         this.writeNumber(chunk.data, 2, arg);
@@ -860,9 +888,10 @@ export class Assembler {
     }
   }
 
-  free(size: number, token?: Token) {
+  free(size: number) {
     // Must be in .org for a single segment.
     if (this._org == null) this.fail(`.free in .reloc mode`);
+    this.markWritten(size);
     const segments = this.segments.length > 1 ? this.segments.filter(s => {
       const data = this.segmentData.get(s);
       if (!data || data.memory == null || data.size == null) return false;
@@ -1131,6 +1160,10 @@ export class Assembler {
         })!);
     return segment?.offset != null ?
         segment.offset + (org - segment.memory!) : undefined;
+  }
+
+  isWritten(offset: number): boolean {
+    return this.written.has(offset);
   }
 }
 

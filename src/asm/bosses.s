@@ -183,3 +183,8 @@ MaybeSpawnInsect:
     lda #$e2
     sta $04ad
 + rts
+
+;;; Reset programmatically by bosses.ts
+.import bossMusic_vampire, bossMusic_insect, bossMusic_kelbesque, \
+        bossMusic_sabera, bossMusic_mado, bossMusic_karmine, \
+        bossMusic_draygon1, bossMusic_draygon2, bossMusic_dyna

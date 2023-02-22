@@ -16,16 +16,16 @@ import { TokenSource } from '../asm/token';
 import { Tokenizer } from '../asm/tokenizer';
 import { TokenStream } from '../asm/tokenstream';
 
-interface RefsJson {
+export interface RefsJson {
   labels: readonly Label[];
   refs: readonly Ref[];
 }
-interface Label {
+export interface Label {
   segments: readonly string[];
   org: number;
   name: string;
 }
-interface Ref {
+export interface Ref {
   segments: readonly string[];
   org: number;
   offset: number;
@@ -75,10 +75,12 @@ async function main() {
         labels.push({name, org, segments});
       },
       ref(expr: Expr, bytes: number, org: number, segments: readonly string[]) {
+        const offset = asm.orgToOffset(org);
+        if (offset == null) return;
         const used = Expr.symbols(expr);
         if (!used.some(isRelevant)) return;
-        const offset = asm.orgToOffset(org);
-        if (offset != null) refs.push({expr, bytes, org, segments, offset});
+        expr = Expr.strip(expr);
+        refs.push({expr, bytes, org, segments, offset});
       },
     },
   });

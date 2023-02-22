@@ -16185,7 +16185,7 @@ Sfx76_Ch5:
         .byte [@191fe@],[@191ff@]
         .byte [@19200@]
 
-.segment "0c"
+.segment "0c","0d"
 ;;; --------------------------------
 ;;; The format of the elements pointed to by this data table is as follows:
 ;;;   * byte 0: always zero

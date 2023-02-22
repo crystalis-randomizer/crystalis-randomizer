@@ -1,12 +1,9 @@
-import {Module} from '../asm/module';
-import {die} from '../assert';
-import {Rom} from '../rom';
-import {Flag} from './flags';
-import {Npc} from './npc';
-import {Mutable, Address, Segment,
-        readLittleEndian, upperCamelToSpaces} from './util.js';
-
-const {$0f, $1b} = Segment;
+import { Module } from '../asm/module';
+import { die } from '../assert';
+import { Rom } from '../rom';
+import { Flag } from './flags';
+import { Npc } from './npc';
+import { Mutable, readLittleEndian, upperCamelToSpaces, readValue, exportValue } from './util.js';
 
 interface BossData {
   readonly flag?: Flag;
@@ -120,15 +117,15 @@ export class Bosses implements Iterable<Boss> {
   });
 
   readonly musics = [
-    new BossMusic($0f, 0xa4b8, [this.Vampire1, this.Vampire2]),
-    new BossMusic($0f, 0xa690, [this.Insect]),
-    new BossMusic($0f, 0xa99b, [this.Kelbesque1, this.Kelbesque2]),
-    new BossMusic($0f, 0xacb1, [this.Sabera1, this.Sabera2]),
-    new BossMusic($0f, 0xae0f, [this.Mado1, this.Mado2]),
-    new BossMusic($0f, 0xaf83, [this.Karmine]),
-    new BossMusic($0f, 0xb187, [this.Draygon1]),
-    new BossMusic($0f, 0xb311, [this.Draygon2]),
-    new BossMusic($1b, 0xbc30, [this.Dyna]),
+    new BossMusic('bossMusic_vampire', [this.Vampire1, this.Vampire2]),
+    new BossMusic('bossMusic_insect', [this.Insect]),
+    new BossMusic('bossMusic_kelbesque', [this.Kelbesque1, this.Kelbesque2]),
+    new BossMusic('bossMusic_sabera', [this.Sabera1, this.Sabera2]),
+    new BossMusic('bossMusic_mado', [this.Mado1, this.Mado2]),
+    new BossMusic('bossMusic_karmine', [this.Karmine]),
+    new BossMusic('bossMusic_draygon1', [this.Draygon1]),
+    new BossMusic('bossMusic_draygon2', [this.Draygon2]),
+    new BossMusic('bossMusic_dyna', [this.Dyna]),
   ];
 
   private readonly all: Boss[] = [];
@@ -175,8 +172,7 @@ export class Bosses implements Iterable<Boss> {
   write(): Module[] {
     const a = this.rom.assembler();
     for (const music of this.musics) {
-      music.addr.loc(a);
-      a.byte(music.bgm);
+      exportValue(a, music.symbol, music.bgm);
     }
     return [a.module()];
   }
@@ -184,12 +180,10 @@ export class Bosses implements Iterable<Boss> {
 
 export class BossMusic {
   bgm: number;
-  readonly addr: Address;
 
-  constructor(seg: Segment, org: number, readonly bosses: readonly Boss[]) {
-    this.addr = Address.of(seg, org);
+  constructor(readonly symbol: string, readonly bosses: readonly Boss[]) {
     const rom = bosses[0].bosses.rom; // pull it out of somewhere
-    this.bgm = this.addr.read(rom.prg);
+    this.bgm = readValue(symbol, rom.prg);
   }
 }
 

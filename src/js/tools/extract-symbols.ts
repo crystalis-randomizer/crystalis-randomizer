@@ -39,7 +39,7 @@ async function main() {
   let line;
   while ((line = toks.next())) {
     for (const t of line) {
-      if (t.token === 'ident') symbols.add(t.str);
+      if (t.token === 'ident' && !t.str.startsWith('@')) symbols.add(t.str);
     }
   }
   fs.writeFileSync(outfile, JSON.stringify([...symbols]));

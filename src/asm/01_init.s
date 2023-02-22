@@ -82,6 +82,7 @@ UPDATE_REFS target @ refs
 .segment "12"   :bank $12 :size $2000 :off $24000 :mem $8000
 .segment "13"   :bank $13 :size $2000 :off $26000 :mem $a000
 .segment "14"   :bank $14 :size $2000 :off $28000 :mem $8000
+.segment "14:a" :bank $14 :size $2000 :off $28000 :mem $a000
 .segment "15"   :bank $15 :size $2000 :off $2a000 :mem $a000
 .segment "16"   :bank $16 :size $2000 :off $2c000 :mem $8000
 ;;; 15..17 store messages, all accessed via the a000 slot

@@ -64,14 +64,12 @@ FREE_UNTIL $85de  ; ~24 bytes
 
 ;; Patches to ItemGet to update the dedicated flag and
 ;; leave room for calling the difficulty methods
-.org $8287
-  jsr ItemGet_PickSlotAndAdd
-
 .org $8297
   jmp ItemGetFollowup
 FREE_UNTIL $829e  ; ~4 bytes
 
 .org $829e
+OVERRIDE
 ItemGet_PickSlotAndAdd:  ; move this up a few bytes
   sty $62
 .assert * = $82a0
@@ -181,8 +179,8 @@ ShowTreasureChestMessage = $d41c
   ;; skip these bytes
 FREE_UNTIL $d41c
 
-.org $d47c ; HandleTreasureChest_TooManyItems
-HandleTreasureChest_TooManyItems:
+.org $d47c
+.assert * = HandleTreasureChest_TooManyItems
   ;; Rather than using the global timer to determine whether
   ;; to show the "too many items" message, use the gamepad:
   ;; only show if pressing a direction ($49 != #$ff)
@@ -318,7 +316,7 @@ ReloadLocationGraphicsAfterChest:
 ;;; want to change how it behaves by bailing out if the item is
 ;;; already owned.
 .org $d22b
-GrantItemInRegisterA:
+.assert * = GrantItemInRegisterA
   jsr @PatchGrantItemInRegisterA
 
 .reloc

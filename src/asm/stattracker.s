@@ -149,14 +149,12 @@ PatchGameCompleted:
 .popseg ; fe,ff
 
 .pushseg "17"
-ComputeChecksumForCheckpoint = $bd92
-CopyExtraStateFromCheckpoint = $bd60
 
 .org $bc60
-  jsr SaveStatsToCheckpoint
+  jsr SaveStatsToCheckpoint     ; was: ComputeChecksumForCheckpoint
 
 .org $bcc5
-  jsr LoadStatsFromCheckpoint
+  jsr LoadStatsFromCheckpoint   ; was: CopyExtraStateFromCheckpoint
 
 .reloc
 SaveStatsToCheckpoint:
@@ -186,9 +184,6 @@ LoadStatsFromCheckpoint:
 ;; We can use the fact that if a save file was reset, the game sets $7001 to $ff
 ;; It later overwrites this, but we can just store that in another spot
 ; ValidateSaveFiles = $f0a4
-
-HandleColdBoot = $f374
-HandleWarmBoot = $f39f
 
 .org $f36d
   ; jmp instead of jsr because the main loop never returns
@@ -225,7 +220,6 @@ PatchResetWarmBootCheck:
 ; + jmp PopulateInitialObjects
 
 ;; Reset the saved stats tracking if the checkpoint is invalid
-FinishSaveFileValidations = $f1c7
 .org $f23a
   jmp ResetStatsCheckpoint
 
@@ -250,11 +244,10 @@ ResetStatsCheckpoint:
 
 NAMETABLE_ADDR = $2800
 
-CreditWriteNametable = $a81c
-WriteOAMDataFromTable = $a9d7
+CreditWriteNametable = $a81c ; CreditWriteScreenFromB000
 
 .org $a19c
-  .word (DrawStatsToNMT2)
+  .word (DrawStatsToNMT2) ; was CreditsWaitForTimer
 
 ;; Patch the end credits main loop to check for the start button and skip to the end
 ;; if its pressed

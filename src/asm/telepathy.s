@@ -94,8 +94,6 @@ Telepathy_ShowDefaultMessage:
     sta $20
     rts
 
-TelepathyResults = $822f
-
 .import TelepathyTable
 
 .endif

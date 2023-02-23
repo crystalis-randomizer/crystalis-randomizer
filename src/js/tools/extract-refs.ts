@@ -16,6 +16,8 @@ import { TokenSource } from '../asm/token';
 import { Tokenizer } from '../asm/tokenizer';
 import { TokenStream } from '../asm/tokenstream';
 
+const FAIL_ON_BAD_OVERRIDE = true;
+
 export interface RefsJson {
   labels: readonly Label[];
   refs: readonly Ref[];
@@ -36,6 +38,8 @@ export interface Ref {
 async function main() {
   let files: string[] = [];
   let syms: Set<string>|undefined = undefined;
+  let overrides: Set<String>|undefined = undefined;
+  let defs: Set<string>|undefined = undefined;
   let outfile: string|undefined = undefined;
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i];
@@ -46,8 +50,19 @@ async function main() {
       outfile = process.argv[++i];
     } else if (arg === '-s') {
       if (!syms) syms = new Set();
-      for (const sym of JSON.parse(String(fs.readFileSync(process.argv[++i]))) ){
+      if (!overrides) overrides = new Set();
+      if (!defs) defs = new Set();
+      const symbolTable = JSON.parse(String(fs.readFileSync(process.argv[++i])));
+      for (const sym of symbolTable.symbols) {
         syms.add(sym);
+      }
+      for (const sym of symbolTable.overrides) {
+        syms.add(sym);
+        overrides.add(sym);
+      }
+      for (const sym of symbolTable.defs) {
+        syms.add(sym);
+        defs.add(sym);
       }
     } else {
       files.push(arg);
@@ -66,15 +81,22 @@ async function main() {
 
   const isRelevant = syms ? (s: string) => syms!.has(s) : () => true;
 
+  let badOverride = false;
   const labels: Label[] = [];
   const refs: Ref[] = [];
   const asm = new Assembler(Cpu.P02, {
     refExtractor: {
       label(name: string, org: number, segments: readonly string[]) {
+        if (defs?.has(name)) {
+          badOverride = true;
+          console.error(`Undeclared OVERRIDE: ${name}`);
+        }
+        overrides?.delete(name);
         if (!isRelevant(name)) return;
         labels.push({name, org, segments});
       },
-      ref(expr: Expr, bytes: number, org: number, segments: readonly string[]) {
+      ref(expr: Expr, bytes: number, org: number,
+          segments: readonly string[]) {
         const offset = asm.orgToOffset(org);
         if (offset == null) return;
         const used = Expr.symbols(expr);
@@ -89,7 +111,14 @@ async function main() {
   toks.enter(TokenSource.concat(...sources));
   const pre = new Preprocessor(toks, asm);
   asm.tokens(pre);
+  for (const sym of overrides || []) {
+    badOverride = true;
+    console.error(`Vanilla missing OVERRIDE: ${sym}`);
+  }
 
+  if (FAIL_ON_BAD_OVERRIDE && badOverride) {
+    process.exit(1);
+  }
   fs.writeFileSync(outfile, JSON.stringify({refs, labels} as RefsJson));
 }
 

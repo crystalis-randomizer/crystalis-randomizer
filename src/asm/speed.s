@@ -9,6 +9,7 @@
 
 .ifdef _EXPAND_SPEEDS
 .org $8480
+OVERRIDE ; !!!
 ComputeDisplacementVector:
 ;;; Inputs:
 ;;;   A - direction, from $360,x (0-7, or 0-f, or 0-3f)

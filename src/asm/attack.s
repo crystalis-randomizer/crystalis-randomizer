@@ -217,8 +217,6 @@ RemoveEnemyAndPlaySFX:
   ; implicit rts
 .endif ; _ENEMY_HP
 
-UpdateHPDisplayInternal = $8cc0
-
 .reloc
 UpdatePlayerMaxHPAndMPAfterLevelUp:
   ldy PlayerLevel
@@ -261,8 +259,7 @@ UpdateDisplayAfterLevelUp:
 ;;; AwardExperiencePoints
 ;; This is changed so that Player EXP counts down instead of up to max EXP
 ;; skip exp calculation if max level
-.org $924b
-AwardExperiencePoints:
+.org $924b ; AwardExperiencePoints
   ;; instead of loading from ObjExp, we store the Exp value in $61
   lda $61
   nop

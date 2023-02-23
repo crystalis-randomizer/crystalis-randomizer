@@ -115,3 +115,7 @@ FREE_UNTIL $d280
   adc #itemValueMedicalHerb
 .org $850b
   adc #itemValueFruitOfPower
+
+;;; Allow dynamically changing dialog pointers
+.import CommonWords, UncommonWords, PersonNames, ItemNames
+.import MessageTableBanks, MessageTableParts

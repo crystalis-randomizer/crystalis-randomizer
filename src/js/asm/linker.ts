@@ -800,5 +800,5 @@ class Link {
 }
 
 const DEBUG = false;
-const NO_THROW = true; // for overwrite
+const NO_THROW = false; // for overwrite
 const QUIET = false; // temporary for overwrite

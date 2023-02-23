@@ -4,6 +4,7 @@
 // defined and/or referenced in the file(s), from the token stream.
 
 import * as fs from 'node:fs';
+import { Cpu } from '../asm/cpu';
 import { TokenSource } from '../asm/token';
 import { Tokenizer } from '../asm/tokenizer';
 import { TokenStream } from '../asm/tokenstream';
@@ -33,16 +34,45 @@ async function main() {
   }
 
   const symbols = new Set<string>();
+  const overrides = new Set<string>();
+  const defs = new Set<string>();
   const toks = new TokenStream();
   const sources = await Promise.all(files.map(tokenizer));
   toks.enter(TokenSource.concat(...sources));
   let line;
+  let override = false;
   while ((line = toks.next())) {
-    for (const t of line) {
-      if (t.token === 'ident' && !t.str.startsWith('@')) symbols.add(t.str);
+    for (let i = 0; i < line.length; i++) {
+      const t = line[i];
+      if (t.token === 'ident' && !/^[@:]/.test(t.str)) {
+        symbols.add(t.str);
+        const next = line[i + 1];
+        if (next?.token === 'op' && /^[:=]$/.test(next.str)) {
+          (override ? overrides : defs).add(t.str);
+        } else if (override) {
+          overrides.add(t.str);
+        }
+      }
+      override = t.token === 'ident' && t.str === 'OVERRIDE';
     }
   }
-  fs.writeFileSync(outfile, JSON.stringify([...symbols]));
+  for (const op of Object.keys(Cpu.P02.table)) {
+    symbols.delete(op);
+  }
+  for (const s of overrides) {
+    symbols.delete(s);
+    defs.delete(s);
+  }
+  for (const s of defs) {
+    symbols.delete(s);
+  }
+  symbols.delete('x');
+  symbols.delete('y');
+  fs.writeFileSync(outfile, JSON.stringify({
+    symbols: [...symbols],
+    overrides: [...overrides],
+    defs: [...defs],
+  }));
 }
 
 function usage(code = 1, message = '') {

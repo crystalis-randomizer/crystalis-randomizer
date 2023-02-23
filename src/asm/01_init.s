@@ -3,6 +3,10 @@
 
 ;;; Initialization. This must come before all other modules.
 
+;;; Tag for labels that we expect to override vanilla
+.define OVERRIDE
+
+;;; Nicer syntax for declaring free sections
 .define FREE {seg [start, end)} \
     .pushseg seg .eol \
     .org start .eol \
@@ -31,7 +35,6 @@
 .popseg .eol \
 .endif .eol \
 UPDATE_REFS :- @ refs
-
 
 ;;; Update a handful of refs to point to the given address.
 ;;; Usage:
@@ -382,60 +385,17 @@ IRQENABLE  = $e001
 ;;; note: this is dangerous if it would result in a register read
 .define SKIP_TWO_BYTES .byte $2c
 
-;;; Labels (TODO - consider keeping track of bank?)
-.segment "0e"                   ; 1c000
-SetOrClearFlagsFromBytePair_24y = $8112
-ReadFlagFromBytePair_24y        = $8135
-ItemGet                         = $826f
-ItemGet_Bracelet                = $82f4
-ItemGet_FindOpenSlot            = $8308
-ItemUse_TradeIn                 = $8354
-
 .segment "10"       ; 20000
-Shop_NothingPressed = $97cd
 AfterLoadGame       = $9c7a
 
-.segment "13"      ; 26000
-PlayerDeath        = $b91c
-ActivateOpelStatue = $b9b0
-
-
-.segment "1a"         ; 34000
-
-ArmorDefense          = $8bc0
-ShieldDefense         = $8bc9
-DisplayNumberInternal = $8e46
-KillObject            = $9152
-KnockbackObject       = $95c0
-NextLevelExpByLevel   = $8b9e
-
 .segment "fe"              ; 3c000
-PowersOfTwo                = $c000
-UpdateEquipmentAndStatus   = $c008
-StartAudioTrack            = $c125
-LoadOneObjectDataInternal  = $c25d
-BankSwitch16k              = $c40e
-BankSwitch8k_8000          = $c418
-BankSwitch8k_a000          = $c427
-EnableNMI                  = $c436
-DisableNMI                 = $c43e
-StageNametableWriteFromTable    = $c482
 FlushNametableDataWrite         = $c676
-WaitForNametableBufferAvailable = $c72b
-RequestAttributeTable0Write     = $c739
 MainLoop_01_Game           = $cab6
-CheckForPlayerDeath        = $cb84
 DialogAction_11            = $d21d
-LoadAndShowDialog          = $d347
-WaitForDialogToBeDismissed = $d354
-SpawnMimic                 = $d3da
 MainLoopItemGet            = $d3ff
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
-UpdatePpuScroll               = $eb6d
-ReadControllersWithDirections = $fe80
-DisplayNumber                 = $ffa9
 
 ;;; Various free sections
 

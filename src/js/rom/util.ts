@@ -631,7 +631,7 @@ interface IAssembler {
   free(size: number): void;
   reloc(name?: string): void;
   label(name: string): void;
-  assign(name: string, value: number): void;
+  assign(name: string, value: number|Expr): void;
   export(name: string): void;
 }
 
@@ -653,7 +653,7 @@ export function relocExportLabel(a: IAssembler, name: string, seg?: Segment[]) {
   a.export(name);
 }
 
-export function exportValue(a: IAssembler, name: string, value: number) {
+export function exportValue(a: IAssembler, name: string, value: number|Expr) {
   a.assign(name, value);
   a.export(name);
 }
@@ -662,10 +662,12 @@ export function cloneArray<T extends ReadonlyArray<any>>(arr: T): Mutable<T> {
   return [...arr] as Mutable<T>;
 }
 
-export function readValue(symbol: string, prg: Uint8Array) {
+export function readValue(symbol: string, prg: Uint8Array, seg?: Segment): number {
   const values = new Set<number>();
+  if (!refsBySymbol().get(symbol)?.length) throw new Error(`No mappings for ${symbol}`);
   for (const ref of refsBySymbol().get(symbol) || []) {
-    const inv = Expr.invert(ref.expr, symbol, prg[ref.offset]);
+    const val = prg[ref.offset] | (ref.bytes === 2 ? prg[ref.offset + 1] << 8 : 0);
+    const inv = Expr.invert(ref.expr, symbol, val);
     if (inv != null) values.add(inv);
   }
   if (values.size !== 1) {
@@ -673,5 +675,6 @@ export function readValue(symbol: string, prg: Uint8Array) {
         [...values].map(x => `$${x.toString(16).padStart(2, '0')}`).join(', ')
         }]`);
   }
-  return values[Symbol.iterator]().next().value;
+  const result = values[Symbol.iterator]().next().value;
+  return seg ? result - seg.org + seg.offset : result;
 }

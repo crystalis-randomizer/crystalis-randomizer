@@ -323,7 +323,7 @@ AutoEquipBracelets:
 ;;; Prevent ever "equipping" opel statue
 OpelStatueReturn = $db0d
 .org $db0e
-SetEquippedConsumableItem:
+.assert * = SetEquippedConsumableItem
     ;; Figure out what's equipped
     ldy SelectedConsumableIndex
     bmi +

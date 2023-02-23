@@ -149,6 +149,9 @@ export namespace Expr {
 
   /** Attempts to solve the the given symbol given the final result. */
   export function invert(expr: Expr, sym: string, result: number): number|undefined {
+    // TODO - make Solver an object that can keep track of extra info,
+    // such as combining a < and a > byte to get a full word, or even
+    // possibly keeping track of bank?
     switch (expr.op) {
       case 'sym':
         return expr.sym === sym ? result : undefined; // found what we're looking for

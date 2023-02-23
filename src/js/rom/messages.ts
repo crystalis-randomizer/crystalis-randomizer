@@ -2,8 +2,7 @@ import {Expr} from '../asm/expr';
 import {Module} from '../asm/module';
 import {Rom} from '../rom';
 import {MessageId} from './messageid';
-import {Address, Data, Segment, hex, readString,
-        seq, free, tuple} from './util.js';
+import { Data, Segment, hex, readString, seq, free, tuple, readValue, exportValue, readLittleEndian } from './util.js';
 
 const {$14, $15, $16_a, $17} = Segment;
 
@@ -67,6 +66,7 @@ class Message {
     // Parse the message
     const prg: Data<number> = messages.rom.prg;
     const parts = [];
+    if (offset < 0x28000 || offset > 0x30000) debugger;
     for (let i = offset; offset && prg[i]; i++) {
       const b = prg[i];
       this.bytes.push(b);
@@ -111,7 +111,8 @@ class Message {
       } else if (b >= 0x20) {
         parts.push(String.fromCharCode(b));
       } else {
-        throw new Error(`Non-exhaustive switch: ${b} at ${i.toString(16)}`);
+        throw new Error(`Non-exhaustive switch: $${b.toString(16)} at $${
+                         i.toString(16)}`);
       }
     }
     this.text = parts.join('');
@@ -286,17 +287,6 @@ const PUNCTUATION: {[char: string]: boolean} = {
   '#': true,  // page separator
 };
 
-// NOTE: the +1 version is always at +5 from the pointer
-const COMMON_WORDS_BASE_PTR = Address.of($14, 0x8704);
-const UNCOMMON_WORDS_BASE_PTR = Address.of($14, 0x868a);
-const PERSON_NAMES_BASE_PTR = Address.of($14, 0x86d5);
-const ITEM_NAMES_BASE_PTR = Address.of($14, 0x86e9);
-const ITEM_NAMES_BASE_PTR2 = Address.of($14, 0x8789);
-
-const BANKS_PTR = Address.of($14, 0x8541);
-const BANKS_PTR2 = Address.of($14, 0x864c);
-const PARTS_PTR = Address.of($14, 0x854c);
-
 const SEGMENTS: Record<number, Segment> = {
   0x15: $15,
   0x16: $16_a,
@@ -327,14 +317,14 @@ export class Messages {
   static readonly CONTINUED = '#';
 
   constructor(readonly rom: Rom) {
-    const commonWordsBase = COMMON_WORDS_BASE_PTR.readAddress(rom.prg);
-    const uncommonWordsBase = UNCOMMON_WORDS_BASE_PTR.readAddress(rom.prg);
-    const personNamesBase = PERSON_NAMES_BASE_PTR.readAddress(rom.prg);
-    const itemNamesBase = ITEM_NAMES_BASE_PTR.readAddress(rom.prg);
-    const banksBase = BANKS_PTR.readAddress(rom.prg);
-    const partsBase = PARTS_PTR.readAddress(rom.prg);
+    const commonWordsBase = readValue('CommonWords', rom.prg, $14);
+    const uncommonWordsBase = readValue('UncommonWords', rom.prg, $14);
+    const personNamesBase = readValue('PersonNames', rom.prg, $14);
+    const itemNamesBase = readValue('ItemNames', rom.prg, $14);
+    const banksBase = readValue('MessageTableBanks', rom.prg, $14);
+    const partsBase = readValue('MessageTableParts', rom.prg, $14);
 
-    const bases: Record<number, Address> = {
+    const bases: Record<number, number> = {
       5: uncommonWordsBase,
       6: personNamesBase,
       7: itemNamesBase,
@@ -354,11 +344,15 @@ export class Messages {
       7: this.itemNames,
     };
 
-    const getWord = (arr: string[], base: Address, index: number) => {
+    const readAddress = (index: number, seg?: Segment): number => {
+      const offset = seg ? seg.offset - seg.org : 0;
+      return readLittleEndian(rom.prg, index) + offset;
+    }
+
+    const getWord = (arr: string[], base: number, index: number) => {
       let word = arr[index];
       if (word != null) return word;
-      word = readString(rom.prg,
-                        base.plus(2 * index).readAddress(rom.prg).offset);
+      word = readString(rom.prg, readAddress(base + 2 * index, $14));
       return (arr[index] = word);
     };
 
@@ -377,17 +371,17 @@ export class Messages {
     // detect the end of each part.  Otherwise there is no guarantee
     // how large the part actually is.
 
-    let lastPart = banksBase.offset;
+    let lastPart = banksBase;
     this.banks = tuple(rom.prg, lastPart, this.partCount);
     for (let p = this.partCount - 1; p >= 0; p--) {
-      const start = partsBase.plus(2 * p).readAddress(rom.prg);
-      const len = (lastPart - start.offset) >>> 1;
-      lastPart = start.offset;
+      const start = readAddress(partsBase + 2 * p, $14);
+      const len = (lastPart - start) >>> 1;
+      lastPart = start;
       const seg = SEGMENTS[this.banks[p]];
       const part: Message[] = this.parts[p] = [];
       for (let i = 0; i < len; i++) {
-        const addr = start.plus(2 * i).readAddress(rom.prg, seg);
-        part[i] = new Message(this, p, i, addr.offset, words);
+        const addr = readAddress(start + 2 * i, seg);
+        part[i] = new Message(this, p, i, addr, words);
       }
     }
 
@@ -762,18 +756,6 @@ export class Messages {
     //   trie.set(table[i].str, i < 0x80 ? [i + 0x80] : [5, i - 0x80]);
     // }
 
-    // write the abbreviation tables (all, rewriting hardcoded coderefs)
-    function updateCoderef(ptr: Address, base: Expr, ...offsets: number[]) {
-      ptr.loc(a);
-      a.word(base);
-      // second ref (usually 5 bytes later)
-      let i = 0;
-      for (const offset of offsets) {
-        ptr.plus(offset).loc(a);
-        a.word({op: '+', args: [base, {op: 'num', num: ++i}]});
-      }
-    }
-
     // First step: write the messages.
     const addresses: Expr[][] = seq(this.partCount, () => [])
     for (let partId = 0; partId < this.partCount; partId++) {
@@ -804,20 +786,17 @@ export class Messages {
     const partsTable = a.pc();
     a.word(...partTables);
 
-    // Finally update the bank and parts pointers.
-    updateCoderef(BANKS_PTR, bankTable);
-    updateCoderef(BANKS_PTR2, bankTable);
-    updateCoderef(PARTS_PTR, partsTable, 5);
+    exportValue(a, 'MessageTableBanks', bankTable);
+    exportValue(a, 'MessageTableParts', partsTable);
 
     // Now write the words tables.
     const wordTables = [
-      [`CommonWords`, this.commonWords, [COMMON_WORDS_BASE_PTR]],
-      [`UncommonWords`, this.uncommonWords, [UNCOMMON_WORDS_BASE_PTR]],
-      [`PersonNames`, this.personNames, [PERSON_NAMES_BASE_PTR]],
-      [`ItemNames`, this.itemNames, [ITEM_NAMES_BASE_PTR,
-                                     ITEM_NAMES_BASE_PTR2]],
+      [`CommonWords`, this.commonWords],
+      [`UncommonWords`, this.uncommonWords],
+      [`PersonNames`, this.personNames],
+      [`ItemNames`, this.itemNames],
     ] as const;
-    for (const [name, words, ptrs] of wordTables) {
+    for (const [name, words] of wordTables) {
       const addrs: (number|Expr)[] = [];
       let i = 0;
       for (const word of words) {
@@ -832,9 +811,7 @@ export class Messages {
       a.reloc(name);
       const base = a.pc();
       a.word(...addrs);
-      for (const ptr of ptrs) {
-        updateCoderef(ptr, base, 5);
-      }
+      exportValue(a, name, base);
     }
     return [a.module()];
   }

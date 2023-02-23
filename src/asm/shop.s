@@ -40,13 +40,9 @@ FREE_UNTIL $9912
 FREE_UNTIL $98b6
 
 .reloc
+OVERRIDE
 ShopItemHorizontalPositions:
   .byte 8,13,18,23
-
-PostInitializeShop = $98b6
-
-.org $98bc  ; use the new position table
-  lda ShopItemHorizontalPositions,x
 
 ;;; Initialize inn price
 .org $95cb

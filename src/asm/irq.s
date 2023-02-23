@@ -31,24 +31,13 @@
 ;;; that MaybeUpdateMusic restores $50 as well as $8000, though this takes
 ;;; an extra two bytes that we need to recover from SelectCHRRomBanks (which
 ;;; immediately follows) by using smaller instructions.
-.org $f564
-  jsr SelectCHRRomBanks
-.org $f6e2
-  jsr SelectCHRRomBanks
-.org $f734
-  jsr SelectCHRRomBanks
-.org $f779
-  jsr SelectCHRRomBanks
-.org $f785
-  jsr SelectCHRRomBanks
-.org $f7c8
-  jsr SelectCHRRomBanks
 .org $f882
   stx $50
   rts
 FREE_UNTIL $f8cb
 
 .reloc
+OVERRIDE
 SelectCHRRomBanks:
   ldx #$05
 -  stx $8000

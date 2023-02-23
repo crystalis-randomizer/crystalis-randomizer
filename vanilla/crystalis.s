@@ -40751,7 +40751,7 @@ LookupMessageInternal:
         <@2853a@>
         <@2853d@>
         <@28540 MessageTableBanks@>
-        <@28543 BankSwitch8k_A000_alt@>
+        <@28543 BankSwitch8k_a000_alt@>
         <@28546@>
         <@28549@>
         <@2854a@>
@@ -40820,7 +40820,7 @@ MessageDecodeJump:
         .word (MessageDecodeJump_02_EndLine)         ; 02 new line
         .word (MessageDecodeJump_03_EndPage)         ; 03 continue on next page
         .word (MessageDecodeJump_04_PlayerName)      ; 04 player name
-        .word (MessageDecodeJump_05_LessCommonWord)  ; 05 less common words (arg follows)
+        .word (MessageDecodeJump_05_UncommonWord)    ; 05 less common words (arg follows)
         .word (MessageDecodeJump_06_PersonName)      ; 06 person names (arg follows)
         .word (MessageDecodeJump_07_ItemName)        ; 07 item names (arg follows)
         .word (MessageDecodeJump_08_CurrentItemName) ; 08 currently gained item name
@@ -40914,7 +40914,7 @@ MessageDecodeJump_03_EndPage:
         <@28645 ReadControllersWithDirections@>
         <@28648@>
         <@2864b MessageTableBanks@>
-        <@2864e BankSwitch8k_A000_alt@>
+        <@2864e BankSwitch8k_a000_alt@>
         <@28651@>
         <@28653@>
         <@28655 +@> ; $28660
@@ -40946,14 +40946,14 @@ MessageDecodeJump_04_PlayerName:
 +       <@28681@>
 ;;; --------------------------------
 .org $8682
-MessageDecodeJump_05_LessCommonWord:
+MessageDecodeJump_05_UncommonWord:
         <@28682 _28710@>
         <@28685@>
         <@28687@>
         <@28688@>
-        <@28689 LessCommonWords@>
+        <@28689 UncommonWords@>
         <@2868c@>
-        <@2868e LessCommonWords+1@>
+        <@2868e UncommonWords+1@>
         <@28691@>
 CopyWordToMessageBuffer:
         ;; Copies the word at ($2a) to the message buffer.
@@ -41253,7 +41253,7 @@ StageNametableWriteForMessage:
         <@28857 EnableNMI_alt@>
 ;;; --------------------------------
 .org $885a
-BankSwitch8k_A000_alt:
+BankSwitch8k_a000_alt:
         <@2885a@>
         <@2885c@>
         <@2885e@>
@@ -41457,17 +41457,17 @@ CommonWords:
         .word (CommonWord_fe) ; fe
         .word (CommonWord_ff) ; ff
 .org $8a00
-LessCommonWords:
-        .word (LessCommonWord_00) ; 00
-        .word (LessCommonWord_01) ; 01
-        .word (LessCommonWord_02) ; 02
-        .word (LessCommonWord_03) ; 03
-        .word (LessCommonWord_04) ; 04
-        .word (LessCommonWord_05) ; 05
-        .word (LessCommonWord_06) ; 06
-        .word (LessCommonWord_07) ; 07
-        .word (LessCommonWord_08) ; 08
-        .word (LessCommonWord_09) ; 09
+UncommonWords:
+        .word (UncommonWord_00) ; 00
+        .word (UncommonWord_01) ; 01
+        .word (UncommonWord_02) ; 02
+        .word (UncommonWord_03) ; 03
+        .word (UncommonWord_04) ; 04
+        .word (UncommonWord_05) ; 05
+        .word (UncommonWord_06) ; 06
+        .word (UncommonWord_07) ; 07
+        .word (UncommonWord_08) ; 08
+        .word (UncommonWord_09) ; 09
 .org $8a14
 PersonNames:
         .word (PersonName_00) ; 00
@@ -41842,25 +41842,25 @@ CommonWord_ff:
         .byte [@28d35:2@],[@28d37@]      ; ff
 ;;; Less common words (05)
 .org $8d38
-LessCommonWord_00:
+UncommonWord_00:
         .byte [@28d38:6@],[@28d3e@]        ; 05 00
-LessCommonWord_01:
+UncommonWord_01:
         .byte [@28d3f:6@],[@28d45@]        ; 05 01
-LessCommonWord_02:
+UncommonWord_02:
         .byte [@28d46:3@],[@28d49@]           ; 05 02
-LessCommonWord_03:
+UncommonWord_03:
         .byte [@28d4a:5@],[@28d4f@]         ; 05 03
-LessCommonWord_04:
+UncommonWord_04:
         .byte [@28d50:5@],[@28d55@]         ; 05 04
-LessCommonWord_05:
+UncommonWord_05:
         .byte [@28d56:7@],[@28d5d@]       ; 05 05
-LessCommonWord_06:
+UncommonWord_06:
         .byte [@28d5e:6@],[@28d64@]        ; 05 06
-LessCommonWord_07:
+UncommonWord_07:
         .byte [@28d65:6@],[@28d6b@]        ; 05 07
-LessCommonWord_08:
+UncommonWord_08:
         .byte [@28d6c:10@],[@28d76@]    ; 05 08
-LessCommonWord_09:
+UncommonWord_09:
         .byte [@28d77:8@],[@28d7f@]      ; 05 09
         .byte [@28d80:13@],[@28d8d@] ; 05 0a
 ;;; Person names (06)
@@ -45465,7 +45465,7 @@ RevertChangeMagic:
 ;;; --------------------------------
 .org $bc00
 MaybeSetCheckpoint:
-        <@2fc00 _2fc09@>
+        <@2fc00 MaybeSetCheckpointActual@>
 ;;; --------------------------------
 .org $bc03
 _2fc03:
@@ -45476,7 +45476,7 @@ _2fc06:
         <@2fc06 _2fcda@>
 ;;; --------------------------------
 .org $bc09
-_2fc09:
+MaybeSetCheckpointActual:
         <@2fc09@>
          <@2fc0a@>
          <@2fc0b@>
@@ -49487,7 +49487,7 @@ LoadPalettesForCustomLocation:
          <@34c2c@>
          <@34c2d@>
         <@34c2e@>
-        <@34c2f BankSwitch8k_A000@>
+        <@34c2f BankSwitch8k_a000@>
 ;;; --------------------------------
 .org $8c32
 _34c32:
@@ -49570,7 +49570,7 @@ PreparePaletteData:
         <@34c8f +@> ; $34c92
          <@34c91@>
 +       <@34c92@>
-        <@34c93 BankSwitch8k_A000@>
+        <@34c93 BankSwitch8k_a000@>
         <@34c96@>
         <@34c98@> ; push $11; we may temporarily zero it.
          <@34c99@>
@@ -51067,7 +51067,7 @@ AdHocSpawnObject:
         <@35732@>
         <@35734@>
          <@35735@> ; A000 -> 28000
-         <@35737 BankSwitch8k_A000@>
+         <@35737 BankSwitch8k_a000@>
          <@3573a@>
          <@3573c@>
          <@3573e AdHocSpawns@>
@@ -51092,7 +51092,7 @@ AdHocSpawnObject:
         ;; a few entries in 29c00 have #$ff for $21 -> return right away
          <@3576b @loop@>
         <@3576d@>
-        <@3576e BankSwitch8k_A000@>
+        <@3576e BankSwitch8k_a000@>
         <@35771@>
         <@35772@>
         ;; ----
@@ -51149,7 +51149,7 @@ AdHocSpawnObject:
          <@357cc@>
          <@357ce @loop@>
 @quit:  <@357d0@>
-        <@357d1 BankSwitch8k_A000@>
+        <@357d1 BankSwitch8k_a000@>
         <@357d4@>
         <@357d6@>
 ;;; --------------------------------
@@ -53605,7 +53605,7 @@ DataTable_36908:
 .org $a90c
 ObjectActionJump_79:
         <@3690c@>
-        <@3690e BankSwitch8k_A000@>
+        <@3690e BankSwitch8k_a000@>
         <@36911 MaybeShootProjectile@>
 ;;; --------------------------------
 .org $a914
@@ -62574,7 +62574,7 @@ UpdateEquipmentAndStatus:
            <@3c0f2 UpdateHPDisplayInternal@>
            <@3c0f5 WaitForNametableFlush@>
           <@3c0f8@>
-          <@3c0f9 BankSwitch8k_A000@>
+          <@3c0f9 BankSwitch8k_a000@>
          <@3c0fc@>
          <@3c0fd BankSwitch8k_8000@>
         ;; ----
@@ -62764,7 +62764,7 @@ _3c1ae:
           <@3c203 -@> ; $3c1bd
           <@3c205 _380a5@>
          <@3c208@>
-         <@3c209 BankSwitch8k_A000@>
+         <@3c209 BankSwitch8k_a000@>
         <@3c20c@>
         <@3c20d BankSwitch8k_8000@>
 ;;; --------------------------------
@@ -62838,7 +62838,7 @@ LoadOneObjectDataInternal:
          <@3c266@>
          <@3c267@>
           <@3c268@>
-          <@3c26a BankSwitch8k_A000@>
+          <@3c26a BankSwitch8k_a000@>
           <@3c26d@>
           <@3c26f@>
           <@3c270@>
@@ -63070,7 +63070,7 @@ BankSwitch16k:
         <@3c40e@>
         <@3c40f@>
         <@3c411@>
-        <@3c413 BankSwitch8k_A000@>
+        <@3c413 BankSwitch8k_a000@>
         <@3c416@>
 BankSwitch8k_8000:
         ;; Swap in the 8k bank number in register A.
@@ -63084,7 +63084,7 @@ BankSwitch8k_8000:
         <@3c426@>
 ;;; --------------------------------
 .org $c427
-BankSwitch8k_A000:
+BankSwitch8k_a000:
         ;; Swap in the 8k bank number in register A.
         ;; May run during IRQ.
         <@3c427@>
@@ -63651,7 +63651,7 @@ DrawFullScreenByUsingVerticalScroll:
             <@3c854@>
            <@3c856 -@> ; $3c83e
           <@3c858@>
-          <@3c859 BankSwitch8k_A000@>
+          <@3c859 BankSwitch8k_a000@>
          <@3c85c@>
          <@3c85d BankSwitch8k_8000@>
         <@3c860@>
@@ -63855,7 +63855,7 @@ MainLoopJump_00_PrepareGame:
 MainLoopJump_08_ContinueGame:
         <@3c9da PopulateInitialObjects@>
         <@3c9dd@> ; A000 -> 2E000
-        <@3c9df BankSwitch8k_A000@>
+        <@3c9df BankSwitch8k_a000@>
         <@3c9e2 _2fc06@>
         <@3c9e5 WaitForNametableFlush@>
         <@3c9e8 UpdateEquipmentAndStatus@>
@@ -64315,7 +64315,7 @@ _3ccdd:
            <@3cd21 +@> ; $3cd28
         ;; Routines 60..6f are in a different page
             <@3cd23@>
-            <@3cd25 BankSwitch8k_A000@>
+            <@3cd25 BankSwitch8k_a000@>
 +          <@3cd28@>
 _3cd2b:
           <@3cd2b@>
@@ -65332,7 +65332,7 @@ MainGameModeJump_06_ItemUseMessage:
         ;; teleported
 +       <@3d4e7 ItemUse_Main@>
         <@3d4ea@>
-        <@3d4ec BankSwitch8k_A000@>
+        <@3d4ec BankSwitch8k_a000@>
         <@3d4ef MaybeSetCheckpoint@>
 ;;; --------------------------------
 .org $d4f2
@@ -65928,7 +65928,7 @@ MainGameModeJump_12_Inventory:
           <@3d8d8 ^PlayerInventoryMenu@> ; $10
           <@3d8da BankSwitch8k_8000@>
           <@3d8dd@>
-          <@3d8df BankSwitch8k_A000@>
+          <@3d8df BankSwitch8k_a000@>
           <@3d8e2 PlayerInventoryMenu@>
           <@3d8e5@>
           <@3d8e7 WaitForOAMDMA@>
@@ -67676,7 +67676,7 @@ DoLocationSpecificChecks:
         <@3e4f9@>
         <@3e4fb _34c49@>
 +       <@3e4fe@> ; a000 -> 2e000
-        <@3e500 BankSwitch8k_A000@>
+        <@3e500 BankSwitch8k_a000@>
         <@3e503 MaybeSetCheckpoint@>
         <@3e506@>
         <@3e508@>
@@ -67706,7 +67706,7 @@ ExitTypeJump_1_Seamless:
 ExitTypeJump_2_Warp:
         ;; Teleport
         <@3e533@> ; 2e000 -> a000
-        <@3e535 BankSwitch8k_A000@>
+        <@3e535 BankSwitch8k_a000@>
         <@3e538 MaybeSetCheckpoint@>
         <@3e53b _3e845@>
         <@3e53e _3e61b@>
@@ -68045,7 +68045,7 @@ CopyMapDataFlags:
           <@3e753 -@> ; $3e70d
         ;; ----
 ++       <@3e756@>
-         <@3e757 BankSwitch8k_A000@>
+         <@3e757 BankSwitch8k_a000@>
         <@3e75a@>
         <@3e75b BankSwitch8k_8000@>
 ;;; --------------------------------
@@ -69033,11 +69033,11 @@ CheckMetatileAgainstFlag:
         <@3eda5@>
         <@3eda7@>
          <@3eda8@> ; $a000 -> $12000
-         <@3edaa BankSwitch8k_A000@>
+         <@3edaa BankSwitch8k_a000@>
          <@3edad@>
          <@3edaf@>
         <@3edb1@>
-        <@3edb2 BankSwitch8k_A000@>
+        <@3edb2 BankSwitch8k_a000@>
         <@3edb5@>
 +       <@3edb7@>
         <@3edb9@>
@@ -69129,7 +69129,7 @@ WriteMetatileAttributesForVerticalScroll:
          <@3edf5@>
         ;; ----
 +       <@3edf6@> ; $a000 -> $12000
-        <@3edf8 BankSwitch8k_A000@>
+        <@3edf8 BankSwitch8k_a000@>
         <@3edfb@>
         <@3edfd@>
         <@3edff@>
@@ -69182,7 +69182,7 @@ WriteMetatileAttributesForHorizontalScroll:
          <@3ee41@>
         ;; ----
 +       <@3ee42@> ; $a000 -> $12000
-        <@3ee44 BankSwitch8k_A000@>
+        <@3ee44 BankSwitch8k_a000@>
         <@3ee47@>
         <@3ee49@>
         <@3ee4b@>
@@ -69580,7 +69580,7 @@ ValidateSaveFiles:
         <@3f0a9@>
         <@3f0ab@>
         <@3f0ae@> ; a000 -> 2e000
-        <@3f0b0 BankSwitch8k_A000@>
+        <@3f0b0 BankSwitch8k_a000@>
 ValidateSaveFile1:
         ;; First check that the two copies are equal
         <@3f0b3@>
@@ -69720,7 +69720,7 @@ ResetSaveFile2:
 FinishSaveFileValidations:
         ;; All validations complete, switch the PRG bank back and return
         <@3f1c7@> ; prg bank mirror
-        <@3f1ca BankSwitch8k_A000@>
+        <@3f1ca BankSwitch8k_a000@>
         ;; ----
 UnconditionallyResetCheckpointFile:
         <@3f1cd@>
@@ -69729,7 +69729,7 @@ UnconditionallyResetCheckpointFile:
         <@3f1d5@>
         <@3f1d7@> ; save PRM bank
         <@3f1da@>
-        <@3f1dc BankSwitch8k_A000@>
+        <@3f1dc BankSwitch8k_a000@>
         <@3f1df ResetCheckpointFile@>
         ;; ----
 ValidateCheckpointFile:
@@ -70679,7 +70679,7 @@ MaybeUpdateMusic:
         <@3f873@>
         ;; Restore banks that were present before.
         <@3f875@>
-        <@3f877 BankSwitch8k_A000@>
+        <@3f877 BankSwitch8k_a000@>
         <@3f87a@>
         <@3f87c BankSwitch8k_8000@>
         <@3f87f BANKSELECT@>
@@ -71141,7 +71141,7 @@ WaitForDialogToBeDismissed:
 .org $ffdb
 RestoreBanks:
          <@3ffdb@>
-         <@3ffdc BankSwitch8k_A000@>
+         <@3ffdc BankSwitch8k_a000@>
         <@3ffdf@>
         <@3ffe0 BankSwitch8k_8000@>
 ;;; --------------------------------

@@ -45,7 +45,6 @@ import * as version from './version';
 import { shuffleAreas } from './pass/shuffleareas';
 import { checkTriggers } from './pass/checktriggers';
 import { Sprite } from './characters';
-import { RefsJson } from './tools/extract-refs';
 
 const EXPAND_PRG: boolean = true;
 const ASM = ModuleId('asm');

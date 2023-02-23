@@ -67,15 +67,12 @@ FREE_UNTIL $bc00
 
 .ifdef _DISABLE_WARP_BOOTS_REUSE
 .org $bc00
-MaybeSetCheckpoint:
+.assert * = MaybeSetCheckpoint
   ;; Normally this just jumps to MaybeSetCheckpointActual, which is kind
   ;; of pointless, but it provides a convenient point of indirection for
   ;; us to use here.
   jmp FixWarpBootsReuseGlitch
 .endif
-
-.org $bc09
-MaybeSetCheckpointActual:
 
 
 .segment "fe", "ff"

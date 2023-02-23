@@ -1,6 +1,8 @@
-import {Module} from '../asm/module';
-import {Rom} from '../rom';
-import {Address, Segment, tuple} from './util';
+import { Module } from '../asm/module';
+import { Rom } from '../rom';
+import { readLittleEndian, readValue, relocExportLabel, Segment } from './util';
+
+const {$1a} = Segment;
 
 // List of coin drops
 export class CoinDrops {
@@ -8,16 +10,17 @@ export class CoinDrops {
   values: number[];
 
   constructor(readonly rom: Rom) {
-    this.values = tuple(rom.prg, ADDRESS.offset, COUNT);
+    const address = readValue('CoinAmounts', rom.prg, $1a);
+    this.values = Array.from({length: COUNT}, (_, i) =>
+        readLittleEndian(rom.prg, address + 2 * i));
   }
 
   write(): Module[] {
     const a = this.rom.assembler();
-    ADDRESS.loc(a);
+    relocExportLabel(a, 'CoinAmounts', [$1a]);
     a.word(...this.values);
     return [a.module()];
   }
 }
 
-const ADDRESS = Address.of(Segment.$1a, 0x8bde);
 const COUNT = 16;

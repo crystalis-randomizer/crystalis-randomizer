@@ -16,6 +16,12 @@ export function smudge(contents: string, cpu: Cpu, prg: Uint8Array): string {
 export function clean(contents: string, cpu: Cpu, prg: Uint8Array): string {
   return new Cleaner(cpu, prg).clean(contents);
 }
+export type SmudgeFunction = (arg: string) => Promise<string>;
+export namespace SmudgeFuntion {
+  export function forKnownPrg(prg: Uint8Array, cpu = Cpu.P02): SmudgeFunction {
+    return (contents) => Promise.resolve(smudge(contents, cpu, prg));
+  }
+}
 
 // Smudging is pretty easy: we don't need to be clever about which bytes in the
 // rom to use for obfuscating.  We just deobfuscate based on whatever we see.

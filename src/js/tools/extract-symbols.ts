@@ -5,6 +5,7 @@
 
 import * as fs from 'node:fs';
 import { Cpu } from '../asm/cpu';
+import { nodeSmudger } from '../asm/nodesmudger';
 import { TokenSource } from '../asm/token';
 import { Tokenizer } from '../asm/tokenizer';
 import { TokenStream } from '../asm/tokenstream';
@@ -29,8 +30,8 @@ async function main() {
   if (!outfile) outfile = '/dev/stdout';
 
   async function tokenizer(path: string) {
-    return new Tokenizer(String(await fs.promises.readFile(path)), path,
-                         {lineContinuations: true});
+    const src = await nodeSmudger(String(await fs.promises.readFile(path)));
+    return new Tokenizer(src, path, {lineContinuations: true});
   }
 
   const symbols = new Set<string>();

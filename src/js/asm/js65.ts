@@ -5,6 +5,7 @@ import * as fs from 'node:fs';
 import { Assembler } from './assembler';
 import { Cpu } from './cpu';
 import { Linker } from './linker';
+import { nodeSmudger } from './nodesmudger';
 //import { Module } from './module.js';
 import { Preprocessor } from './preprocessor';
 import { clean, smudge } from './smudge';
@@ -73,10 +74,13 @@ async function main() {
     return;
   }
 
-  // assemble
+  // assemble (TODO - consider allowing --smudge and --rom in normal
+  //           assembly mode somehow?)
   if (rom) usage(1, '--rom only allowed with --smudge or --clean');
   async function tokenizer(path: string) {
-    return new Tokenizer(String(await fs.promises.readFile(path)), path,
+    const contents =
+        await nodeSmudger(String(await fs.promises.readFile(path)));
+    return new Tokenizer(contents, path,
                          {lineContinuations: true});
   }
 

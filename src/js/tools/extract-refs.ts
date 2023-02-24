@@ -11,6 +11,7 @@ import * as fs from 'node:fs';
 import { Assembler } from '../asm/assembler';
 import { Cpu } from '../asm/cpu';
 import { Expr } from '../asm/expr';
+import { nodeSmudger } from '../asm/nodesmudger';
 import { Preprocessor } from '../asm/preprocessor';
 import { TokenSource } from '../asm/token';
 import { Tokenizer } from '../asm/tokenizer';
@@ -75,8 +76,8 @@ async function main() {
 
   // assemble
   async function tokenizer(path: string) {
-    return new Tokenizer(String(await fs.promises.readFile(path)), path,
-                         {lineContinuations: true});
+    const src = await nodeSmudger(String(await fs.promises.readFile(path)));
+    return new Tokenizer(src, path, {lineContinuations: true});
   }
 
   const isRelevant = syms ? (s: string) => syms!.has(s) : () => true;

@@ -16,5 +16,7 @@ chmod 600 deploy_key
 ssh-add deploy_key </dev/null
 echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
 openssl enc -d -aes-256-cbc -a -in test/testdata.enc -out test/testdata -pass "pass:$TESTDATA" -md sha256
+cp test/testdata testdata.nes
+
 git config --global user.email "nobody@invalid"
 git config --global user.name "GitHub Actions"

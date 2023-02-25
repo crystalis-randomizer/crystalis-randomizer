@@ -3,7 +3,7 @@
 import { Rom } from '../rom';
 import { ObjectData } from './objectdata';
 import { Monster } from './monster';
-import { lowerCamelToSpaces } from './util';
+import { lowerCamelToSpaces, relocExportLabel } from './util';
 import { EntityArray } from './entity';
 import { Module } from '../asm/module';
 
@@ -750,10 +750,8 @@ export class Objects extends EntityArray<ObjectData> {
       }
       a.assign('ENEMY_NAME_LENGTH', longestName);
       a.export('ENEMY_NAME_LENGTH');
-      a.segment('1a')
-      a.reloc('EnemyNameBlocklist')
-      a.label('EnemyNameBlocklist')
-      a.export('EnemyNameBlocklist')
+      a.segment('1a', 'fe', 'ff')
+      relocExportLabel(a, 'EnemyNameBlocklist', ['1a', 'fe', 'ff']);
       const hardcodedBlockedObjs = [this.dynaCounter, this.dynaLaser, this.dynaBubble];
       const blocklist = this.filter(obj => obj.hp > 0 && obj.displayName == '').concat(hardcodedBlockedObjs);
       a.byte(...blocklist.map(obj => obj.id))

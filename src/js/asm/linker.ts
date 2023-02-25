@@ -518,6 +518,10 @@ class Link {
         const free = segment.free;
         // Add the free space
         for (const [start, end] of free || []) {
+          if (DEBUG_SEGMENTS.has(name)) {
+            console.log(`Free(${name}): ${(start + s.delta).toString(16)
+                }..${(end + s.delta).toString(16)} (${end - start} bytes)`);
+          }
           this.free.add(start + s.delta, end + s.delta);
           this.data.splice(start + s.delta, end - start);
         }
@@ -562,7 +566,9 @@ class Link {
     //   - gets 
 
     const chunks = [...this.chunks];
-    chunks.sort((a, b) => b.size - a.size);
+    // NOTE: place the less-flexible chunks (bigger, fewer segments) first
+    chunks.sort((a, b) => (a.segments.length - b.segments.length) ||
+                          (b.size - a.size));
 
     for (const chunk of chunks) {
       chunk.resolveSubs();
@@ -683,6 +689,12 @@ class Link {
         }
       }
       if (found != null) {
+        if (DEBUG_SEGMENTS.has(segment.name)) {
+          console.log(`Placement(${chunk.segments.map(s => s).join(',')
+              } => ${segment.name}): ${
+              chunk.name || 'unnamed'} (${chunk.data.length} bytes) at ${
+              (found - segment.delta).toString(16)}`);
+        }
         // found a region
         chunk.place(found - segment.delta, segment);
         // this.free.delete(f0, f0 + size);
@@ -799,6 +811,7 @@ class Link {
   }
 }
 
+const DEBUG_SEGMENTS = new Set(["1a", "fe", "ff"]);
 const DEBUG = false;
 const NO_THROW = false; // for overwrite
 const QUIET = false; // temporary for overwrite

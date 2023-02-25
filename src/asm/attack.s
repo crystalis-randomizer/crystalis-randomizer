@@ -639,5 +639,5 @@ FREE_UNTIL $ba2c
 .org $922c
   cmp #slimeMutationElement
 
-FREE [$8bde, $8bfe)             ; TODO - free other bits
+FREE "1a" [$8bde, $8bfe)        ; TODO - free other bits
 .import CoinAmounts

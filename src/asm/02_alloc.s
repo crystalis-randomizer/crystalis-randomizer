@@ -98,49 +98,6 @@ JmpSeg38:
 ;;   .move ($eb05 - $ea72), ClampScreenPosition
 
 
-;;; This looks safe and recovers over 300 bytes from the static page.
-;;; This code is used by the Storm Bracelet.
-.ifdef EXPAND_PRG
-.segment "fe"
-.org $ce12
-  tay 
-  lda #$38
-  jsr $c418
-  jsr @ReadTable
-  jmp $ce39
-  FREE_UNTIL $ce39
-.org $cf47
-: FREE_UNTIL $d085
-.pushseg "38"
-.reloc
-@Table:
-  .move ($d085-$cf47), :-
-.reloc
-@ReadTable:
-  tya
-  sta $10
-  asl
-  clc
-  adc $10
-  tay
-  lda @Table,y
-  sta $20
-  lda @Table+1,y
-  sta $21
-  lda @Table+2,y
-  sta $22
-  bcc +
-   lda @Table+$100,y
-   sta $20
-   lda @Table+$101,y
-   sta $21
-   lda @Table+$102,y
-   sta $22
-+ rts
-.popseg
-
-.endif ; EXPAND_PRG
-
 ;;; Rewrite the page boundary to avoid code crossing it.
 ;;; This is equivalent to the original, but 6 bytes shorter
 ;;; and doesn't cross the boundary (TODO - why did we care

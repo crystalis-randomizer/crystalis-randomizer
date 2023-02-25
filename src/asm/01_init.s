@@ -129,6 +129,7 @@ UPDATE_REFS target @ refs
 .segment "36"   :bank $36 :size $2000 :off $6c000 :mem $8000
 .segment "37"   :bank $37 :size $2000 :off $6e000 :mem $a000
 ;;; Plane 7 - available for code/data
+;;;  - we move parts out of higher-value pages into here.
 .segment "38"   :bank $38 :size $2000 :off $70000 :mem $8000
 .segment "39"   :bank $39 :size $2000 :off $72000 :mem $a000
 .segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
@@ -615,8 +616,6 @@ RESERVE_MAPS
   .res 9 ; armor defense
 .org $8bc9
   .res 9 ; shield defense
-.org $8bde
-  .res 32 ; coin amounts
 .org $9691
   .res 24 * 4 ; hitboxes
 .org $97e4

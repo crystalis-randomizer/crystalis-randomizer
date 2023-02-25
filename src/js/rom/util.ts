@@ -626,7 +626,7 @@ export class Address {
 }
 
 interface IAssembler {
-  segment(...s: string[]): void;
+  segment(...s: (string|Segment)[]): void;
   org(o: number, n?: string): void;
   free(size: number): void;
   reloc(name?: string): void;
@@ -646,8 +646,9 @@ export function exportLabel(a: IAssembler, name: string) {
   a.export(name);
 }
 
-export function relocExportLabel(a: IAssembler, name: string, seg?: Segment[]) {
-  if (seg?.length) a.segment(...seg.map(s => s.name));
+export function relocExportLabel(a: IAssembler, name: string,
+                                 seg?: Array<string|Segment>) {
+  if (seg?.length) a.segment(...seg);
   a.reloc(name);
   a.label(name);
   a.export(name);

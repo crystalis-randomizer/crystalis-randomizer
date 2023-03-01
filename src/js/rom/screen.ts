@@ -86,7 +86,7 @@ export class Screen extends Entity {
     if (this.rom.compressedMapData || this.id < 0x100) {
       const seg = (this.id >> 5).toString(16).padStart(2, '0');
       a.segment(seg);
-      if (seg === '0a') tiles = tiles.slice(0xc0);
+      if (seg === '0a') tiles = tiles.slice(0, 0xc0);
     } else {
       a.segment('0a');
       tiles = tiles.slice(0, 0xc0);

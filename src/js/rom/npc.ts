@@ -166,6 +166,7 @@ export class Npcs extends EntityArray<Npc> {
       pointerTable.push(addr);
     }
     relocExportLabel(a, 'MovementScriptTable');
+    a.word(...pointerTable);
     // Return the result
     return [a.module()];
   }

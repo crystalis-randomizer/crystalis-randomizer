@@ -811,7 +811,7 @@ class Link {
   }
 }
 
-const DEBUG_SEGMENTS = new Set(["1a", "fe", "ff"]);
+const DEBUG_SEGMENTS = new Set(["1a", "1b", "fe", "ff"]);
 const DEBUG = false;
 const NO_THROW = false; // for overwrite
 const QUIET = false; // temporary for overwrite

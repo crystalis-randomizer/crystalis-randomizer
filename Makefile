@@ -37,6 +37,7 @@ WEB_JS_REL = $(addprefix $(RELDIR)/js/,$(WEB_ENTRY_OUTS))
 STATIC_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
 STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
 JS_FILES = $(shell find src/js -type f -name '*.[tj]s')
+ASM_JS_FILES = $(shell find src/js/asm -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
 ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
 NSS_FILES = $(shell find src/images/spritesheets -type f -name '*.nss')
@@ -76,12 +77,12 @@ $(BROTLI): src/js/tools/brotli.js
 	@mkdir -p $(@D)
 	install -m 755 $< $@
 
-$(EXTRACT_REFS): $(JS_FILES)
+$(EXTRACT_REFS): src/js/tools/extract-refs.ts $(ASM_JS_FILES)
 	@mkdir -p $(@D)
-	$(ESBUILD) $(NODEFLAGS) --outfile=$@ src/js/tools/extract-refs.ts
-$(EXTRACT_SYMBOLS): $(JS_FILES)
+	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
+$(EXTRACT_SYMBOLS): src/js/tools/extract-symbols.ts $(ASM_JS_FILES)
 	@mkdir -p $(@D)
-	$(ESBUILD) $(NODEFLAGS) --outfile=$@ src/js/tools/extract-symbols.ts
+	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
 
 $(DBG_INFO):
 	touch $@

@@ -29111,7 +29111,7 @@ BossKillJump_GeneralEscapes:
         <@1faeb@>
         <@1faed@>
         <@1faf0 _1fb29@>
-        <@1faf3@>
+        <@1faf3 SFX_DIALOG@>
         <@1faf5 StartAudioTrack@>
         <@1faf8 WaitForDialogToBeDismissed@>
         <@1fafb _1fb5b@>
@@ -40010,7 +40010,7 @@ _27fc9:
          <@27fd1@>
          <@27fd4 DataTable_27fe8+1@>
          <@27fd7@>
-         <@27fda@>
+         <@27fda SFX_DIALOG@>
          <@27fdc StartAudioTrack@>
          <@27fdf WaitForDialogToBeDismissed@>
         <@27fe2@>
@@ -50101,7 +50101,7 @@ _3506c:
         <@3506f +@> ; $3507b
          <@35071@>
          <@35073@>
-         <@35076@>
+         <@35076 SFX_ATTACK_IMMUNE@>
          <@35078 StartAudioTrack@>
          ;; ----
 +       <@3507b@>
@@ -51995,7 +51995,7 @@ UpdatePlayerFalling:
 ++      <@35d27@>
         <@35d29@>
         <@35d2b +@> ; $35d3a
-         <@35d2d@> ; falling sound?!?
+         <@35d2d SFX_56@> ; falling sound?!?
          <@35d2f StartAudioTrack@>
          <@35d32@>
          <@35d34@>
@@ -53332,7 +53332,7 @@ ObjectActionJump_51:
 +       <@366ee@>
         <@366f1@>
          bne :>rts ; $366fa
-        <@366f5@>
+        <@366f5 SFX_WINDMILL@>
         <@366f7 StartAudioTrack@>
         ;; ----
         <@366fa@>
@@ -54602,7 +54602,7 @@ _36ffb:
 +       <@37006@>
         <@37009@>
         <@3700b +@> ; $37012
-         <@3700d@> ; some sort of weird explosion sound
+         <@3700d SFX_64@> ; some sort of weird explosion sound
          <@3700f StartAudioTrack@>
 +       <@37012@>
          beq :<rts ; $37005
@@ -55681,7 +55681,7 @@ DoExplosion:
 +       <@3785b@>
         <@3785e@>
         <@37860 +@> ; $37879
-         <@37862@>
+         <@37862 SFX_54@>
          <@37864 StartAudioTrack@>
          <@37867@>
          <@37869@>
@@ -64744,7 +64744,7 @@ MainGameModeJump_10_StatusMessage:
            <@3d09e@>
            <@3d0a1@>
            <@3d0a3@>
-           <@3d0a6@> ; Level up sfx
+           <@3d0a6 BGM_FANFARE_ALT@> ; Level up sfx
            <@3d0a8 StartAudioTrack@>
            <@3d0ab ++@> ; $3d0b3
         ;; ----

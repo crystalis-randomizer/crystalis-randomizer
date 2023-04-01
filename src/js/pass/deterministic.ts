@@ -1275,9 +1275,7 @@ function disableStabs(rom: Rom): void {
   for (const o of [0x08, 0x09, 0x27]) {
     rom.objects[o].collisionPlane = 0;
   }
-  // Also take warrior ring out of the picture... :troll:
-  // rom.itemGets[0x2b].id = 0x5b; // medical herb from second flute of lime check
-  // rom.npcs.Brokahana.data[0] = rom.items.FruitOfLime.id;
+  // Warrior ring now functions as a "turret" mode after 32 frames of standing still
 }
 
 function orbsOptional(rom: Rom): void {

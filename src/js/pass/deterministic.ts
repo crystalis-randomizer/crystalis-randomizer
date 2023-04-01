@@ -1275,7 +1275,7 @@ function disableStabs(rom: Rom): void {
   }
   // Also take warrior ring out of the picture... :troll:
   // rom.itemGets[0x2b].id = 0x5b; // medical herb from second flute of lime check
-  rom.npcs.Brokahana.data[0] = rom.items.FruitOfLime.id;
+  // rom.npcs.Brokahana.data[0] = rom.items.FruitOfLime.id;
 }
 
 function orbsOptional(rom: Rom): void {

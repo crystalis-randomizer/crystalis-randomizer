@@ -25,9 +25,11 @@
 .pushseg "fe", "ff"
 .reloc
 CheckRabbitBoots:
+.ifndef _CHARGE_WHILE_WALKING
   lda EquippedPassiveItem
   cmp #ITEM_RABBIT_BOOTS ; require rabbit boots
   bne +
+.endif
   lda $06c0
   cmp #$10 ; don't charge past level 2
   bcs +

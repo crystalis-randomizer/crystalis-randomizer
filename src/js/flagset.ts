@@ -1002,7 +1002,7 @@ export class FlagSet {
     return this.check(Vanilla.BonusItems, false);
   }
   rabbitBootsChargeWhileWalking(): boolean {
-    return this.check(Vanilla.BonusItems, false);
+    return this.check(Vanilla.BonusItems, false) || this.check(HardMode.ChargeShotsOnly);
   }
 
   shuffleSpritePalettes(): boolean {

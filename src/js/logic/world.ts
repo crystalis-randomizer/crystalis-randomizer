@@ -108,8 +108,17 @@ export class World {
   /** Location with a north exit to Lime Tree Lake (i.e. Rage). */
   private limeTreeEntranceLocation = -1;
 
+  private chestRequirement: Requirement = Requirement.OPEN;
+
   constructor(readonly rom: Rom, readonly flagset: FlagSet,
               readonly tracker = false) {
+    // Set up some initial state
+    if (flagset.alwaysMimics()) {
+      const mimicSwords =
+          [SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder]
+              .filter((_, i) => rom.objects.mimic.elements & (1 << i));
+      this.chestRequirement = or(...swords)
+    }
     // Build itemUses (e.g. windmill key inside windmill, bow of sun/moon?)
     for (const item of rom.items) {
       for (const use of item.itemUseData) {
@@ -1264,7 +1273,7 @@ export class World {
     if (mapped >= 0x70) return; // TODO - mimic% may care
     const item = this.rom.items[mapped];
     const unique = this.flagset.preserveUniqueChecks() ? !!item?.unique : true;
-    this.addItemCheck([TileId.from(location, spawn)], Requirement.OPEN,
+    this.addItemCheck([TileId.from(location, spawn)], this.chestRequirement,
                       slot, {lossy: false, unique});
   }
 

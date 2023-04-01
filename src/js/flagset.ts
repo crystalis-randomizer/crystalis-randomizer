@@ -978,6 +978,10 @@ export class FlagSet {
     return flag && this.flags.get(flag) || false;
   }
 
+  alwaysMimics(): boolean {
+    return true;
+  }
+
   preserveUniqueChecks(): boolean {
     return this.check(EasyMode.PreserveUniqueChecks);
   }

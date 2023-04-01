@@ -206,11 +206,11 @@ ExitWithoutDrawingEXP:
 .reloc
 RemoveEnemyAndPlaySFX:
   ;; the last attacked enemy is getting cleared out so we want to update the HP display
-  ;; Check first if the current slot == this obj slot (stored in $62 at this point)
+  ;; Check first if the current slot == this obj slot (stored in $65 at this point)
   ;; If the moster that just died is not the current monster, then its very likely that
   ;; this monster is blocklisted, so don't clear the HP bar.
   lda CurrentEnemySlot
-  cmp $62
+  cmp $65
   bne +
     jsr ClearCurrentEnemyHPSlot
 + lda #SFX_MONSTER_HIT

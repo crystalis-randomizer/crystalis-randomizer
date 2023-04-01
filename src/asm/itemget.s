@@ -55,7 +55,7 @@ FREE_UNTIL $85de  ; ~24 bytes
 
 
 ;; Replace ItemGet with an extra indirection
-.org ItemGet
+.org $826f ; ItemGet
   jsr PatchStartItemGet
 
 .org $8285
@@ -105,6 +105,14 @@ FREE_UNTIL $8308
 OriginalItemGetTable = $9d66
 
 .ifdef _OOPS_ALL_MIMICS
+
+; ObjectData_Mimic:                                         ; Object 73
+;         .byte $00
+;         .byte $ff,$aa,$40,$02,$00,$09,$31,$2d,$33
+;         .byte $ff,$00,$88,$00,$06,$00,$2b,$00,$00
+;         .byte $f0,$f5,$7e,$00,$01
+;         .byte $80,$20
+
 ; Custom ItemGet to replace the function with spawning a mimic
 .reloc
 PatchStartItemGet:
@@ -115,8 +123,9 @@ PatchStartItemGet:
   ldy $0623
   lda $0300,y
   cmp #$aa
-  beq @MimicOrChest
-  ; Just a person or dead mimic so load the item and return
+  bne +
+    jmp MimicOrChest
++ ; Just a person or dead mimic so load the item and return
   lda $23
   sta $61fe
   tax
@@ -133,11 +142,10 @@ PatchStartItemGet:
 .else
   rts         ;      - what about other writes to 07dc?
 .endif ; _STATS_TRACKING
-@MimicOrChest:
-  ; and also check to see if we already killed this mimic
-  lda $0680,y
-  bne @GiveItemForReal ; already dead so just give the item and leave
-  ; else they just touched the chest for the first time so spawn a mimic
+
+.reloc
+MimicOrChest:
+  ; they just touched the chest for the first time so spawn a mimic
   lda $23
   sta $61fe
   tax
@@ -196,15 +204,8 @@ PatchStartItemGet:
   pla
   rts
 
-; ObjectData_Mimic:                                         ; Object 73
-;         .byte $00
-;         .byte $ff,$aa,$40,$02,$00,$09,$31,$2d,$33
-;         .byte $ff,$00,$88,$00,$06,$00,$2b,$00,$00
-;         .byte $f0,$f5,$7e,$00,$01
-;         .byte $80,$20
-
 .pushseg "1a"
-.org ReplaceObject
+.org $9167 ; ReplaceObject
   jsr GiveItemAfterMimicKilledOrReplaceObject
 .popseg
 
@@ -216,12 +217,27 @@ GiveItemAfterMimicKilledOrReplaceObject:
     jmp $ff80 ; LoadOneObjectData
     ; implicit rts
 + ; load the item id from the object and jump to item get routines
-  lda $06a0,y
-  ldy $0623
-  ; no need flag the mimic as already defeated for PatchedItemGet checks
-  ; since the mimic now has a different metasprite since its dead
-  ; it will just fallthrough to the "give item from person" code
-  jmp $d3fb + 4 ; HandleTreasureChest skipping nops
+  lda $61
+  pha
+    lda $62
+    pha
+      lda $06a0,y
+      sta $0560,y ; This value is read by the routine to store into $23
+      ; no need flag the mimic as already defeated for PatchedItemGet checks
+      ; since the mimic now has a different metasprite since its dead
+      ; it will just fallthrough to the "give item from person" code
+      jsr $d3fb + 4 ; HandleTreasureChest skipping nops
+  ; Restore the value in $61 and $62
+    pla
+    sta $62
+  pla
+  sta $61
+  ; need to restore the banks back
+  lda #$1a
+  pha
+  lda #$1b
+  pha
+  jmp RestoreBanks
 .popseg
 
 .else

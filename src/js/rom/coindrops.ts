@@ -8,19 +8,20 @@ const {$1a} = Segment;
 export class CoinDrops {
 
   values: number[];
+  address: number;
 
   constructor(readonly rom: Rom) {
-    const address = readValue('CoinAmounts', rom.prg, $1a);
+    this.address = readValue('CoinAmounts', rom.prg, $1a);
     this.values = Array.from({length: COUNT}, (_, i) =>
-        readLittleEndian(rom.prg, address + 2 * i));
+        readLittleEndian(rom.prg, this.address + 2 * i));
   }
 
   write(): Module[] {
     const a = this.rom.assembler();
     relocExportLabel(a, 'CoinAmounts', ['1a', 'fe', 'ff']);
     a.word(...this.values);
+    a.export("CoinAmounts");
     return [a.module()];
   }
 }
-
 const COUNT = 16;

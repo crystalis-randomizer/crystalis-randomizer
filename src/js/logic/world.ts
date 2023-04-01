@@ -114,10 +114,9 @@ export class World {
               readonly tracker = false) {
     // Set up some initial state
     if (flagset.alwaysMimics()) {
-      const mimicSwords =
-          [SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder]
-              .filter((_, i) => rom.objects.mimic.elements & (1 << i));
-      this.chestRequirement = or(...swords)
+      const swords = [rom.flags.SwordOfWind, rom.flags.SwordOfFire, rom.flags.SwordOfWater, rom.flags.SwordOfThunder];
+      const mimicSwords = swords.filter((_, i) => rom.objects.mimic.elements & (1 << i));
+      this.chestRequirement = or(...mimicSwords)
     }
     // Build itemUses (e.g. windmill key inside windmill, bow of sun/moon?)
     for (const item of rom.items) {

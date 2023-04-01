@@ -1122,7 +1122,7 @@ export class FlagSet {
   }
 
   guaranteeSword() {
-    return true || this.check(EasyMode.GuaranteeStartingSword); // _OOPS_ALL_MIMICS
+    return this.check(EasyMode.GuaranteeStartingSword);
   }
   guaranteeSwordMagic() {
     return this.check(NoGuarantees.BattleMagic, false);

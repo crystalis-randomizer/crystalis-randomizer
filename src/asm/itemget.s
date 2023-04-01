@@ -291,7 +291,8 @@ PatchStartItemGet:
 .else
   rts         ;      - what about other writes to 07dc?
 .endif ; _STATS_TRACKING
-;; TODO - why is this here?
+
+.endif
 
 .org $d3f6              ; Within game mode jump 07 (trigger / chest)
   ;; This is only a minor optimization to skip the 4 nops we add below
@@ -304,7 +305,6 @@ PatchStartItemGet:
   nop
   nop
 +:
-.endif
 
 ;; Fix dialog to work with us... (patch in the middle here)
 ShowTreasureChestMessage = $d41c

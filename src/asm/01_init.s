@@ -170,6 +170,7 @@ FREE "3d" [$a000, $c000)
 .define GameMode   $41
 .define BankSelectShadow $50
 .define ScreenMode $51
+
 ObjectRecoil = $340
 ObjectHP = $3c0
 PlayerHP = $3c1
@@ -204,6 +205,7 @@ ScrollXHi = $07d9
 ScrollYLo = $07da
 ScrollYHi = $07db
 
+PlayerStandingTimer = $61fc
 InvSwords = $6430
 InvConsumables = $6440
 InvPassive = $6448

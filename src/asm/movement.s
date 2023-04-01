@@ -25,7 +25,9 @@
 .pushseg "fe", "ff"
 .reloc
 CheckRabbitBoots:
-.ifndef _CHARGE_WHILE_WALKING
+; In charge shot only mode, we want to have the charge while walking enabled
+; even without rabbit boots
+.ifndef _CHARGE_SHOT_ONLY
   lda EquippedPassiveItem
   cmp #ITEM_RABBIT_BOOTS ; require rabbit boots
   bne +
@@ -38,6 +40,69 @@ CheckRabbitBoots:
 + pla
   pla
   jmp $9e39 ; 35e39
+.popseg
+
+.endif
+
+.ifdef _CHARGE_SHOT_ONLY
+; Timer of 30 frames
+.define Ctrl1CurrentDirection $49
+.define WARRIOR_RING_DELAY 30
+
+;; If we only have charge shot, buff rabbit boots to charge twice as fast while equipped
+.org $9e0d
+  jsr CheckRabbitBootsSpeedUp
+  nop
+
+.reloc
+CheckRabbitBootsSpeedUp:
+  lda EquippedPassiveItem
+  cmp #ITEM_RABBIT_BOOTS
+  bne +
+    lda #1
+    .byte $2c ; abs BIT instruction to skip the other load
+; its safe to BIT here as it turns into BIT $03a9 which doesn't have side effects on read
++ lda #3
+  and $08 ; GlobalCounter
+  rts
+
+;; Turn warrior ring into turret mode
+.org $9c8d ; CheckWarriorRing
+  jsr CheckIfStandingStillForWarriorRing
+  nop
+
+.reloc
+CheckIfStandingStillForWarriorRing:
+  bne +
+  ; The warrior ring is equiped so now check to see if we've stood still for long enough
+  lda PlayerStandingTimer
+  cmp #WARRIOR_RING_DELAY
+  bne +
+    inc $10
++ rts
+
+.org $f089 ; Near end of GlobalCounter processing
+  jsr UpdatePlayerStandingTimer
+
+.pushseg "fe", "ff"
+.reloc
+UpdatePlayerStandingTimer:
+  lda Ctrl1CurrentDirection ; $ff if still
+  bpl +
+    lda PlayerStandingTimer
+    cmp #WARRIOR_RING_DELAY
+    beq @Exit
+      clc
+      adc #1
+      .byte $2c ; Use bit to skip the lda #0
+      ; this is safe because it compiles to BIT $00a9 which has no side effects
++ ; player moved so reset timer
+  lda #0
+  sta PlayerStandingTimer
+@Exit:
+  ; Continue patched function
+  lda $071a
+  rts
 .popseg
 
 .endif

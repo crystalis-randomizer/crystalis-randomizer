@@ -79,7 +79,7 @@
 .define ObjectLevel            $0420 ; also :40 selects ext hitboxes
 .define ObjectChildSpawn       $0440
 .define ObjectTerrainSusceptibility  $0460
-;;; 480 ?
+.define ObjectTimer            $0480
 .define ObjectActionScript     $04a0 ; also includes presence in :80
 .define ObjectReplacement      $04c0 ; ???
 .define ObjectAnimationCounter $04e0
@@ -26243,7 +26243,7 @@ BossPatternJump_00:              ; Vampire 0
 .org $a4c3
 BossPatternJump_01:              ; Vampire 1
         ;; Appears to be unused?
-        <@1e4c3@>
+        <@1e4c3 ObjectTimer@>
          bne :>rts
         <@1e4c8 ObjectBossMode@>
         <@1e4cb@>
@@ -26691,14 +26691,14 @@ BossPatternJump_09:              ; Insect 1
         <@1e885 ScreenMode@>
         <@1e887@>
         <@1e88a _1e84d@>
-        <@1e88c@>
+        <@1e88c ObjectTimer@>
         <@1e88f ++@> ; $1e8bc
          <@1e891 GenerateRandomNumber@>
          <@1e894@>
          <@1e896@>
          <@1e898@>
          <@1e899@>
-         <@1e89b@>
+         <@1e89b ObjectTimer@>
          <@1e89e GenerateRandomNumber@>
          <@1e8a1@>
          <@1e8a3 +@> ; $1e8aa
@@ -26853,7 +26853,7 @@ BossPatternJump_0b:              ; Kelbesque 1
            <@1e9d6@>
            <@1e9d8@>
            <@1e9db@>
-           <@1e9dd@>
+           <@1e9dd ObjectTimer@>
            <@1e9e0@>
            <@1e9e2@>
            <@1e9e5@>
@@ -26870,9 +26870,9 @@ BossPatternJump_0b:              ; Kelbesque 1
            ;; ----
 +       <@1e9fa@>
         <@1e9fc@>
-        <@1e9ff@>
+        <@1e9ff ObjectTimer@>
         <@1ea02@>
-        <@1ea05@>
+        <@1ea05 ObjectTimer@>
         <@1ea08@>
         <@1ea0a _1ea37@>
          <@1ea0c@>
@@ -26893,7 +26893,7 @@ BossPatternJump_0b:              ; Kelbesque 1
         <@1ea2d _1ea37@>
         <@1ea2f@>
         <@1ea32@>
-        <@1ea34@>
+        <@1ea34 ObjectTimer@>
 _1ea37:
         <@1ea37@>
         <@1ea3a ComputeDisplacementVector@>
@@ -26904,7 +26904,7 @@ _1ea37:
 .org $aa46
 BossPatternJump_0c:              ; Kelbesque 2
         <@1ea46@>
-        <@1ea49@>
+        <@1ea49 ObjectTimer@>
         <@1ea4c +@> ; $1ea5a
          <@1ea4e@>
          <@1ea51@>
@@ -26912,7 +26912,7 @@ BossPatternJump_0c:              ; Kelbesque 2
          <@1ea56@>
          <@1ea59@>
          ;; ----
-+       <@1ea5a@>
++       <@1ea5a ObjectTimer@>
         <@1ea5d@>
         <@1ea5f _1ea37@>
         <@1ea61@>
@@ -26950,7 +26950,7 @@ DataTable_1ea9f:
 ;;; --------------------------------
 .org $aaa7
 BossPatternJump_0d:              ; Kelbesque 3
-        <@1eaa7@>
+        <@1eaa7 ObjectTimer@>
         <@1eaaa +@> ; $1eab2
          <@1eaac@>
          <@1eaaf _1ea89@>
@@ -26985,21 +26985,21 @@ BossPatternJump_0d:              ; Kelbesque 3
 BossPatternJump_0e:              ; Kelbesque 4
         <@1eae6@>
         <@1eae8@>
-        <@1eaeb@>
+        <@1eaeb ObjectTimer@>
         <@1eaee +@> ; $1eaf8
          <@1eaf0@>
          <@1eaf2@>
          <@1eaf5 _1ea89@>
          ;; ----
-+       <@1eaf8@>
++       <@1eaf8 ObjectTimer@>
         <@1eafb@>
          bcs :>rts ; $1eb24
         <@1eaff@>
         <@1eb01@>
-        <@1eb04@>
+        <@1eb04 ObjectTimer@>
         <@1eb07@>
          bcs :>rts ; $1eb24
-        <@1eb0a@>
+        <@1eb0a ObjectTimer@>
         <@1eb0d@>
         <@1eb0f +@> ; $1eb1c
          <@1eb11@>
@@ -27341,7 +27341,7 @@ BossPatternJump_18:              ; Sabera 1
          <@1ed69@>
          <@1ed6a DataTable_1ed82@>
          <@1ed6d@>
-+       <@1ed70@>
++       <@1ed70 ObjectTimer@>
         <@1ed73 ReadObjectCoordinatesInto_34_37@>
         <@1ed76@>
         <@1ed79 ComputeDisplacementVector@>
@@ -27460,7 +27460,7 @@ BossPatternJump_1d:              ; Mado 2
 ;;; --------------------------------
 .org $ae5a
 BossPatternJump_1e:              ; Mado 3
-        <@1ee5a@>
+        <@1ee5a ObjectTimer@>
         <@1ee5d@>
         <@1ee60@>
         <@1ee63 _1eeba@>
@@ -27924,7 +27924,7 @@ BossPatternJump_28:              ; Draygon 1
          <@1f202@>
          ;; ----
 _1f203:
-        <@1f203@>
+        <@1f203 ObjectTimer@>
         <@1f206 ReadObjectCoordinatesInto_34_37@>
         <@1f209@>
         <@1f20c ComputeDisplacementVector@>
@@ -28153,7 +28153,7 @@ BossPatternJump_2b:              ; Draygon2 0
 BossPatternJump_2c:              ; Draygon2 1
         <@1f3bc@>
         <@1f3be ObjectKnockback@>
-        <@1f3c1@>
+        <@1f3c1 ObjectTimer@>
         <@1f3c4@>
          <@1f3c7 _1f425@> ; some long routine at end?
         <@1f3c9@>
@@ -28303,7 +28303,7 @@ _1f4c8:
 .org $b4dd
 BossPatternJump_2d:              ; Draygon2 2
         <@1f4dd@>
-        <@1f4e0@>
+        <@1f4e0 ObjectTimer@>
         <@1f4e3 ObjectHP@>
         <@1f4e6 +@> ; $1f4eb
          <@1f4e8 _1f4c8@>
@@ -28332,7 +28332,7 @@ DataTable_1f51c:
 .org $b524
 BossPatternJump_2e:              ; Draygon2 3
         <@1f524@>
-        <@1f527@>
+        <@1f527 ObjectTimer@>
         <@1f52a@>
         <@1f52d +@> ; $1f532
          <@1f52f _1f4c8@>
@@ -49110,7 +49110,7 @@ ComputeDisplacementVector:
         <@3449f@>
         <@344a1 SpeedTable_Widths@>
         <@344a4@>
-        <@344a6@>
+        <@344a6 ObjectTimer@>
         <@344a9@>
         <@344ab@>
         <@344ad@>
@@ -52168,7 +52168,7 @@ ObjectActionJump_03:
         <@35eb8@>
 +       <@35eba@>
         <@35ebc@>
-        <@35ebf@>
+        <@35ebf ObjectTimer@>
         <@35ec2 MoveObjectWithSpeedAndDirection@>
         <@35ec5 +@> ; $35ed8
          <@35ec7@>
@@ -52188,7 +52188,7 @@ ObjectActionJump_03:
         <@35ee8 ++@> ; $35eef
          <@35eea@>
          <@35eec@>
-++      <@35eef@>
+++      <@35eef GlobalCounter@>
         <@35ef1@>
         <@35ef3 +@> ; $35efa
          <@35ef5 ChargeIndicatorDisplay@>
@@ -52292,10 +52292,10 @@ _35fd2:
         <@35fd5@>
          <@35fd6@>
          <@35fd9@>
-          <@35fda@>
+          <@35fda ObjectTimer@>
           <@35fdd@>
            <@35fde@>
-           <@35fe0@>
+           <@35fe0 ObjectTimer@>
            <@35fe3@>
            <@35fe6@>
            <@35fe9@>
@@ -52309,7 +52309,7 @@ _35fd2:
            <@35ffc DataTable_3600f@>
            <@35fff@>
 +         <@36002@>
-          <@36003@>
+          <@36003 ObjectTimer@>
          <@36006@>
          <@36007@>
         <@3600a@>
@@ -52803,7 +52803,7 @@ ObjectActionJumpTable:
         .word (ObjectActionJump_28_Golem) ; 28 monster
         .word (ObjectActionJump_29_AmorphousBlob) ; 29 monster
         .word (ObjectActionJump_2a_Soldier) ; 2a monster
-        .word (ObjectActionJump_2b) ; 2b
+        .word (ObjectActionJump_2b) ; 2b mimic
         .word (ObjectActionJump_2c) ; 2c
         .word [@3636e:w@]
         .word (ObjectActionJump_2e) ; 2e monster
@@ -53292,7 +53292,7 @@ ObjectActionJump_50:
         <@366a5@>
         <@366a8@>
         <@366ab@>
-        <@366ae@>
+        <@366ae ObjectTimer@>
         <@366b1@>
         <@366b3@>
         <@366b6@>
@@ -53510,7 +53510,7 @@ ObjectActionJump_54:
          <@36842@>
          <@36844@>
          <@36846@>
-++      <@36849@>
+++      <@36849 ObjectTimer@>
         <@3684c@>
         <@3684f ReadObjectCoordinatesInto_34_37@>
         <@36852@>
@@ -53637,12 +53637,12 @@ ObjectActionJump_20_RandomMovement:
           <@36932@>
 +        <@36935@>
         ;; ----
-++      <@36936@> ; also some kind of step counter
+++      <@36936 ObjectTimer@> ; also some kind of step counter
         <@36939 +@> ; $3693e
         ;; After we've taken the pre-determined number of steps, stop and turn.
          <@3693b ObjectAction_RandomMovement_PickNewDirection@>
 +       <@3693e@>
-        <@36941@>
+        <@36941 ObjectTimer@>
         <@36944 MoveObjectWithSpeedAndDirection@>
         ;; If we just tried to move onto an impassible tile, then stop and turn.
         <@36947 ObjectAction_RandomMovement_PickNewDirection@>
@@ -53661,7 +53661,7 @@ ObjectAction_RandomMovement_PickNewDirection:
         <@36956@>
         <@36957@>
         <@36958@>
-        <@3695a@>
+        <@3695a ObjectTimer@>
         <@3695d GlobalCounter@>
         <@3695f@>
         <@36961@>
@@ -53833,11 +53833,11 @@ ObjectActionJump_24_HomingMovement:
         ;; Tick the non-looping counter (4e0) twice, the step counter once
 +       <@36a6b@>
         <@36a6e@>
-        <@36a71@>
+        <@36a71 ObjectTimer@>
         ;; 
         <@36a74@>
          <@36a77 ObjectAction_HomingMovement_Swerving@>
-        <@36a79@>
+        <@36a79 ObjectTimer@>
         <@36a7c@>
         <@36a7e +@> ; $36a96
          <@36a80@>
@@ -54034,8 +54034,8 @@ ObjectAction_AmorphousBlob_Main:
          <@36bd3@>
          <@36bd6 AdHocSpawnObject@>
 +       <@36bd9@>
-        <@36bdc@>
-        <@36bdf@>
+        <@36bdc ObjectTimer@>
+        <@36bdf ObjectTimer@>
         <@36be2@>
          bne :>rts
         ;; Every other frame decrement 640
@@ -54116,7 +54116,7 @@ ObjectAction_Soldier_CheckShoot:
 ObjectActionJump_2b:             ; Mimic
         <@36c60@>
         <@36c63 ++@> ; $36cae
-        <@36c65@>
+        <@36c65 ObjectTimer@>
         <@36c68@>
         <@36c6a@>
         <@36c6d@>
@@ -54549,7 +54549,7 @@ MovementScriptTable_0f:
 ;;; --------------------------------
 .org $afa9
 ObjectActionJump_38:
-        <@36fa9@>
+        <@36fa9 ObjectTimer@>
         <@36fac ReadObjectCoordinatesInto_34_37@>
         <@36faf@>
         <@36fb2@>
@@ -54709,7 +54709,7 @@ ObjectActionJump_57:
         <@370c1 +@> ; $370c6
          <@370c3 ClearSpawnSlot@>
         ;; ----
-+       <@370c6@>
++       <@370c6 ObjectTimer@>
         <@370c9 +@> ; $370ce
          <@370cb _358cd@>
         ;; ----
@@ -54735,7 +54735,7 @@ ObjectActionJump_57:
 ObjectActionJump_16:
         <@370f6@>
         <@370f9@>
-        <@370fc@>
+        <@370fc ObjectTimer@>
         <@370ff@>
         <@37101 ++@> ; $37118
          <@37103@>
@@ -54765,7 +54765,7 @@ ObjectActionJump_1b:
          ;; ----
 +       <@37135@>
         <@37137@>
--         <@37139@>
+-         <@37139 ObjectTimer@>
           <@3713c@>
           <@3713f +@> ; $3716e
            <@37141 ReadObjectCoordinatesInto_34_37@>
@@ -54799,7 +54799,7 @@ ObjectActionJump_12:
         <@37177 ++@> ; $371bc
          <@37179@>
          <@3717c@>
-         <@3717f@>
+         <@3717f ObjectTimer@>
          <@37182 +@> ; $37187
           <@37184 ClearSpawnSlot@>
           ;; ----
@@ -54861,9 +54861,9 @@ DataTable_371f5:
 ;;; --------------------------------
 .org $b235
 ObjectActionJump_13: ; Blizzard projectile
-        <@37235@>
+        <@37235 ObjectTimer@>
         <@37238@>
-        <@3723a@>
+        <@3723a ObjectTimer@>
         <@3723d@>
         <@37240@>
         <@37243@>
@@ -54893,11 +54893,11 @@ ObjectActionJump_13: ; Blizzard projectile
 ;;; --------------------------------
 .org $b27a
 ObjectActionJump_15:
-        <@3727a@>
+        <@3727a ObjectTimer@>
         <@3727d +@> ; $37282
          <@3727f ClearSpawnSlot@>
          ;; ----
-+       <@37282@>
++       <@37282 ObjectTimer@>
         <@37285@>
         <@37287 +@> ; $37292
          <@37289@>
@@ -55062,7 +55062,7 @@ ObjectActionJump_40:
          <@373b7@>
          <@373b8@>
          <@373ba@>
-         <@373bb@>
+         <@373bb ObjectTimer@>
          <@373be@>
          <@373c0@>
          <@373c1 DataTable_3741e@>
@@ -55095,7 +55095,7 @@ ObjectActionJump_40:
           <@373f6@>
 .org $b3f9
 _373f9:
-         <@373f9@>
+         <@373f9 ObjectTimer@>
          <@373fc ReadObjectCoordinatesInto_34_37@>
          <@373ff@>
          <@37402 ComputeDisplacementVector@>
@@ -55131,7 +55131,7 @@ ObjectActionJump_44:
           <@3744a@>
           <@3744d@>
           ;; ----
-+        <@3744e@>
++        <@3744e ObjectTimer@>
          <@37451 ++@> ; $37479
           <@37453@>
           <@37456@>
@@ -55140,7 +55140,7 @@ ObjectActionJump_44:
            <@3745c@>
            <@3745f@>
 +         <@37462@>
-          <@37465@>
+          <@37465 ObjectTimer@>
           <@37468 ReadObjectCoordinatesInto_34_37@>
           <@3746b@>
           <@3746e ComputeDisplacementVector@>
@@ -55158,7 +55158,7 @@ ObjectActionJump_44:
         <@3748e GenerateRandomNumber@>
         <@37491@>
         <@37492 DataTable_374aa@>
-        <@37495@>
+        <@37495 ObjectTimer@>
         <@37498 DataTable_374b2@>
         <@3749b@>
         <@3749e@>
@@ -55198,7 +55198,7 @@ ObjectActionJump_45_BasicFlyer:
         <@374d9@>
         <@374db@>
         ;; Only change direction every 16 frames
-        <@374de@>
+        <@374de ObjectTimer@>
         <@374e1@>
         <@374e3 ++@> ; $3750e
 _374e5:
@@ -55225,7 +55225,7 @@ _374e5:
         <@37514@>
         <@37515 DataTable_37556@>
         <@37518@>
-        <@3751b@>
+        <@3751b ObjectTimer@>
         <@3751e ReadObjectCoordinatesInto_34_37@>
         <@37521@>
         <@37524 ComputeDisplacementVector@>
@@ -55280,7 +55280,7 @@ ObjectActionJump_48:
          ;; ----
 ++      <@37586 CheckToShootProjectile@>
         <@37589 ObjectActionJump_45_BasicFlyer@>
-        <@3758c@>
+        <@3758c ObjectTimer@>
         bne :>rts ; $37594
          <@37591 _374e5@>
          ;; ----
@@ -55400,8 +55400,8 @@ ObjectActionJump_5c:            ; Tower sentinel turret
           <@37643@>
           <@37645@>
           <@37647@>
-++       <@3764a@>
-         <@3764d@>
+++       <@3764a ObjectTimer@>
+         <@3764d ObjectTimer@>
          <@37650@>
          <@37652 FinishRobotMovement@>
           <@37654 GenerateRandomNumber@>
@@ -55435,8 +55435,8 @@ FinishRobotMovement:
 .org $b690
 ObjectActionJump_5d:            ; Helicopter
         <@37690@>
-        <@37693@>
-        <@37696@>
+        <@37693 ObjectTimer@>
+        <@37696 ObjectTimer@>
         <@37699@>
         <@3769b +@> ; $376a7
          <@3769d@>
@@ -55571,18 +55571,18 @@ ReturnEveryOtherFrameIfOffScreen:
 ObjectActionJump_7b:
         <@37778@>
         <@3777b@>
-        <@3777e@>
+        <@3777e ObjectTimer@>
         <@37781 +@> ; $37786
          <@37783 _358cd@>
          ;; ----
-+       <@37786@>
++       <@37786 ObjectTimer@>
         <@37789@>
         <@3778b +@> ; $37798
          <@3778d@>
          <@37790@>
          <@37793@>
          <@37795@>
-+       <@37798@>
++       <@37798 ObjectTimer@>
         <@3779b@>
         bcc :>rts ; $377c5
 _3779f:
@@ -62954,7 +62954,7 @@ LoadOneObjectDataInternal:
 +          <@3c337@>
            <@3c339 +@> ; $3c341
             <@3c33b@>
-            <@3c33d@> ; $0480,x <- mnst[y']:20 ? mnst[y++]
+            <@3c33d ObjectTimer@> ; ObjectTimer,x <- mnst[y']:20 ? mnst[y++]
             <@3c340@>
 +          <@3c341@>
            <@3c343 +@> ; $3c34b
@@ -64349,7 +64349,7 @@ _3cd2b:
          <@3cd5e@>
          <@3cd60 BankSwitch8k_8000@>
          <@3cd63 MoveObjectWithSpeedAndDirection@>
-         <@3cd66@>
+         <@3cd66 ObjectTimer@>
          <@3cd69@>
          <@3cd6a@>
          <@3cd6d@>

@@ -55,7 +55,7 @@ FREE_UNTIL $85de  ; ~24 bytes
 
 
 ;; Replace ItemGet with an extra indirection
-.org $826f
+.org ItemGet
   jsr PatchStartItemGet
 
 .org $8285
@@ -104,6 +104,127 @@ FREE_UNTIL $8308
 ;;; at $9daf (y=$49).
 OriginalItemGetTable = $9d66
 
+.ifdef _OOPS_ALL_MIMICS
+; Custom ItemGet to replace the function with spawning a mimic
+.reloc
+PatchStartItemGet:
+  ; Check to see if we are opening a chest or getting an item from a person.
+  ; A chest uses the metasprite $aa so check for that
+  ; A mimic also uses $aa, but when this will be called later to give the item
+  ; the mimic will already be dead, and the metasprite will be $90
+  ldy $0623
+  lda $0300,y
+  cmp #$aa
+  beq @MimicOrChest
+  ; Just a person or dead mimic so load the item and return
+  lda $23
+  sta $61fe
+  tax
+  lda CheckToItemGetMap,x
+  tay
+  .import itemGet_getToItemThreshold
+  cmp #itemGet_getToItemThreshold
+  bcc +
+   lda OriginalItemGetTable,y  ; NOTE: y>=$49, so this is really [$9daf...)
++ sta $29
+  sta $07dc   ; TODO - can we ditch the table at 3d45c now?
+.ifdef _STATS_TRACKING
+  jmp CheckForStatTrackedItems
+.else
+  rts         ;      - what about other writes to 07dc?
+.endif ; _STATS_TRACKING
+@MimicOrChest:
+  ; and also check to see if we already killed this mimic
+  lda $0680,y
+  bne @GiveItemForReal ; already dead so just give the item and leave
+  ; else they just touched the chest for the first time so spawn a mimic
+  lda $23
+  sta $61fe
+  tax
+  lda CheckToItemGetMap,x
+  tay
+  cmp #$70
+  bcc @ConvertChestToMimic
+    ; Mimics are the 16 objects from $70 to $80, so use the Powers of Two lookup to convert from the mimic to
+    ; a mask for the byte. $70-$77 in the lo byte $78-$7f in hi
+.ifdef _STATS_TRACKING
+    cmp #$78
+    bcc +
+      sec
+      sbc #$78
+      tay
+      lda PowersOfTwo,y
+      ora StatsMimicsHi
+      sta StatsMimicsHi
+      bcs @SkipToSpawnMimic ; unconditional
++   sec
+    sbc #$70
+    tay
+    lda PowersOfTwo,y
+    ora StatsMimicsLo
+    sta StatsMimicsLo
+.endif
+   ;; spawn regular mimic instead - need to back out of 3 layers of calls
+@SkipToSpawnMimic:
+    jsr SpawnMimic
+    bne @PatchResistance ;unconditional
+@ConvertChestToMimic:
+  ; Since this is just a regular item, we will instead spawn a custom mimic
+  ; that drops the item on death
+  jsr SpawnMimic
+  ; x is the current mimic index
+  ldx $10
+  ; store the item to give in the field $06a0 which holds items for NPC Persons
+  lda $61fe
+  sta $06a0,x
+  ; write a unused object id as a sentinel id so our patched kill object can use this
+  ; to give the item instead
+  lda #$5b
+  sta $04c0,x
+@PatchResistance:
+  ldx $10
+  ; prevent the mimics from being unkillable my making them weak to all swords
+  lda ObjectElementalDefense,x
+  and #$f0
+  sta ObjectElementalDefense,x
+  ; We've gotta jump out of 3 callstacks here since we always spawn a mimic now
+  pla
+  pla
+  pla
+  pla
+  pla
+  pla
+  rts
+
+; ObjectData_Mimic:                                         ; Object 73
+;         .byte $00
+;         .byte $ff,$aa,$40,$02,$00,$09,$31,$2d,$33
+;         .byte $ff,$00,$88,$00,$06,$00,$2b,$00,$00
+;         .byte $f0,$f5,$7e,$00,$01
+;         .byte $80,$20
+
+.pushseg "1a"
+.org ReplaceObject
+  jsr GiveItemAfterMimicKilledOrReplaceObject
+.popseg
+
+.pushseg "fe", "ff"
+.reloc
+GiveItemAfterMimicKilledOrReplaceObject:
+  cmp #$5b
+  beq +
+    jmp $ff80 ; LoadOneObjectData
+    ; implicit rts
++ ; load the item id from the object and jump to item get routines
+  lda $06a0,y
+  ldy $0623
+  ; no need flag the mimic as already defeated for PatchedItemGet checks
+  ; since the mimic now has a different metasprite since its dead
+  ; it will just fallthrough to the "give item from person" code
+  jmp $d3fb + 4 ; HandleTreasureChest skipping nops
+.popseg
+
+.else
 .reloc
 PatchStartItemGet:
   lda $23
@@ -167,6 +288,7 @@ PatchStartItemGet:
   nop
   nop
 +:
+.endif
 
 ;; Fix dialog to work with us... (patch in the middle here)
 ShowTreasureChestMessage = $d41c

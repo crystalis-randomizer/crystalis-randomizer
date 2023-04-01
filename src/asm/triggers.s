@@ -247,7 +247,6 @@ DestroyStatue:
   sta $10
   jmp $c25d ; LoadOneObjectDataInternal
 
-
 .org $d7fd ; itemuse action jump 1c - statue of onyx -> akahana
   jsr GrantItemFromTable
   nop

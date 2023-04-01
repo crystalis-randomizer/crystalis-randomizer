@@ -26233,7 +26233,7 @@ BossPatternJump_00:              ; Vampire 0
         <@1e4b2@>
         <@1e4b4 ObjectDelay@>
         <@1e4b7 bossMusic_vampire@>
-             bossMusic_vampire = $12
+             bossMusic_vampire = [@1e4b8@]
         <@1e4b9 StartAudioTrack@>
         ;; Start in mode 2
         <@1e4bc ObjectBossMode@>
@@ -26528,7 +26528,7 @@ BossPatternJump_08:              ; Insect 0
          <@1e68e@>
          ;; ----
 +       <@1e68f bossMusic_insect@>
-             bossMusic_insect = $12
+             bossMusic_insect = [@1e690@]
         <@1e691 StartAudioTrack@>
         <@1e694@>
         <@1e697@>
@@ -26821,7 +26821,7 @@ BossPatternJump_0a:              ; Kelbesque 0
         <@1e995@>
         <@1e997@>
         <@1e99a bossMusic_kelbesque@>
-             bossMusic_kelbesque = $12
+             bossMusic_kelbesque = [@1e99b@]
         <@1e99c StartAudioTrack@>
         <@1e99f@>
         <@1e9a1@>
@@ -27247,7 +27247,7 @@ BossPatternJump_17:              ; Sabera 0
         <@1ecab@>
         <@1ecad@>
         <@1ecb0 bossMusic_sabera@>
-             bossMusic_sabera = $12
+             bossMusic_sabera = [@1ecb1@]
         <@1ecb2 StartAudioTrack@>
         <@1ecb5@>
         <@1ecb8@>
@@ -27418,7 +27418,7 @@ BossPatternJump_1b:              ; Mado 0
         <@1ee09@>
         <@1ee0b@>
         <@1ee0e bossMusic_mado@>
-             bossMusic_mado = $12
+             bossMusic_mado = [@1ee0f@]
         <@1ee10 StartAudioTrack@>
         <@1ee13@>
         <@1ee16@>
@@ -27607,7 +27607,7 @@ BossPatternJump_21:              ; Karmine 0
         <@1ef7d@>
         <@1ef7f@>
         <@1ef82 bossMusic_karmine@>
-             bossMusic_karmine = $12
+             bossMusic_karmine = [@1ef83@]
         <@1ef84 StartAudioTrack@>
         <@1ef87@>
         <@1ef8a@>
@@ -27860,7 +27860,7 @@ BossPatternJump_27:              ; Draygon 0
         <@1f181@>
         <@1f183@>
         <@1f186 bossMusic_draygon1@>
-             bossMusic_draygon1 = $12
+             bossMusic_draygon1 = [@1f187@]
         <@1f188 StartAudioTrack@>
         <@1f18b@>
         <@1f18d@>
@@ -28074,7 +28074,7 @@ BossPatternJump_2b:              ; Draygon2 0
         <@1f30b@>
         <@1f30d _34c3d@>
         <@1f310 bossMusic_draygon2@>
-             bossMusic_draygon2 = $0c
+             bossMusic_draygon2 = [@1f311@]
         <@1f312 StartAudioTrack@>
         <@1f315@>
         <@1f317@>
@@ -56164,7 +56164,7 @@ ObjectActionJump_70_03:
         <@37c2a@>
         <@37c2d@>
         <@37c2f bossMusic_dyna@>
-             bossMusic_dyna = $14
+             bossMusic_dyna = [@37c30@]
         <@37c31 StartAudioTrack@>
 ;;; --------------------------------
 .org $bc34

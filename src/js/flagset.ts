@@ -554,6 +554,14 @@ class Monsters extends FlagSection {
     text: `Monster and boss elemental weaknesses are shuffled.`,
   });
 
+  static readonly OopsAllMimics = Monsters.flag('Mg', {
+    name: 'Replace all chests with mimics',
+    text: `Every chest is now a mimic, and killing the mimic will drop
+           the real item chest. Careful when killing the mimic, if it
+           drops the chest out of reach you'll need to reset the room!`,
+    hard: true,
+  });
+
   static readonly TowerRobots = Monsters.flag('Mt', {
     name: 'Shuffle tower robots',
     text: `Tower robots will be shuffled into the normal pool.  At some
@@ -979,7 +987,7 @@ export class FlagSet {
   }
 
   alwaysMimics(): boolean {
-    return true;
+    return this.check(Monsters.OopsAllMimics);
   }
 
   preserveUniqueChecks(): boolean {

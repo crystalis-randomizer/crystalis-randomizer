@@ -94,9 +94,9 @@ FREE_UNTIL $d280
 .import DolphinSpawnTable
 .import dolphinSpawnIndexESI, dolphinSpawnIndexChannel
 .org $d663
-  ldy 5 * dolphinSpawnIndexChannel
+  ldy #5 * dolphinSpawnIndexChannel
 .org $d66b
-  ldy 5 * dolphinSpawnIndexESI
+  ldy #5 * dolphinSpawnIndexESI
 .org $d679
   lda DolphinSpawnTable,y
 .org $d68d

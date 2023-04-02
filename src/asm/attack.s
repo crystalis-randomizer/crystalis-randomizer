@@ -168,10 +168,10 @@ StoreObjectExp:
     asl ; note: clears carry
     tay
     lda PlayerExp
-    adc NextLevelExpByLevel,y
+    adc NextLevelExpByLevel-1,y
     sta PlayerExp
     lda PlayerExp+1
-    adc NextLevelExpByLevel+1,y
+    adc NextLevelExpByLevel,y
     sta PlayerExp+1
     ;; Now that we leveled, it's possible that we have enough exp to level again
     ;; first double check here that we aren't already max level

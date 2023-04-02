@@ -979,7 +979,7 @@ export class FlagSet {
   }
 
   alwaysMimics(): boolean {
-    return true;
+    return false;
   }
 
   preserveUniqueChecks(): boolean {

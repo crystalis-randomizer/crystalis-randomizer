@@ -124,8 +124,11 @@ PatchStartItemGet:
   lda $0300,y
   cmp #$aa
   bne +
+    lda $06c0,y
+    cmp #DEAD_MIMIC
+    beq +
     jmp MimicOrChest
-+ ; Just a person or dead mimic so load the item and return
++ ; Just a person so load the item and return
   lda $23
   sta $61fe
   tax
@@ -143,6 +146,7 @@ PatchStartItemGet:
   rts         ;      - what about other writes to 07dc?
 .endif ; _STATS_TRACKING
 
+DEAD_MIMIC = $FF
 .reloc
 MimicOrChest:
   ; they just touched the chest for the first time so spawn a mimic
@@ -185,9 +189,11 @@ MimicOrChest:
   ; store the item to give in the field $06a0 which holds items for NPC Persons
   lda $61fe
   sta $06a0,x
-  ; write a unused object id as a sentinel id so our patched kill object can use this
-  ; to give the item instead
-  lda #$5b
+  ; write a sentinel value to use to indicate this chest is a dead mimic
+  lda #DEAD_MIMIC
+  sta $06c0,x
+  ; force the mimic to drop a new chest
+  lda #$0d
   sta $04c0,x
 @PatchResistance:
   ldx $10
@@ -204,40 +210,28 @@ MimicOrChest:
   pla
   rts
 
-.pushseg "1a"
+.pushseg "1a", "fe", "ff"
 .org $9167 ; ReplaceObject
-  jsr GiveItemAfterMimicKilledOrReplaceObject
-.popseg
-
-.pushseg "fe", "ff"
+  jsr ReplaceObjectAndPatchChest
 .reloc
-GiveItemAfterMimicKilledOrReplaceObject:
-  cmp #$5b
-  beq +
-    jmp $ff80 ; LoadOneObjectData
-    ; implicit rts
-+ ; load the item id from the object and jump to item get routines
-  lda $61
-  pha
-    lda $62
-    pha
-      lda $06a0,y
-      sta $0560,y ; This value is read by the routine to store into $23
-      ; no need flag the mimic as already defeated for PatchedItemGet checks
-      ; since the mimic now has a different metasprite since its dead
-      ; it will just fallthrough to the "give item from person" code
-      jsr $d3fb + 4 ; HandleTreasureChest skipping nops
-  ; Restore the value in $61 and $62
-    pla
-    sta $62
-  pla
-  sta $61
-  ; need to restore the banks back
-  lda #$1a
-  pha
-  lda #$1b
-  pha
-  jmp RestoreBanks
+ReplaceObjectAndPatchChest:
+  ; a - ObjectReplacement; y - object index
+  cmp #$0d ; ObjectChest - if we are about to drop a chest
+  bne +
+    ; AND we have the sentinel data to signify its from a dead mimic
+    lda $06c0, y
+    cmp #DEAD_MIMIC
+    bne +
+      ; after loading the replacement we want to copy over the item
+      lda $06a0, y
+      pha
+        jsr $ff80 ; LoadOneObjectData
+      pla
+      sta $0560, y
+      lda #DEAD_MIMIC
+      sta $06c0, y
+      rts
++ jmp $ff80 ; LoadOneObjectData
 .popseg
 
 .else

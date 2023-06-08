@@ -28048,7 +28048,7 @@ ObjectActionJump_6b_Draygon2:
         <@1f2e2 +@> ; $1f2f3
          <@1f2e4@>
          <@1f2e6@>
-         <@1f2e9@>
+         <@1f2e9 ScreenMode@>
          <@1f2eb@>
          <@1f2ed +@> ; $1f2f3
           <@1f2ef SCREEN_MODE_NTBOSS@>
@@ -34472,7 +34472,7 @@ _22751:
 _22788:
         <@22788@>
         <@2278a@>
-        <@2278c@>
+        <@2278c ScreenMode@>
         <@2278e @loop@>
          <@22790@>
          <@22792 @loop@>
@@ -63905,7 +63905,7 @@ MainGameModeJump_01_LocationChange:
         <@3ca38 ReadObjectCoordinatesInto_34_37@>
         <@3ca3b@> ; update $380,x
         <@3ca3d CheckTerrainUnderObject@>
-        <@3ca40@>
+        <@3ca40 SCREEN_MODE_NORMAL@>
         <@3ca42 ScreenMode@> ; display mode: normal
         <@3ca44@>
         <@3ca47@>
@@ -64396,7 +64396,7 @@ _3cd8a:
          <@3cdba BankSwitch8k_8000@>
          <@3cdbd LoadPalettesForLocation@>
          ;; ----
-+       <@3cdc0@>
++       <@3cdc0 ScreenMode@>
         beq :>rts ; $3cdd4
          <@3cdc4@>
          <@3cdc7@>
@@ -64591,7 +64591,7 @@ _3ce89:
          <@3cf0d StageNametableWriteFromTable@>
          <@3cf10 WaitForOAMDMA@>
          ;; ----
-+       <@3cf13@>
++       <@3cf13 ScreenMode@>
         <@3cf15@>
         <@3cf17 +@> ; $3cf1d
          <@3cf19 SCREEN_MODE_NORMAL@>
@@ -65166,7 +65166,7 @@ WaitForDialogToBeDismissedInternal:
          <@3d3b0 RemoveSpritesBehindMessageBox@>
          <@3d3b3@>
         <@3d3b5 -@> ; $3d3aa
-        <@3d3b7@>
+        <@3d3b7 SCREEN_MODE_NORMAL@>
         <@3d3b9 ScreenMode@>
         <@3d3bb@>
         <@3d3bd GAME_MODE_NORMAL@>
@@ -65888,7 +65888,7 @@ WaitForAudio:
 _3d896:
         <@3d896@>
         <@3d898@>
--        <@3d89a@>
+-        <@3d89a SCREEN_MODE_NORMAL@>
          <@3d89c ScreenMode@>
          <@3d89e WaitForOAMDMA@>
          <@3d8a1 SCREEN_MODE_TEXT@>
@@ -66161,7 +66161,7 @@ _3da72:
         <@3daaf@>
         <@3dab0@>
         <@3dab2 CurrentEntrance@>
-        <@3dab4@>
+        <@3dab4 SCREEN_MODE_NORMAL@>
         <@3dab6 ScreenMode@>
         <@3dab8 Ctrl1NewlyPressed@>
         <@3daba GAME_MODE_CHANGE_LOCATION@>
@@ -66539,7 +66539,7 @@ CheckWarpPointFlag:
 ;;; --------------------------------
 .org $dd6b
 MainGameModeJump_15_TelepathyMenu:
-        <@3dd6b@>
+        <@3dd6b ScreenMode@>
         <@3dd6d@>
          <@3dd6e@>
          <@3dd70@>
@@ -66717,7 +66717,7 @@ DataTable_3dea1:
 ;;; --------------------------------
 .org $dec1
 MainGameModeJump_17_ChangeMagicMenu:
-        <@3dec1@>
+        <@3dec1 ScreenMode@>
         <@3dec3@>
          <@3dec4@>
          <@3dec6@>
@@ -70032,10 +70032,10 @@ HandleNMI:
            <@3f3e7@>
            <@3f3e9@>
         ;; ???
-           <@3f3ec@>
-           <@3f3ee@>
+           <@3f3ec ScreenMode@>
+           <@3f3ee SCREEN_MODE_NTBOSS_TEXT@>
            <@3f3f0 +@> ; $3f3f6
-           <@3f3f2@>
+           <@3f3f2 SCREEN_MODE_NTBOSS@>
            <@3f3f4 ++@> ; $3f40a
         ;; If $51 is 7 or 9, then copy $[8ace]3 into $07d[89ab] instead.
         ;; This is the map position of object $13, whatever that is.
@@ -70435,7 +70435,7 @@ AnimateSNKLogoScroll:
 ExecuteScreenMode:
         <@3f6ad@>
         <@3f6af@>
-        <@3f6b1@>
+        <@3f6b1 ScreenMode@>
         <@3f6b3@>
         <@3f6b4@>
         <@3f6b5 ScreenModeJumpTable@>
@@ -70720,7 +70720,7 @@ SelectCHRRomBanks:
 ;;; we'll copy from a different range, but I don't think that's valid?)
 .org $f8cb
 WritePaletteDataToPpu:
-        <@3f8cb@>
+        <@3f8cb ScreenMode@>
         <@3f8cd +@> ; $3f8d0
         <@3f8cf@>
         ;; ----

@@ -80,6 +80,7 @@ export class Graph {
   /** Bitsets keyed by ItemIndex, represent a DNF condition. */
   readonly graph: Keyed<SlotIndex, readonly Bits[]>;
   readonly unlocks: Keyed<ItemIndex, readonly SlotIndex[]>;
+  private lastFailure = '';
 
   constructor(private readonly worlds: readonly LocationList[]) {
     //const reverseWorlds = new Map<LocationList, number>();
@@ -179,6 +180,7 @@ export class Graph {
                 spoiler?: Spoiler): Promise<Map<SlotId, ItemId>|null> {
     if (progress) progress.addTasks(Math.floor(attempts / 10));
     for (let attempt = 0; attempt < attempts; attempt++) {
+      this.lastFailure = '';
       if (progress && (attempt % 10 === 9)) {
         progress.addCompleted(1);
         await new Promise(requestAnimationFrame);
@@ -225,6 +227,7 @@ export class Graph {
                           .map(k => k + missingMap.get(k)!).join('\n  ')}`);
                       // }\nUnavailable items:\n  ${notHas.join('\n  ')}`);
                       // final, this);
+        this.lastFailure = `unreachable slots?`;
         continue;
       }
       this.expandFill(indexFill, fill);
@@ -251,7 +254,8 @@ export class Graph {
       }
       return out;
     }
-    return null;
+    throw new Error(`Shuffle failed: ${this.lastFailure || 'unknown error'}`);
+    //return null;
   }
 
   private fillInternal(fill: MutableArrayBiMap<SlotIndex, ItemIndex>,
@@ -303,6 +307,8 @@ export class Graph {
       // console.log(`Pool:\n  ${items.map(ni).join('\n  ')}`);
       // console.log(`Fill:\n  ${[...fill].map(([s,i]) => `${ns(s)}: ${ni(i)}`).join('\n  ')}`);
       // console.error(`REROLL: Could not place item index ${bit}: ${ni(bit)}`);
+      this.lastFailure = `could not place ${this.checkName(this.items.get(bit)!)
+          }, ${items.filter(i => Bits.has(has, i)).length} remaining`;
       return false;
     }
     return true;
@@ -409,6 +415,7 @@ export class Graph {
         console.log(`Slots:\n  ${[...iters.concat(...slotPasses)].map(n).join('\n  ')}`);
         //console.log(`Fill:\n  ${[...fill].map(([s,i]) => `${ns(s)}: ${ni(i)}`).join('\n  ')}`);
         console.error(`REROLL: Could not place item ${n(item)}`);
+        this.lastFailure = `could not place non-progression ${n(item)}`;
         return null;
       }
     }

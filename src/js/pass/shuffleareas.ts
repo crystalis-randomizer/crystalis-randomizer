@@ -341,7 +341,7 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
     exit2.reverse = rev1;
     rev1.reverse = exit2;
     [count, traversal, pool] = traverse();
-    if (iterations < -10) debugger;
+    //if (iterations < -10) debugger;
   }
 
   for (const exit of exits.values()) {

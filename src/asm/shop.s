@@ -272,4 +272,11 @@ Multiply32Bit:
   bne -
   rts
 
+.else  ; (vanilla shops)
+
+;;; ROM still overwrites this data (since it can still be randomized), so we
+;;; still need to reserve it.
+.org $9da4
+.res 264
+
 .endif ; _NORMALIZE_SHOP_PRICES

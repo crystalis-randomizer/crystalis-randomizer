@@ -51,8 +51,10 @@ DBG_INFO = $(DBGDIR)/js/build_info.js
 REL_INFO = $(RELDIR)/js/build_info.js
 DBG_STATIC = $(STATIC_FILES:src/%=target/debug/%)
 REL_STATIC = $(STATIC_FILES:src/%=target/release/%)
-DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
-REL_OUTS = $(JS65_REL) $(CLI_REL) $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
+DBG_WEB_OUTS = $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
+REL_WEB_OUTS = $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
+DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS)
+REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS)
 TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON)
 
 x:
@@ -67,8 +69,8 @@ x:
 release: $(REL_OUTS)
 debug: $(DBG_OUTS)
 all: debug release
-web-debug: $(WEB_JS_DBG)
-web-release: $(WEB_JS_REL)
+web-debug: $(DBG_WEB_OUTS)
+web-release: $(REL_WEB_OUTS)
 
 clean:
 	rm -rf target

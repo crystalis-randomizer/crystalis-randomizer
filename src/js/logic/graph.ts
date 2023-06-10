@@ -50,6 +50,8 @@ export interface SlotInfo {
    * could just avoid ever placing mimics in these areas?
    */
   weight?: number;
+  /** Whether slot is currently broken */
+  broken?: boolean;
 }
 
 export type SlotIndex = number & {__slotIndex__: never};
@@ -320,6 +322,7 @@ export class Graph {
     const out: SlotIndex[] = [];
     for (const slot of slots) {
       const info = this.slotInfoFromIndex(slot);
+      if (info?.broken) continue;
       // don't bother with non-unique slots at this stage.
       if (!info || flagset.preserveUniqueChecks() && !info.unique) continue;
       addCopies(out, slot, info.weight || 1);

@@ -46,7 +46,7 @@ setTimeout(function() {
     </div>
   </section>
 
-  <section id="js-notice" class="if-js-broken warning">
+  <section class="if-js-broken warning">
     <h1>Something went wrong!</h1>
     <div>
       <p>Something went wrong with the scripts on this page.  This may be
@@ -61,7 +61,7 @@ setTimeout(function() {
     </div>
   </section>
 
-  <section id="js-notice" class="if-failure warning">
+  <section class="if-failure warning">
     <h1>Something went wrong!</h1>
     <div>
       <p>Something went wrong with the scripts on this page.  Please report
@@ -70,6 +70,13 @@ setTimeout(function() {
         <br>Flags: <span class="flagstring-out"></span>
         <br>Seed: <span class="seed-out"></span>
       <p id="error-text">
+    </div>
+  </section>
+
+  <section class="if-invalid warning">
+    <h1>Invalid Flags</h1>
+    <div>
+      <p>The flags are invalid: <span id="invalid-text"></span>
     </div>
   </section>
 

@@ -231,9 +231,10 @@ const shuffleRom = async (seed) => {
         await patch.shuffle(
           orig, seed, flagsClone, [sprite], log, progressTracker);
   } catch (err) {
-    document.body.classList.add('failure');
-    const errorText = document.getElementById('error-text');
-    errorText.textContent = err.stack;
+    const invalid = err.name === 'UsageError';
+    document.body.classList.add(invalid ? 'invalid' : 'failure');
+    const errorText = document.getElementById(invalid ? 'invalid-text' : 'error-text');
+    errorText.textContent = invalid ? err.message : err.stack;
     errorText.parentElement.parentElement.scrollIntoViewIfNeeded();
     document.getElementById('checksum').textContent = 'SHUFFLE FAILED!';
     throw err;
@@ -347,6 +348,7 @@ const makeCheckbox = (el) => {
 
 const updateDom = () => {
   document.body.classList.remove('failure');
+  document.body.classList.remove('invalid');
   for (const cb of document.querySelectorAll('input[data-flag]')) {
     const flag = cb.dataset['flag'];
     const mode = flags.get(flag);

@@ -205,6 +205,7 @@ export async function shuffle(rom: Uint8Array,
     try {
       return await shuffleInternal(rom, originalFlags, seed, random, log, progress, sprites, origPrg);
     } catch (error) {
+      if (error.name === 'UsageError') throw error;
       attemptErrors.push(error);
       console.error(`Attempt ${i + 1} failed: ${error.stack}`);
     }
@@ -223,6 +224,7 @@ async function shuffleInternal(rom: Uint8Array,
                               ): Promise<readonly [Uint8Array, number]>  {
   const originalFlagString = String(originalFlags);
   const flags = originalFlags.filterRandom(random);
+  flags.validate();
   const parsed = new Rom(rom);
   const actualFlagString = String(flags);
 // (window as any).cave = shuffleCave;
@@ -307,7 +309,8 @@ async function shuffleInternal(rom: Uint8Array,
       }
       parsed.slots.setCheckCount(fill.size);
     } else {
-      return [rom, -1];
+      throw new Error(`Shuffle failed`);
+      //return [rom, -1];
       //console.error('COULD NOT FILL!');
     }
   }

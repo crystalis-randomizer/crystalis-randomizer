@@ -337,7 +337,12 @@ export const breakLines = (str: string, len: number): string[] => {
   return out;
 };
 
-export class UsageError extends Error {}
+export class UsageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UsageError';
+  }
+}
 
 export class SuffixTrie<T> {
   readonly next = new Map<string, SuffixTrie<T>>();

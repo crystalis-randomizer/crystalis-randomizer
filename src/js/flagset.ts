@@ -1258,4 +1258,10 @@ export class FlagSet {
   hasStatTracking(): boolean {
     return true;
   }
+
+  validate(): void {
+    if (this.shuffleAreas() && this.preserveUniqueChecks()) {
+      throw new UsageError('Wa and Eu are incompatible');
+    }
+  }
 }

@@ -14,7 +14,7 @@
 <nav>
   <a class="img if-not-permalink" href="/"><img src="images/crystalis-sword.png"></a>
   <a href="index">Play</a>
-  <a class="if-not-permalink" href="track">Track</a>
+  <!-- a class="if-not-permalink" href="track">Track</a -->
   <a href="help">Help</a>
   <!-- TODO: better process for stable version numbers. -->
   <span id="version"></span>
@@ -40,17 +40,11 @@
         flags, are simply not suited to beginning players, and will most likely
         lead to frustraton.
       <li>A good way to get started is to turn on some casual flags and to use
-        a tracker (such as the one provided here, or else the emotracker pack).
-        Clicking on "Track" in the top menu will automatically
-        use the currently selected flag set to determine availability of each
-        item on the mini map.  Availability is indicated by colors, from red
-        (completely blocked) to orange and yellow (available via hard mode
-        strat or glitch, respectively) to greenish yellow (available but not
-        considered by the current flag's logic) to green (available and probably
-        expected).  Locations may be marked as "checked" by clicking on them,
-        or by right-clicking on the major item that's usually there.
+        a tracker (CodeGorilla's <a href="https://emotracker.net/">emotracker</a>
+        pack tends to be the most up-to-date).
       <li>Learn the <a href="http://mikesrpgcenter.com/crystalis/index.html#maps">dungeon
-        maps</a> to the main key item locations.
+        maps</a> to the main key item locations (note: mimic locations are
+        missing from these maps).
       <li>Do not shuffle minor items in with the major ones, and then do not
         worry about the minor item chests.
       <li>Expect to spend 2-4 hours the first time.  With some practice it's
@@ -91,6 +85,20 @@
           game.  The higher charges (and higher damage) will be available until
           the inventory screen is entered.
           <a href="https://www.youtube.com/watch?v=6hXOutvuD1Q&index=2&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">See video explanation</a>
+        <li>Trigger skip: equip an unusable item and try to use it.
+          Then hold a direction, press A to dismiss the message, and
+          buffer B to immediately use the item again the next frame.
+          You will walk one pixel but skip any triggers (such as the
+          push-down triggers in front of Mt Sabre N or Evil Spirit
+          Island, or the triggers that cause guards to move), seamless
+          transitions (such as crossing the bridge in Cordel), or
+          slope or pain effects from the terrain.  Note that the slope
+          on Mt Sabre West is slightly more complicated to climb with
+          trigger skip because it relies on taking a seamless exit 3
+          tiles below the bridge in order to actually cross under the
+          bridge.  To do this, you must delay the skip for a single
+          frame while standing on the exit.  This should allow the
+          sword to swing and if you're lucky you won't lose any speed.
         <li>A few very specific skips are also possible:
           <a href="https://www.youtube.com/watch?v=bsHdN4_5q4M&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C&index=1">Teleport skip</a>,
           <a href="https://www.youtube.com/watch?v=P2Ou1TI8yTk&index=4&list=PLyA9BtOXggkiOGWAj-tjnqLang97E8G7C">Rabbit skip</a>,
@@ -173,6 +181,16 @@
       <li>A number of cave entrances in the game are closed until the player
         exits Mezame shrine.  This should be unobservable unless the player
         wild warps out of the starting screen, rather than exiting to the south.
+      <li>Note: the more major map edits can lead to some very difficult
+        interactions.  For instance, the Portoa queen/fortune teller dynamics
+        can require travelling to very distant corners of the world to reset
+        the guard if <span class="flag">Wh</span> or
+        <span class="flag">Wa</span> are set.  Note that (when possible) any
+        alternative exits to whatever cave is behind the windmill or the prison
+        atop Mt. Sabre will be caved in.  The Key to Prison can be used on any
+        of these caved-in entrances to unlock all the entrances.  The other
+        sealed cave exits will only open after both starting the windmill
+        <i>and</i>seeing the explosion in the Valley of Wind.
       </ul>
     </div>
   </section>
@@ -270,17 +288,21 @@
         Asina until after the Mesia recording has been viewed (this ensures
         both Sword and Orb of Water are acquired, guaranteeing that the back
         room is reachable).
-      <li>If Queen of Portoa doesn't give [Flute of Lime] before turning into
-        Asina, just talk to her again after getting [Recover].
+      <li>If Queen of Portoa/Asina goes into the back room before giving [Flute
+        of Lime], you'll need to talk to the guard by the back door in the
+        throne room to get the item.
       <li>Fog Lamp cannot be returned unless Shell Flute is
         acquired. Optionally (with the 'Rd' flag), it's also required
         to have healed the dolphin (note that this means that without
         the flag it's possible to heal the dolphin while riding the
         dolphin.  Don't worry, it's his sister).
       <li>Kensu will not appear in the beach cabin until Fog Lamp has been
-        returned.
+        returned.  If 'Rd' is not set, then he holds an item drop.
       <li>The Shyron massacre requires both the actual Sword of Thunder and
         getting the [Key to Stxy] from Zebu in Shyron.
+      <li>The requirement for Akahana's friend (we call him "Brokahana") to
+        give the [Warrior Ring] is changed to defeating Mado 1 (rather than
+        defeating Karmine).
       </ul>
     </div>
   </section>

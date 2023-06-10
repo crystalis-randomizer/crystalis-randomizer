@@ -606,6 +606,8 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
     // Alarm flute and a medical herb are in chests in mezame
     MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x9b, type: 2, id: 0x31}));
     MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x95, type: 2, id: 0x49}));
+    ZebuStudent.unsafeRename('Mezame Right Chest');
+    rom.flags[0x149].unsafeRename('Mezame Left Chest');
     rom.itemGets[0x49].itemId = rom.items.MedicalHerb.id;
   }
 

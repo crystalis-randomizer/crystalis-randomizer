@@ -55,6 +55,10 @@ export class Flag {
     this.logic = data.logic ?? TRACK;
   }
 
+  unsafeRename(newName: string) {
+    (this as {name: string}).name = newName;
+  }
+
   get c(): Condition {
     return this.id as Condition;
   }

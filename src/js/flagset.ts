@@ -1108,6 +1108,10 @@ export class FlagSet {
     // TODO: consider multiple levels of shuffle?
     return this.check(World.ShuffleAreas);
   }
+  mayShuffleAreas() {
+    // includes '?'
+    return !this.check(World.ShuffleAreas, false);
+  }
   randomizeMaps() {
     return this.check(World.RandomizeMaps);
   }

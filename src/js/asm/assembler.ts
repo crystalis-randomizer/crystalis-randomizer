@@ -289,6 +289,11 @@ export class Assembler {
     return Expr.evaluate({op: 'num', num, meta});
   }
 
+  // Returns an expr resolving to a symbol name (e.g. a label)
+  symbol(name: string): Expr {
+    return Expr.evaluate(Expr.parseOnly([{token: 'ident', str: name}]));
+  }
+
   where(): string {
     if (!this._chunk) return '';
     if (this.chunk.org == null) return '';

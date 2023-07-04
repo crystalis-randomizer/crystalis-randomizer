@@ -1,11 +1,42 @@
 import {Entity} from './entity';
-import {hex, readLittleEndian, seq, tuple} from './util';
+import {hex, readLittleEndian, relocExportLabel, seq, tuple} from './util';
 import {Rom} from '../rom';
+import { Module } from '../asm/module';
+import { Assembler } from '../asm/assembler';
+import { Expr } from '../asm/expr';
 
 const METASPRITE_TABLE = 0x3845c;
 
 // [dx, dy, attributes, pattern id]
 type Sprite = [number, number, number, number];
+
+export class Metasprites extends Array<Metasprite> {
+  
+  constructor(readonly rom: Rom) {
+    super(0x100);
+    for (let id = 0; id < 0x100; id++) {
+      this[id] = new Metasprite(rom, id);
+    }
+  }
+
+  write(): Module[] {
+    // write out the new metasprite data
+    const a = this.rom.assembler();
+    a.segment('1c', '1d');
+    const map = new Map<number, Expr>();
+    for (const metasprite of this) {
+      if (!metasprite.mirrored && metasprite.used) {
+        map.set(metasprite.id, metasprite.assembleNotMirrored(a));
+      }
+    }
+    for (const metasprite of this) {
+      if (metasprite.mirrored && metasprite.used) {
+        metasprite.assembleMirrored(a, map);
+      }
+    }
+    return [a.module()];
+  }
+}
 
 export class Metasprite extends Entity {
 
@@ -52,11 +83,18 @@ export class Metasprite extends Entity {
         const a = this.base + 2 + f * 4 * this.size;
         const sprites: [number, number, number, number][] = [];
         for (let i = 0; i < this.size; i++) {
-          if (rom.prg[a + 4 * i] === 0x80) break;
+          if (rom.prg[a + 4 * i] === 0x80 && f == (this.frames - 1)) {
+            // if this is the last frame of animation, then we can end it with just
+            // one row of 0x80
+            sprites.push([0x80, 0x80, 0x80, 0x80]);
+            break;
+          }
           sprites.push(tuple(rom.prg, a + 4 * i, 4));
         }
         return sprites;
       });
+      // FUTURE NOTE: Its not that simple since it needs to be padded
+      // to match the correct offset for the frame.
       // NOTE: when re-encoding this, fill in $80 for all
       // missing rows from non-final frames.  For the final
       // frame, just write a single row of $80 (or maybe
@@ -95,5 +133,37 @@ export class Metasprite extends Entity {
       }
     }
     return [...pals];
+  }
+  
+  get org(): number {
+    return this.base - 0x30000;
+  }
+
+  assembleNotMirrored(a: Assembler) : Expr {
+    a.reloc(`Metasprite_${this.id.toString(16)}_Data`);
+    
+    const ptr = a.pc();
+    a.byte(this.size);
+    a.byte(this.frameMask);
+    for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
+      for (let spriteNum = 0; spriteNum < this.sprites[frameNum].length; ++spriteNum) {
+        a.byte(...this.sprites[frameNum][spriteNum]);
+      }
+    }
+
+    a.org(this.pointer - 0x30000, `Metasprite_${this.id.toString(16)}_Ptr`);
+    a.word(ptr);
+    console.log(`id ${this.id.toString(16)} size ${this.size} sprites ${JSON.stringify(this.sprites)} mirrored ${this.mirrored}`);
+    return ptr;
+  }
+
+  assembleMirrored(a: Assembler, map: Map<number, Expr>) {
+    a.reloc(`Metasprite_${this.id.toString(16)}_Data`);
+    const ptr = a.pc();
+    a.byte(0xff);
+    a.word(map.get(this.mirrored!)!);
+
+    a.org(this.pointer - 0x30000, `Metasprite_${this.id.toString(16)}_Ptr`);
+    a.word(ptr);
   }
 }

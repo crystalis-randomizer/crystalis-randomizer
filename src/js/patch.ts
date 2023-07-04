@@ -202,6 +202,7 @@ export async function shuffle(rom: Uint8Array,
   const sprites = spriteReplacements ? spriteReplacements : [];
   const attemptErrors = [];
   const maxAttempts = originalFlags.mayShuffleAreas() ? 12 : 5;
+  // const maxAttempts = 1;
   for (let i = 0; i < maxAttempts; i++) { // for now, we'll try 5 attempts
     try {
       return await shuffleInternal(rom, originalFlags, seed, random, log, progress, sprites, origPrg);

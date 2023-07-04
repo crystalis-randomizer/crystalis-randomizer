@@ -122,17 +122,17 @@ export class Constraint {
     return new Constraint([NONE, NONE, NONE, NONE], [], 0);
   }
 
-  static get MIMIC() {
-    return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 2);
-  }
+  // static get MIMIC() {
+  //   return new Constraint([ALL, bit(0x6c), ALL, ALL], [], 2);
+  // }
 
-  static get TREASURE_CHEST() {
-    return new Constraint([ALL, ALL, ALL, ALL], [TREASURE_CHEST_BANKS], 0);
-  }
+  // static get TREASURE_CHEST() {
+  //   return new Constraint([ALL, ALL, ALL, ALL], [TREASURE_CHEST_BANKS], 0);
+  // }
 
-  static get BOSS() {
-    return new Constraint([TREASURE_CHEST_BANKS, ALL, ALL, ALL], [], 0);
-  }
+  // static get BOSS() {
+  //   return new Constraint([TREASURE_CHEST_BANKS, ALL, ALL, ALL], [], 0);
+  // }
 
   static get COIN() {
     return new Constraint([COIN_BANKS, ALL, ALL, ALL], [], 0);
@@ -517,12 +517,12 @@ export class Constraint {
 //   return NaN;
 // }
 
-const TREASURE_CHEST_BANKS = new Set([
-  // NOTE: $51 has the treasure chest sprites, but in the wrong spot.
-  0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
-  0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
-  0x74, 0x75, 0x76, 0x77,
-]);
+// const TREASURE_CHEST_BANKS = new Set([
+//   // NOTE: $51 has the treasure chest sprites, but in the wrong spot.
+//   0x5e, 0x5f, 0x60, 0x61, 0x64, 0x65, 0x66, 0x67,
+//   0x68, 0x69, 0x6a, 0x6c, 0x6d, 0x6e, 0x6f, 0x70,
+//   0x74, 0x75, 0x76, 0x77,
+// ]);
 
 const COIN_BANKS = new Set([
   0x5e, 0x5f, 0x60, 0x61, 0x63, 0x64, 0x65, 0x66,

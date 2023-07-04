@@ -1004,3 +1004,23 @@ export function hex1(x: number, digits = 1): string {
 export type StrictIterator<T> = {
   next(): {value: T, done: boolean};
 }
+
+// A CHR tileset is 16 tiles wide, the left 8 tiles are the no armor sprites, the right 8 are the armor sprites
+export const ARMOR_TILESET_OFFSET = 0x08;
+// In the original game, the game swaps the two 0x20 size CHR banks for sprites to switch armor/no armor sprites
+export const CHR_PAGE_OFFSET = 0x400;
+
+export function toChrAddr(chr_page: number, nametable: number, tile_number: number): number {
+  const baseAddr = 0x40000 + 0x10; // added 0x10 to account for rom header
+  return baseAddr + chr_page * 0x2000 + nametable * 0x1000 + tile_number * 0x10;
+}
+
+export function copyToAllWeaponPages (tile: number) {
+  return [
+    toChrAddr(8, 0, tile) + CHR_PAGE_OFFSET * 2,
+    toChrAddr(8, 0, tile) + CHR_PAGE_OFFSET * 3,
+    toChrAddr(8, 1, tile),
+    toChrAddr(8, 1, tile) + CHR_PAGE_OFFSET,
+    toChrAddr(8, 1, tile) + CHR_PAGE_OFFSET * 2,
+  ]
+}

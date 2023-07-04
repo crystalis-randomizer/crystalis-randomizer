@@ -40,7 +40,7 @@ export class Pattern extends Entity {
   }
 }
 
-                            export class Patterns implements Iterable<Pattern> {
+export class Patterns implements Iterable<Pattern> {
   private _all: Pattern[] = [];
 
   get(page: number, tile_idx?: number): Pattern {

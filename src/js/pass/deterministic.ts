@@ -190,6 +190,8 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   if (flags.hasStatTracking()) updateGraphicsForStatTracking(rom);
 
   fixWildWarp(rom);
+
+  swapMimicAndRecoverGraphics(rom);
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {
@@ -1310,6 +1312,195 @@ function noBowMode(rom: Rom): void {
 // For now this just fixes the shot to be all elements instead of none.
 function fixCrystalis(rom: Rom) {
   rom.objects[0x33].elements = 0xf;
+}
+
+// Enables chests and mimics to appear on every screen by replacing the unused recover graphics
+// on the sword banks and replace it with chest and mimic sprites.
+function swapMimicAndRecoverGraphics(rom: Rom) {
+  // Summary of changes made here to swap mimic and recovery
+  // 1) copy the 10 recover spell sprites to a new bank.
+  // 2) copy the mimic and chest sprite to all of the sword banks.
+  // 3) update the metasprites for the recover spell and mimic and chest
+  // to use their new tile ids.
+
+  // Step 0: Make sure we don't do anything if the first shuffle failed (meaning we run this method
+  // a second time) We check to see if the new recover spell is pasted into the new bank
+  const newRecoverPage = 0x53 << 6;
+  if (!rom.patterns.get(newRecoverPage, 0x15).pixels.every( p => p === 0 )) {
+    return;
+  }
+
+  const windSwordPage = 0x42 << 6;
+  // Step 1
+  // Note: I chose the bank with Azteca in it ($53 or CHR $14c00) since it has a lot of unused tiles.
+  // In the original bank $42 it uses tiles $1c - $1f, $3a - $3f
+  const moveRecoverAddress = [
+    [0x1c, 0x15],
+    [0x1d, 0x16],
+    [0x1e, 0x17],
+    [0x1f, 0x18],
+    [0x3a, 0x19],
+    [0x3b, 0x1a],
+    [0x3c, 0x1b],
+    [0x3d, 0x1c],
+    [0x3e, 0x1d],
+    [0x3f, 0x1e],
+  ]
+  moveRecoverAddress.forEach(addr => {
+    rom.patterns.set(newRecoverPage, addr[1], rom.patterns.get(windSwordPage, addr[0]).pixels);
+  });
+  
+  const chestMimicPage = 0x6c << 6;
+  // Step 2
+  // Each weapon page is sequential in ROM starting from windsword $42 and ending with crystalis $46
+  const moveChestMimicAddress = [
+    // Chest = 4 sprites
+    [0x03, 0x1c],
+    [0x04, 0x1d],
+    [0x05, 0x1e],
+    [0x06, 0x1f],
+    // Mimic = 5 sprites
+    [0x33, 0x3a],
+    [0x34, 0x3b],
+    [0x35, 0x3c],
+    [0x36, 0x3d],
+    [0x37, 0x3e],
+  ]
+  moveChestMimicAddress.forEach(addr => {
+    const tile = rom.patterns.get(chestMimicPage, addr[0]).pixels;
+    for (let i=0; i<5; ++i) {
+      rom.patterns.set(windSwordPage + (i << 6), addr[1], tile);
+    }
+  });
+
+  // Step 2.1
+  // In vanilla, the recover spell usage actually ALWAYS switches to the wind sword
+  // bank for using recovery which makes updating the recover spell animation trivial
+  // Just switch the value of the wind sword bank to use the new recover bank one.
+  // NOTE: this will break mimic/chest sprites during recover animation
+  // but its worth it since thats such a small issue.
+
+  const unused = 0x80;
+  const chestMetasprite = 0xaa;
+  rom.metasprites[chestMetasprite].sprites.forEach(frame => {
+    frame.forEach(sprite => {
+      // 0x40 = PPU addr base
+      // 0x1c = new chest sprite location
+      // 0x83 = original chest starting tile
+      if (sprite[0] != unused) {
+        sprite[3] = (sprite[3] - 0x83) + 0x40 + 0x1c;
+      }
+    });
+  });
+
+  const mimicMetasprite = 0x90;
+  for (let frameNum = 0; frameNum < rom.metasprites[mimicMetasprite].sprites.length; frameNum++) {
+    for (let spriteNum = 0; spriteNum < rom.metasprites[mimicMetasprite].sprites[frameNum].length; spriteNum++) {
+      let sprite = rom.metasprites[mimicMetasprite].sprites[frameNum][spriteNum];
+      // 0x40 = PPU addr base (NOTE: The mimic adds $40 by default, see the value loaded into $320)
+      // 0x3a = new chest sprite location
+      // 0xb3 = original mimic starting tile
+      if (sprite[0] != unused) {
+        console.log(`setting sprite tile ${((sprite[3] - 0xb3) + 0x3a).toString(16)}`);
+        rom.metasprites[mimicMetasprite].sprites[frameNum][spriteNum][3] = (sprite[3] - 0xb3) + 0x3a;
+      }
+    }
+  }
+
+  const recoverMetasprite = 0xcb;
+  rom.metasprites[recoverMetasprite].sprites.forEach(frame => {
+    for (let i = 0; i < frame.length; i++) {
+      let sprite = frame[i];
+      let origTile = moveRecoverAddress[i][0];
+      let newTile = moveRecoverAddress[i][1];
+      // 0x40 = PPU addr base
+      // 0x3a = new chest sprite location
+      if (sprite[0] != unused) {
+        sprite[3] = (sprite[3] - 0x40 - origTile) + 0x40 + newTile;
+      }
+    }
+  });
+  
+
+// .org $a741
+// Metasprite_aa:                   ; Metasprite aa
+//         .byte $04,$00
+//         ;; Variant 0
+//         .byte $f8,$f0,$00,$83
+//         .byte $00,$f0,$00,$84
+//         .byte $f8,$f8,$00,$85
+//         .byte $00,$f8,$00,$86
+
+// .org $9e74
+// Metasprite_90:                   ; Metasprite 90 - mimic (alt page 6c)
+//         .byte $06,$01
+//         ;; Variant 0
+//         .byte $f8,$e8,$00,$b3
+//         .byte $00,$e8,$40,$b3
+//         .byte $f8,$f0,$00,$b4
+//         .byte $00,$f0,$40,$b4
+//         .byte $f8,$f8,$00,$b5
+//         .byte $00,$f8,$40,$b5
+//         ;; Variant 1
+//         .byte $f8,$f0,$00,$b6
+//         .byte $00,$f0,$40,$b6
+//         .byte $f8,$f8,$00,$b7
+//         .byte $00,$f8,$40,$b7
+//         .byte $80,$80,$80,$80
+
+
+  // Metasprite for the recover spell
+//   .org $b3db
+// Metasprite_cb:                   ; Metasprite cb
+//         .byte $05,$07
+//         ;; Variant 0
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         ;; Variant 1
+//         .byte $f2,$f0,$01,$5d
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         ;; Variant 2
+//         .byte $09,$ec,$01,$5d
+//         .byte $f2,$f0,$01,$5c
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         ;; Variant 3
+//         .byte $01,$e6,$01,$5d
+//         .byte $09,$ec,$01,$5c
+//         .byte $f8,$f8,$01,$5e
+//         .byte $00,$f8,$01,$5f
+//         .byte $80,$80,$80,$80
+//         ;; Variant 4
+//         .byte $ee,$f3,$01,$5d
+//         .byte $01,$e6,$01,$5c
+//         .byte $f8,$f0,$41,$7b
+//         .byte $00,$f0,$41,$7a
+//         .byte $80,$80,$80,$80
+//         ;; Variant 5
+//         .byte $07,$f7,$01,$5d
+//         .byte $ee,$f3,$01,$5c
+//         .byte $f8,$e8,$01,$7d
+//         .byte $f8,$f0,$01,$7e
+//         .byte $00,$f0,$01,$7f
+//         ;; Variant 6
+//         .byte $f2,$ee,$01,$5d
+//         .byte $07,$f7,$01,$5c
+//         .byte $f8,$e8,$01,$7a
+//         .byte $00,$e8,$01,$7b
+//         .byte $00,$f0,$01,$7c
+//         ;; Variant 7
+//         .byte $f2,$ee,$01,$5c
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
+//         .byte $80,$80,$80,$80
 }
 
 // There are a few metatiles that have incorrect behavior (one of

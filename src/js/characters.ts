@@ -1,4 +1,5 @@
 import { spritesheets } from './data';
+import { toChrAddr, copyToAllWeaponPages, ARMOR_TILESET_OFFSET, CHR_PAGE_OFFSET } from './util';
 
 class NssFile {
   readonly filename: string;
@@ -170,11 +171,6 @@ export class CharacterSet {
   }
 }
 
-function toChrAddr(chr_page: number, nametable: number, tile_number: number): number {
-  const baseAddr = 0x40000 + 0x10; // added 0x10 to account for rom header
-  return baseAddr + chr_page * 0x2000 + nametable * 0x1000 + tile_number * 0x10;
-}
-
 // Provides a lookup from the sample tileset to the CHRROM locations
 export class CustomTilesetMapping {
   private static instance: CustomTilesetMapping;
@@ -215,11 +211,6 @@ export class CustomTilesetMapping {
   private generateSimeaMapping() : Map<number, number[]> {
     // For most of the mappings, there is only one location to write it to, but for some, its split across several CHRROM banks.
     // so thats why its a map of tileset number to a list of addresses
-
-    // A CHR tileset is 16 tiles wide, the left 8 tiles are the no armor sprites, the right 8 are the armor sprites
-    const ARMOR_TILESET_OFFSET = 0x08;
-    // In the original game, the game swaps the two 0x20 size CHR banks for sprites to switch armor/no armor sprites
-    const CHR_PAGE_OFFSET = 0x400;
 
     const mapping = new Map<number, number[]>();
     //////////
@@ -479,15 +470,6 @@ export class CustomTilesetMapping {
     //////////
     // Misc
     // Each sword has their own page of sprites, so apply the change to all pages.
-    let copyToAllWeaponPages = (tile: number) => {
-      return [
-        toChrAddr(8, 0, tile) + CHR_PAGE_OFFSET * 2,
-        toChrAddr(8, 0, tile) + CHR_PAGE_OFFSET * 3,
-        toChrAddr(8, 1, tile),
-        toChrAddr(8, 1, tile) + CHR_PAGE_OFFSET,
-        toChrAddr(8, 1, tile) + CHR_PAGE_OFFSET * 2,
-      ]
-    }
     // Swords
     // diagonal left top
     mapping.set(0xf0, copyToAllWeaponPages(0x10));

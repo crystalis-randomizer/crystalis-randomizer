@@ -623,6 +623,17 @@ RESERVE_MAPS
 .org $97e4
   .res 64 ; RNG table
 
+;;; Metasprite rendering code + data
+.segment "1c","1d"
+.org $845c ; MetaspriteTable
+  .res $100
+.org $855c
+  .res $100 ; MetaspriteTablePart2
+; .org $865c
+;   .res ($a000 - *) ; All of the actual metasprite data
+; .org $a000
+;   .res $1500
+FREE_UNTIL $c000
 
 ;;; New extended map screens
 .segment "20","21"

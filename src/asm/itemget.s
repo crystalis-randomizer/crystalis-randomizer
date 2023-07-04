@@ -412,7 +412,6 @@ ItemGet_FindOpenSlotWithOverflow:
 ;;; .org $7d3fd
 ;;;   .byte $b0
 
-
 .segment "fe", "ff"
 
 

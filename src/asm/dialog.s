@@ -112,8 +112,11 @@ FREE_UNTIL $d280
 .segment "0e"
 .import itemValueMedicalHerb, itemValueFruitOfPower
 .org $84e9
-  adc #itemValueMedicalHerb
+; for some reason the vanilla code is lda medical herb value
+; add the current hp, but for fruid of power its
+  lda #itemValueMedicalHerb
 .org $850b
+; load current mp, then add fruit of power value.
   adc #itemValueFruitOfPower
 
 ;;; Allow dynamically changing dialog pointers

@@ -153,7 +153,6 @@ export class Metasprite extends Entity {
 
     a.org(this.pointer - 0x30000, `Metasprite_${this.id.toString(16)}_Ptr`);
     a.word(ptr);
-    console.log(`id ${this.id.toString(16)} size ${this.size} sprites ${JSON.stringify(this.sprites)} mirrored ${this.mirrored}`);
     return ptr;
   }
 

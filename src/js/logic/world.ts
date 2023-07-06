@@ -1029,13 +1029,18 @@ export class World {
             hitbox, [req], this.rom.flags.AsinaInBackRoom.id, info);
         break;
 
-      case 0x11:
+      case 0x11: // give item through trigger (loading from $6a0)
         this.addItemCheck(hitbox, [req], 0x100 | npc.data[1], info);
         break;
 
-      case 0x03:
-      case 0x0a: // normally this hard-codes glowing lamp, but we extended it
+      case 0x03: // give item through trigger (loading from $680)
         this.addItemCheck(hitbox, [req], 0x100 | npc.data[0], info);
+        break;
+
+      case 0x0a: // normally this hard-codes glowing lamp, but we extended it to drop any chest
+        // since we drop a chest, we want to add a sword requirement if it turns into a mimic
+        const swordReq = this.flagset.alwaysMimics() ? [[...req, this.rom.flags.Sword.c]] : [req];
+        this.addItemCheck(hitbox, swordReq, 0x100 | npc.data[0], info);
         break;
 
       case 0x09:

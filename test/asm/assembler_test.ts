@@ -321,6 +321,64 @@ describe('Assembler', function() {
         segments: [],
       });
     });
+
+    it('should support programmatic forward references', function() {
+      const a = new Assembler(Cpu.P02);
+      a.reloc();
+      a.byte(8);
+      a.word(a.symbol('foo'));
+      a.byte(9);
+      a.label('foo');
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          overwrite: 'allow',
+          segments: ['code'],
+          data: Uint8Array.of(8, 0xff, 0xff, 9),
+          subs: [{offset: 1, size: 2, expr: {op: 'sym', num: 0}}],
+        }],
+        symbols: [{expr: {op: 'num', num: 4, meta: {chunk: 0, rel: true}}}],
+        segments: [],
+      });
+    });
+
+    it('should support programmatic back references', function() {
+      const a = new Assembler(Cpu.P02);
+      a.reloc();
+      a.byte(8);
+      a.label('foo');
+      a.byte(9);
+      a.word(a.symbol('foo'));
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          overwrite: 'allow',
+          segments: ['code'],
+          data: Uint8Array.of(8, 9, 0xff, 0xff),
+          subs: [{offset: 2, size: 2, expr: {op: 'num', num: 1,
+                                             meta: {chunk: 0, rel: true}}}],
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
+
+    it('should support programmatic immediate back references', function() {
+      const a = new Assembler(Cpu.P02);
+      a.org(0x8000);
+      a.byte(8);
+      a.label('foo');
+      a.byte(9);
+      a.word(a.symbol('foo'));
+      expect(strip(a.module())).to.eql({
+        chunks: [{
+          overwrite: 'allow',
+          segments: ['code'],
+          org: 0x8000,
+          data: Uint8Array.of(8, 9, 0x01, 0x80),
+        }],
+        symbols: [],
+        segments: [],
+      });
+    });
   });
 
   describe('Cheap locals', function() {

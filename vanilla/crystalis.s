@@ -52655,7 +52655,7 @@ DataTable_36242:
 ;;; --------------------------------
 .org $a24a
 ObjectActionJump_0b:             ; Stom fight (in $4a0)
-        <@3624a _362b4@>
+        <@3624a StomFight_CheckExitCondition@> ; $362b4
         <@3624d@>
         <@3624f@>
         <@36252@>
@@ -52707,15 +52707,18 @@ ObjectActionJump_0b:             ; Stom fight (in $4a0)
 DataTable_362ac: 
         .byte [@362ac@],[@362ad@],[@362ae@],[@362af@],[@362b0@],[@362b1@],[@362b2@],[@362b3@]
 ;;; --------------------------------
-.org $a2b4
-_362b4:
+;;; Check the exit conditions for the stom fight
+.org $a2b4                      ; 362b4
+StomFight_CheckExitCondition:
+        ;; Check the player's Y-coordinate within the screen
         <@362b4@>
         <@362b6@>
-        <@362b8 ++@> ; $362e8
+        <@362b8 ++@> ; $362e8  - "below" (>=) $98 => player loses
          <@362ba@>
-         <@362bc +@> ; $362bf
-          <@362be@>
+         <@362bc +@> ; $362bf  - "above" (<) $58 => player wins
+          <@362be@>  ;         - else return
         ;; ----
+         ;; Player wins fight
 +        <@362bf@>
          <@362c2@>
          <@362c4@>
@@ -52733,8 +52736,9 @@ _362b4:
          <@362dd@>
          <@362e0@>
          <@362e2@>
-         <@362e5 _362fc@>
+         <@362e5 StomFight_Exit@> ; $362fc
          ;; ----
+        ;; Player loses fight
 ++      <@362e8@>
         <@362ea@>
         <@362ed@>
@@ -52743,7 +52747,7 @@ _362b4:
         <@362f4@>
         <@362f7@>
         <@362f9@>
-_362fc:
+StomFigiht_Exit:
         <@362fc GAME_MODE_STATUS_MSG@>
         <@362fe GameMode@>
         <@36300@>

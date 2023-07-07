@@ -189,7 +189,7 @@ export class World {
         OpenedCrypt,
         RabbitBoots, Refresh, RepairedStatue, RescuedChild,
         ShellFlute, ShieldRing,
-        ShootingStatue, ShootingStatueSouth, StormBracelet,
+        ShootingStatue, ShootingStatueSouth, StomSkip, StormBracelet,
         Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind,
         TornadoBracelet, TravelSwamp, TriggerSkip,
         UsedBowOfMoon, UsedBowOfSun,
@@ -310,6 +310,17 @@ export class World {
       this.addCheck([start], TriggerSkip.r,
                     [CrossPain.id, ClimbSlope8.id,
                      ClimbSlope9.id /*, ClimbSlope10.id */]);
+    }
+    // Stom skip (only required for charge-shots only)
+    if (this.flagset.chargeShotsOnly()) {
+      for (const location of this.rom.townWarp.locations) {
+        const entrance = this.entrance(location);
+        // Check if the entrance is above y<$58, which is the requirement
+        // for skipping the fight (see check in $362b4).
+        if ((entrance[3]) < 0x58) {
+          this.addCheck([entrance], BuyWarp.r, [StomSkip.id]);
+        }
+      }
     }
   }
 
@@ -871,7 +882,7 @@ export class World {
         // Special case: warp boots glitch required if charge shots only.
         const req =
           this.flagset.chargeShotsOnly() ?
-          Requirement.meet(requirements, and(this.rom.flags.WarpBoots)) :
+          Requirement.meet(requirements, this.rom.flags.StomSkip) :
           requirements;
         this.addItemCheck(hitbox, req, this.rom.flags.StomFightReward.id,
                           {lossy: true, unique: true});

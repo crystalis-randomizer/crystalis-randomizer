@@ -670,6 +670,7 @@ export class Flags {
   TriggerSkip = pseudo(this);
   RageSkip = pseudo(this);
   ShootingStatueSouth = pseudo(this); // pass south through statues
+  StomSkip = pseudo(this); // town warp that will satisfy yt<=4
 
   // Map of flags that are "waiting" for a previously-used ID.
   // Signified with a negative (one's complement) ID in the Flag object.

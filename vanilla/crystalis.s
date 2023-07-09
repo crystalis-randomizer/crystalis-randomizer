@@ -28736,7 +28736,7 @@ DataTable_1f7c1:                 ; This table is read in fives
 ObjectActionJump_6f:
         ;; This is the action for $CF which spawns after some (all?) bosses die
         <@1f807@>
-        <@1f809@>
+        <@1f809 OBJ_BOSS_CHEST@>
         <@1f80b@>
         <@1f80d LoadOneObjectData@>
         <@1f810@>

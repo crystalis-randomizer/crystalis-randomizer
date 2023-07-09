@@ -14,7 +14,7 @@ import {ItemGets} from './rom/itemget';
 import {Locations} from './rom/location';
 import {Messages} from './rom/messages';
 import {Metascreens} from './rom/metascreens';
-import {Metasprite, Metasprites} from './rom/metasprite';
+import {Metasprites} from './rom/metasprite';
 import {Metatileset, Metatilesets} from './rom/metatileset';
 import {Monster} from './rom/monster';
 import {Npcs} from './rom/npc';

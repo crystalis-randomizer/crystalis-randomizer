@@ -123,7 +123,6 @@ export class Graphics {
     // Force the chest spawns to never use a graphics offset, but don't add any constraints
     if (spawn.isChest()) {
       // Chest sprite is always banked in and hardcoded to pattern bank 0 now
-      console.log(`chest spawn ${JSON.stringify(spawn)}`);
       spawn.patternBank = 0;
     }
     if (!c) return;

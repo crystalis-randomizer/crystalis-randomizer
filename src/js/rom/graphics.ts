@@ -114,11 +114,18 @@ export class Graphics {
   configure(location: Location, spawn: Spawn) {
     if (!spawn.used) return;
     // const itemId = this.rom.slots[spawn.id];
+
     const c = spawn.isMonster() ? this.monsterConstraints.get(spawn.monsterId) :
         spawn.isNpc() ? this.npcConstraints.get(spawn.id) :
         // spawn.isChest() ? (itemId < 0x70 ? Constraint.TREASURE_CHEST :
         //                    Constraint.MIMIC) :
         undefined;
+    // Force the chest spawns to never use a graphics offset, but don't add any constraints
+    if (spawn.isChest()) {
+      // Chest sprite is always banked in and hardcoded to pattern bank 0 now
+      console.log(`chest spawn ${JSON.stringify(spawn)}`);
+      spawn.patternBank = 0;
+    }
     if (!c) return;
     if (c.shift === 3 || c.float.length >= 2) {
       throw new Error(`don't know what to do with two floats`);

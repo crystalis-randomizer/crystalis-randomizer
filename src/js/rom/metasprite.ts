@@ -1,5 +1,5 @@
 import {Entity} from './entity';
-import {hex, readLittleEndian, relocExportLabel, seq, tuple} from './util';
+import {hex, readLittleEndian, seq, tuple} from './util';
 import {Rom} from '../rom';
 import { Module } from '../asm/module';
 import { Assembler } from '../asm/assembler';

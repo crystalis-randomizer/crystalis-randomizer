@@ -12,11 +12,13 @@ export function shuffleMonsters(rom: Rom, flags: FlagSet, random: Random) {
   const graphics = new Graphics(rom);
   // (window as any).graphics = graphics;
   if (flags.shuffleSpritePalettes()) graphics.shufflePalettes(random);
-  const pool = new MonsterPool(flags, {});
+  const report = {};
+  const pool = new MonsterPool(flags, report);
   for (const loc of rom.locations) {
     if (loc.used) pool.populate(loc);
   }
   pool.shuffle(random, graphics);
+  // console.log(`report: ${JSON.stringify(report, null, 2)}`);
 }
 
 interface MonsterConstraint {
@@ -176,7 +178,7 @@ class MonsterPool {
           if (pos == null) return false;
         }
 
-        report.push(`  Adding ${m.id.toString(16)}: ${meet}`);
+        report.push(`  Adding ${m.id.toString(16)}: ${JSON.stringify(meet)}`);
         constraint = meet;
 
         // Pick the slot only after we know for sure that it will fit.

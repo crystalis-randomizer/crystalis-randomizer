@@ -1420,6 +1420,8 @@ function swapMimicAndRecoverGraphics(rom: Rom) {
       }
     }
   });
+
+  
   
 
 // .org $a741

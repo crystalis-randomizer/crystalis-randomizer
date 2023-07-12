@@ -57612,21 +57612,25 @@ Metasprite_11:                   ; Metasprite 11
         .byte [@388d5@],[@388d6@],[@388d7@],[@388d8@]
         ;; Variant 3
         .byte [@388d9@],[@388da@],[@388db@],[@388dc@]
-        .byte [@388dd@],[@388de@],[@388df@],[@388e0@]
-        ;; Variant 4
-        .byte [@388e1@],[@388e2@],[@388e3@],[@388e4@]
+;;; ----------------------------------------------------------------
+;;; Unused. Looks like a metasprite for the floating orb when charging sword
+;;; but the final game uses AdhocSpawnObject instead of a metasprite
+        .byte [@388dd@],[@388de@]
+        .byte [@388df@],[@388e0@],[@388e1@],[@388e2@]
+;;; ----------------------------------------------------------------
+;;; Unused. Some sort of metasprite that uses the refresh animation tiles
+;;; but the final game uses AdhocSpawnObject instead of a metasprite
+        .byte [@388e3@],[@388e4@]
         .byte [@388e5@],[@388e6@],[@388e7@],[@388e8@]
-        ;; Variant 5
         .byte [@388e9@],[@388ea@],[@388eb@],[@388ec@]
-        .byte [@388ed@],[@388ee@],[@388ef@],[@388f0@]
-        ;; Variant 6
-        .byte [@388f1@],[@388f2@],[@388f3@],[@388f4@]
-        .byte [@388f5@],[@388f6@],[@388f7@],[@388f8@]
-        ;; Variant 7
+        .byte [@388ed@],[@388ee@]
+        .byte [@388ef@],[@388f0@],[@388f1@],[@388f2@]
+        .byte [@388f3@],[@388f4@],[@388f5@],[@388f6@]
+        .byte [@388f7@],[@388f8@]
         .byte [@388f9@],[@388fa@],[@388fb@],[@388fc@]
         .byte [@388fd@],[@388fe@],[@388ff@],[@38900@]
-;;; ----------------------------------------------------------------
-        .byte [@38901@],[@38902@],[@38903@]
+        .byte [@38901@]
+        .word [@38902:w@]
 ;;; ----------------------------------------------------------------
 .org $8904
 Metasprite_1c:                   ; Metasprite 1c

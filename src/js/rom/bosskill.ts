@@ -111,6 +111,10 @@ export class BossKill extends Entity {
 
     // later spot for pal3 (and pat1?) *after* explosion
     this.data2[0] = location.spritePalettes[1];
+
+    // chest graphics are now moved so they are part of the sword banks
+    // so change the offset of the dropped boss chest graphics to always be zero now
+    this.data2[2] = 0;
   }
 
   assemble(a: Assembler) {

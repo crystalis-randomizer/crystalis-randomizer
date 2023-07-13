@@ -124,48 +124,9 @@ SpawnDraygon:
   sta $41
 + rts
 
-;;; Boss chest action jump has some special handling for bosskill 3 (rage)
-;;; which is instead used for Kensu dropping a chest.  We'll rearrange the
-;;; special case to consolidate.
-;; .org $1f766
-;;   lda #$8d
-;;   sta $03a0,x
-;;   lda #$aa
-;;   sta $0300,x
-;;   lda $0600,x
-;;   asl
-;;   asl
-;;   ;clc
-;;   adc $0600,x
-;;   tay
-;;   cpy #$0f
-.org $b76b
-  beq @HandleKensuChestInit
-.org $b77b
-  clc
-  nop
-@HandleKensuChestInit: ; if we jumped here then C is set
-  jsr HandleKensuChest
-
-;;; NOTE: The following is apparently important for kensu chest, but we need
-;;;       to set it programmatically instead.
-;; .org $b7d0
-;;   .byte $00
-
 ;;; We moved the LV(menu) display from 06 to 0e so display that instead
 .org $bd27
   lda #$0e
-
-.segment "0f"    ; NOTE: 0e does not work here.
-.reloc
-HandleKensuChest:
-  lda #$8d
-  sta $03a0,x
-  bcc +
-   lda #$09
-   sta $033e
-+ rts
-
 
 .segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
 

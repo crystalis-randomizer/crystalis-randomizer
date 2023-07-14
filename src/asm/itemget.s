@@ -123,12 +123,19 @@ PatchStartItemGet:
   ldy $0623
   lda $0300,y
   cmp #$aa
-  bne +
+  bne @NotAMimicOrChest
     lda $06c0,y
     cmp #DEAD_MIMIC
-    beq +
+    beq @NotAMimicOrChest
+    cmp #INSECT_MIMIC
+    bne + ; not the insect chest so skip reseting the screen
+      ; if this is the insect mimic, we need to work around the screen scroll still
+      ; being in the wrong state until the chest grab animation is finished.
+      lda #0 ; SCREEN_MODE_NORMAL
+      sta ScreenMode
+    +
     jmp MimicOrChest
-+ ; Just a person so load the item and return
+@NotAMimicOrChest: ; Just a person so load the item and return
   lda $23
   sta $61fe
   tax
@@ -223,24 +230,16 @@ ReplaceObjectAndPatchChest:
     ; AND we have the sentinel data to signify its from a dead mimic
     lda $06c0, y
     cmp #DEAD_MIMIC
-    beq +
-    cmp #INSECT_MIMIC
     bne @Exit
-      ; if this is the insect mimic, we need to work around the screen scroll still
-      ; being in the wrong state until the chest grab animation is finished.
-      lda #0 ; SCREEN_MODE_NORMAL
-      sta ScreenMode
-      beq @Exit
-    +
-    ; after loading the replacement we want to copy over the item
-    lda $06a0, y
-    pha
-      jsr $ff80 ; LoadOneObjectData
-    pla
-    sta $0560, y
-    lda #DEAD_MIMIC
-    sta $06c0, y
-    rts
+      ; after loading the replacement we want to copy over the item
+      lda $06a0, y
+      pha
+        jsr $ff80 ; LoadOneObjectData
+      pla
+      sta $0560, y
+      lda #DEAD_MIMIC
+      sta $06c0, y
+      rts
 @Exit:
   jmp $ff80 ; LoadOneObjectData
 .popseg

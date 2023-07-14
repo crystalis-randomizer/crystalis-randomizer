@@ -9,21 +9,22 @@
 ; add a flag to reset the screen mode when touching the chest, and then
 ; also move the chest down 16 px so it doesn't get trapped in the invisible
 ; wall when it spawns
-.org $b825
-.free 3
+
+; The patch point at $b825 is already used in stat tracking for
+; setting the time stamp for boss death, so use a nearby one instead
+.org $b82b
   jsr MoveInsectBossChest
 
 .reloc
 MoveInsectBossChest:
-  sta $0600,x
-  cpy #1 ; Insect boss
-  bne :>rts
+  cpy #2 ; Insect boss
+  bne +
     lda #$a0
     sta $b0,x
     lda #INSECT_MIMIC
     sta $06c0,x
-    ; restore value in a from y
-    tya
+  ; finally run the patched instruction
++ lda $b96b,y ; BossKillDataTable
   rts
 
 .endif ; _OOPS_ALL_MIMICS

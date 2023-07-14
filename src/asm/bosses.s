@@ -3,6 +3,31 @@
 
 .segment "0f", "fe", "ff"
 
+.ifdef _OOPS_ALL_MIMICS
+
+; Patch the ObjectActionJump_6f to add a check for if we killed insect,
+; add a flag to reset the screen mode when touching the chest, and then
+; also move the chest down 16 px so it doesn't get trapped in the invisible
+; wall when it spawns
+.org $b825
+.free 3
+  jsr MoveInsectBossChest
+
+.reloc
+MoveInsectBossChest:
+  sta $0600,x
+  cpy #1 ; Insect boss
+  bne :>rts
+    lda #$a0
+    sta $b0,x
+    lda #INSECT_MIMIC
+    sta $06c0,x
+    ; restore value in a from y
+    tya
+  rts
+
+.endif ; _OOPS_ALL_MIMICS
+
 ;; Prevent soft-lock when encountering sabera and mado from reverse
 ;; Returns N (negative/false) if player is not on same screen as boss
 ;; and is at row 9, which causes the caller to return without

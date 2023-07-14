@@ -147,6 +147,8 @@ PatchStartItemGet:
 .endif ; _STATS_TRACKING
 
 DEAD_MIMIC = $FF
+INSECT_MIMIC = $FE
+
 .reloc
 MimicOrChest:
   ; they just touched the chest for the first time so spawn a mimic
@@ -217,21 +219,30 @@ MimicOrChest:
 ReplaceObjectAndPatchChest:
   ; a - ObjectReplacement; y - object index
   cmp #$0d ; ObjectChest - if we are about to drop a chest
-  bne +
+  bne @Exit
     ; AND we have the sentinel data to signify its from a dead mimic
     lda $06c0, y
     cmp #DEAD_MIMIC
-    bne +
-      ; after loading the replacement we want to copy over the item
-      lda $06a0, y
-      pha
-        jsr $ff80 ; LoadOneObjectData
-      pla
-      sta $0560, y
-      lda #DEAD_MIMIC
-      sta $06c0, y
-      rts
-+ jmp $ff80 ; LoadOneObjectData
+    beq +
+    cmp #INSECT_MIMIC
+    bne @Exit
+      ; if this is the insect mimic, we need to work around the screen scroll still
+      ; being in the wrong state until the chest grab animation is finished.
+      lda #0 ; SCREEN_MODE_NORMAL
+      sta ScreenMode
+      beq @Exit
+    +
+    ; after loading the replacement we want to copy over the item
+    lda $06a0, y
+    pha
+      jsr $ff80 ; LoadOneObjectData
+    pla
+    sta $0560, y
+    lda #DEAD_MIMIC
+    sta $06c0, y
+    rts
+@Exit:
+  jmp $ff80 ; LoadOneObjectData
 .popseg
 
 .else
@@ -286,7 +297,7 @@ PatchStartItemGet:
   rts         ;      - what about other writes to 07dc?
 .endif ; _STATS_TRACKING
 
-.endif
+.endif ; _OOPS_ALL_MIMICS
 
 .org $d3f6              ; Within game mode jump 07 (trigger / chest)
   ;; This is only a minor optimization to skip the 4 nops we add below

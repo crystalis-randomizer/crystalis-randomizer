@@ -314,11 +314,12 @@ export class World {
     // Stom skip (only required for charge-shots only)
     if (this.flagset.chargeShotsOnly()) {
       for (const location of this.rom.townWarp.locations) {
-        const entrance = this.entrance(location);
+        const loc = this.rom.locations[location];
+        const entrance = loc.entrances[0];
         // Check if the entrance is above y<$58, which is the requirement
         // for skipping the fight (see check in $362b4).
-        if ((entrance[3]) < 0x58) {
-          this.addCheck([entrance], BuyWarp.r, [StomSkip.id]);
+        if ((entrance.y & 0xff) < 0x58) {
+          this.addCheck([this.entrance(location)], BuyWarp.r, [StomSkip.id]);
         }
       }
     }
@@ -882,7 +883,7 @@ export class World {
         // Special case: warp boots glitch required if charge shots only.
         const req =
           this.flagset.chargeShotsOnly() ?
-          Requirement.meet(requirements, this.rom.flags.StomSkip) :
+          Requirement.meet(requirements, this.rom.flags.StomSkip.r) :
           requirements;
         this.addItemCheck(hitbox, req, this.rom.flags.StomFightReward.id,
                           {lossy: true, unique: true});

@@ -1275,9 +1275,8 @@ export class World {
     if (boss === this.rom.bosses.Draygon2) {
       this.addCheck(hitbox, req, [boss.flag.id]);
     } else {
-      const broken = boss === this.rom.bosses.Insect;
       this.addItemCheck(
-          hitbox, req, boss.flag.id, {lossy: false, unique: true, broken});
+          hitbox, req, boss.flag.id, {lossy: false, unique: true});
     }
   }
 

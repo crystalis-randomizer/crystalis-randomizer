@@ -73,17 +73,80 @@ CheckRabbitBootsSpeedUp:
 
 .reloc
 CheckIfStandingStillForWarriorRing:
-  bne +
+  bne @Exit
   ; The warrior ring is equiped so now check to see if we've stood still for long enough
   lda PlayerStandingTimer
   cmp #WARRIOR_RING_DELAY
   bne +
     inc $10
-+ rts
+    bpl @Exit
++
+  ; check our stab counter, every 3rd stab gets a free shot
+  lda WarriorRingStabCounter
+  cmp #3-1 ; minus 1 to account for bpl being branch greater than
+  bpl +
+    inc WarriorRingStabCounter
+    rts
++ inc $10
+  lda #0
+  sta WarriorRingStabCounter
+@Exit:
+  rts
 
+; Patch SwordSwingEnd to not reset charge amount if warrior ring is equipped
+; and we are below the full charge amount
+; .org $9cd1
+;   jmp SwordSwingEndCheckIfWarriorRingEquipped
+; FREE_UNTIL $9cda
+; .reloc
+; SwordSwingEndCheckIfWarriorRingEquipped:
+;   lda EquippedPassiveItem
+;   cmp #$0f ; ITEM_WARRIOR_RING
+;   beq @HasWarriorRingEquipped
+; @ClearChargeAmount:
+;     lda #0
+;     sta $06c0 ; PlayerSwordChargeAmount
+;     beq @Exit
+; @HasWarriorRingEquipped:
+;   ; since we have the warrior ring equipped with charge mode on, we
+;   ; want to keep the sword charge after stab IF its not fully charged yet
+;   lda $06c0
+;   cmp #$08
+;   bcs @ClearChargeAmount
+;   lda #0
+; @Exit:
+;   sta $06c1
+;   rts
+
+; ; Patch Player action to remove the requirement to hold b to charge the sword
+; .org $9def
+;   jsr HoldBCheckIfWarriorRingEquipped
+;   nop
+
+; .reloc
+; HoldBCheckIfWarriorRingEquipped:
+;   lda $43 ; Controller 1
+;   and #$40
+;   bne :>rts
+;     ; if they aren't pressing b, see if we are increasing the warrior ring charge
+;     lda EquippedPassiveItem
+;     cmp #$0f ; ITEM_WARRIOR_RING
+;     bne +
+;       ; if they are holding the warrior ring check to add sword charge amount
+;       lda $08
+;       and #$03
+;       bne + ; $35e39
+;         lda $06c0 ; PlayerSwordChargeAmount
+;         cmp #$08
+;         bne + ; $35e22
+;           inc $06c0 ; PlayerSwordChargeAmount
+; +
+;   lda #0
+;   rts
+
+; Patch global counter to track how long a player is standing still for
 .org $f089 ; Near end of GlobalCounter processing
   jsr UpdatePlayerStandingTimer
-
 .pushseg "fe", "ff"
 .reloc
 UpdatePlayerStandingTimer:

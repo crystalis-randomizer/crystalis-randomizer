@@ -205,6 +205,7 @@ ScrollXHi = $07d9
 ScrollYLo = $07da
 ScrollYHi = $07db
 
+WarriorRingStabCounter = $61fb
 PlayerStandingTimer = $61fc
 InvSwords = $6430
 InvConsumables = $6440

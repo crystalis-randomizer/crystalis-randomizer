@@ -51911,6 +51911,7 @@ DataTable_35c66:
          <@35c86 +@> ; $35c91
           <@35c88 EquippedPassiveItem@>
           <@35c8b ITEM_WARRIOR_RING@>
+CheckWarriorRing:
           <@35c8d +@> ; $35c91
            <@35c8f@>
 +       <@35c91@>
@@ -51949,7 +51950,7 @@ DataTable_35c66:
         <@35cce SpendMPOrDoubleReturn@>
 SwordSwingEnd:
 -       <@35cd1@>
-        <@35cd3@>
+        <@35cd3 PlayerSwordChargeAmount@>
         <@35cd6@>
         <@35cd9@>
         ;; ----

@@ -166,7 +166,7 @@ export class CharacterSet {
     // the description in the NSS file contents - probably doable?)
     this.mapping.set("simea", new Map([
       ["Simea", Sprite.init("Simea", "simea", loadNssFile("Simea.nss"), "The original main character of Crystalis")],
-      ["Mesia", Sprite.init("Mesia", "simea", loadNssFile("Mesia.nss"), "Secondary protagonist Mesia takes the spotlight! Artwork by jroweboy")],
+      ["Mesia", Sprite.init("Mesia", "simea", loadNssFile("Mesia.nss"), "Secondary protagonist Mesia takes the spotlight!")],
     ]));
   }
 }

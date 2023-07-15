@@ -2,6 +2,9 @@
 
 import { CharacterSet, Sprite, generateThumbnailImage } from './characters';
 import {FlagSection, FlagSet, Preset} from './flagset';
+// import * as Ips from module('./tools/ips');
+const Ips:any = require('./tools/ips');
+const Main:any = require('./main');
 
 export function renderPresets(presets: HTMLElement) {
   let first = true;
@@ -142,6 +145,24 @@ export function renderCustomCharacter(container: HTMLElement, filename: string, 
     }
     label.appendChild(xbutton);
   }
+
+  // Also add a button for downloading the sprite as an IPS patch for vanilla
+  
+  const downloadIps = document.createElement('div');
+  const ipsButton = document.createElement('a');
+  ipsButton.textContent = "Download .ips";
+  ipsButton.className = "button";
+  ipsButton.onclick = function() {
+    const vanillaRom = Main.rom.slice();
+    const patchedRom = Main.rom.slice();
+    Sprite.applyPatch(sprite, patchedRom, false);
+    const vanilla = new Ips.MarcFile(vanillaRom);
+    const patched = new Ips.MarcFile(patchedRom);
+    Ips.createIPSFromFiles(vanilla, patched).export(sprite.name).save();
+  }
+  downloadIps.appendChild(ipsButton);
+  downloadIps.style.marginTop = "8px";
+  label.appendChild(downloadIps);
 
   container.appendChild(label);
 }

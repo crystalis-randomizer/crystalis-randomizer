@@ -10,7 +10,7 @@ import { CharacterSet, Sprite, parseNssFile } from './characters';
 // global state
 let flags;
 let seed;
-let rom;
+export let rom;
 let romName;
 let race = false;
 let debug = false;
@@ -465,7 +465,7 @@ const loadSpriteSelectionsFromStorage = () => {
   });
 }
 
-const download = (data, name) => {
+export const download = (data, name) => {
   const a = document.createElement('a');
   document.body.appendChild(a);
   a.style = 'display: none';

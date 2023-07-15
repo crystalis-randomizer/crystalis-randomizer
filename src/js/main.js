@@ -422,28 +422,6 @@ const loadRomFromStorage = () => {
   });
 };
 
-const reloadSpritesFromStorage = () => {
-  const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
-  const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
-  const savedSprites = JSON.parse(savedSpritesStr);
-  // load any saved sprites from storage
-  const savedSpritesDiv = document.getElementById('simea-sprite-custom');
-  savedSpritesDiv.innerHTML = '';
-  for (let [filename, sprite] of Object.entries(savedSprites)) {
-    // Update the character set mapping for this custom sprite
-    CharacterSet.get("simea").set(sprite.name, Promise.resolve(sprite));
-
-    render.renderCustomCharacter(savedSpritesDiv, sprite)
-    const thisRadio = document.getElementById(`simea-replacement-${sprite.name}`);
-    thisRadio.addEventListener('change', (event) => {
-      window['localStorage'].setItem('simea-replacement', event.target.value);
-    });
-    if (thisRadio.value == selectedSimeaSprite) {
-      thisRadio.checked = true;
-    }
-  }
-}
-
 const loadSpriteSelectionsFromStorage = () => {
   const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
 
@@ -459,7 +437,7 @@ const loadSpriteSelectionsFromStorage = () => {
     })
   })
 
-  reloadSpritesFromStorage();
+  render.reloadSpritesFromStorage();
 
   // add a handler for the sprite upload
   const upload = document.getElementById('upload-sprite');
@@ -478,7 +456,7 @@ const loadSpriteSelectionsFromStorage = () => {
         // generatePreviewImage(sprite.nssdata).then(img => document.getElementById('test-spritesheet-upload').src = img);
         window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
         // reload custom sprites
-        reloadSpritesFromStorage();
+        render.reloadSpritesFromStorage();
       });
       // Reset the input to allow reuploading the same file multiple times for development
       upload.value = "";

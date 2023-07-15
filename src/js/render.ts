@@ -67,14 +67,15 @@ export async function renderDefaultCharacters(options: HTMLElement) {
   const simeaReplacements = CharacterSet.get("simea");
   for (const sprite of simeaReplacements.values()) {
     const container = document.createElement('div');
-    renderCustomCharacter(container, await sprite);
+    renderCustomCharacter(container, "", await sprite);
     options.appendChild(container);
   }
 }
 
-export function renderCustomCharacter(container: HTMLElement, sprite: Sprite) {
+export function renderCustomCharacter(container: HTMLElement, filename: string, sprite: Sprite) {
   container.className = "flex-row";
   container.style.width = '100%';
+  
   const input = document.createElement('input');
   input.type = 'radio';
   input.name = 'simea-replacement'
@@ -88,6 +89,7 @@ export function renderCustomCharacter(container: HTMLElement, sprite: Sprite) {
   }
   container.appendChild(input);
   const label = document.createElement('label');
+  label.style.position = "relative";
   label.className = "sprite-replacement";
   label.htmlFor = `simea-replacement-${sprite.name}`;
   const img = document.createElement('img');
@@ -108,6 +110,39 @@ export function renderCustomCharacter(container: HTMLElement, sprite: Sprite) {
     desc.className = "desc";
     label.appendChild(desc);
   }
+
+  if (filename != "") {
+    const xbutton = document.createElement('div');
+    xbutton.textContent = "X";
+    xbutton.className = "button";
+    xbutton.style.position = "absolute";
+    xbutton.style.top = "0";
+    xbutton.style.right = "0";
+    xbutton.style.margin = "5px";
+    xbutton.onclick = function() {
+      const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
+      const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
+      const savedSprites = JSON.parse(savedSpritesStr);
+      // remove the sprite from localstorage and then reload sprites
+      delete savedSprites[filename];
+      window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
+
+      // if we deleted the selected sprite reselect Simea
+      if (sprite.name == selectedSimeaSprite) {
+        const simeaOptions = document.getElementsByName('simea-replacement');
+        for (const radio of simeaOptions) {
+          const r = <HTMLInputElement>radio;
+          if (r.value == "Simea") {
+            r.checked = true;
+          }
+        }
+      }
+
+      reloadSpritesFromStorage();
+    }
+    label.appendChild(xbutton);
+  }
+
   container.appendChild(label);
 }
 
@@ -143,3 +178,27 @@ export function renderRaceFlags(options: HTMLElement, flagset: FlagSet) {
     }
   }
 };
+
+export const reloadSpritesFromStorage = () => {
+  const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
+  const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
+  const savedSprites = JSON.parse(savedSpritesStr);
+  // load any saved sprites from storage
+  const savedSpritesDiv = document.getElementById('simea-sprite-custom')!;
+  savedSpritesDiv.innerHTML = '';
+  for (let [filename, sprite] of Object.entries(savedSprites)) {
+    // Update the character set mapping for this custom sprite
+    const s = <Sprite>sprite;
+    CharacterSet.get("simea").set(s.name, Promise.resolve(s));
+
+    renderCustomCharacter(savedSpritesDiv, filename, s);
+    const thisRadio = document.getElementById(`simea-replacement-${s.name}`);
+    const r = <HTMLInputElement>thisRadio;
+    r.addEventListener('change', (e) => {
+      window['localStorage'].setItem('simea-replacement', (e.target as HTMLInputElement).value);
+    });
+    if (r.value == selectedSimeaSprite) {
+      r.checked = true;
+    }
+  }
+}

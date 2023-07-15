@@ -12,7 +12,7 @@
 
 ; The patch point at $b825 is already used in stat tracking for
 ; setting the time stamp for boss death, so use a nearby one instead
-.org $b82b
+.org $b82a
   jsr MoveInsectBossChest
 
 .reloc

@@ -1,18 +1,25 @@
 import { spritesheets } from './data';
+import { Rom } from './rom';
 import { toChrAddr, copyToAllWeaponPages, ARMOR_TILESET_OFFSET, CHR_PAGE_OFFSET } from './util';
+
+type OAMSprite = [number, number, number, number];
+type Frame = Map<number, OAMSprite[]>;
 
 class NssFile {
   readonly filename: string;
   readonly chrdata: number[];
+  readonly metasprites: Map<number, OAMSprite[][]>;
   readonly palette: number[];
   readonly rendered: number[];
   constructor(filename: string,
               chrdata: ArrayBuffer,
               palette: number[],
+              metasprites: Map<number, OAMSprite[][]>,
               rendered: ImageData) {
     this.filename = filename;
     this.chrdata = Array.from(new Uint8Array(chrdata));
     this.palette = palette;
+    this.metasprites = metasprites;
     this.rendered = Array.from(new Uint8Array(rendered.data));
   }
 }
@@ -114,10 +121,7 @@ export class Sprite {
 
   public static isCustom = (s: Sprite) => { return s.name != "Simea"; }
 
-  public static applyPatch(s: Sprite, rom: Uint8Array, expandedPRG: Boolean) {
-    if (!Sprite.isCustom(s)) {
-      return;
-    }
+  public static applyPatch(s: Sprite, rom: Rom, expandedPRG: Boolean) {
     const expandedOffset = expandedPRG ? 0x40000 : 0;
     for (let [src, dsts] of CustomTilesetMapping.getChr(s.converter)) {
       for (let dst of dsts) {
@@ -556,13 +560,99 @@ function hex2Num(strs: string[]): number[] {
     return strs.map(s => parseInt(s, 16));
 }
 
+  // Maps from the named metasprites in the NSS file to the game's metasprite [id, frame]
+const simeaMetaspriteMapping : Map<string, number[]> = new Map<string, number[]>([
+  ["Up 1",                [0x00, 0]],
+  ["Up 2",                [0x00, 1]],
+  ["Right 1",             [0x01, 0]],
+  ["Right 2",             [0x01, 1]],
+  ["Down 1",              [0x02, 0]],
+  ["Down 2",              [0x02, 1]],
+  // 0x03 Left is mirrored from Right
+  ["Stab Up 1",           [0x04, 2]],
+  ["Stab Up 2",           [0x04, 1]],
+  ["Stab Up 3",           [0x04, 0]],
+  ["Stab Right 1",        [0x05, 2]],
+  ["Stab Right 2",        [0x05, 1]],
+  ["Stab Right 3",        [0x05, 0]],
+  ["Stab Down 1",         [0x06, 2]],
+  ["Stab Down 2",         [0x06, 1]],
+  ["Stab Down 3",         [0x06, 0]],
+  // 0x07 stab left is mirrored from stab right
+  // 0x08 is Arm Up (and is intentionally empty in game)
+  ["Arm Right 1",         [0x09, 1]],
+  ["Arm Right 2",         [0x09, 0]],
+  // 0x0a is Arm Down (and is intentionally empty in game)
+  // 0x0b is Arm Left and is mirrored from Arm Right
+  ["Shield Up 1",         [0x0c, 0]],
+  ["Shield Up 2",         [0x0c, 1]],
+  ["Shield Right 1",      [0x0d, 0]],
+  ["Shield Right 2",      [0x0d, 1]],
+  ["Shield Down 1",       [0x0e, 0]],
+  ["Shield Down 2",       [0x0e, 1]],
+  // 0x0f Left is mirrored from Right
+  ["Shield Stab Up 1",    [0x10, 2]],
+  ["Shield Stab Up 2",    [0x10, 1]],
+  ["Shield Stab Up 3",    [0x10, 0]],
+  ["Shield Stab Right 1", [0x11, 2]],
+  ["Shield Stab Right 2", [0x11, 1]],
+  ["Shield Stab Right 3", [0x11, 0]],
+  ["Shield Stab Down 1",  [0x12, 2]],
+  ["Shield Stab Down 2",  [0x12, 1]],
+  ["Shield Stab Down 3",  [0x12, 0]],
+  // 0x13 Shield Stab Left is mirrored from Right
+  // Now onto a few random metasprites that are nice to have
+  ["Death 1",             [0xbc, 0]],
+  ["Death 2",             [0xbc, 1]],
+  ["Death 3",             [0xbc, 2]],
+  ["Death 4",             [0xbc, 3]],
+  ["Death Last",          [0xbd, 0]],
+  ["Telepathy Intro 1",   [0xcc, 1]],
+  ["Telepathy Intro 2",   [0xcc, 0]],
+  ["Telepathy 1",         [0xcd, 1]],
+  ["Telepathy 2",         [0xcd, 0]],
+]);
+
+function arraysEqual(a:number[], b:number[]) {
+  return a.length === b.length && a.every((el, ix) => el === b[ix]);
+}
+
+function loadMetasprites(nss: Map<string, string>): Map<number, Frame> {
+  const out = new Map<number, Frame>();
+  // the raw metasprites is a 
+  const raw = Array.from(new Uint8Array(hexstrToBytes(unRLE(nss.get("MetaSprites") || ""))));
+  const gridXOffset = parseInt(nss.get("VarSpriteGridX") || "64");
+  const gridYOffset = parseInt(nss.get("VarSpriteGridY") || "64");
+  let msName;
+  for (let currentMetasprite = 0; msName = nss.get(`MetaSprite${currentMetasprite}`); currentMetasprite++) {
+    const mapping = simeaMetaspriteMapping.get(msName);
+    if (!mapping) {
+      console.warn(`Missing mapping for ${msName}`);
+      continue; 
+    }
+    const sprites = [];
+    let index = currentMetasprite * 64 * 4;
+    while (!arraysEqual(raw.slice(index, index+4), [0xff, 0xff, 0xff, 0xff])) {
+      const sprite = raw.slice(index, index+4) as OAMSprite;
+      sprites.push(sprite);
+      index += 4;
+    }
+    const [msid, framenum] = mapping;
+    const frames = out.get(msid) || new Map<number, OAMSprite[]>();
+    frames.set(framenum, sprites);
+    out.set(msid, frames);
+  }
+  return out;
+}
+
 export async function parseNssFile(filename: string, data: string): Promise<NssFile> {
   const nss = new Map(data.split("\n").filter(s => s.includes("=")).map(s => s.split("=")).map(s => [s[0], s[1]]));
   const paletteData = nss.get("Palette") || "";
   const palette = hex2Num(chunk(unRLE(paletteData).slice(0, 32), 2));
   const chrdata = hexstrToBytes(unRLE(nss.get("CHRMain") || ""));
+  const metasprites = loadMetasprites(nss);
   const rendered = await createImageFromCHR(new Uint8ClampedArray(chrdata), palette);
-  return new NssFile(filename, chrdata, palette, rendered);
+  return new NssFile(filename, chrdata, palette, metasprites, rendered);
 }
 
 const basePaletteColors: number[][] = [

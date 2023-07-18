@@ -446,7 +446,7 @@ const loadSpriteSelectionsFromStorage = () => {
     const reader = new FileReader();
     reader.addEventListener('loadend', () => {
       const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
-      const savedSprites = JSON.parse(savedSpritesStr);
+      const savedSprites = JSON.parse(savedSpritesStr, addMapRestorement);
       const nssdata = reader.result;
       // Get rid of the extension and replace any _ with spaces
       const name = file.name.replace(/\.[^/.]+$/, "").replaceAll(/_/g, " ");
@@ -454,7 +454,7 @@ const loadSpriteSelectionsFromStorage = () => {
         savedSprites[name] = sprite;
         // uncomment this and the img tag to debug spritesheet loading
         // generatePreviewImage(sprite.nssdata).then(img => document.getElementById('test-spritesheet-upload').src = img);
-        window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
+        window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites, addMapReplacement));
         // reload custom sprites
         render.reloadSpritesFromStorage();
       });
@@ -463,6 +463,26 @@ const loadSpriteSelectionsFromStorage = () => {
     });
     reader.readAsText(file);
   });
+}
+
+export function addMapReplacement(key, value) {
+  if(value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries()), // or with spread: value: [...value]
+    };
+  } else {
+    return value;
+  }
+}
+
+export function addMapRestorement(key, value) {
+  if(typeof value === 'object' && value !== null) {
+    if (value.dataType === 'Map') {
+      return new Map(value.value);
+    }
+  }
+  return value;
 }
 
 export const download = (data, name) => {

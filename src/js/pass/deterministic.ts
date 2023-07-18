@@ -11,6 +11,7 @@ import {hex, Mutable} from '../rom/util';
 import {assert} from '../util';
 import {Monster} from '../rom/monster';
 import {Patterns} from '../rom/pattern';
+import { readLittleEndian } from '../rom/util';
 
 const [] = [hex]; // generally useful
 
@@ -107,15 +108,35 @@ export function deterministicPreParse(prg: Uint8Array): void {
         0xb4, 0x41,  // b4 windmill cave trigger -> 41 refresh
         0xff);       // for bookkeeping purposes, not actually used
 
-  // Make the sword use the element's palette instead of the player.
-  // TODO - move this into post-parse as a metasprite edit (we'll need to
-  // do a full write on that table...).  If we don't color the sword
-  // elements then this turns the swords a brighter white.
-  for (const addr of [0x38757, 0x38777, 0x3877b, 0x38797, 0x3879b,
-                      0x387db, 0x387df, 0x387fb, 0x387ff, 0x3881b, 0x3881f,
-                      0x38865, 0x38885, 0x38889, 0x388a5]) {
-    prg[addr] |= 1;
-  }
+  // Create a new metasprite for the shade/wraith enemy shadow so if the
+  // player edited the shadow metasprite then it won't give an advantage to
+  // the player
+  const METASPRITE_TABLE = 0x3845c;
+  const SHADOW_METASPRITE_ID = 0xa7;
+  const NEW_METASPRITE_ID = 0x9a;
+  const UNUSED_METASPRITE_DATA = 0x88e3 + 0x30000;
+  const origptr = readLittleEndian(prg, METASPRITE_TABLE + (SHADOW_METASPRITE_ID << 1)) + 0x30000;
+  const shadowdata = prg.slice(origptr, origptr + 10);
+  // add the new pointer in an unused slot
+  write(prg, METASPRITE_TABLE + (NEW_METASPRITE_ID << 1), UNUSED_METASPRITE_DATA & 0xff, (UNUSED_METASPRITE_DATA >> 8) & 0xff);
+  // update to use the second enemy palette (enemy palettes always have black as the 3rd color?)
+  shadowdata[4] |= 0x03;
+  shadowdata[8] |= 0x03;
+  // and write the data into unused space in metasprite 0x11
+  write(prg, UNUSED_METASPRITE_DATA, ...shadowdata);
+  // now update the shadows's metasprite (shadow 1 and shadow 2)
+  const OBJECT_DATA_SHADOW1 = 0x1b683;
+  const OBJECT_DATA_SHADOW2 = 0x1b80d;
+  prg[OBJECT_DATA_SHADOW1 + 2] = NEW_METASPRITE_ID;
+  prg[OBJECT_DATA_SHADOW2 + 2] = NEW_METASPRITE_ID;
+  // and also update the metasprite id in $06c0 and $06e0 (ObjectDirMetaspriteBase) since that gets copied into
+  // the metasprite every frame for reasons.
+  prg[OBJECT_DATA_SHADOW1 + 18] = NEW_METASPRITE_ID;
+  prg[OBJECT_DATA_SHADOW1 + 19] = NEW_METASPRITE_ID;
+  prg[OBJECT_DATA_SHADOW2 + 18] = NEW_METASPRITE_ID;
+  prg[OBJECT_DATA_SHADOW2 + 19] = NEW_METASPRITE_ID;
+  // When checking that the attack hit a shadow, it checks the metasprite id, so update that check too.
+  prg[0x350f7 + 2] = NEW_METASPRITE_ID;
 
   // Rename the default name to "Simea".
   write(prg, 0x2656e, "Simea", 0x10, 0, "     ", 0x10, 0);
@@ -1401,7 +1422,6 @@ function swapMimicAndRecoverGraphics(rom: Rom) {
       // 0x3a = new chest sprite location
       // 0xb3 = original mimic starting tile
       if (sprite[0] != unused) {
-        console.log(`setting sprite tile ${((sprite[3] - 0xb3) + 0x3a).toString(16)}`);
         rom.metasprites[mimicMetasprite].sprites[frameNum][spriteNum][3] = (sprite[3] - 0xb3) + 0x3a;
       }
     }

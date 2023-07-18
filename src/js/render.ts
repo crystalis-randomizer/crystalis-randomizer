@@ -114,21 +114,22 @@ export function renderCustomCharacter(container: HTMLElement, filename: string, 
     label.appendChild(desc);
   }
 
+  const cornerButtons = document.createElement('div');
+  cornerButtons.style.position = "absolute";
+  cornerButtons.style.top = "0";
+  cornerButtons.style.right = "0";
+  cornerButtons.style.margin = "3px";
   if (filename != "") {
     const xbutton = document.createElement('div');
     xbutton.textContent = "X";
     xbutton.className = "button";
-    xbutton.style.position = "absolute";
-    xbutton.style.top = "0";
-    xbutton.style.right = "0";
-    xbutton.style.margin = "5px";
     xbutton.onclick = function() {
       const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
       const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
-      const savedSprites = JSON.parse(savedSpritesStr);
+      const savedSprites = JSON.parse(savedSpritesStr, Main.addMapRestorement);
       // remove the sprite from localstorage and then reload sprites
       delete savedSprites[filename];
-      window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites));
+      window['localStorage'].setItem('simea-replacement-custom', JSON.stringify(savedSprites, Main.addMapReplacement));
 
       // if we deleted the selected sprite reselect Simea
       if (sprite.name == selectedSimeaSprite) {
@@ -143,27 +144,30 @@ export function renderCustomCharacter(container: HTMLElement, filename: string, 
 
       reloadSpritesFromStorage();
     }
-    label.appendChild(xbutton);
+    cornerButtons.appendChild(xbutton);
   }
 
   // Also add a button for downloading the sprite as an IPS patch for vanilla
   
-  const downloadIps = document.createElement('div');
-  const ipsButton = document.createElement('a');
-  ipsButton.textContent = "Download .ips";
+  const ipsButton = document.createElement('div');
+  ipsButton.className = "button";
+  const downloadIcon = document.getElementById('download-icon')?.cloneNode(true)! as HTMLElement;
+  downloadIcon.setAttribute("id", `download-icon-${sprite.name}`);
+  downloadIcon.style.display = "flex";
+  ipsButton.appendChild(downloadIcon);
   ipsButton.className = "button";
   ipsButton.onclick = function() {
     const vanillaRom = Main.rom.slice();
     const patchedRom = Main.rom.slice();
-    Sprite.applyPatch(sprite, patchedRom, false);
+    Sprite.applyPatch(sprite, patchedRom.subarray(0x10), false);
     const vanilla = new Ips.MarcFile(vanillaRom);
     const patched = new Ips.MarcFile(patchedRom);
     Ips.createIPSFromFiles(vanilla, patched).export(sprite.name).save();
   }
-  downloadIps.appendChild(ipsButton);
-  downloadIps.style.marginTop = "8px";
-  label.appendChild(downloadIps);
-
+  // downloadIps.appendChild(ipsButton);
+  // downloadIps.style.marginTop = "8px";
+  cornerButtons.appendChild(ipsButton);
+  label.appendChild(cornerButtons);
   container.appendChild(label);
 }
 
@@ -203,7 +207,7 @@ export function renderRaceFlags(options: HTMLElement, flagset: FlagSet) {
 export const reloadSpritesFromStorage = () => {
   const selectedSimeaSprite = window['localStorage'].getItem('simea-replacement');
   const savedSpritesStr = window['localStorage'].getItem('simea-replacement-custom') || "{}";
-  const savedSprites = JSON.parse(savedSpritesStr);
+  const savedSprites = JSON.parse(savedSpritesStr, Main.addMapRestorement);
   // load any saved sprites from storage
   const savedSpritesDiv = document.getElementById('simea-sprite-custom')!;
   savedSpritesDiv.innerHTML = '';

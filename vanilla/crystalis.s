@@ -60560,7 +60560,8 @@ Metasprite_ac:                   ; Metasprite ac
 ;;; ----------------------------------------------------------------
 .org $a877
 Metasprite_a7:                   ; Metasprite a7
-        ;; Player shadow
+        ;; Player shadow and shade/wraith shadow. Randomizer adds a new
+        ;; shade metasprite in the empty slot in 9a (and unused space at $88e3)
         .byte [@3a877@],[@3a878@]
         ;; Variant 0
         .byte [@3a879@],[@3a87a@],[@3a87b@],[@3a87c@]

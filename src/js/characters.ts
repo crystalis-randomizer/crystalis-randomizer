@@ -1,26 +1,32 @@
 import { spritesheets } from './data';
-import { Rom } from './rom';
-import { toChrAddr, copyToAllWeaponPages, ARMOR_TILESET_OFFSET, CHR_PAGE_OFFSET } from './util';
+import { readLittleEndian } from './rom/util';
 
 type OAMSprite = [number, number, number, number];
 type Frame = Map<number, OAMSprite[]>;
 
+class CHROffset {
+  constructor(readonly page: number,
+    readonly bank: number,
+    readonly tile: number,
+    readonly pputile: number) {}
+}
+
 class NssFile {
   readonly filename: string;
   readonly chrdata: number[];
-  readonly metasprites: Map<number, OAMSprite[][]>;
+  readonly metasprites: Map<number, Frame>;
   readonly palette: number[];
   readonly rendered: number[];
-  constructor(filename: string,
-              chrdata: ArrayBuffer,
-              palette: number[],
-              metasprites: Map<number, OAMSprite[][]>,
-              rendered: ImageData) {
+  constructor(filename: string = "",
+              chrdata: number[] = [],
+              palette: number[] = [],
+              metasprites: Map<number, Frame> = new Map(),
+              rendered: number[] = []) {
     this.filename = filename;
-    this.chrdata = Array.from(new Uint8Array(chrdata));
+    this.chrdata = chrdata;
     this.palette = palette;
     this.metasprites = metasprites;
-    this.rendered = Array.from(new Uint8Array(rendered.data));
+    this.rendered = rendered;
   }
 }
 
@@ -121,12 +127,14 @@ export class Sprite {
 
   public static isCustom = (s: Sprite) => { return s.name != "Simea"; }
 
-  public static applyPatch(s: Sprite, rom: Rom, expandedPRG: Boolean) {
+  public static applyPatch(s: Sprite, rom: Uint8Array, expandedPRG: boolean): boolean {
     const expandedOffset = expandedPRG ? 0x40000 : 0;
-    for (let [src, dsts] of CustomTilesetMapping.getChr(s.converter)) {
+    let hasErrors = false;
+    const chrMapping = CustomTilesetMapping.getChr(s.converter);
+    for (let [src, dsts] of chrMapping) {
       for (let dst of dsts) {
         for (let i=0; i<0x10; ++i) {
-          rom[dst + i + expandedOffset] = s.nssdata.chrdata[src * 0x10 + i];
+          rom[toChrAddr(dst.page, dst.bank, dst.tile) + i + expandedOffset] = s.nssdata.chrdata[src * 0x10 + i];
         }
       }
     }
@@ -146,12 +154,51 @@ export class Sprite {
           case "color3":
             rom[dst] = s.nssdata.palette[3];
             break;
-          case "metasprite":
+          case "sprite_palette":
+            // TODO figure out how to choose what palette to load for the sprite?
             rom[dst + expandedOffset] = 0x00;
             break;
         }
       }
     }
+
+    const METASPRITE_TABLE = 0x3845c;
+    // and then apply any patches for the metasprite as well
+    for (let [name, [metaid, framenum]] of CustomTilesetMapping.getMetasprite(s.converter)) {
+      const base = readLittleEndian(rom, METASPRITE_TABLE + (metaid << 1)) + 0x30000;
+      const size = rom[base];
+      const frameMask = rom[base + 1];
+      const frames = frameMask + 1;
+
+      if (framenum > frames) {
+        console.warn(`Custom metasprite ${name} with the id ${metaid}
+          and frame number ${framenum} greater than the vanilla frame count: ${frames}`);
+        hasErrors = true;
+        continue;
+      }
+      const ms = rom.subarray(base + 2 + framenum * size * 4);
+      const sprites = s.nssdata.metasprites.get(metaid)!.get(framenum)!;
+      // count the number of sprites in the vanilla game as a check for good data
+      let index = 0;
+      while ((index/4) < size && !arraysEqual(Array.from(ms.subarray(index, index+4)), [0x80, 0x80, 0x80, 0x80])) {
+        index += 4;
+      }
+      if (sprites.length != (index / 4)) {
+        console.warn(`Custom metasprite ${name} with the id ${metaid}
+          and frame number ${framenum} does not equal the vanilla sprite size: ${sprites.length} != ${(index / 4)}`);
+        hasErrors = true;
+        continue;
+      }
+
+      // copy the sprites from the nss metasprite into the game data
+      for (let spriteNum = 0; spriteNum < sprites.length; ++spriteNum) {
+        ms[(spriteNum * 4) + 0] = sprites[spriteNum][0];
+        ms[(spriteNum * 4) + 1] = sprites[spriteNum][1];
+        ms[(spriteNum * 4) + 2] = sprites[spriteNum][2] | (ms[(spriteNum * 4) + 2] & 0x4);
+        ms[(spriteNum * 4) + 3] = chrMapping.get(sprites[spriteNum][3])![0].pputile;
+      }
+    }
+    return hasErrors;
   }
 }
 
@@ -178,12 +225,11 @@ export class CharacterSet {
 // Provides a lookup from the sample tileset to the CHRROM locations
 export class CustomTilesetMapping {
   private static instance: CustomTilesetMapping;
-  private readonly simeaChrMapping: Map<number, number[]>;
-  private readonly simeaPaletteMapping: Map<string, number[]>;
-  private readonly chrMapping: Map<string, Map<number, number[]>> = new Map();
+  private readonly chrMapping: Map<string, Map<number, CHROffset[]>> = new Map();
   private readonly paletteMapping: Map<string, Map<string, number[]>> = new Map();
+  private readonly metaspriteMapping: Map<string, Map<string, number[]>> = new Map();
 
-  public static getChr(which: string): Map<number, number[]> {
+  public static getChr(which: string): Map<number, CHROffset[]> {
     if (!this.instance) this.instance = new CustomTilesetMapping();
     return this.instance.chrMapping.get(which)!;
   }
@@ -193,183 +239,188 @@ export class CustomTilesetMapping {
     return this.instance.paletteMapping.get(which)!;
   }
 
+  public static getMetasprite(which: string): Map<string, number[]> {
+    if (!this.instance) this.instance = new CustomTilesetMapping();
+    return this.instance.metaspriteMapping.get(which)!;
+  }
+
   private constructor() {
-    this.simeaChrMapping = this.generateSimeaMapping();
-    this.simeaPaletteMapping = this.generateSimeaPalette();
-    this.chrMapping.set("simea", this.simeaChrMapping);
-    this.paletteMapping.set("simea", this.simeaPaletteMapping);
+    this.chrMapping.set("simea", this.generateSimeaMapping());
+    this.paletteMapping.set("simea", this.generateSimeaPalette());
+    this.metaspriteMapping.set("simea", simeaMetaspriteMapping);
   }
 
   private generateSimeaPalette() : Map<string, number[]> {
     const mapping = new Map<string, number[]>();
-    // move the character main palette to palette_b0
-    const customCharPaletteAddr = 0x6cf0 + 0x10;
-    mapping.set("color0", [customCharPaletteAddr + 0]);
-    mapping.set("color1", [customCharPaletteAddr + 1]);
-    mapping.set("color2", [customCharPaletteAddr + 2]);
-    mapping.set("color3", [customCharPaletteAddr + 3]);
-    mapping.set("metasprite", [0x3c054 + 0x10]);
+    // edit the main character palette
+    const customCharPaletteAddrs = [0x6cf0, 0x3e0a8];
+    mapping.set("color0", customCharPaletteAddrs.map(addr => addr + 0));
+    mapping.set("color1", customCharPaletteAddrs.map(addr => addr + 1));
+    mapping.set("color2", customCharPaletteAddrs.map(addr => addr + 2));
+    mapping.set("color3", customCharPaletteAddrs.map(addr => addr + 3));
+    mapping.set("sprite_palette", [0x3c054]);
     return mapping;
   }
 
-  private generateSimeaMapping() : Map<number, number[]> {
+  private generateSimeaMapping() : Map<number, CHROffset[]> {
     // For most of the mappings, there is only one location to write it to, but for some, its split across several CHRROM banks.
     // so thats why its a map of tileset number to a list of addresses
 
-    const mapping = new Map<number, number[]>();
+    const mapping = new Map<number, CHROffset[]>();
     //////////
     // Walking Down
     // top left
-    mapping.set(0x00, [toChrAddr(8,0,0x1a)]);
+    mapping.set(0x00, [new CHROffset(8,0,0x1a,0x1a)]);
     // top right
-    mapping.set(0x01, [toChrAddr(8,0,0x1b)]);
+    mapping.set(0x01, [new CHROffset(8,0,0x1b,0x1b)]);
     // mid left
-    mapping.set(0x10, [toChrAddr(8,0,0x00)]);
+    mapping.set(0x10, [new CHROffset(8,0,0x00,0x00)]);
     // mid right
-    mapping.set(0x11, [toChrAddr(8,0,0x01)]);
+    mapping.set(0x11, [new CHROffset(8,0,0x01,0x01)]);
     // bot left
-    mapping.set(0x20, [toChrAddr(8,0,0x20)]);
+    mapping.set(0x20, [new CHROffset(8,0,0x20,0x20)]);
     // bot right
-    mapping.set(0x21, [toChrAddr(8,0,0x21)]);
+    mapping.set(0x21, [new CHROffset(8,0,0x21,0x21)]);
 
     //////////
     // Walking Left
     // top left
-    mapping.set(0x02, [toChrAddr(8,0,0x1c)]);
+    mapping.set(0x02, [new CHROffset(8,0,0x1c,0x1c)]);
     // top right
-    mapping.set(0x03, [toChrAddr(8,0,0x1d)]);
+    mapping.set(0x03, [new CHROffset(8,0,0x1d,0x1d)]);
     // mid left
-    mapping.set(0x12, [toChrAddr(8,0,0x02)]);
+    mapping.set(0x12, [new CHROffset(8,0,0x02,0x02)]);
     // mid right
-    mapping.set(0x13, [toChrAddr(8,0,0x03)]);
+    mapping.set(0x13, [new CHROffset(8,0,0x03,0x03)]);
     // mid arm left
-    mapping.set(0x14, [toChrAddr(8,0,0x04)]);
+    mapping.set(0x14, [new CHROffset(8,0,0x04,0x04)]);
     // mid arm right
-    mapping.set(0x15, [toChrAddr(8,0,0x05)]);
+    mapping.set(0x15, [new CHROffset(8,0,0x05,0x05)]);
     // bot left
-    mapping.set(0x22, [toChrAddr(8,0,0x22)]);
+    mapping.set(0x22, [new CHROffset(8,0,0x22,0x22)]);
     // bot right
-    mapping.set(0x23, [toChrAddr(8,0,0x23)]);
+    mapping.set(0x23, [new CHROffset(8,0,0x23,0x23)]);
     // bot leg left
-    mapping.set(0x24, [toChrAddr(8,0,0x24)]);
+    mapping.set(0x24, [new CHROffset(8,0,0x24,0x24)]);
     // bot leg right
-    mapping.set(0x25, [toChrAddr(8,0,0x25)]);
+    mapping.set(0x25, [new CHROffset(8,0,0x25,0x25)]);
 
     //////////
     // Walking Up
     // Up top left
-    mapping.set(0x06, [toChrAddr(8,0,0x1e)]);
+    mapping.set(0x06, [new CHROffset(8,0,0x1e,0x1e)]);
     // Up top right
-    mapping.set(0x07, [toChrAddr(8,0,0x1f)]);
+    mapping.set(0x07, [new CHROffset(8,0,0x1f,0x1f)]);
     // Up mid left
-    mapping.set(0x16, [toChrAddr(8,0,0x06)]);
+    mapping.set(0x16, [new CHROffset(8,0,0x06,0x06)]);
     // Up mid right
-    mapping.set(0x17, [toChrAddr(8,0,0x07)]);
+    mapping.set(0x17, [new CHROffset(8,0,0x07,0x07)]);
     // Up bot left
-    mapping.set(0x26, [toChrAddr(8,0,0x26)]);
+    mapping.set(0x26, [new CHROffset(8,0,0x26,0x26)]);
     // Up bot right
-    mapping.set(0x27, [toChrAddr(8,0,0x27)]);
+    mapping.set(0x27, [new CHROffset(8,0,0x27,0x27)]);
 
     //////////
     // Up attack
     // Frame 1
     // mid left
-    mapping.set(0x40, [toChrAddr(8,0,0x14)]);
+    mapping.set(0x40, [new CHROffset(8,0,0x14,0x14)]);
     // mid right
-    mapping.set(0x41, [toChrAddr(8,0,0x15)]);
+    mapping.set(0x41, [new CHROffset(8,0,0x15,0x15)]);
     // bot left
-    mapping.set(0x50, [toChrAddr(8,0,0x34)]);
+    mapping.set(0x50, [new CHROffset(8,0,0x34,0x34)]);
     // bot right
-    mapping.set(0x51, [toChrAddr(8,0,0x35)]);
+    mapping.set(0x51, [new CHROffset(8,0,0x35,0x35)]);
 
     // Frame 2
     // top left
-    mapping.set(0x32, [toChrAddr(8,0,0x3c)]);
+    mapping.set(0x32, [new CHROffset(8,0,0x3c,0x3c)]);
     // top right
-    mapping.set(0x33, [toChrAddr(8,0,0x3d)]);
+    mapping.set(0x33, [new CHROffset(8,0,0x3d,0x3d)]);
     // mid left
-    mapping.set(0x42, [toChrAddr(8,0,0x18)]);
+    mapping.set(0x42, [new CHROffset(8,0,0x18,0x18)]);
     // mid right
-    mapping.set(0x43, [toChrAddr(8,0,0x19)]);
+    mapping.set(0x43, [new CHROffset(8,0,0x19,0x19)]);
     // bot left
-    mapping.set(0x52, [toChrAddr(8,0,0x38)]);
+    mapping.set(0x52, [new CHROffset(8,0,0x38,0x38)]);
 
     // Frame 3
     // mid left
-    mapping.set(0x44, [toChrAddr(8,0,0x16)]);
+    mapping.set(0x44, [new CHROffset(8,0,0x16,0x16)]);
     // mid right
-    mapping.set(0x45, [toChrAddr(8,0,0x17)]);
+    mapping.set(0x45, [new CHROffset(8,0,0x17,0x17)]);
     // bot left
-    mapping.set(0x54, [toChrAddr(8,0,0x36)]);
+    mapping.set(0x54, [new CHROffset(8,0,0x36,0x36)]);
 
     ////////
     // Left attack
     // Frame 1
     // mid left
-    mapping.set(0x70, [toChrAddr(8,0,0x0e)]);
+    mapping.set(0x70, [new CHROffset(8,0,0x0e,0x0e)]);
     // mid right
-    mapping.set(0x71, [toChrAddr(8,0,0x0f)]);
+    mapping.set(0x71, [new CHROffset(8,0,0x0f,0x0f)]);
     // bot left
-    mapping.set(0x80, [toChrAddr(8,0,0x2e)]);
+    mapping.set(0x80, [new CHROffset(8,0,0x2e,0x2e)]);
     // bot right
-    mapping.set(0x81, [toChrAddr(8,0,0x2f)]);
+    mapping.set(0x81, [new CHROffset(8,0,0x2f,0x2f)]);
 
     // Frame 2
     // mid left
-    mapping.set(0x72, [toChrAddr(8,0,0x12)]);
+    mapping.set(0x72, [new CHROffset(8,0,0x12,0x12)]);
     // mid right
-    mapping.set(0x73, [toChrAddr(8,0,0x13)]);
+    mapping.set(0x73, [new CHROffset(8,0,0x13,0x13)]);
     // bot left
-    mapping.set(0x82, [toChrAddr(8,0,0x30)]);
+    mapping.set(0x82, [new CHROffset(8,0,0x30,0x30)]);
     // bot right
-    mapping.set(0x83, [toChrAddr(8,0,0x33)]);
+    mapping.set(0x83, [new CHROffset(8,0,0x33,0x33)]);
 
     // Frame 3
     // mid left
-    mapping.set(0x74, [toChrAddr(8,0,0x10)]);
+    mapping.set(0x74, [new CHROffset(8,0,0x10,0x10)]);
     // mid right
-    mapping.set(0x75, [toChrAddr(8,0,0x11)]);
+    mapping.set(0x75, [new CHROffset(8,0,0x11,0x11)]);
     // bot right
-    mapping.set(0x85, [toChrAddr(8,0,0x31)]);
+    mapping.set(0x85, [new CHROffset(8,0,0x31,0x31)]);
 
     //////////
     // Down attack
     // Frame 1
     // mid left
-    mapping.set(0xa0, [toChrAddr(8,0,0x08)]);
+    mapping.set(0xa0, [new CHROffset(8,0,0x08,0x08)]);
     // mid right
-    mapping.set(0xa1, [toChrAddr(8,0,0x09)]);
+    mapping.set(0xa1, [new CHROffset(8,0,0x09,0x09)]);
     // bot left
-    mapping.set(0xb0, [toChrAddr(8,0,0x28)]);
+    mapping.set(0xb0, [new CHROffset(8,0,0x28,0x28)]);
 
     // Frame 2
     // top left
-    mapping.set(0x92, [toChrAddr(8,0,0x3a)]);
+    mapping.set(0x92, [new CHROffset(8,0,0x3a,0x3a)]);
     // top right
-    mapping.set(0x93, [toChrAddr(8,0,0x3b)]);
+    mapping.set(0x93, [new CHROffset(8,0,0x3b,0x3b)]);
     // mid left
-    mapping.set(0xa2, [toChrAddr(8,0,0x0c)]);
+    mapping.set(0xa2, [new CHROffset(8,0,0x0c,0x0c)]);
     // mid right
-    mapping.set(0xa3, [toChrAddr(8,0,0x0d)]);
+    mapping.set(0xa3, [new CHROffset(8,0,0x0d,0x0d)]);
     // bot left
-    mapping.set(0xb2, [toChrAddr(8,0,0x2c)]);
+    mapping.set(0xb2, [new CHROffset(8,0,0x2c,0x2c)]);
     // bot right
-    mapping.set(0xb3, [toChrAddr(8,0,0x2d)]);
+    mapping.set(0xb3, [new CHROffset(8,0,0x2d,0x2d)]);
 
     // Frame 3
     // mid left
-    mapping.set(0xa4, [toChrAddr(8,0,0x0a)]);
+    mapping.set(0xa4, [new CHROffset(8,0,0x0a,0x0a)]);
     // mid right
-    mapping.set(0xa5, [toChrAddr(8,0,0x0b)]);
+    mapping.set(0xa5, [new CHROffset(8,0,0x0b,0x0b)]);
     // bot right
-    mapping.set(0xb5, [toChrAddr(8,0,0x2b)]);
+    mapping.set(0xb5, [new CHROffset(8,0,0x2b,0x2b)]);
 
     // Armor mappings
     // Create the armor mappings by using the hardcoded sprite mappings but with the armor offsets
     const noarmor_mappings = new Map(mapping);
+    const NSS_ARMOR_OFFSET = 0x100;
     for (let [key, value] of noarmor_mappings) {
-      const armor_key = key + ARMOR_TILESET_OFFSET;
-      const armor_val = value.map((k) => k + CHR_PAGE_OFFSET);
+      const armor_key = key + NSS_ARMOR_OFFSET;
+      const armor_val = value.map((k) => new CHROffset(k.page, k.bank + 1, k.tile, k.pputile));
       mapping.set(armor_key, armor_val);
     }
 
@@ -381,94 +432,106 @@ export class CustomTilesetMapping {
     // Death
     // Frame 1
     // top left
-    mapping.set(0xc0, [toChrAddr(11,1,0x00)]);
+    mapping.set(0xc0, [new CHROffset(11,4,0x00, 0x00)]);
     // top right
-    mapping.set(0xc1, [toChrAddr(11,1,0x01)]);
+    mapping.set(0xc1, [new CHROffset(11,4,0x01, 0x01)]);
     // mid left
-    mapping.set(0xd0, [toChrAddr(11,1,0x02)]);
+    mapping.set(0xd0, [new CHROffset(11,4,0x02, 0x02)]);
     // mid right
-    mapping.set(0xd1, [toChrAddr(11,1,0x03)]);
+    mapping.set(0xd1, [new CHROffset(11,4,0x03, 0x03)]);
     // bot left
-    mapping.set(0xe0, [toChrAddr(11,1,0x04)]);
+    mapping.set(0xe0, [new CHROffset(11,4,0x04, 0x04)]);
     // bot right
-    mapping.set(0xe1, [toChrAddr(11,1,0x05)]);
+    mapping.set(0xe1, [new CHROffset(11,4,0x05, 0x05)]);
 
     // Frame 2
     // top left
-    mapping.set(0xc2, [toChrAddr(11,1,0x24)]);
+    mapping.set(0xc2, [new CHROffset(11,4,0x24, 0x24)]);
     // top right
-    mapping.set(0xc3, [toChrAddr(11,1,0x25)]);
+    mapping.set(0xc3, [new CHROffset(11,4,0x25, 0x25)]);
     // mid left
-    mapping.set(0xd2, [toChrAddr(11,1,0x06)]);
+    mapping.set(0xd2, [new CHROffset(11,4,0x06, 0x06)]);
     // mid right
-    mapping.set(0xd3, [toChrAddr(11,1,0x07)]);
+    mapping.set(0xd3, [new CHROffset(11,4,0x07, 0x07)]);
     // bot left
-    mapping.set(0xe2, [toChrAddr(11,1,0x26)]);
+    mapping.set(0xe2, [new CHROffset(11,4,0x26, 0x26)]);
     // bot right
-    mapping.set(0xe3, [toChrAddr(11,1,0x27)]);
+    mapping.set(0xe3, [new CHROffset(11,4,0x27, 0x27)]);
 
     // Frame 3
     // top left
-    mapping.set(0xc4, [toChrAddr(11,1,0x20)]);
+    mapping.set(0xc4, [new CHROffset(11,4,0x20, 0x20)]);
     // top right
-    mapping.set(0xc5, [toChrAddr(11,1,0x21)]);
+    mapping.set(0xc5, [new CHROffset(11,4,0x21, 0x21)]);
     // mid left
-    mapping.set(0xd4, [toChrAddr(11,1,0x22)]);
+    mapping.set(0xd4, [new CHROffset(11,4,0x22, 0x22)]);
     // mid right
-    mapping.set(0xd5, [toChrAddr(11,1,0x23)]);
+    mapping.set(0xd5, [new CHROffset(11,4,0x23, 0x23)]);
 
     // Frame 4
     // mid left
-    mapping.set(0xd6, [toChrAddr(11,1,0x14)]);
+    mapping.set(0xd6, [new CHROffset(11,4,0x14, 0x14)]);
     // mid right
-    mapping.set(0xd7, [toChrAddr(11,1,0x15)]);
+    mapping.set(0xd7, [new CHROffset(11,4,0x15, 0x15)]);
     // bot left
-    mapping.set(0xe6, [toChrAddr(11,1,0x16)]);
+    mapping.set(0xe6, [new CHROffset(11,4,0x16, 0x16)]);
     // bot right
-    mapping.set(0xe7, [toChrAddr(11,1,0x17)]);
+    mapping.set(0xe7, [new CHROffset(11,4,0x17, 0x17)]);
 
     // Holding sword
     // top left
-    mapping.set(0x36, [toChrAddr(11,1,0x0c)]);
+    mapping.set(0x36, [new CHROffset(11,4,0x0c, 0x0c)]);
     // top right
-    mapping.set(0x37, [toChrAddr(11,1,0x0d)]);
+    mapping.set(0x37, [new CHROffset(11,4,0x0d, 0x0d)]);
     // mid left
-    mapping.set(0x46, [toChrAddr(11,1,0x32)]);
+    mapping.set(0x46, [new CHROffset(11,4,0x32, 0x32)]);
     // mid right
-    mapping.set(0x47, [toChrAddr(11,1,0x33)]);
+    mapping.set(0x47, [new CHROffset(11,4,0x33, 0x33)]);
     // bot left
-    mapping.set(0x56, [toChrAddr(11,1,0x2e)]);
+    mapping.set(0x56, [new CHROffset(11,4,0x2e, 0x2e)]);
     // bot right
-    mapping.set(0x57, [toChrAddr(11,1,0x2f)]);
+    mapping.set(0x57, [new CHROffset(11,4,0x2f, 0x2f)]);
+
+    // Telepathy Psychic Energy
+    // frame 1
+    mapping.set(0xb4, [new CHROffset(11,4,0x36, 0x36)]);
+    mapping.set(0xb5, [new CHROffset(11,4,0x37, 0x37)]);
+    // frame 2
+    mapping.set(0xe4, [new CHROffset(11,4,0x38, 0x38)]);
+    mapping.set(0xe5, [new CHROffset(11,4,0x39, 0x39)]);
+
+    // Sword Get Sparkles
+    mapping.set(0xc6, [new CHROffset(11,4,0x3a, 0x3a)]);
+    mapping.set(0xc7, [new CHROffset(11,4,0x3b, 0x3b)]);
 
     // Telepathy
     // Frame 1
     // top left
-    mapping.set(0x66, [toChrAddr(11,1,0x12)]);
+    mapping.set(0x66, [new CHROffset(11,4,0x12, 0x12)]);
     // top right
-    mapping.set(0x67, [toChrAddr(11,1,0x13)]);
+    mapping.set(0x67, [new CHROffset(11,4,0x13, 0x13)]);
     // mid left
-    mapping.set(0x76, [toChrAddr(11,1,0x08)]);
+    mapping.set(0x76, [new CHROffset(11,4,0x08, 0x08)]);
     // mid right
-    mapping.set(0x77, [toChrAddr(11,1,0x09)]);
+    mapping.set(0x77, [new CHROffset(11,4,0x09, 0x09)]);
     // bot left
-    mapping.set(0x86, [toChrAddr(11,1,0x28)]);
+    mapping.set(0x86, [new CHROffset(11,4,0x28, 0x28)]);
     // bot right
-    mapping.set(0x87, [toChrAddr(11,1,0x29)]);
+    mapping.set(0x87, [new CHROffset(11,4,0x29, 0x29)]);
 
     // Frame 2
     // top left
-    mapping.set(0x96, [toChrAddr(11,1,0x2c)]);
+    mapping.set(0x96, [new CHROffset(11,4,0x2c, 0x2c)]);
     // top right
-    mapping.set(0x97, [toChrAddr(11,1,0x2d)]);
+    mapping.set(0x97, [new CHROffset(11,4,0x2d, 0x2d)]);
     // mid left
-    mapping.set(0xa6, [toChrAddr(11,1,0x0a)]);
+    mapping.set(0xa6, [new CHROffset(11,4,0x0a, 0x0a)]);
     // mid right
-    mapping.set(0xa7, [toChrAddr(11,1,0x0b)]);
+    mapping.set(0xa7, [new CHROffset(11,4,0x0b, 0x0b)]);
     // bot left
-    mapping.set(0xb6, [toChrAddr(11,1,0x2a)]);
+    mapping.set(0xb6, [new CHROffset(11,4,0x2a, 0x2a)]);
     // bot right
-    mapping.set(0xb7, [toChrAddr(11,1,0x2b)]);
+    mapping.set(0xb7, [new CHROffset(11,4,0x2b, 0x2b)]);
 
 
     //////////
@@ -492,7 +555,7 @@ export class CustomTilesetMapping {
     // ???
     mapping.set(0xf7, copyToAllWeaponPages(0x17));
     // Hilt - is only in the page with mesia since its only used in the tower
-    mapping.set(0xf8, [toChrAddr(8, 1, 0xed)]);
+    mapping.set(0xf8, [new CHROffset(8, 4, 0xed, 0xed)]);
     // full length blade
     mapping.set(0xf9, copyToAllWeaponPages(0x19));
     // diagonal right
@@ -562,12 +625,14 @@ function hex2Num(strs: string[]): number[] {
 
   // Maps from the named metasprites in the NSS file to the game's metasprite [id, frame]
 const simeaMetaspriteMapping : Map<string, number[]> = new Map<string, number[]>([
-  ["Up 1",                [0x00, 0]],
-  ["Up 2",                [0x00, 1]],
-  ["Right 1",             [0x01, 0]],
-  ["Right 2",             [0x01, 1]],
-  ["Down 1",              [0x02, 0]],
-  ["Down 2",              [0x02, 1]],
+  // animation frames in crystalis count down from the last frame, so we need to reverse them
+  // from the order they appear in the NSS file
+  ["Up 1",                [0x00, 1]],
+  ["Up 2",                [0x00, 0]],
+  ["Right 1",             [0x01, 1]],
+  ["Right 2",             [0x01, 0]],
+  ["Down 1",              [0x02, 1]],
+  ["Down 2",              [0x02, 0]],
   // 0x03 Left is mirrored from Right
   ["Stab Up 1",           [0x04, 2]],
   ["Stab Up 2",           [0x04, 1]],
@@ -584,12 +649,12 @@ const simeaMetaspriteMapping : Map<string, number[]> = new Map<string, number[]>
   ["Arm Right 2",         [0x09, 0]],
   // 0x0a is Arm Down (and is intentionally empty in game)
   // 0x0b is Arm Left and is mirrored from Arm Right
-  ["Shield Up 1",         [0x0c, 0]],
-  ["Shield Up 2",         [0x0c, 1]],
-  ["Shield Right 1",      [0x0d, 0]],
-  ["Shield Right 2",      [0x0d, 1]],
-  ["Shield Down 1",       [0x0e, 0]],
-  ["Shield Down 2",       [0x0e, 1]],
+  ["Shield Up 1",         [0x0c, 1]],
+  ["Shield Up 2",         [0x0c, 0]],
+  ["Shield Right 1",      [0x0d, 1]],
+  ["Shield Right 2",      [0x0d, 0]],
+  ["Shield Down 1",       [0x0e, 1]],
+  ["Shield Down 2",       [0x0e, 0]],
   // 0x0f Left is mirrored from Right
   ["Shield Stab Up 1",    [0x10, 2]],
   ["Shield Stab Up 2",    [0x10, 1]],
@@ -602,16 +667,34 @@ const simeaMetaspriteMapping : Map<string, number[]> = new Map<string, number[]>
   ["Shield Stab Down 3",  [0x12, 0]],
   // 0x13 Shield Stab Left is mirrored from Right
   // Now onto a few random metasprites that are nice to have
-  ["Death 1",             [0xbc, 0]],
-  ["Death 2",             [0xbc, 1]],
-  ["Death 3",             [0xbc, 2]],
-  ["Death 4",             [0xbc, 3]],
+  ["Sword Get 1",         [0xb8, 1]],
+  ["Sword Get 2",         [0xb8, 0]],
+  ["Death 1",             [0xbc, 3]],
+  ["Death 2",             [0xbc, 2]],
+  ["Death 3",             [0xbc, 1]],
+  ["Death 4",             [0xbc, 0]],
   ["Death Last",          [0xbd, 0]],
   ["Telepathy Intro 1",   [0xcc, 1]],
   ["Telepathy Intro 2",   [0xcc, 0]],
   ["Telepathy 1",         [0xcd, 1]],
   ["Telepathy 2",         [0xcd, 0]],
 ]);
+
+
+export function toChrAddr(chr_page: number, bank: number, tile_number: number): number {
+  const baseAddr = 0x40000;
+  return baseAddr + chr_page * 0x2000 + bank * 0x400 + tile_number * 0x10;
+}
+
+export function copyToAllWeaponPages (tile: number) : CHROffset[] {
+  return [
+    new CHROffset(8, 2, tile, tile + 0x40),
+    new CHROffset(8, 3, tile, tile + 0x40),
+    new CHROffset(8, 4, tile, tile + 0x40),
+    new CHROffset(8, 5, tile, tile + 0x40),
+    new CHROffset(8, 6, tile, tile + 0x40),
+  ]
+}
 
 function arraysEqual(a:number[], b:number[]) {
   return a.length === b.length && a.every((el, ix) => el === b[ix]);
@@ -624,7 +707,7 @@ function loadMetasprites(nss: Map<string, string>): Map<number, Frame> {
   const gridXOffset = parseInt(nss.get("VarSpriteGridX") || "64");
   const gridYOffset = parseInt(nss.get("VarSpriteGridY") || "64");
   let msName;
-  for (let currentMetasprite = 0; msName = nss.get(`MetaSprite${currentMetasprite}`); currentMetasprite++) {
+  for (let currentMetasprite = 0; msName = nss.get(`MetaSprite${currentMetasprite}`)?.trim(); currentMetasprite++) {
     const mapping = simeaMetaspriteMapping.get(msName);
     if (!mapping) {
       console.warn(`Missing mapping for ${msName}`);
@@ -632,9 +715,13 @@ function loadMetasprites(nss: Map<string, string>): Map<number, Frame> {
     }
     const sprites = [];
     let index = currentMetasprite * 64 * 4;
+    // nss files use 0xff as a terminator
     while (!arraysEqual(raw.slice(index, index+4), [0xff, 0xff, 0xff, 0xff])) {
       const sprite = raw.slice(index, index+4) as OAMSprite;
-      sprites.push(sprite);
+      sprite[3] -= gridXOffset;
+      sprite[0] -= gridYOffset;
+      const spr = [sprite[3], sprite[0], sprite[2], sprite[1]] as OAMSprite;
+      sprites.push(spr);
       index += 4;
     }
     const [msid, framenum] = mapping;
@@ -646,13 +733,13 @@ function loadMetasprites(nss: Map<string, string>): Map<number, Frame> {
 }
 
 export async function parseNssFile(filename: string, data: string): Promise<NssFile> {
-  const nss = new Map(data.split("\n").filter(s => s.includes("=")).map(s => s.split("=")).map(s => [s[0], s[1]]));
+  const nss = new Map(data.replace(/\r\n/g, '\n').split("\n").filter(s => s.includes("=")).map(s => s.split("=")).map(s => [s[0], s[1]]));
   const paletteData = nss.get("Palette") || "";
   const palette = hex2Num(chunk(unRLE(paletteData).slice(0, 32), 2));
-  const chrdata = hexstrToBytes(unRLE(nss.get("CHRMain") || ""));
+  const chrdata = Array.from(new Uint8Array(hexstrToBytes(unRLE((nss.get("CHRMain") || "")))));
   const metasprites = loadMetasprites(nss);
   const rendered = await createImageFromCHR(new Uint8ClampedArray(chrdata), palette);
-  return new NssFile(filename, chrdata, palette, metasprites, rendered);
+  return new NssFile(filename, chrdata, palette, metasprites, Array.from(new Uint8Array(rendered.data)));
 }
 
 const basePaletteColors: number[][] = [

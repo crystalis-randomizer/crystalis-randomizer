@@ -136,7 +136,8 @@ export function deterministicPreParse(prg: Uint8Array): void {
   prg[OBJECT_DATA_SHADOW2 + 18] = NEW_METASPRITE_ID;
   prg[OBJECT_DATA_SHADOW2 + 19] = NEW_METASPRITE_ID;
   // When checking that the attack hit a shadow, it checks the metasprite id, so update that check too.
-  prg[0x350f7 + 2] = NEW_METASPRITE_ID;
+  // change cmp #$a7 to cmp #NEW_METASPRITE_ID
+  prg[0x350f7] = NEW_METASPRITE_ID;
 
   // Rename the default name to "Simea".
   write(prg, 0x2656e, "Simea", 0x10, 0, "     ", 0x10, 0);

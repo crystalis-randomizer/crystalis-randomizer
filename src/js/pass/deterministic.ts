@@ -1356,7 +1356,7 @@ function swapMimicAndRecoverGraphics(rom: Rom) {
   // Step 1
   // Note: I chose the bank with Azteca in it ($53 or CHR $14c00) since it has a lot of unused tiles.
   // In the original bank $42 it uses tiles $1c - $1f, $3a - $3f
-  const moveRecoverAddress = [
+  const moveRecoverAddress = new Map<number, number>([
     [0x1c, 0x15],
     [0x1d, 0x16],
     [0x1e, 0x17],
@@ -1367,9 +1367,9 @@ function swapMimicAndRecoverGraphics(rom: Rom) {
     [0x3d, 0x1c],
     [0x3e, 0x1d],
     [0x3f, 0x1e],
-  ]
-  moveRecoverAddress.forEach(addr => {
-    rom.patterns.set(newRecoverPage, addr[1], rom.patterns.get(windSwordPage, addr[0]).pixels);
+  ]);
+  moveRecoverAddress.forEach((newaddr, oldaddr) => {
+    rom.patterns.set(newRecoverPage, newaddr, rom.patterns.get(windSwordPage, oldaddr).pixels);
   });
   
   const chestMimicPage = 0x6c << 6;
@@ -1432,98 +1432,15 @@ function swapMimicAndRecoverGraphics(rom: Rom) {
   rom.metasprites[recoverMetasprite].sprites.forEach(frame => {
     for (let i = 0; i < frame.length; i++) {
       let sprite = frame[i];
-      let origTile = moveRecoverAddress[i][0];
-      let newTile = moveRecoverAddress[i][1];
-      // 0x40 = PPU addr base
-      // 0x3a = new chest sprite location
       if (sprite[0] != unused) {
-        sprite[3] = (sprite[3] - 0x40 - origTile) + 0x40 + newTile;
+        let newTile = moveRecoverAddress.get(sprite[3] & 0x3f);
+        // 0x40 = PPU addr base
+        // 0x3a = new chest sprite location
+        sprite[3] = 0x40 + newTile!;
       }
     }
   });
 
-  
-  
-
-// .org $a741
-// Metasprite_aa:                   ; Metasprite aa
-//         .byte $04,$00
-//         ;; Variant 0
-//         .byte $f8,$f0,$00,$83
-//         .byte $00,$f0,$00,$84
-//         .byte $f8,$f8,$00,$85
-//         .byte $00,$f8,$00,$86
-
-// .org $9e74
-// Metasprite_90:                   ; Metasprite 90 - mimic (alt page 6c)
-//         .byte $06,$01
-//         ;; Variant 0
-//         .byte $f8,$e8,$00,$b3
-//         .byte $00,$e8,$40,$b3
-//         .byte $f8,$f0,$00,$b4
-//         .byte $00,$f0,$40,$b4
-//         .byte $f8,$f8,$00,$b5
-//         .byte $00,$f8,$40,$b5
-//         ;; Variant 1
-//         .byte $f8,$f0,$00,$b6
-//         .byte $00,$f0,$40,$b6
-//         .byte $f8,$f8,$00,$b7
-//         .byte $00,$f8,$40,$b7
-//         .byte $80,$80,$80,$80
-
-
-  // Metasprite for the recover spell
-//   .org $b3db
-// Metasprite_cb:                   ; Metasprite cb
-//         .byte $05,$07
-//         ;; Variant 0
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         ;; Variant 1
-//         .byte $f2,$f0,$01,$5d
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         ;; Variant 2
-//         .byte $09,$ec,$01,$5d
-//         .byte $f2,$f0,$01,$5c
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         ;; Variant 3
-//         .byte $01,$e6,$01,$5d
-//         .byte $09,$ec,$01,$5c
-//         .byte $f8,$f8,$01,$5e
-//         .byte $00,$f8,$01,$5f
-//         .byte $80,$80,$80,$80
-//         ;; Variant 4
-//         .byte $ee,$f3,$01,$5d
-//         .byte $01,$e6,$01,$5c
-//         .byte $f8,$f0,$41,$7b
-//         .byte $00,$f0,$41,$7a
-//         .byte $80,$80,$80,$80
-//         ;; Variant 5
-//         .byte $07,$f7,$01,$5d
-//         .byte $ee,$f3,$01,$5c
-//         .byte $f8,$e8,$01,$7d
-//         .byte $f8,$f0,$01,$7e
-//         .byte $00,$f0,$01,$7f
-//         ;; Variant 6
-//         .byte $f2,$ee,$01,$5d
-//         .byte $07,$f7,$01,$5c
-//         .byte $f8,$e8,$01,$7a
-//         .byte $00,$e8,$01,$7b
-//         .byte $00,$f0,$01,$7c
-//         ;; Variant 7
-//         .byte $f2,$ee,$01,$5c
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
-//         .byte $80,$80,$80,$80
 }
 
 // There are a few metatiles that have incorrect behavior (one of

@@ -27,10 +27,3 @@
     ;.byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
 .endscope
 
-
-;;; In deterministic.ts we moved the recover animation to use a new bank
-;;; so update MainGameModeJump_18_RecoverMagicAnimation to load the new CHR bank for
-;;; the animation (its now in bank $6c)
-.segment "13"
-.org $bb4e
-  lda #$6c

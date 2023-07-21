@@ -37,3 +37,10 @@ UpdateSwordPaletteOnSwordGet:
   pla
   jmp BankSwitch8k_8000
   ; rts ; implicit
+
+;;; In deterministic.ts we moved the recover animation to use a new bank
+;;; so update MainGameModeJump_18_RecoverMagicAnimation to load the new CHR bank for
+;;; the animation (its now in bank $53)
+.segment "13"
+.org $bb4e
+  lda #$53

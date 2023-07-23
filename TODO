@@ -5,7 +5,7 @@ Cleanups after merging v2.0.0
  - split out the charge-shot-only behaviors into separate flags
  - move wraith shadows out of deterministicPreParse
  - fix swapMimicAndRecoverGraphics (deterministic.ts) to not poke the PRG directly
-
+ - bosskill -> could consolidate some of the data table entries?
 
 ===
 

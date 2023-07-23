@@ -57,6 +57,10 @@ DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS)
 REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS)
 TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON)
 
+.PHONY: all debug release clean web-debug web-release x
+
+all: debug release
+
 x:
 	@echo pat: $(STATIC_PATTERNS)
 	@echo
@@ -64,11 +68,8 @@ x:
 	@echo
 	@echo dbg: $(DBG_STATIC)
 
-.PHONY: all debug release clean web-debug web-release x
-
 release: $(REL_OUTS)
 debug: $(DBG_OUTS)
-all: debug release
 web-debug: $(DBG_WEB_OUTS)
 web-release: $(REL_WEB_OUTS)
 

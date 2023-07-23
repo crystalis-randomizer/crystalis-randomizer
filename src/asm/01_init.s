@@ -205,8 +205,8 @@ ScrollXHi = $07d9
 ScrollYLo = $07da
 ScrollYHi = $07db
 
-WarriorRingStabCounter = $61fb
-PlayerStandingTimer = $61fc
+WarriorRingStabCounter = $61fb  ; added in rando
+PlayerStandingTimer = $61fc     ; added in rando
 InvSwords = $6430
 InvConsumables = $6440
 InvPassive = $6448

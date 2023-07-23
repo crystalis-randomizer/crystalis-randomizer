@@ -270,10 +270,11 @@ ATTEMPT:
       }
       const path: number[][]|undefined = spoiler ? [] : undefined;
       const final = this.traverse(i => indexFill.get(i), Bits.of(), path);
+      // Make an effort to bury flight.
       const sphereAnalysis = this.analyzeSpheres(i => indexFill.get(i));
+      const targetFlightSphere = flagset.buryFlightStartSphere() - attempt / 4
       for (const [id,, sphere] of sphereAnalysis) {
-        // Make an effort to bury flight.
-        if (id === 0x248 && sphere < 10 - attempt / 4) continue ATTEMPT;
+        if (id === 0x248 && sphere < targetFlightSphere) continue ATTEMPT;
       }
       // for (const [, item, sphere, check] of sphereAnalysis) {
       //   if ('document' in globalThis) {

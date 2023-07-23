@@ -17,6 +17,7 @@
 }
 
 /* Basic flow control */
+.if-invalid,
 .if-failure,
 .if-versioned,
 .if-release-candidate,
@@ -29,6 +30,7 @@
   display: none;
 }
 
+body.invalid .if-invalid,
 body.failure .if-failure,
 body.versioned .if-versioned,
 body.release-candidate .if-release-candidate,

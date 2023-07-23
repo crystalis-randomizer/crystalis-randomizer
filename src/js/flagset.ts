@@ -1271,6 +1271,10 @@ export class FlagSet {
     return true;
   }
 
+  buryFlightStartSphere(): number {
+    return 7; // we tested at 10 and it's pretty effective; use 7 for now tho.
+  }
+
   validate(): void {
     if (this.shuffleAreas() && this.preserveUniqueChecks()) {
       throw new UsageError('Wa and Eu are incompatible');

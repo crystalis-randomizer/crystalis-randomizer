@@ -348,9 +348,9 @@ class World extends FlagSection {
   static readonly RandomizeTrades = World.flag('Wt', {
     name: 'Randomize trade-in items',
     text: `Items expected by various NPCs will be shuffled: specifically,
-           Statue of Onyx, Kirisa Plant, Love Pendant, Ivory Statue, Fog
-           Lamp, and Flute of Lime (for Akahana).  Rage will expect a
-           random sword, and Tornel will expect a random bracelet.`,
+           Statue of Onyx, Kirisa Plant, Love Pendant, Ivory Statue, and Fog
+           Lamp.  Rage will expect a random sword, and Tornel will expect a
+           random bracelet.`,
     hard: true,
   });
 

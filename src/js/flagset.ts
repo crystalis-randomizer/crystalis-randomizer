@@ -225,6 +225,28 @@ class Presets {
         World.UnidentifiedKeyItems,
       ]);
 
+  readonly Tournament2023 = new Preset(this, 'Tournament 2023', `
+      This year's tournament flags debuts some interesting new flags for a
+      unique challenge.`, [
+        World.RandomizeTrades,
+        World.UnidentifiedKeyItems,
+        World.RandomizeWallElements,
+        World.ShuffleGoaFloors,
+        [Routing.StoryMode, '?'],
+        Routing.OrbsNotRequired,
+        Routing.NoThunderSwordWarp,
+        Glitches.GhettoFlight,
+        Glitches.StatueGlitch,
+        Glitches.MtSabreRequirementSkip,
+        Monsters.RandomizeWeaknesses,
+        [Monsters.OopsAllMimics, '?'],
+        Monsters.TowerRobots,
+        NoGuarantees.BattleMagic,
+        NoGuarantees.Barrier,
+        HardMode.MaxScalingInTower,
+        [HardMode.ChargeShotsOnly, '?'],
+      ]);
+
   readonly Tournament2022Early = new Preset(this, 'Tournament 2022 Early Rounds', `
       Lots of potential complexity, but within reason.  Requires all swords and
       bosses, as well as a few glitches, but guarantees a starting sword.`, [ 

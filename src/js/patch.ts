@@ -194,11 +194,6 @@ export async function shuffle(rom: Uint8Array,
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
-  // Patch graphics and update any metasprites before parsing the rom and applying changes
-  const hasGraphics = spriteReplacements?.some((spr) => Sprite.isCustom(spr)) || false;
-  const sprites = spriteReplacements ? spriteReplacements : [];
-  patchGraphics(rom.subarray(0x10), sprites);
-
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
   const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(originalFlags.filterOptional())) >>> 0;
@@ -209,7 +204,7 @@ export async function shuffle(rom: Uint8Array,
   // const maxAttempts = 1;
   for (let i = 0; i < maxAttempts; i++) { // for now, we'll try 5 attempts
     try {
-      return await shuffleInternal(rom, originalFlags, seed, random, log, progress, hasGraphics, origPrg);
+      return await shuffleInternal(rom, originalFlags, seed, random, log, progress, spriteReplacements, origPrg);
     } catch (error) {
       if (error.name === 'UsageError') throw error;
       attemptErrors.push(error);
@@ -225,7 +220,7 @@ async function shuffleInternal(rom: Uint8Array,
                                random: Random,
                                log: {spoiler?: Spoiler}|undefined,
                                progress: ProgressTracker|undefined,
-                               hasGraphics: boolean,
+                               spriteReplacements: Sprite[]|undefined,
                                origPrg: Uint8Array,
                               ): Promise<readonly [Uint8Array, number]>  {
   const originalFlagString = String(originalFlags);
@@ -477,6 +472,8 @@ async function shuffleInternal(rom: Uint8Array,
   parsed.writeData(prgCopy);
   parsed.modules.set(ASM, await asm('late'));
 
+  const hasGraphics = spriteReplacements?.some((spr) => Sprite.isCustom(spr)) || false;
+
   const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics);
 
   // Do optional randomization now...
@@ -495,6 +492,10 @@ async function shuffleInternal(rom: Uint8Array,
   fixSkippableExits(parsed);
 
   parsed.writeData();
+
+  // Patch graphics and update any metasprites after everything is done so the hashes will match
+  const sprites = spriteReplacements ? spriteReplacements : [];
+  patchGraphics(rom.subarray(0x10), sprites);
 
   // TODO - optional flags can possibly go here, but MUST NOT use parsed.prg!
   return [rom, crc];

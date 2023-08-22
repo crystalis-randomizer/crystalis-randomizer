@@ -23004,7 +23004,7 @@ NpcDialog_15: ; sleeping windmill guard
         .byte [@1ccf7@],[@1ccf8@],[@1ccf9@],[@1ccfa@],[@1ccfb@] ; default -> 01:00
 ;;; ----------------------------------------------------------------
 .org $8cfc
-NpcDialog_1b: ; blue treasure hunter in brynmaer tavern
+NpcDialog_1b: ; blue treasure hunter in brynmaer tavern (ski free)
         .byte [@1ccfc@],[@1ccfd@],[@1ccfe@],[@1ccff@]
         .byte [@1cd00@]
         .byte [@1cd01@],[@1cd02@],[@1cd03@],[@1cd04@],[@1cd05@] ; default -> 02:08 (action 0d)
@@ -23022,7 +23022,7 @@ NpcDialog_1c: ; yellow treasure hunter in brynmaer tavern
         .byte [@1cd23@],[@1cd24@],[@1cd25@],[@1cd26@],[@1cd27@] ; default -> 02:09
 ;;; ----------------------------------------------------------------
 .org $8d28
-NpcDialog_2c: ; dying man at foot of mt sabre north
+NpcDialog_2c: ; dying man at foot of mt sabre north (ski free)
         .byte [@1cd28@],[@1cd29@],[@1cd2a@],[@1cd2b@]
         .byte [@1cd2c@]
         .byte [@1cd2d@],[@1cd2e@],[@1cd2f@],[@1cd30@],[@1cd31@] ; 012 NOT -> 05:0e (action 04)

@@ -31,3 +31,35 @@ Multiply by 0..7 -> 9 bits (use carry?)
   lda #$00
   
   asl $62
+
+=====
+
+Note that ComputeDisplacementVector is called 20 times:
+ _1e8ff: giant insect
+ _1ea37: kelbesque
+ BossPatternJump_18: sabera
+ _1eeba: mado
+ _1f203: draygon
+ CheckDirectionAgainstTerrain: player and mobs
+ ObjectActionJump_54: following dwarf child
+ ObjectActionJump_2b: mimic
+ ObjectActionJump_30 (@FinishNpcAction): npc
+ ObjectActionJump_32 (@advance_frame): movement script
+ ObjectActionJump_38: moving platform
+ ObjectActionJump_57: dyna shots (bubble and revenge beam)
+ ObjectActionJump_1b: boss popcorn
+ ObjectActionJump_12: tornado
+ ObjectActionJump_13: blizzard
+ ObjectActionJump_15: fire 2
+ ObjectActionJump_40: bats/moths
+ ObjectActionJump_44: tomato
+ ObjectActionJump_45: basic flyer
+ FinishRobotMovement: robots (helicopter, maybe?)
+
+
+There are 196 references (102 writes) to $0340,x (speed) or $0360,x (direction)
+ - all of these will need updating...!
+
+
+VectorBetweenObjectsXY =>
+ - will want to have a high-res version of this?

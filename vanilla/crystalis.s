@@ -48973,7 +48973,7 @@ DisplacementToDirectionTable:
         <@34408@>
 ;;; --------------------------------
 ;;; Point object X toward object Y.
-;;; Puts a result in $20 and/or $21.
+;;; Returns direction in $20 and distance in $21.
 .org $8409
 VectorBetweenObjectsXY:
         <@34409@>
@@ -49090,16 +49090,20 @@ VectorBetweenObjectsXY:
 ;;; row based on direction, then the column based on step count.
 .org $8480
 ComputeDisplacementVector:
+        ;; Stash the direction (times 8) in $12
         <@34480@>
         <@34481@>
         <@34482@>
         <@34483@>
+        ;; Read the speed into Y
         <@34485@>
         <@34488@>
         <@3448a@>
+        ;; Check for "slow terrain" (grass, swamp, etc)
         <@3448b@>
         <@3448e@>
         <@3448f +@> ; $34497
+         ;; Slow terrain: decrease speed by two increments
          <@34491@>
          <@34492@>
          <@34493 +@> ; $34497

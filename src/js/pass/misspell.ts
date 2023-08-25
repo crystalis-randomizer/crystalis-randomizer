@@ -15,7 +15,7 @@ const ITEMS: ReadonlyMap<string, string[]> = new Map([
   ['Ivory Statue', ['Ivory Statute']],
   ['Fog Lamp', ['Frog Lamp', 'Smog Lamp', 'Dog Lamp', 'Bog Lamp', 'Fog Lump']],
   ['Glowing Lamp', ['Glowing Lump']],
-  ['Key to Stxy', ['Key to Styx']],
+  ['Key to Stxy', ['Key to Styx', 'Styx Key']],
   ['Insect Flute', ['Bug Flute', 'Bug Whistle']],
   ['Flute of Lime', ['Flute of Grime']],
   ['Iron Necklace', ['I Ron Necklace']],

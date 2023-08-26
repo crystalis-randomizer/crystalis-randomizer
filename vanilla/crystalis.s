@@ -49134,7 +49134,7 @@ ComputeDisplacementVector:
 ;;; first 20%, and is just used for efficient wrap-around.  So there's effectively only
 ;;; 8 rows per table.  These are speed and direction tables.
 .org $84bc
-SpeedTableLo:                    ;  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+SpeedTableLo: ; 0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
         .byte [@344bc@],[@344bd@],[@344be@],[@344bf@],[@344c0@],[@344c1@],[@344c2@],[@344c3@],[@344c4@],[@344c5@],[@344c6@],[@344c7@],[@344c8@],[@344c9@],[@344ca@],[@344cb@]
 .org $84cc
 SpeedTableHi:

@@ -32,7 +32,18 @@ Multiply by 0..7 -> 9 bits (use carry?)
   
   asl $62
 
-=====
+
+
+Vanilla:
+ 340 = RRRRSSSS  recoil position, speed
+ 360 = KKKKDDDD  knockback direction, direction
+Proposed:
+ 340 = RMMSSSSS  recoil position, mode, speed
+ 360 = KKKDDDDD or 00DDDDDD depending on mode?
+
+But how do we reduce recoil to a single bit???
+
+
 
 Note that ComputeDisplacementVector is called 20 times:
  _1e8ff: giant insect

@@ -48930,7 +48930,6 @@ DisplacementToDirectionTable:
         .byte [@340c0@],[@340c1@],[@340c2@],[@340c3@],[@340c4@],[@340c5@],[@340c6@],[@340c7@],[@340c8@],[@340c9@],[@340ca@],[@340cb@],[@340cc@],[@340cd@],[@340ce@],[@340cf@]
         .byte [@340d0@],[@340d1@],[@340d2@],[@340d3@],[@340d4@],[@340d5@],[@340d6@],[@340d7@],[@340d8@],[@340d9@],[@340da@],[@340db@],[@340dc@],[@340dd@],[@340de@],[@340df@]
         .byte [@340e0@],[@340e1@],[@340e2@],[@340e3@],[@340e4@],[@340e5@],[@340e6@],[@340e7@],[@340e8@],[@340e9@],[@340ea@],[@340eb@],[@340ec@],[@340ed@],[@340ee@],[@340ef@]
-;;; --------------------------------
         .byte [@340f0@],[@340f1@],[@340f2@],[@340f3@],[@340f4@],[@340f5@],[@340f6@],[@340f7@],[@340f8@],[@340f9@],[@340fa@],[@340fb@],[@340fc@],[@340fd@],[@340fe@],[@340ff@]
         .byte [@34100@],[@34101@],[@34102@],[@34103@],[@34104@],[@34105@],[@34106@],[@34107@],[@34108@],[@34109@],[@3410a@],[@3410b@],[@3410c@],[@3410d@],[@3410e@],[@3410f@]
         .byte [@34110@],[@34111@],[@34112@],[@34113@],[@34114@],[@34115@],[@34116@],[@34117@],[@34118@],[@34119@],[@3411a@],[@3411b@],[@3411c@],[@3411d@],[@3411e@],[@3411f@]
@@ -50944,77 +50943,79 @@ DoneCheckHitbox:
 .org $95f8
 CheckHitbox:
         <@355f8@>
-         <@355fa ObjectTerrain@>
-         <@355fd DoneCheckHitbox@> ; off screen => no hit
-         <@355ff ObjectKnockback@>
-         <@35602 DoneCheckHitbox@> ; being knocked back => no hit
-         <@35604 ObjectHitbox@>
-         <@35607@>
-         <@35609 DoneCheckHitbox@> ; no hit (not spawned? exploding walls have zero)
-         <@3560b@>             ; collision plane
-         <@3560d ObjectHitbox@>
-         <@35610@>
-         <@35612@>
-         <@35613@>
-         <@35614@>
-         <@35616 ObjectLevel@>
-         <@35619@>
-         <@3561b@>
-         <@3561d@>
-         <@3561e@> ; sprite x-coordinate on screen
-         <@35621@>
-         <@35622 Hitboxes+2@>
-         <@35625@>
-         <@35627@>
-         <@35628 Hitboxes+3@>
-         <@3562b@>
-         <@3562d@> ; sprite y-coordinate on screen
-         <@35630@>
-         <@35631 Hitboxes@>
-         <@35634@>
-         <@35636@>
-         <@35637 Hitboxes+1@>
-         <@3563a@>
-        ;; For each object, check same conditions
-         <@3563c@> ; lower bound of range to check
--                <@3563e@>
-                 <@3563f@> ; upper bound of range
-                  <@35641 DoneCheckHitbox@>
-                 <@35643@>
-                <@35646 -@> ; $3563e
-                <@35648@>
-                <@3564b@> ; same collision plane?
-               <@3564d -@> ; $3563e
-               <@3564f@>
-              <@35652 -@> ; $3563e
-              <@35654@> ; don't check the object against itself
-             <@35656 -@> ; $3563e
-             ;; Both objs are eligible for collisions
-             <@35658@>
-             <@3565b@>
-             <@3565d@>
-             <@3565e@>
-             <@3565f@>
-             <@35661@>
-             <@35664@>
-             <@35666@>
-             <@35668@>
-             <@35669@>
-             <@3566c@>
-             <@3566d Hitboxes@>
-             <@35670@>
-            <@35672 -@>
+          <@355fa ObjectTerrain@>
+          <@355fd DoneCheckHitbox@> ; off screen => no hit
+          <@355ff ObjectKnockback@>
+          <@35602 DoneCheckHitbox@> ; being knocked back => no hit
+          <@35604 ObjectHitbox@>
+          <@35607@>
+          <@35609 DoneCheckHitbox@> ; no hit (not spawned? exploding walls have zero)
+          <@3560b@>             ; collision plane
+          <@3560d ObjectHitbox@>
+          <@35610@>
+          <@35612@>
+          <@35613@>
+          <@35614@>
+          <@35616 ObjectLevel@>
+          <@35619@>
+          <@3561b@>
+          <@3561d@>
+          <@3561e@> ; sprite x-coordinate on screen
+          <@35621@>
+          <@35622 Hitboxes+2@>
+          <@35625@>
+          <@35627@>
+          <@35628 Hitboxes+3@>
+          <@3562b@>
+          <@3562d@> ; sprite y-coordinate on screen
+          <@35630@>
+          <@35631 Hitboxes@>
+          <@35634@>
+          <@35636@>
+          <@35637 Hitboxes+1@>
+          <@3563a@>
+          ;; For each object, check same conditions
+          <@3563c@> ; lower bound of range to check
+@NextObject:
+            <@3563e@>
+            <@3563f@> ; upper bound of range
+              <@35641 DoneCheckHitbox@>
+            <@35643@>
+              <@35646 @NextObject@> ; $3563e
+            <@35648@>
+            <@3564b@> ; same collision plane?
+              <@3564d @NextObject@> ; $3563e
+            <@3564f@>
+              <@35652 @NextObject@> ; $3563e
+            <@35654@> ; don't check the object against itself
+              <@35656 @NextObject@> ; $3563e
+            ;; Both objs are eligible for collisions
+            <@35658@>
+            <@3565b@>
+            <@3565d@>
+            <@3565e@>
+            <@3565f@>
+            <@35661@>
+            <@35664@>
+            <@35666@>
+            <@35668@>
+            <@35669@>
+            <@3566c@>
+            <@3566d Hitboxes@>
+            <@35670@>
+              <@35672 @NextObject@>
             <@35674 Hitboxes+1@>
             <@35677@>
-           <@35679 -@>
-           <@3567b@>
-           <@3567e@>
-           <@3567f Hitboxes+2@>
-           <@35682@>
-          <@35684 -@>
-          <@35686 Hitboxes+3@>
-          <@35689@>
-         <@3568b -@>
+              <@35679 @NextObject@>
+            <@3567b@>
+            <@3567e@>
+            <@3567f Hitboxes+2@>
+            <@35682@>
+              <@35684 @NextObject@>
+            <@35686 Hitboxes+3@>
+            <@35689@>
+              <@3568b @NextObject@>
+          ;; fall through out of loop
         <@3568d@>
         <@3568f@>
         <@35690@>
@@ -51400,7 +51401,7 @@ DataTable_35907:
                 ;; U-R     U-L     D-L
         .byte [@3593f@],[@35940@],[@35941@],[@35942@],[@35943@],[@35944@],[@35945@],[@35946@] ; up-left
 ;;; --------------------------------
-;;; Possibly double-returns.
+;;; Possibly double-returns (in case movement actually happens)
 ;;; Reads object's coordinatesinto $34,..,$37.
 ;;; Removes upper 5 bits of $360,x, then mul *8 => $24
 ;;;   - this becomes the index of the $35907 table, which is pairs.
@@ -51463,6 +51464,7 @@ CheckDirectionAgainstTerrain:
                <@359a6@>
                ;; Only proceed straight if $340,x == #$8 exactly (what does this mean?)
                ;;   - not being knocked back, certain speed ??? why not just cmp?
+               ;; (potentially this is looking for dolphin speed? but why?)
                <@359a8 ObjectKnockback@>
                <@359ab@>
                <@359ad +++@> ; $359c4
@@ -52348,6 +52350,7 @@ _35fd2:
 .org $a00f
 DataTable_3600f:
         .byte [@3600f@],[@36010@],[@36011@],[@36012@],[@36013@],[@36014@],[@36015@],[@36016@]
+;;; Optional directions to maybe store in 360,x (if positive)
 DataTable_36017:
         .byte [@36017@],[@36018@],[@36019@],[@3601a@],[@3601b@],[@3601c@],[@3601d@],[@3601e@]
 ;;; --------------------------------

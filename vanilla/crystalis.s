@@ -82,7 +82,7 @@
 .define ObjectTimer            $0480
 .define ObjectActionScript     $04a0 ; also includes presence in :80
 .define ObjectReplacement      $04c0 ; ???
-.define ObjectAnimationCounter $04e0
+.define ObjectAnimationCounter $04e0 ; also used as a "step counter"
 .define ObjectGoldDropBucket   $0500 ; hi nibble
 .define ObjectElementalDefense $0500 ; lo nibble
 .define ObjectExperiencePoints $0520
@@ -27077,10 +27077,12 @@ _1eb8a:
          <@1eb93@>
 +       <@1eb95@>
 ;;; --------------------------------
+;;; Kelbesque rock movement
 .org $ab96   ; NOTE: relative jump from 2 above (obj action jump 64)
 _1eb96:
-        <@1eb96@>
+        <@1eb96@> ; A was loaded from $600,x
         <@1eb98 +@> ; $1ebad
+         ;; $600,x == 1
          <@1eb9a@>
           bne :>rts ; $1ebac
          <@1eb9f@>
@@ -27090,6 +27092,10 @@ _1eb96:
          <@1eba9@>
          <@1ebac@>
          ;; ----
+        ;; Actually not a rock, this must be K2 so it's the laser?
+        ;;  - Start by decrementing Y by 1 pixel (?)
+        ;;  - Reset the step counter to #$80 and the action script to #$10
+        ;;  - 16-dir vector to player, add 0,1,-1 randomly and store in $360
 +       <@1ebad@>
         <@1ebaf@>
         bne :<rts ; $1ebac
@@ -28185,15 +28191,17 @@ BossPatternJump_2c:              ; Draygon2 1
 ++      <@1f3f7@>
         <@1f3f9@>
         <@1f3fc _1f71d@>
+        ;; Maybe compute a new direction
         <@1f3ff@>
-        <@1f402@>
+        <@1f402@>               ; Draygon's current x on screen
         <@1f404@>
         <@1f406 +@> ; $1f40a
-         <@1f408@>
+         <@1f408@>               ; If x < $40 then point right
 +       <@1f40a@>
         <@1f40c +@> ; $1f410
-         <@1f40e@>
-+       <@1f410@>
+         <@1f40e@>               ; If x > $c0 then point left
++       <@1f410@>             ; Store maybe-new direction
+        ;; 
         <@1f413@>
         <@1f416@>
         <@1f419 _1e8ff@>
@@ -28266,24 +28274,27 @@ _1f493:
         bcc :>rts ; $1f4ba
         <@1f49c@>
         <@1f49e@>
+        ;; Pick a random 16-direction from the table
         <@1f4a1 GenerateRandomNumber@>
         <@1f4a4@>
-        <@1f4a5 DataTable_1f4bb@>
+        <@1f4a5 @Directions@> ; 1f4bb
         <@1f4a8@>
+        ;; Add D2's x-position to player's
         <@1f4ab@>
         <@1f4ad@>
         <@1f4ae@>
+        ;; Look at the :06 bits to pick a random speed
         <@1f4b0@>
         <@1f4b1@>
         <@1f4b3@>
-        <@1f4b4 DataTable_1f4c4@>
+        <@1f4b4 @Speeds@> ; 1f4c4
         <@1f4b7@>
         <@1f4ba@>
-;;; --------------------------------
-.org $b4bb
-DataTable_1f4bb: 
+        ;; ----
+@Directions:
+        ;;    ESE ESE SE  SSE S   SSW SW  WSW WSW
         .byte [@1f4bb@],[@1f4bc@],[@1f4bd@],[@1f4be@],[@1f4bf@],[@1f4c0@],[@1f4c1@],[@1f4c2@],[@1f4c3@]
-DataTable_1f4c4: 
+@Speeds: 
         .byte [@1f4c4@],[@1f4c5@],[@1f4c6@],[@1f4c7@]
 ;;; --------------------------------
 .org $b4c8
@@ -28317,16 +28328,15 @@ BossPatternJump_2d:              ; Draygon2 2
         <@1f4f9@>
         <@1f4fc GenerateRandomNumber@>
         <@1f4ff@>
-        <@1f500 DataTable_1f51c@>
+        <@1f500 @Directions@> ; 1f51c
         <@1f503@>
         <@1f506@>
         <@1f508@>
         <@1f50b@>
-;;; --------------------------------
-.org $b50c
-DataTable_1f50c: 
-        .byte [@1f50c@],[@1f50d@],[@1f50e@],[@1f50f@],[@1f510@],[@1f511@],[@1f512@],[@1f513@],[@1f514@],[@1f515@],[@1f516@],[@1f517@],[@1f518@],[@1f519@],[@1f51a@],[@1f51b@]
-DataTable_1f51c:
+.org $b51c ;; smudge from $1f51c (NOTE: skipped a bit for locality)
+@Directions:
+        ;; 16-dirs for D2
+        ;;    N   WNW NW  NNW N   NNE NE  ENE
         .byte [@1f51c@],[@1f51d@],[@1f51e@],[@1f51f@],[@1f520@],[@1f521@],[@1f522@],[@1f523@]
 ;;; --------------------------------
 .org $b524
@@ -28547,11 +28557,17 @@ _1f6a3:
 +        <@1f6b1@>
          <@1f6b3@>
          <@1f6b5 +@> ; $1f6c0
+          ;; Follow a permutation on direction (basically just d := 16 - d)
 ++        <@1f6b7@>
-          <@1f6ba DataTable_1f50c@>
+          <@1f6ba @Directions@> ; 1f50c
           <@1f6bd@>
 +       <@1f6c0@>
+.org $b50c ;; smudge from $1f50c (NOTE: pulled from earlier for locality)
+@Directions: 
+        ;;    0:0 1:f 2:e 3:d 4:c 5:b 6:a 7:9 8:8 9:7 a:6 b:5 c:4 d:3 e:2 f:1
+        .byte [@1f50c@],[@1f50d@],[@1f50e@],[@1f50f@],[@1f510@],[@1f511@],[@1f512@],[@1f513@],[@1f514@],[@1f515@],[@1f516@],[@1f517@],[@1f518@],[@1f519@],[@1f51a@],[@1f51b@]
 ;;; --------------------------------
+;;; smudge from $1f6c1
 .org $b6c1
 _1f6c1:
           ;; Probably just updating graphics?
@@ -50866,6 +50882,14 @@ _35535:
 ;;; --------------------------------
 ;;; Knocks back the object indexed $11 in the direction of object indexed $10?
 ;;; Not entirely sure about this - since it looks like direction,x is not used?
+;;; (It's converted to an 8-dir and then stored shifted into the upper nibble).
+;;; The use of $10/$11 as inputs is just because knocking back the player requires
+;;; flipping x and y.  We could simplify a bit by using carry to indicate a flip:
+;;;     plp; jsr SwapXYIfCarry; ... ; php; jsr SwapXYIfCarry; rts
+;;;     SwapXYIfCarry:
+;;;       bcc :>rts; stx $10; tya; tax; ldy $10; rts
+;;; This saves 4 bytes in KnockbackObject and 3*3 bytes at each callsite,
+;;; and costs 9 for the swap routine, which may be usable elsewhere as well?
 .org $95c0
 KnockbackObject:
         <@355c0@>
@@ -51419,8 +51443,8 @@ CheckDirectionAgainstTerrain:
            <@35984 DataTable_35907+1@>
            <@35987@>
            <@35989@>
-        ;; Stop looking and double-return if we get to a (0,0) pair in the row.
-        ;; At this point we're going with whatever was stored in $1c..$1f.
+            ;; Stop looking and double-return if we get to a (0,0) pair in the row.
+            ;; At this point we're going with whatever was stored in $1c..$1f.
             <@3598b @BailOut@> ; $359d4
            <@3598d@>
            <@3598e@>
@@ -51428,36 +51452,36 @@ CheckDirectionAgainstTerrain:
            <@35991 AddDisplacementVectorShort@>
            <@35994@>
            <@35996 ++@> ; $359bf
-        ;; special handling for player only here (x=0)
+            ;; special handling for player only here (x=0)
             <@35998 ApplyInvisibleWallAtScreenEdge@>
             <@3599b +@> ; $359be -> rts
-        ;; screen position okay, check terrain
+               ;; screen position okay, check terrain
                <@3599d@> ; force terrain lookup, no update $380,x
                <@3599f CheckTerrainUnderObject@>
                <@359a2@>
                <@359a4@> ; $25 always starts zero
                <@359a6@>
-        ;; Only proceed straight if $340,x == #$8 exactly (what does this mean?)
-        ;;   - not being knocked back, certain speed ??? why not just cmp?
+               ;; Only proceed straight if $340,x == #$8 exactly (what does this mean?)
+               ;;   - not being knocked back, certain speed ??? why not just cmp?
                <@359a8 ObjectKnockback@>
                <@359ab@>
                <@359ad +++@> ; $359c4
-        ;; Check if we're riding on a dolphin - jump away if *not*
+               ;; Check if we're riding on a dolphin - jump away if *not*
                <@359af PlayerStatus@>
                <@359b2 +++@> ; $359c4
-        ;; At this point we know we're on a dolphin - so water becomes passable.
+              ;; At this point we know we're on a dolphin - so water becomes passable.
               <@359b4 @DirLoop@> ; $3597d
-        ;; Carry clear - if no terrain blockers, return directly.
+             ;; Carry clear - if no terrain blockers, return directly.
              <@359b6@>
              <@359b8 +@> ; $359be -> rts
-        ;; Carry was clear, but the terrain was non-zero.  If the terrain is a
-        ;; waterfall or a solid wall (impassible even flying) then loop back,
-        ;; otherwise return with clear carry.
+              ;; Carry was clear, but the terrain was non-zero.  If the terrain is a
+              ;; waterfall or a solid wall (impassible even flying) then loop back,
+              ;; otherwise return with clear carry.
               <@359ba@>
             <@359bc @DirLoop@> ; $3597d
 +           <@359be@>
             ;; ----
-        ;; Non-player (x != 0), though non-dolphin player comes in in two lines
+          ;; Non-player (x != 0), though non-dolphin player comes in in two lines
 ++        <@359bf@> ; force terrain lookup, no update $380,x
           <@359c1 CheckTerrainUnderObject@>
 +++      <@359c4@> ; enemies avoid slides, pits, walls, water
@@ -52752,7 +52776,7 @@ StomFight_CheckExitCondition:
         <@362f4@>
         <@362f7@>
         <@362f9@>
-StomFigiht_Exit:
+StomFight_Exit:
         <@362fc GAME_MODE_STATUS_MSG@>
         <@362fe GameMode@>
         <@36300@>

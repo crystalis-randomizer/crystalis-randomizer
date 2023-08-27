@@ -890,8 +890,9 @@ $600 in ticking it down.
 
 $4a0,x
 ------
+Object Action Script
+
 if this is zero, then do not show a sprite...?
-but it clearly does more than that...
  - looks to index jump table at $36314
  - not sure when that runs?
    kinda looks like every frame, provided 3cade_08 jump is run

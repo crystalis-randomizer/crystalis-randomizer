@@ -72,5 +72,54 @@ There are 196 references (102 writes) to $0340,x (speed) or $0360,x (direction)
  - all of these will need updating...!
 
 
+# ObjectDirection\|\$0?3[67][0-9a-f]  in 00000..20000
+ * call VectorBetweenObjectsXY then read $20 => $360,x
+    - vampire 7, kelbeqsue 1
+ * call VectorBetweenObjectsXY then transform => $360,x
+    - (<<1) (+/-1): _1e96b (kelby rock? action) - 16-dir
+    - (<<1) (+1) (+dir) (&f) (index _1ed86 +/-1,0) (+dir) (&f): sabera 1
+    - (<<1): sabera 1 
+ * read to A before calling ComputeDisplacementVector
+    - insect 1 (_1e8ff), kelbesque 1 (_1ea37), sabera 1, mado 3 (_1eeba)
+    
+ * reverse 8-dir
+    - _1e602, kelbesque 3, 
+ * initialize to zero
+    - sabera 0
+ * hardcode 2 or 6
+    - insect 1
+ * set to ~random 16-dir from a table
+    - mado 3 (table 1ef28)
+ * special handling for kelbesque 2
+    - or w/ #$04
+    - write from data table _1ea97 (1, 0, or 7) or _1ea37 (3, 4, or 5) or hardcoded 0
+ * _1eb96 (object action 64, kelby rock)
+    - adds $20<<1 from a much earlier VectorBetweenObjectsXY (to switch to 16-dir?)
+ * _1ed96 (sabera 1)
+    - added to ($620>>4)-2, (&f) => y (direction) then call AdHocSpawnObject
+ * copy from $1f
+    - mado 5, initializing half the adhoc-spawned shurikens (other half from Y)
+ * karmine
+    - (karmine 1) set to 0 or 4 from $301<<2 (`and #$06` might as well be `and #$04`??)
+    - (karmine 2) set to exactly 8?
+
+NOTE: gave up at Draygon 1
+NOTE: also need to pay attention to _all_ AdHocSpawnObject calls -> how is Y initialized?
+
 VectorBetweenObjectsXY =>
  - will want to have a high-res version of this?
+
+
+
+============
+
+How does knockback play into $360?
+ - PlayerHit_CalculateDamage zeroes out the high nibble of 361 and copies 3[46]1 to 3[46]0
+ - PlayerHit_ApplyKnockback temporarily replaces player's speed/dir with 2/dir[obj] to bump,
+   then restores
+ - _35535 temporarily swaps direction to south for statue bump
+ - KnockbackObject puts the 8-dir of the $11 object into the upper nibble of $10's dir
+    - it's called in three places:
+      (1) AttackEnemy_Immune, (2) AttackEnemy_DealDamage, (3) PlayerHit_CalculateDamage
+    - the use of x vs y is swapped in these, unfortunately, so there's extra code to save
+      and restore...

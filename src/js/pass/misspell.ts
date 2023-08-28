@@ -75,7 +75,7 @@ const MONSTERS: ReadonlyMap<string, string[]> = new Map([
   ['Robot Sentry', ['C-3PO', 'T-1000', 'Johnny 5']],
   ['Robot Enforcer', ['ED-209', 'R2-D2', 'Agent Smith']],
   ['Robocopter', ['Cylon Drone', 'Megatron', 'Roflcopter', 'Roflcopter', 'Roflcopter']],
-  ['DYNA', ['GLaDOS', 'HAL-9000', 'Multivac']],
+  ['DYNA', ['GLaDOS', 'HAL-9000', 'Multivac', 'TASBot']],
   ['Vampire', ['Captain Telefrag', 'Count Dracula']],
 ]);
 

@@ -19,7 +19,7 @@ disassembly.  This is done with the `js65` tool and can be automated via
 npm install
 make target/release/bin/js65
 # NOTE: install to somewhere in $PATH (e.g. ~/bin)
-install -m 755 target/release/bin/js65.js ~/bin/js65
+install -m 755 target/release/bin/js65 ~/bin/js65
 ```
 
 This builds and installs `js65` somewhere accessible.  Next,

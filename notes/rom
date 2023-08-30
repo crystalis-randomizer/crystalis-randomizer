@@ -22,3 +22,7 @@ Broken out by segment
  * 30..37 - plane 6, unused
  * 38..3d - plane 7, new/relocated material
  * 3e, 3f - fixed pages (DO NOT USE DIRECTLY)
+
+ 3d used by stat tracker
+ 38 used in expandprg.s
+ 37 used for large fixed tables by speed.s

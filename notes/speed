@@ -1,3 +1,60 @@
+64-direction trig tables are going to be laggy, and will slow down
+the inner loop.  Better approach would be to _decouple_ the speed
+from the direction.
+
+Current speeds:
+ 0 - 0.5 px/fr
+ 1 - 0.75
+ 2 - 1.0
+ 3 - 1.25
+ 4 - 1.5
+ 5 - 1.75
+ 6 - 2.0
+ 7 - 2.5
+ 8 - 5.0
+ 9 - 6.5 [could maybe move to 6.25?]
+ A - 8.0 [sword shots only, except thunder]
+ B - 7.0 (16-dir)
+ C - 1.75 (16-dir)
+ D - 2.5 (16-dir)
+ E - 3.0 (16-dir)
+ F - 2.0 (16-dir) [unused?]
+
+New proposal:
+ 0 - 0.5   [drop??? - used by tomatoes when not rolling]
+ 1 - 0.75
+ 2 - 1.0
+ 3 - 1.25
+ 4 - 1.5
+ 5 - 1.75
+ 6 - 2.0
+ 7 - 2.5
+ 8 - 3.0
+ 9 - [3.5]
+ A - [4.0]
+ B - [4.5]
+ C - 5.0
+ D - [5.5]
+ E - [6.0]  [drop?]
+ F - 6.5    [replace with 6.25?]
+///////// no room for the last 3...
+ ? - 7.0
+ ? - [7.5]  [drop?]
+ ? - 8.0
+
+I added 6 speeds, but removed 3 redundant 16-dir speeds (1.75, 2.5, and 2.0)
+Can we get away with expanding speed to 5 bits?
+
+Store 16-dir status in DIRECTION:80 rather than using certain speeds?
+ - 16-dir objects will _never_ have knockback, so upper nibble is free
+ - (given this, we _could_ make it bigger still - how much can we precompute?
+    we could take up 2 full rom banks if we needed to?)
+
+
+
+
+=============== OLD NOTES ==============
+
 bits: 7 => knockback
       5,6 => direction resolution (8/16/32/64)
       0..4 => speed

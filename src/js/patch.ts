@@ -113,6 +113,7 @@ function defines(flags: FlagSet,
     _DISABLE_WARP_BOOTS_REUSE: flags.disableShopGlitch(),
     _DISABLE_WILD_WARP: false,
     _EXPAND_PRG: EXPAND_PRG,
+    _EXPAND_SPEEDS: true,
     _EXTRA_EXTENDED_SCREENS: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
     _FIX_BLIZZARD_SPAWN: true,

@@ -1,6 +1,13 @@
 import {Rom} from './rom'
 
 export default (nes) => {
+  window.watchLag = (interval = 1000) => {
+    setInterval(() => {
+      const [l, t] = nes.getLagFrames();
+      console.log(`Lag: ${(l/t*100).toFixed(2)}%`);
+    }, interval);
+  };
+
   window.onspawn = () => {};
   window.onspawned = () => {};
   window.onlocation = () => {};

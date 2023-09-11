@@ -19,19 +19,27 @@ FREE "1a" [$8480,$8b7f)
 ;;; Do the speed conversion, once per branch.  Leaves DDDS.SSSS in A
 .macro CONVERT_SPEED
         pha
-          lda SpeedConversionTable,y
+          ;; Check for slow terrain
+          lda $0340,x
+          bvc +
+            dey
+            dey
+          ;; Convert speed to new system
++         lda SpeedConversionTable,y
           sta $10
+          ;; Store step counter in $11
           lda $0480,x
           and #$0f
           sta $11
         pla
+        ;; OR the (shifted) direction into the speed to get trig table index
         ora $10
 .endmacro
 
 ;;; Positive trig function
 .macro TRIGP table, mem
         ;; At this point, A has index into one of the trig tables
-        ;; But we may need to negate the result (or maybe invert the argument?)
+        ;; Read the component and add the fraction to the whole part
         tay
         lda table,y
         pha
@@ -52,7 +60,10 @@ FREE "1a" [$8480,$8b7f)
 ;;; Negative trig function
 .macro TRIGN table, mem
         ;; At this point, A has index into one of the trig tables
-        ;; But we may need to negate the result (or maybe invert the argument?)
+        ;; Read the component, then negate and add the fraction (inverse carry)
+        ;; This is effectively a two's complement but rather than always
+        ;; incrementing and then somtimes decrementing, we just conditionally
+        ;; increment on the opposite condition (carry clear)
         tay
         lda table,y
         pha
@@ -74,6 +85,15 @@ FREE "1a" [$8480,$8b7f)
 
 
 .reloc
+;;; NOTE: can't use a cheap local because of the named label below... :-(
+cdv_q2:         ; Put this before the main routine to keep jumps in bounds
+        ;; east -> south (dx = +cos, dy = +sin)
+        CONVERT_SPEED
+        pha
+        TRIGP CosTable, $30
+        pla
+        TRIGP SinTable, $31
+        rts
 OVERRIDE ; !!!
 ComputeDisplacementVector:
 ;;; Inputs:
@@ -93,22 +113,22 @@ ComputeDisplacementVector:
         bcs +                   ; if SPD < $b...
           asl                   ;   then it's 8-dir, so shift an extra time
 +       asl                     ; direction is now 32-dir
-        ;; Shift direction to upper nibble
+        ;; Shift direction to MSB
         asl
         asl
         asl
+        ;; Shift off the top two bits to figure out which quadrant we're in
         asl
         bcs @q3
         asl
-        bcs @q2
-        jmp @q1
-@q2:
-        ;; east -> south (dx = +cos, dy = +sin)
+        bcs cdv_q2
+@q1:
+        ;; north -> east (dx = +sin, dy = -cos)
         CONVERT_SPEED
         pha
-        TRIGP CosTable, $30
+        TRIGP SinTable, $30
         pla
-        TRIGP SinTable, $31
+        TRIGN CosTable, $31
         rts
 @q3:
         asl
@@ -127,14 +147,6 @@ ComputeDisplacementVector:
         TRIGN CosTable, $30
         pla
         TRIGN SinTable, $31
-        rts
-@q1:
-        ;; north -> east (dx = +sin, dy = -cos)
-        CONVERT_SPEED
-        pha
-        TRIGP SinTable, $30
-        pla
-        TRIGN CosTable, $31
         rts
 
 .reloc

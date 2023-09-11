@@ -24,6 +24,17 @@ NOTE: we can possibly just store 272 bytes (17*16) and do an EOR in the cos
    6-bit arctan table (256 bytes, all 0 or 1 here)
 
 
+Trial results: 32-dir seems to work pretty well, only introducing a small amount
+of lag.  We can maybe (over)compensate and reduce lag by updating
+ObjectActionJump_57 to use a cached version of ComputeDisplacementVector.
+We can utilize $640,x .. $6a0,x to store the cached versions, initializing
+with some simple signal to invalidate them (i.e. require one to be negative,
+and zero it out when it's invalid).  We then need to change OAJ_16 (and maybe
+36, but that's just crystalis shot and shouldn't matter) to invalidate the cache
+whenever it changes direction - and also possibly stagger the direction changes
+across frames rather than updating 10 caches all at once?
+
+
 ============= OLD NOTES 2023 AUG ==============
 
 64-direction trig tables are going to be laggy, and will slow down

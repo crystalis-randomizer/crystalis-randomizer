@@ -8,6 +8,7 @@ BROTLI = $(BLDDIR)/brotli
 EXTRACT_REFS = $(BLDDIR)/extract-refs
 EXTRACT_SYMBOLS = $(BLDDIR)/extract-symbols
 DATADIR = $(BLDDIR)/data
+NODE = node
 
 # Flags
 NODEFLAGS   = --bundle --platform=node
@@ -39,10 +40,12 @@ STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
 JS_FILES = $(shell find src/js -type f -name '*.[tj]s')
 ASM_JS_FILES = $(shell find src/js/asm -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
-ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
+ASM_FILE_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
+ASM_GENERATED = $(DATADIR)/speedtables.s
+ASM_COPIES = $(ASM_FILE_COPIES) $(ASM_GENERATED)
 NSS_FILES = $(shell find src/images/spritesheets -type f -name '*.nss')
 NSS_COPIES = $(NSS_FILES:src/images/spritesheets/%=$(DATADIR)/%)
-REFS_JSON = $(BLDDIR)/data/refs.json
+REFS_JSON = $(DATADIR)/refs.json
 SYMBOL_TABLE = $(BLDDIR)/symbols.json
 DATA_TAR = $(BLDDIR)/data.tar
 DATA_TBR = $(BLDDIR)/data.tar.br
@@ -111,7 +114,10 @@ $(REL_STATIC): target/release/%: src/%
 	@mkdir -p $(@D)
 	cp $< $@
 
-$(ASM_COPIES): target/build/data/%: src/asm/%
+$(DATADIR)/speedtables.s: scripts/compute-speed-tables.js
+	$(NODE) $< > $@
+
+$(ASM_FILE_COPIES): target/build/data/%: src/asm/%
 	@mkdir -p $(@D)
 	cp $< $@
 $(NSS_COPIES): target/build/data/%: src/images/spritesheets/%
@@ -121,8 +127,8 @@ $(NSS_COPIES): target/build/data/%: src/images/spritesheets/%
 $(REFS_JSON): vanilla/crystalis.s $(EXTRACT_REFS) $(SYMBOL_TABLE)
 	$(EXTRACT_REFS) -s $(SYMBOL_TABLE) -o $@ $<
 
-$(SYMBOL_TABLE): $(ASM_FILES) $(EXTRACT_SYMBOLS)
-	$(EXTRACT_SYMBOLS) -o $@ $(ASM_FILES)
+$(SYMBOL_TABLE): $(ASM_COPIES) $(EXTRACT_SYMBOLS)
+	$(EXTRACT_SYMBOLS) -o $@ $(ASM_COPIES)
 
 $(WEB_JS_DBG): $(JS_FILES) $(DATA_TBR)
 	rm -f $(DBGDIR)/js/*-????????.js

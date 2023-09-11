@@ -1,3 +1,31 @@
+Even the non-trig versions are way too laggy, but we can maybe
+fix this by doing large branches.  Two main approaches, depending
+on whether we're going for 32 or 64 directions.
+
+32-dir, 32-speed:
+ - only need 8 frames of fraction data
+ - speeds go smoothly in 1/4 increments from speed(0) = 1/2 to speed(30) = 8,
+   potentially leaving eight unused bytes for speed 31
+ - store two 256-byte tables for speed(i)*cos(dir(j)) and speed(i)*sin(dir(j))
+   vary direction slower, speed fastest
+ - slice off the upper two bits of direction and branch -> 3 bits for table
+ - trig tables store a "component": %fff0wwww where fff is the 3-bit fraction
+   and wwww is an unsigned whole number from 0 to 8
+ - fraction table transposed, loaded in from step counter at start
+   - only 8 bytes total for fracs since they're packed
+ - store a "upper-nibble powers-of-two" table (maybe embedded in sin/cos?
+NOTE: we can possibly just store 272 bytes (17*16) and do an EOR in the cos
+      branches, with a different base address
+
+64-dir, 32-speed:
+ - similar to others, but branch one more time: 4 sin/cos tables that store
+   pi/4 each (rather than pi/2).
+ - rather than storing packed fractions, we can overload the sign bit of the
+   6-bit arctan table (256 bytes, all 0 or 1 here)
+
+
+============= OLD NOTES 2023 AUG ==============
+
 64-direction trig tables are going to be laggy, and will slow down
 the inner loop.  Better approach would be to _decouple_ the speed
 from the direction.
@@ -53,7 +81,7 @@ Store 16-dir status in DIRECTION:80 rather than using certain speeds?
 
 
 
-=============== OLD NOTES ==============
+=============== OLD NOTES 2022 ==============
 
 bits: 7 => knockback
       5,6 => direction resolution (8/16/32/64)

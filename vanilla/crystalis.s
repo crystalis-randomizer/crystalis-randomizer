@@ -48989,8 +48989,15 @@ DisplacementToDirectionTable:
 ;;; --------------------------------
 ;;; Point object X toward object Y.
 ;;; Returns direction in $20 and distance in $21.
+;;; This appears to do some bad/funny match around a delta of 1 screen in
+;;; either the horizontal or vertical directions.  When _either_ delta
+;;; decreases to a single screen, that single component delta is (effectively)
+;;; multiplied by 16 to get a delta in terms of tiles, but this is independent
+;;; of the other component, so the direction and distance both end up being
+;;; pretty meaningless (i.e. artificially more diagonal) in these cases.
 .org $8409
 VectorBetweenObjectsXY:
+        ;; $10 <- dx(lo), $11 <- dx(hi)
         <@34409@>
         <@3440a ObjectXLo@>
         <@3440d ObjXLo@>
@@ -48999,15 +49006,18 @@ VectorBetweenObjectsXY:
         <@34414 ObjXHi@>
         <@34416@>
         <@34418 +@> ; $3441c
-        ;; if dx < 0 then take the ones complement (so 0 and -1 both => 0)
+        ;; if dx(hi) < 0 then take the ones complement (so 0 and -1 both => 0)
          <@3441a@>
 +       <@3441c +@> ; $34422
         ;; x coordinates don't line up - so $11 definitely != 0
           <@3441e@>
           <@34420 ++@> ; $34430 uncond
           ;; ----
-        ;; hi x coordinates are equal - check lo, extending the sign bit of
-        ;; xhi as we shift it right four bits.
+        ;; objects are within a single screen of each other (i.e. dx(hi) == 0
+        ;; or dx(hi) == -1, since both matched above)  We load the low byte
+        ;; into A, shifting it right so that it's effectively left-shifted
+        ;; compared to the other branch that's comparing dx(hi); we pull sign
+        ;; bits from $11 (which is either #$00 or #$FF).
 +        <@34422@>
          <@34424@>
          <@34426@>
@@ -49019,8 +49029,8 @@ VectorBetweenObjectsXY:
          <@3442f@>
         ;; At this point A is some measure of dx (but might be units of screens
         ;; or tiles, if within a screen). This ensures that it is only a single
-        ;; nibble, plus sign bit.  So shift it to the range [0, 1f] where 10 is
-        ;; dead center (zero).
+        ;; nibble, plus sign bit.  So translate it to the range [0, 1f] where 10
+        ;; is dead center (zero).
 ++      <@34430@>
         <@34431@>
         <@34433@>
@@ -49037,6 +49047,8 @@ VectorBetweenObjectsXY:
          <@34447@>
 +       <@34449 +@> ; $34458
         ;; yhi diff is nonzero: shift hi left 1 nibble -> $11, lo right 1 nibble -> y
+        ;; This is different from the dx version because we need the dy nibble
+        ;; to be the upper nibble to OR into it.
          <@3444b@>
          <@3444c@>
          <@3444d@>
@@ -54767,6 +54779,7 @@ ObjectActionJump_57:
         ;; ----
 +       <@370f3 WriteObjectCoordinatesFrom_34_37@>
 ;;; --------------------------------
+;;; Mado shurikens
 .org $b0f6
 ObjectActionJump_16:
         <@370f6@>
@@ -55251,10 +55264,10 @@ _374e5:
           <@374fa@>
 +        <@374fd@>
          <@37500@>
-         <@37501 DataTable_37550@>
+         <@37501 FlyerSpeedSelector@>  ; $37550
          <@37504@>
          <@37507@>
-         <@37508 DataTable_3754c@>
+         <@37508 FlyerSpeedTable@>  ; $3754c
          <@3750b@>
 ++      <@3750e@>
         <@37511@>
@@ -55283,10 +55296,18 @@ _374e5:
         ;; ----
         <@3754b@>
 ;;; --------------------------------
+;;; Flyer speeds come from this table, which includes
+;;; "bat out of hell" mode ($0c), but is otherwise
+;;; rather slow.  The "selector" is an indirect index
+;;; into the table, which is indexed by and read/written
+;;; to $600,x (it's confusing).  I think it gets decreased
+;;; whenever the flyer actually turns, and increased when
+;;; it's going straight.  This should make it accelerate
+;;; until it gets closer to the player?
 .org $b54c
-DataTable_3754c: 
+FlyerSpeedTable:
         .byte [@3754c@],[@3754d@],[@3754e@],[@3754f@]
-DataTable_37550: 
+FlyerSpeedSelector:
         .byte [@37550@],[@37551@],[@37552@],[@37553@],[@37554@],[@37555@]
 DataTable_37556: 
         .byte [@37556@],[@37557@],[@37558@],[@37559@]

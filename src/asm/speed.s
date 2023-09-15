@@ -25,6 +25,8 @@ FREE "1a" [$8480,$8b7f)
           bpl +
             dey
             dey
+            bpl +
+              ldy #$00
           ;; Convert speed to new system
 +         lda SpeedConversionTable,y
           sta $10

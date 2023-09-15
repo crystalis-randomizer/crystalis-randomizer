@@ -131,6 +131,7 @@ class Message {
   //  - at most four lines per message box
   // If any violations are found, the entire message is reflowed.
   fixText(): void {
+    if (this.mid === '18:04') debugger;
     if (this.checkText()) return;
     const parts: string[] = [];
     let lineNum = 0;

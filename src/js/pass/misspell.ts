@@ -142,6 +142,12 @@ function replaceCharacterName(rom: Rom, replaceFn: ReplaceFn) {
       msg.text = replaceFn(msg.text);
     }
   }
+  for (const arr of [rom.messages.personNames, rom.messages.itemNames]) {
+    for (let i = 0; i < arr.length; i++) {
+      if (!arr[i]) continue;
+      arr[i] = replaceFn(arr[i]);
+    }
+  }
   rom.messages.personNames = rom.messages.personNames.map(replaceFn);
   replaceEnemyName(rom, replaceFn);
 }

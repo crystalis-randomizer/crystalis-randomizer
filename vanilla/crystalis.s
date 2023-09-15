@@ -103,13 +103,17 @@
 .define LookingAt               $0623 ; slot index currently looking at
 
 .define PlayerMetaspriteBase    $0301
+.define PlayerSpeed             $0340
+.define PlayerDirection         $0360
 .define PlayerMaxHP             $03c0
 .define PlayerHP                $03c1
 .define PlayerAttack            $03e1
 .define PlayerArmorDef          $0401
 .define PlayerShieldDef         $0400
 .define PlayerLevel             $0421
+.define PlayerSwordSwingTimer   $0600
 .define PlayerJumpDisplacement  $0620
+.define PlayerJumpDirection     $0640
 .define PlayerSwordChargeAmount $06c0
 .define PlayerMoney             $0702 ; 2 bytes
 .define PlayerExp               $0704 ; 2 bytes
@@ -320,14 +324,16 @@
 .define SWORD_CRYSTALIS   $05
 
 ;;; Magic stored in $712 is just the low nibble of the inventory version
-.define MAGIC_REFRESH     $01
-.define MAGIC_PARALYSIS   $02
-.define MAGIC_TELEPATHY   $03
-.define MAGIC_TELEPORT    $04
-.define MAGIC_RECOVER     $05
-.define MAGIC_BARRIER     $06
-.define MAGIC_CHANGE      $07
-.define MAGIC_FLIGHT      $08
+.define MAGIC_NONE           $00
+.define MAGIC_REFRESH        $01
+.define MAGIC_PARALYSIS      $02
+.define MAGIC_TELEPATHY      $03
+.define MAGIC_TELEPORT       $04
+.define MAGIC_RECOVER        $05
+.define MAGIC_BARRIER        $06
+.define MAGIC_CHANGE         $07
+.define MAGIC_FLIGHT         $08
+.define MAGIC_RABBIT_BOOTS   $09
 
 ;;; Items stored in $715 and $716 are $1c less than inventory numbers
 .define ITEM_MEDICAL_HERB     $01
@@ -541,6 +547,7 @@
 .define LOC_PORTOA               $50
 .define LOC_FISHERMANS_ISLAND    $51
 .define LOC_MESIA_SHRINE         $52
+.define LOC_TOWER_ENTRANCE       $58
 .define LOC_DYNA                 $5f
 .define LOC_ANGRY_SEA            $60
 .define LOC_UNDERGROUND_CHANNEL  $64
@@ -7930,13 +7937,13 @@ MapData:                         ; Not quite sure where this is going - it's use
         .word (MapData_55) ; 55 WaterfallCave2
         .word (MapData_56) ; 56 WaterfallCave3
         .word (MapData_57) ; 57 WaterfallCave4
-        .word (MapData_58) ; 58
-        .word (MapData_59) ; 59
-        .word (MapData_5a) ; 5a
-        .word (MapData_5b) ; 5b
-        .word (MapData_5c) ; 5c
-        .word (MapData_5d) ; 5d
-        .word (MapData_5e) ; 5e
+        .word (MapData_58) ; 58 TowerEntrance
+        .word (MapData_59) ; 59 Tower1
+        .word (MapData_5a) ; 5a Tower2
+        .word (MapData_5b) ; 5b Tower3
+        .word (MapData_5c) ; 5c TowerOutsideMesia
+        .word (MapData_5d) ; 5d TowerOutsideDyna
+        .word (MapData_5e) ; 5e TowerMesia
         .word (MapData_5f) ; 5f Dyna
         .word (MapData_60) ; 60 AngrySea
         .word (MapData_61) ; 61 BoatHouse
@@ -52064,143 +52071,214 @@ FallDisplacements:
         .byte [@35d6d@],[@35d6e@],[@35d6f@],[@35d70@],[@35d71@],[@35d72@],[@35d73@],[@35d74@],[@35d75@],[@35d76@],[@35d77@],[@35d78@],[@35d79@],[@35d7a@],[@35d7b@],[@35d7c@]
         .byte [@35d7d@]
 .org $9d7e
-DataTable_35d7e:
+SwordChargeMultiplyBy8:           ; 35d7e
         .byte [@35d7e@],[@35d7f@],[@35d80@]
 ;;; --------------------------------
 .org $9d81
+;;; Zero out controller input and forces player to walk up.  This is
+;;; set by ObjectActionJump_70_01 after D2 is defeated to force-walk
+;;; the player into the tower teleporter.  Once we get into the tower,
+;;; the actionscript is reset to 3 like normal.
 ObjectActionJump_02:
+        ;; X=0 always
         <@35d81@>
         <@35d83@>
         <@35d85@>
         <@35d87@>
         <@35d89@>
+        ;; Check location against tower entrance
         <@35d8b@>
-        <@35d8d@>
-        <@35d8f +@> ; $35d9a
-        <@35d91@>
-        <@35d93@>
-        <@35d96@>
-        <@35d98@>
-ObjectActionJump_03:
-        ;; This runs on X=0
-+       <@35d9a PlayerStatus@>
-        <@35d9d +@> ; $35db7 - changed
-        <@35d9f@>
-        <@35da1@>
-        <@35da3 +@> ; $35db7
-        <@35da5@>
-        <@35da7@>
-        <@35daa@>
-        <@35dac@>
-        <@35daf@>
-        <@35db0 ++@> ; $35db9
-        <@35db2@>
-        <@35db5 ++@> ; $35db9
-+       <@35db7@>
+        <@35d8d LOC_TOWER_ENTRANCE@>
+        <@35d8f ObjectActionJump_03@> ; $35d9a
+         ;; If we're at the tower entrance, switch to object action 3
+         <@35d91@>
+         <@35d93@>
+         <@35d96@>               ; Down
+         <@35d98@>                ; Direction currently being pressed
+
+;;; Normal player actionscript for the vast majority of the game, except the
+;;; brief period where the player is force-walked into the tower teleporter.
+;;; This routine handles all the "every frame" checks on the player, updating
+;;; jumps, speed, etc.
+ObjectActionJump_03:  ; This runs on X=0
+        ;; First update the metasprite $300
+        <@35d9a PlayerStatus@>
+        <@35d9d +@> ; $35db7 - Player is changed -> metasprite gets 4c
+         ;; Player is not changed, check for slime
+         <@35d9f@>
+         <@35da1@>
+         <@35da3 +@> ; $35db7 - Player is nuper'd -> metasprite gets 4c
+          ;; Player is NOT nuper'd
+          <@35da5@>               ; Dpad direction currently pressed
+          <@35da7@>
+          <@35daa@>
+          <@35dac@>           ; Check 380:40 (slow terrain)
+          <@35daf@>
+          <@35db0 ++@> ; $35db9
+           ;; Player is walking in slow terrain - check the jump position
+           <@35db2 PlayerJumpDisplacement@>
+            <@35db5 ++@> ; $35db9
+         ;; Player is changed, nuper'd, or (in slow terrain AND not jumping)
++        <@35db7@>
+        ;; At this point, Y is either $a7 or $4c.  This probably points
+        ;; to some sort of metasprite ID.
 ++      <@35db9@>
-        <@35dba@>
-        <@35dbd@>
+        <@35dba@>             ; Metasprite ID
+        ;; Check jump position
+        <@35dbd PlayerJumpDisplacement@>
         <@35dc0 ++@> ; $35de1
-        <@35dc2@>
-        <@35dc5@>
-        <@35dc8@>
-        <@35dca +@> ; $35dd1
-        <@35dcc SFX_LANDING@>
-        <@35dce StartAudioTrack@>
-+       <@35dd1@>
-        <@35dd4@>
-        <@35dd6 ++@> ; $35de1
-        <@35dd8@>
-        <@35dda ++@> ; $35de1
-        <@35ddc@>
-        <@35ddf ++@> ; $35de1
-++      <@35de1 _36022@>
+         ;; Currently in the middle of a jump
+         <@35dc2 PlayerJumpDisplacement@>     ; decrease jump position by 1
+         <@35dc5 PlayerJumpDisplacement@>
+         <@35dc8@>               ; check newly-decreased position
+         <@35dca +@> ; $35dd1
+          ;; position exactly 11: play the landing sound
+          <@35dcc SFX_LANDING@>
+          <@35dce StartAudioTrack@>
+         ;; Check jump position against 1e (starts at 20, 1e is
+         ;; still on the way up, before peak between 12 and 0d)
++        <@35dd1 PlayerJumpDisplacement@>
+         <@35dd4@>
+         <@35dd6 ++@> ; $35de1
+          ;; jump is not yet 1e: first two frames of jump
+          <@35dd8@>               ; current dpad
+          <@35dda ++@> ; $35de1
+           ;; player is pressing a direction
+           <@35ddc@>          ; store the pressed direction in 640
+           <@35ddf ++@> ; $35de1 - noop
+        ;; Done updating the jump position, etc.  Now resolve A button
+        ;; effects by calling into the UseMagicJump table (after checking
+        ;; various eligibility conditions).  Note that this also handles
+        ;; initiating a rabbit boots jump.
+++      <@35de1 ResolveAButtonEffect@>  ; 36022
+        ;; Resolve the B button (i.e. swing the sword).
+        ;; First check if we're changed
         <@35de4 PlayerStatus@>
-        <@35de7 ++@> ; $35e39
+         <@35de7 ++@> ; $35e39 - player is changed, skip sword swing
         <@35de9@>
         <@35deb@>
-        <@35ded ++@> ; $35e39
-        <@35def@>
+         <@35ded ++@> ; $35e39 - player is nuper'd, skip sword swing
+        <@35def@> ; currently-pressed bytton
         <@35df1@>
-        <@35df3 ++@> ; $35e39
-        ;; holding down B
-        <@35df5@>
+         <@35df3 ++@> ; $35e39 - B button is not currently pressed, skip sword swing
+        ;; currently holding down B button
+        <@35df5 PlayerSwordSwingTimer@>     ; countdown timer for sword swing
         <@35df8@>
         <@35dfa +@> ; $35e03
-        <@35dfc@>
-        <@35dfe +@> ; $35e03
-        <@35e00 ++@> ; $35e39
-        ;; ----
+         ;; carry set = no borrow -> not much time has passed since last swing
+         <@35dfc@>
+         <@35dfe +@> ; $35e03 - exactly $11 -> button pressed (earlier) but not released
+          <@35e00 ++@> ; $35e39 - too soon since last swing, skip sword swing
+          ;;  ----
+        ;; Sword swing timing/status checked out, so initialize or continue
+        ;; sword swing/charge
 +       <@35e03 EquippedSword@>
-        <@35e06 ++@> ; $35e39
+         <@35e06 ++@> ; $35e39 - no sword equipped, so skip swing
+        ;; Initialize sword swing timer to $12, but it'll decrement back to $11
+        ;; this frame.  It effectively stays at $11 until button is unpressed.
         <@35e08@>
-        <@35e0a@>
-        <@35e0d@>
+        <@35e0a PlayerSwordSwingTimer@>
+        ;; Update the sword charge amount.  Check the global timer and only
+        ;; proceed every 4th frame (otherwise, skip ahead)
+        <@35e0d GlobalCounter@>
         <@35e0f@>
         <@35e11 ++@> ; $35e39
+         ;; Every 4th frame holding B button: increase charge level
          <@35e13 PlayerSwordChargeAmount@>
          <@35e16 PlayerSwordChargeAmount@>
          <@35e19@>
          <@35e1b +@> ; $35e22
+          ;; Sword charge level 8 is the start of level 1
+          ;; 6c1 tracks the sword charge rings animation coming in from the
+          ;; outside of the screen.  It counts down from $e to 0, at which point
+          ;; it's in a steady state circling around the player.
           <@35e1d@>
           <@35e1f@>
 +        <@35e22@>
          <@35e24 +@> ; $35e2b
+          ;; Every 8 fractional charge level increments the actual charge level
+          ;; and plays a sound to indicate the level increased.
           <@35e26 SFX_SWORD_CHARGED@>
           <@35e28 StartAudioTrack@>
+         ;; Clamp the charge at the max level given the equipment
 +        <@35e2b MaxChargeLevel@>
-         <@35e2e DataTable_35d7e@>
-         <@35e31 ObjectDirMetaspriteBase@>
+         <@35e2e SwordChargeMultiplyBy8@>
+         <@35e31 PlayerSwordChargeAmount@>
          <@35e34 ++@> ; $35e39
-          <@35e36 ObjectDirMetaspriteBase@>
-++      <@35e39@>
-        <@35e3c +++@> ; $35e6f
+          <@35e36 PlayerSwordChargeAmount@>
+        ;; Update the sword swing timer
+++      <@35e39 PlayerSwordSwingTimer@>
+         <@35e3c +++@> ; $35e6f
         <@35e3e@>
         <@35e40 +@> ; $35e57
-        <@35e42@>
-        <@35e44 +@> ; $35e57
-        <@35e46@>
-        <@35e48 +++@> ; $35e6f
-        <@35e4a@>
-        <@35e4d +@> ; $35e57
-        <@35e4f@>
-        <@35e51@>
-        <@35e54 ++@> ; $35e62
-        ;; ----
+         ;; Just reset the sword swing timer this frame (i.e. holding
+         ;; the B button right now).
+         <@35e42@>                ; currently pressed buttons
+         <@35e44 +@> ; $35e57 - look at :40 (button B)
+          ;; B currently being pressed - are we pressing a direction?
+          <@35e46@>               ; currently pressed direction (or FF)
+           <@35e48 +++@> ; $35e6f     ; if pressing a direction, then skip entirely
+          ;; No direction currently pressed
+          <@35e4a PlayerJumpDisplacement@>
+          <@35e4d +@> ; $35e57
+           ;; Player is mid-jump?  Set metasprite to 0..3
+           <@35e4f@>
+           <@35e51@>
+           <@35e54 ++@> ; $35e62
+           ;; ----
+        ;; Store the sword swing timer as the animation frame - we can get here
+        ;; if either (1) sword swing timer is nonzero but also not $12 (i.e.
+        ;; no longer holding the B button); or (2) B is not being held; or (3)
+        ;; player is not in the air.
 +       <@35e57@>
+        ;; Set metasprite to 4..7 while swinging sword
         <@35e5a@>
         <@35e5c@>
-        <@35e5f@>
-++      <@35e62@>
-        <@35e65 +@> ; $35e85
+        ;; Clock the sword swing timer
+        <@35e5f PlayerSwordSwingTimer@>
+        ;; Got here either via the `+` above, or else from the `jmp ++` for
+        ;; mid-jump sprite update.
+        ;; Check the jump status
+++      <@35e62 PlayerJumpDisplacement@>
+         <@35e65 +@> ; $35e85
+        ;; Not in a jump - hardcode terrain susceptibility to #$32 ??
         <@35e67@>
-        <@35e69@>
+        <@35e69 ObjectTerrainSusceptibility@>
         <@35e6c +@> ; $35e85
         ;; ----
+        ;; Sword swing timer is zero or pressing a direction
+        ;; Set player metasprite to 0..3
 +++     <@35e6f@>
         <@35e71@>
-        <@35e74@>
+        ;; Update terrain susceptibility based on jump to either 32 or 34
+        <@35e74 PlayerJumpDisplacement@>
         <@35e77 +@> ; $35e85
-        <@35e79@>
-        <@35e7b@>
-        <@35e7e@>
-        <@35e80 +@> ; $35e85
-        <@35e82@>
+         ;; Player is on the ground: susceptibility := 32
+         <@35e79@>
+         <@35e7b ObjectTerrainSusceptibility@>
+         ;; Check if we're walking (dpad pressed) on the ground
+         <@35e7e@>
+         <@35e80 +@> ; $35e85
+          ;; Only clock the animation counter while on the ground _and_ moving
+          <@35e82@>
+        ;; Check whether riding on dolphin
 +       <@35e85 PlayerStatus@>
         <@35e88 +@> ; $35e8f
-        <@35e8a@>
-        <@35e8c@>
-+       <@35e8f@>
+         ;; On dolphin: terrain susceptibility := 34
+         <@35e8a@>
+         <@35e8c ObjectTerrainSusceptibility@>
++       <@35e8f PlayerJumpDisplacement@>
         <@35e92 +@> ; $35e9e
-        <@35e94@>
+        <@35e94 PlayerJumpDirection@>
         <@35e97@>
         <@35e99 FallDisplacements@>
         <@35e9c ++@> ; $35eef
-+       <@35e9e@>
++       <@35e9e PlayerDirection@>
         <@35ea1@>
         <@35ea3@>
         ;; If we're not moving, this is where we bail out
         <@35ea5 ++@> ; $35eef
+        ;; Handle directional input
         <@35ea7@>
         <@35eaa +@> ; $35eba
         <@35eac@>
@@ -52238,11 +52316,11 @@ ObjectActionJump_03:
          <@35ef8@>
 +       <@35efa ReadObjectCoordinatesInto_34_37@>
         <@35efd@>
-        <@35eff@>
+        <@35eff PlayerJumpDisplacement@>
         <@35f02 +@> ; $35f06
          <@35f04@> ; update $380,x only if $620,x is zero
 +       <@35f06 CheckTerrainUnderObject@>
-        <@35f09@>
+        <@35f09 PlayerJumpDisplacement@>
         <@35f0c@>
         <@35f0e +@> ; $35f37
          <@35f10@>
@@ -52251,9 +52329,9 @@ ObjectActionJump_03:
          <@35f17 +@> ; $35f37
           <@35f19@>
           <@35f1c@>
-          <@35f1f@>
+          <@35f1f PlayerJumpDisplacement@>
           <@35f22 +@> ; $35f37
-           <@35f24@>
+           <@35f24 PlayerJumpDisplacement@>
            <@35f27 PlayerMP@>
            <@35f2a +@> ; $35f37
             <@35f2c@>
@@ -52261,7 +52339,7 @@ ObjectActionJump_03:
             <@35f30 +@> ; $35f37
              <@35f32@>
              <@35f34 SpendMPOrDoubleReturn@>
-+       <@35f37@>
++       <@35f37 PlayerJumpDisplacement@>
         <@35f3a +@> ; $35f4c
         <@35f3c@>
         <@35f3e@>
@@ -52305,10 +52383,10 @@ ObjectActionJump_03:
 ++      <@35f95@>
         <@35f97@>
         <@35f9a _35fd2@>
-        <@35f9d@>
+        <@35f9d PlayerJumpDisplacement@>
         <@35fa0@>
         <@35fa2 +@> ; $35fb4
-        <@35fa4@>
+        <@35fa4 PlayerJumpDisplacement@>
          bne :>rts ; $35fd1
         <@35fa9 PlayerStatus@>
         <@35fac ++@> ; $35fc4
@@ -52371,46 +52449,65 @@ ErrorBuzzRelay:
         <@3601f ErrorBuzz@>
 ;;; --------------------------------
 .org $a022
-_36022:
-        ;; This is about jumping
+;;; Handle any effect of pressing the "A" button.
+ResolveAButtonEffect:    ; 36022
+        ;; Figure out what A should do by looking at the equipped magic.
+        ;; If no magic is equipped, check for rabbit boots.
+        ;; Y gets index of the magic (1=refresh, 2=paralysis, ..., 8=flight)
+        ;; or 9 for rabbit boots, or 0 if nothing is equipped.
         <@36022 EquippedMagic@>
         <@36025 +@> ; $36030
-        <@36027 EquippedPassiveItem@>
-        <@3602a ITEM_RABBIT_BOOTS@>
-        <@3602c +@> ; $36030
-         <@3602e@> ; rabbit boots "magic"
-+       <@36030@>
-        <@36032 DataTable_36092@> ; 0 or 8
+         ;; y=0: no magic equipped
+         <@36027 EquippedPassiveItem@>
+         <@3602a ITEM_RABBIT_BOOTS@>
+         <@3602c +@> ; $36030
+          <@3602e MAGIC_RABBIT_BOOTS@>
++       <@36030@>    ; save a copy
+        ;; Look up the usage mode to determine which controller input matters.
+        ;; For continuous magic (y=0) this is $43, currently pressed buttons.
+        ;; For one-off magic (y=8) this is $4b, newly-pressed buttonss.
+        <@36032 MagicOnceVsContinuousTable@> ; (36092) 8 if once, 0 if continuous
         <@36035@>
         <@36036@> ; $43 or $4b
+        ;; Check if the A button is (newly) pressed
         <@36039 +@> ; $3603c
-         <@3603b@>
+         <@3603b@>  ; If not, bail out - there's nothing more to do
          ;; ----
+        ;; Check if player is nuper'd
 +       <@3603c PlayerStatus@>
         <@3603f@>
         <@36041@>
-        <@36043 ErrorBuzzRelay@>
+         <@36043 ErrorBuzzRelay@>     ; Player is a slime and can't cast magic
+         ;;  ---
+        ;; Check if player is off the ground, in which case it's an error to
+        ;; cast anything other than Flight
         <@36045@>
-        <@36047@>
+        <@36047@>                ; flight
         <@36049 +@> ; $36054
-         <@3604b@>
+         ;; not casting flight
+         <@3604b@>               ; rabbit boots also okay
          <@3604d +@> ; $36054
-          <@3604f@>
-          <@36052 ErrorBuzzRelay@>
-+       <@36054@>
+          ;; not using rabbit boots, either
+          <@3604f PlayerJumpDisplacement@>    ; jump displacement
+           <@36052 ErrorBuzzRelay@>   ; off ground - can't cast any other magic
+           ;;  ---
+        ;; If player is changed then A button unchanges, so do that.
++       <@36054 GAME_MODE_CHANGE_REVERT@> ; $19
         <@36056 PlayerStatus@>
         <@36057 +@> ; $3605e
-         <@3605b UseMagic_SetGameMode@> ; currently changed
-        ;; ----
-+       <@3605e@>
-        <@36060@>
-        <@36062@>
+         ;; Set game mode to #$19 (unchange) and return
+         <@3605b UseMagic_SetGameMode@>
+         ;;  ----
+        ;; At this point, we're going to cast the magic
++       <@3605e@>                 ; saved magic index
+        <@36060@>                ; no-op since we wrote 0..9 here
+        <@36062@>                     ; prepare to index UseMagicJump
         <@36063@>
         <@36064 UseMagicJump@>
         <@36067@>
         <@36069 UseMagicJump+1@>
         <@3606c@>
-        <@3606e@>
+        <@3606e@>             ; jump to appropriate subroutine
 ;;; --------------------------------
         .byte [@36071@] ; UNUSED
 ;;; --------------------------------
@@ -52435,9 +52532,14 @@ UseMagicJump:
         .word (UseMagicJump_00_Nothing)
 ;;; --------------------------------
 .org $a092
-DataTable_36092:
-        .byte [@36092@],[@36093@],[@36094@],[@36095@],[@36096@],[@36097@],[@36098@],[@36099@],[@3609a@],[@3609b@],[@3609c@],[@3609d@],[@3609e@],[@3609f@]
-        .byte [@360a0@],[@360a1@]
+;;; Stores 8 for one-off magics (or no magic), or 0 for continuous-use magics,
+;;; which are just 1 (refresh), 6 (barrier), and 8 (flight).  Also has an entry
+;;; for 9 (rabbit boots), which is considered one-off.
+MagicOnceVsContinuousTable:     ; 36092
+        .byte [@36092@],[@36093@],[@36094@],[@36095@],[@36096@],[@36097@],[@36098@],[@36099@],[@3609a@],[@3609b@]
+;;; --------------------------------
+;;; unused
+        .byte [@3609c@],[@3609d@],[@3609e@],[@3609f@],[@360a0@],[@360a1@]
 ;;; --------------------------------
 .org $a0a2
 UseMagicJump_00_Nothing:
@@ -52493,7 +52595,7 @@ UseMagic_EndWithSpawn:
         ;; ----
 .org $a0f4
 UseMagicJump_06_Barrier:
-        <@360f4@>
+        <@360f4 PlayerJumpDisplacement@>
         <@360f7 +@> ; $360fc
          <@360f9 ErrorBuzz@>
          ;; ----
@@ -52517,17 +52619,17 @@ UseMagicJump_08_Flight:
         <@3611b +@> ; $36122
          <@3611d@>
          <@3611f SpendMPOrDoubleReturn@>
-+       <@36122@>
++       <@36122 PlayerJumpDisplacement@>
         <@36125 +@> ; $36133
          <@36127 PlayerMP@>
          <@3612a UseMagic_InsufficientMP@>
          <@3612c@>
          <@3612e@>
          <@36131 ++@> ; $3614d
-+       <@36133@>
++       <@36133 PlayerJumpDisplacement@>
         <@36136@>
         <@36138 +@> ; $3613d
-         <@3613a@>
+         <@3613a PlayerJumpDisplacement@>
 +       <@3613d Ctrl1CurrentDirection@>
         <@3613f@>
         <@36142@>
@@ -52536,10 +52638,10 @@ UseMagicJump_08_Flight:
 UseMagicJump_09:
         <@36143 PlayerStatus@>
         bvs :<rts ; if on dolphin
-        <@36148@>
+        <@36148 PlayerJumpDisplacement@>
         bne :<rts
 ++      <@3614d@>
-        <@3614f@>
+        <@3614f PlayerJumpDisplacement@>
         <@36152 Ctrl1CurrentDirection@>
         <@36154@>
         <@36157 SFX_JUMP@>
@@ -52558,7 +52660,7 @@ UseMagicJump_07_Change:
         <@36165@> ; inside the tower
         <@36167 ErrorBuzz@> ; -> error and return, no message
         <@36169 UseMagic_CheckCurse@>
-        <@3616c@>
+        <@3616c PlayerJumpDisplacement@>
         <@3616f +@> ; $36172
          <@36171@>
         ;; ----
@@ -56123,6 +56225,10 @@ ObjectActionJump_70_01:
          <@37b69 DisplayNumberInternal@>
         <@37b6c@>
         <@37b6d@>
+        ;; Change the player's actionscript to 2
+        ;; This causes the controller input to be ignored and walks
+        ;; the player into the teleporter, and is reset back to 3 once
+        ;; we're in the tower.
         <@37b6e@>
         <@37b70@>
         <@37b73@>

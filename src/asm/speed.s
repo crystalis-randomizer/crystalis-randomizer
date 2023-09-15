@@ -20,8 +20,9 @@ FREE "1a" [$8480,$8b7f)
 .macro CONVERT_SPEED
         pha
           ;; Check for slow terrain
-          lda $0340,x
-          bvc +
+          lda $0380,x
+          asl
+          bpl +
             dey
             dey
           ;; Convert speed to new system
@@ -84,7 +85,8 @@ FREE "1a" [$8480,$8b7f)
 
 
 
-.reloc
+;.reloc
+.org $8800
 ;;; NOTE: can't use a cheap local because of the named label below... :-(
 cdv_q2:         ; Put this before the main routine to keep jumps in bounds
         ;; east -> south (dx = +cos, dy = +sin)
@@ -95,7 +97,7 @@ cdv_q2:         ; Put this before the main routine to keep jumps in bounds
         TRIGP SinTable, $31
         rts
 OVERRIDE ; !!!
-ComputeDisplacementVector:
+ComputeDisplacementVector:  ; NOTE: 34849
 ;;; Inputs:
 ;;;   A - direction, from $360,x (0-7, or 0-f, or 0-3f)
 ;;;   $340,x:0f - speed bucket

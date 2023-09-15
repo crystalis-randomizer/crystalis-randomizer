@@ -60,7 +60,7 @@ writer.print(`.ifdef _EXPAND_SPEEDS`);
 writer.print(`.segment "1a", "fe", "ff"`);
 
 // First build up the fractions tables
-writer.print(`.reloc`);
+writer.print(`.org $8500`); // .reloc`);
 writer.print(`SpeedFractionTable:`);
 for (let s = 0; s < 16; s++) {
   let total = 0;
@@ -74,7 +74,7 @@ for (let s = 0; s < 16; s++) {
 }
 
 // Sin-cosine tables
-writer.print(`.reloc`);
+writer.print(`.org $8600`); // .reloc`);
 writer.print(`SinTable:`);
 for (let i = 0; i < 16; i++) {
   if (i === 8) writer.print(`CosTable:`);

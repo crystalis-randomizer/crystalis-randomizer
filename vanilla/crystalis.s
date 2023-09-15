@@ -50634,7 +50634,7 @@ PlayerHit_CalculateDamage:
         <@353cc ObjectKnockback@>
         <@353cf ObjectKnockback@>
         <@353d2@>
-        <@353d4@>
+        <@353d4 PlayerJumpDirection@>
         <@353d7 ObjectDefense@> ; $401 is armor def
         <@353da@>
         <@353dc ObjectDamageType@>
@@ -51364,6 +51364,7 @@ _358cd:
 ;;; Result:
 ;;;   C - set if we collided with an impassible tile.
 ;;;       clear if the movement was successful.
+;;;   $25 - terrain effects under object (from $20 after CheckTerrainUnderObject)
 ;;;   Object coords and direction updated.
 .org $98d7
 MoveObjectWithSpeedAndDirection:
@@ -52101,6 +52102,7 @@ ObjectActionJump_02:
 ;;; This routine handles all the "every frame" checks on the player, updating
 ;;; jumps, speed, etc.
 ObjectActionJump_03:  ; This runs on X=0
+
         ;; First update the metasprite $300
         <@35d9a PlayerStatus@>
         <@35d9d +@> ; $35db7 - Player is changed -> metasprite gets 4c
@@ -52124,6 +52126,8 @@ ObjectActionJump_03:  ; This runs on X=0
         ;; to some sort of metasprite ID.
 ++      <@35db9@>
         <@35dba@>             ; Metasprite ID
+
+
         ;; Check jump position
         <@35dbd PlayerJumpDisplacement@>
         <@35dc0 ++@> ; $35de1
@@ -52144,13 +52148,17 @@ ObjectActionJump_03:  ; This runs on X=0
           <@35dd8@>               ; current dpad
           <@35dda ++@> ; $35de1
            ;; player is pressing a direction
-           <@35ddc@>          ; store the pressed direction in 640
+           <@35ddc PlayerJumpDirection@>          ; store the pressed direction in 640
            <@35ddf ++@> ; $35de1 - noop
+
+
         ;; Done updating the jump position, etc.  Now resolve A button
         ;; effects by calling into the UseMagicJump table (after checking
         ;; various eligibility conditions).  Note that this also handles
         ;; initiating a rabbit boots jump.
 ++      <@35de1 ResolveAButtonEffect@>  ; 36022
+
+
         ;; Resolve the B button (i.e. swing the sword).
         ;; First check if we're changed
         <@35de4 PlayerStatus@>
@@ -52206,7 +52214,9 @@ ObjectActionJump_03:  ; This runs on X=0
          <@35e31 PlayerSwordChargeAmount@>
          <@35e34 ++@> ; $35e39
           <@35e36 PlayerSwordChargeAmount@>
-        ;; Update the sword swing timer
+
+
+        ;; Update the sword swing timer (and crouching animation if stationary)
 ++      <@35e39 PlayerSwordSwingTimer@>
          <@35e3c +++@> ; $35e6f
         <@35e3e@>
@@ -52218,10 +52228,18 @@ ObjectActionJump_03:  ; This runs on X=0
           ;; B currently being pressed - are we pressing a direction?
           <@35e46@>               ; currently pressed direction (or FF)
            <@35e48 +++@> ; $35e6f     ; if pressing a direction, then skip entirely
-          ;; No direction currently pressed
+          ;; No direction currently pressed - no need to do crouching animation
+          ;; if walking (independent of jump status).
           <@35e4a PlayerJumpDisplacement@>
           <@35e4d +@> ; $35e57
            ;; Player is mid-jump?  Set metasprite to 0..3
+           ;; This only seems to matter in the case where the player jumps
+           ;; straight up and down and presses-and-holds B mid-jump.  Without
+           ;; this special case, the following code (which it skips) would
+           ;; set the sprite to 4, which is the crouching sprite, except that
+           ;; the animation step counter being at $12 (since it's fixed for
+           ;; jumps) means that it's actually skips the crouched position and
+           ;; goes straight to "sword out in front", which is weird.  The only
            <@35e4f@>
            <@35e51@>
            <@35e54 ++@> ; $35e62
@@ -52231,7 +52249,8 @@ ObjectActionJump_03:  ; This runs on X=0
         ;; no longer holding the B button); or (2) B is not being held; or (3)
         ;; player is not in the air.
 +       <@35e57@>
-        ;; Set metasprite to 4..7 while swinging sword
+        ;; Set metasprite to 4..7 (crouch-windup-swing) while swinging sword
+        ;; or if stationary and winding up to swing.
         <@35e5a@>
         <@35e5c@>
         ;; Clock the sword swing timer
@@ -52267,48 +52286,87 @@ ObjectActionJump_03:  ; This runs on X=0
          ;; On dolphin: terrain susceptibility := 34
          <@35e8a@>
          <@35e8c ObjectTerrainSusceptibility@>
+
+
+        ;; Collect all the above codepaths back to here.  Everything goes
+        ;; through here at this point.
 +       <@35e8f PlayerJumpDisplacement@>
         <@35e92 +@> ; $35e9e
-        <@35e94 PlayerJumpDirection@>
-        <@35e97@>
-        <@35e99 FallDisplacements@>
-        <@35e9c ++@> ; $35eef
+         ;; Player is jumping - overwite controller direction with jump direction
+         ;; (Note: UseMagicJump_08_Flight already reset jump direction to dpad
+         ;; direction if we're flying rather than jumping; not sure how this
+         ;; interacts with ghetto flight).
+         <@35e94 PlayerJumpDirection@>
+         <@35e97@>
+         ;; Check if we're "off the ground" - i.e. _not_ in the last two frames
+         ;; of a fall, where the displacement is already zero.  Basically, don't
+         ;; allow changing direction while immediately landing (apparently?)
+         <@35e99 FallDisplacements@>
+         <@35e9c ++@> ; $35eef
+        ;; Player is either on the ground (and isn't just landing) or is in the air
 +       <@35e9e PlayerDirection@>
         <@35ea1@>
         <@35ea3@>
-        ;; If we're not moving, this is where we bail out
-        <@35ea5 ++@> ; $35eef
+        ;; If no direction is being pressed (or carried along via jump) then skip
+         <@35ea5 ++@> ; $35eef
         ;; Handle directional input
-        <@35ea7@>
+        <@35ea7@>             ; either 4 or 84 (below) or maybe 5 or 6 from 3600f
         <@35eaa +@> ; $35eba
-        <@35eac@>
-        <@35eae@>
-        <@35eb1@>
-        <@35eb3 DataTable_36017@>
-        <@35eb6 ++@> ; $35eef
-        <@35eb8@>
+         ;; 680 is negative (??)
+         ;; zero out the animation step counter
+         <@35eac@>
+         <@35eae@>
+         ;; look up diagonal clamp
+         <@35eb1@>
+         <@35eb3 DataTable_36017@>   ; clamp diagonals to left/right
+         ;; if dpad is up/down, then skip the next section????
+         <@35eb6 ++@> ; $35eef
+          ;; dpad is left/right with optional diagonal
+          ;; -> forget about the diagonal and just go with straight left or right
+          <@35eb8@>
+        ;; Transfer dpad direction to 360
 +       <@35eba@>
-        <@35ebc@>
+        <@35ebc PlayerDirection@>
+        ;; Clock the step counter since we're (at least trying to be) moving
         <@35ebf ObjectTimer@>
+        ;; Try to move in the current direction
         <@35ec2 MoveObjectWithSpeedAndDirection@>
         <@35ec5 +@> ; $35ed8
+         ;; Movement succeeded
+         ;; Copy terrain to $561 for later reference
          <@35ec7@>
          <@35ec9@>
+         ;; Restore direction in case of a double-return??? (this mirrors the
+         ;; end of MoveObjectWithSpeedAndDirection, so seems maybe unnecessary,
+         ;; but the end may have been skipped via double-return.  That said,
+         ;; we actually _do_ override the direction when there's a blockage,
+         ;; so it's still not clear what this is doing)
          <@35ecc@>
-         <@35ece@>
+         <@35ece PlayerDirection@>
+         ;; Reset the "keep swerving" counter to 8 frames on successful movement
          <@35ed1@>
          <@35ed3@>
          <@35ed6 ++@> ; $35eef - uncond
          ;; ----
+        ;; Movement failed (including converting diagonal to either cardinal)
+        ;; But there may still be movement if the swerve counter is nonzero.
+        ;; In that case, look at the "last sucessful" direction
 +       <@35ed8@>
         <@35edb ++@> ; $35eef
-        <@35edd@>
-        <@35ee0@>
-        <@35ee2@>
-        <@35ee5 MoveObjectWithSpeedAndDirection@>
-        <@35ee8 ++@> ; $35eef
-         <@35eea@>
-         <@35eec@>
+         ;; Swerve counter nonzero - clock it once
+         <@35edd@>
+         ;; Load the direction saved BEFORE updating it from the dpad - this
+         ;; is the last direction we successfully went.  Try that direction.
+         <@35ee0@>
+         <@35ee2 PlayerDirection@>
+         <@35ee5 MoveObjectWithSpeedAndDirection@>
+         <@35ee8 ++@> ; $35eef
+          ;; If that worked, then again update the terrain under player
+          <@35eea@>
+          <@35eec@>
+
+
+        ;; ....
 ++      <@35eef GlobalCounter@>
         <@35ef1@>
         <@35ef3 +@> ; $35efa
@@ -52339,15 +52397,17 @@ ObjectActionJump_03:  ; This runs on X=0
             <@35f30 +@> ; $35f37
              <@35f32@>
              <@35f34 SpendMPOrDoubleReturn@>
+
+
 +       <@35f37 PlayerJumpDisplacement@>
         <@35f3a +@> ; $35f4c
-        <@35f3c@>
-        <@35f3e@>
-        <@35f40@>
-        <@35f42@>
-        <@35f45@>
-        <@35f47@>
-        <@35f49@>
+         <@35f3c@>
+         <@35f3e@>
+         <@35f40@>
+         <@35f42@>
+         <@35f45@>
+         <@35f47@>
+         <@35f49@>
 +       <@35f4c@>
         <@35f4f@>
         <@35f51@>
@@ -52380,6 +52440,8 @@ ObjectActionJump_03:  ; This runs on X=0
 +       <@35f8e@>
         <@35f90@>
         <@35f93 _35fd2@>
+
+
 ++      <@35f95@>
         <@35f97@>
         <@35f9a _35fd2@>
@@ -52624,14 +52686,14 @@ UseMagicJump_08_Flight:
          <@36127 PlayerMP@>
          <@3612a UseMagic_InsufficientMP@>
          <@3612c@>
-         <@3612e@>
+         <@3612e ObjectTerrainSusceptibility@>
          <@36131 ++@> ; $3614d
 +       <@36133 PlayerJumpDisplacement@>
         <@36136@>
         <@36138 +@> ; $3613d
          <@3613a PlayerJumpDisplacement@>
 +       <@3613d Ctrl1CurrentDirection@>
-        <@3613f@>
+        <@3613f PlayerJumpDirection@>
         <@36142@>
 ;;; --------------------------------
 .org $a143

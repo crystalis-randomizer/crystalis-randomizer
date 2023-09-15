@@ -948,6 +948,8 @@ for projectiles (540==ff), 560 is imputed status
 for objects loaded from the NpcData table, this is the 4th byte in the table,
 typically the ID.
 
+561 appears to be the terrain under the player (set around $35ed8)
+
 
 $580,x
 ------
@@ -1048,6 +1050,13 @@ for NPC's, this is the ID of the PersonData
 
 $6a0,x
 ------
+For player, $680 tracks frames for navigating around obstacles
+  - when a diagonal direction is converted to a cardinal direction because it's
+    blocked, we set this to 8 as a timer - for the next 8 movement frames we'll
+    make the same promotion to the side even if the diagonal is no longer pressed
+    (i.e. if pressing right into a wall, a single frame of diagonal up-right
+    followed by 7 frames of right only will get us 8 frames of upward movement)
+    
 
 
 $6c0,x

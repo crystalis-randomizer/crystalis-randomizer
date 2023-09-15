@@ -875,6 +875,9 @@ seems to be some sort of step counter
  - counts down and loops
  - $48e is the step counter for the $e NPC?
 
+This step counter is used for movement computations, while 4e0,x is used for
+animation.
+
 NOTE: $480 and $4e0 both seem to be step counters, though $4e0 is used
 for animation and seems to count down by 2 whenever $480 counts down
 by one (deps on 4a0).  Interestingly, the player's steps decrement $480
@@ -911,7 +914,7 @@ on death action??? death replacement...
 
 $4e0,x
 ------
-Step counter - counts down with some sort of increment (1 or 2?)
+Step counter (for animation?) - counts down with some sort of increment (1 or 2?)
 The upper 5 bits of this are ANDed with the 2nd byte of the
 metasprite data table to pick the specific version to use
 
@@ -1004,9 +1007,13 @@ a statue.  The values are $da,$22,$4a,$aa => ???
 
 $620,x
 ------
-$620 is the current jump displacement, from 0 to $13.  As rising or falling
-this number is changing.  It presumably means something else for somebody else.
- - probably also fires when falling into a pit - starts at $30, decreases down to 0
+$620 is the current jump displacement, from 0 to $30.
+ - for jump/flight - starts at $20 when just leaving ground
+ - decreases by 1 each frame
+ - reaches $13 at peak (stays there while flying)
+ - plays "landing" sound at $11
+ - for falling into a pit - initialized to $30
+
 for action script $0f, $620,x is the game mode to load.
 
 $623 is slot of object in front of player.
@@ -1020,7 +1027,9 @@ $640,x
 ------
  - $643: index (0..$1f) of the non-monster NPC in front of the player.
    set by $34f73 and/or $354b0
-?? somethingb about terrain - cf 3ef72 checking $641:80 to skip pain land?
+?? something about terrain - cf 3ef72 checking $641:80 to skip pain land?
+ - for player, $640 appears to be jump/flying direction (see object action 03)
+also something about which object is shooting (maybe for projectiles?)
 
 
 $660,x
@@ -1028,9 +1037,13 @@ $660,x
 $661 is a countdown timer used only in stom fight, but apparently never read
 to affect anything other than checking for a multiple of 4?
 
+660,x appears to store a push-down speed for slope movement? (35fd2)
+
 
 $680,x
 ------
+680,x appears to store a push-down direction for slope movement? (35fd2)
+for NPC's, this is the ID of the PersonData
 
 
 $6a0,x
@@ -1039,16 +1052,26 @@ $6a0,x
 
 $6c0,x
 ------
+for player, $6c0 is sword charge amount
+            $6c1 starts at $d when charge gets to 8, decreases every subsequent
+                frame to 0 (i.e. when charge is at $b) - this looks like it has
+                something to do with the charge animation coming in from the edge
+more generally, 6c0,x seems to have something to do with directional metasprites
+
 
 
 $6e0,x
 ------
 used for ad-hoc spawns? mixed in with direction.
+ - maybe something about projectile metasprites? or metasprite while shooting?
 
 also used for random other purposes:
   $6f3 - jump table position in main title screen
   $6fc..$6fd - used for some temporary jumps (e.g. in title screen)
   $6ff - seems to be something about a timer in title screen
+
+for player (x=0) this is copied from dpad direction ($49) when player
+is not nuper'd
 
 
 $0708

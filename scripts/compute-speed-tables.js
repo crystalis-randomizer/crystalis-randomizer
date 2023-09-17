@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // Try 32 directions, so dir D is theta=D*pi/16
 
 // Tables:
@@ -78,8 +80,11 @@ writer.print(`.org $8600`); // .reloc`);
 writer.print(`SinTable:`);
 for (let i = 0; i < 16; i++) {
   if (i === 8) writer.print(`CosTable:`);
+  // precompute sin of angle, but replace sin45 (0.707) w/ 0.75
+  // because it gives smoother movement.
+  const sin = (i % 8 === 4) ? 0.75 : Math.sin(i * Math.PI / 16);
   for (let s = 2; s < 34; s++) {
-    writer.push(toComponent16((s / 4) * Math.sin(i * Math.PI / 16)));
+    writer.push(toComponent16((s / 4) * sin));
   }
 }
 

@@ -34,6 +34,53 @@ and zero it out when it's invalid).  We then need to change OAJ_16 (and maybe
 whenever it changes direction - and also possibly stagger the direction changes
 across frames rather than updating 10 caches all at once?
 
+## Projectiles
+
+Call tree for OAJ_57: dyna shots
+ - 10: swords, popcorn, etc
+ - 11: swords, popcorn, etc
+ - 16: mado shurikens (curve)
+ - 17: demon wall fire
+ - 1e: draygon laser
+ - 1f: moth residue
+ - 36: crystalis shot
+
+Need 6 (7?) RAM values to optimize motion - what's available?
+ 300 - metasprite id
+ 320 - (read by metasprite code)
+ 340 - speed
+ 360 - direction
+ 380 - (read by metasprites and movement)
+ 3a0 - hitbox
+ 3c0 - AVAILABLE (HP)
+ 3e0 - attack
+ 400 - AVAILABLE (defense)
+ 420 - sword level for breaking walls
+ 440 - AVAILABLE (thrown object)
+ 460 - terrain susceptibility??
+ 480 - step counter for movement
+ 4a0 - action
+ 4c0 - death replacement????
+ 4e0 - animation step counter
+ 500 - sword element
+ 520 - AVAILABLE (exp on death)
+ 540 - damage type
+ 560 - used for some things??
+ 580 - wind2 uses??? otherwise available
+ 5a0 - must wait to move paralysis counter (ticked centrally)
+ 5c0 - sprite X coordinate on screen
+ 5e0 - sprite Y coordinate on screen
+ 600 - subboss, etc; nonzero for crystalis?; used in 64,
+ 620 - nonzero for obj $20?
+ 640 - AVAILABLE?
+ 660 - AVAILABLE?
+ 680 - AVAILABLE?
+ 6a0 - (used for lizardmen flails... probably available?)
+ 6c0 - directional metasprites? (maybe available?)
+ 6e0 - ...?
+
+Available: 3c0, 400, 440, 520, 640, 660, 680, 6c0
+
 
 ============= OLD NOTES 2023 AUG ==============
 

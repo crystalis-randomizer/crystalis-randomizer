@@ -54871,12 +54871,12 @@ ObjectActionJump_36:
         <@37070@>
         <@37072@>
         <@37075@>
-        <@37078 ObjectActionJump_57@>
+         <@37078 ObjectActionJump_57@>
         <@3707a@>
         <@3707d@>
         <@3707f@>
         <@37081 AdHocSpawnObject@>
-        <@37084 ObjectActionJump_57@>
+         <@37084 ObjectActionJump_57@>
         <@37086@>
         <@37088@>
         <@3708b@>

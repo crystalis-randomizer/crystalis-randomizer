@@ -55153,12 +55153,14 @@ ObjectActionJump_14:
         <@372d4@>
 ;;; --------------------------------
 .org $b2d5
+;;; Thunder 1 shot
 ObjectActionJump_18:
         <@372d5@>
         <@372d8@>
         <@372db@>
         <@372dc@>
         <@372df@>
+;;; Thunder 2 shot
 ObjectActionJump_19:
         <@372e2@>
         <@372e5@>
@@ -55168,6 +55170,7 @@ ObjectActionJump_19:
         <@372ec@>
         <@372ef@>
         <@372f1@>
+;;; Thunder 3 shot
 ObjectActionJump_1a:
         <@372f4@>
 ;;; --------------------------------

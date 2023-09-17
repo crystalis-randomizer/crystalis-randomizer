@@ -9,6 +9,19 @@
 ;;; and this is inner-loop stuff.
 
 
+.segment "1a", "1b"
+;;; Switch mado shurikens to alternate frames that they curve at
+;;; We can't have them _all_ go at different frames since it drastically
+;;; changes their trajectory, but we can alternate even/odd without much
+;;; noticeable change.  TODO - we'll probably want to rewrite more of this.
+.org $b0fc
+  jsr +
+.reloc
++ txa
+  and #1
+  eor $0480,x
+  rts
+
 .segment "1a", "fe", "ff"
 
 .ifdef _EXPAND_SPEEDS
@@ -329,6 +342,7 @@ BitsTable:
 ;;     jsr ShiftDirection
 ;;     asl
 ;;     and #$70
+
 .endif ; ___FALSE___
 
 .endif ; _EXPAND_SPEEDS

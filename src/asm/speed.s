@@ -9,22 +9,9 @@
 ;;; and this is inner-loop stuff.
 
 
-.segment "1a", "1b"
-;;; Switch mado shurikens to alternate frames that they curve at
-;;; We can't have them _all_ go at different frames since it drastically
-;;; changes their trajectory, but we can alternate even/odd without much
-;;; noticeable change.  TODO - we'll probably want to rewrite more of this.
-.org $b0fc
-  jsr +
-.reloc
-+ txa
-  and #1
-  eor $0480,x
-  rts
+.ifdef _EXPAND_SPEEDS
 
 .segment "1a", "fe", "ff"
-
-.ifdef _EXPAND_SPEEDS
 
 ;;; Mark this whole area as free
 FREE "1a" [$8480,$8b7f)
@@ -123,7 +110,6 @@ ComputeDisplacementVector:  ; NOTE: 34849
 ;;; For now, we're just working in "compatibility mode": we assume
 ;;; speeds are the same wonky nonsense that the vanilla game uses,
 ;;; and we have conversion tables into our more general system.
-
         ;; Figure out if we have an 8-dir or a 16-dir
         sta $12                 ; stash direction
         lda $0340,x             ; load speed to y
@@ -170,6 +156,7 @@ ComputeDisplacementVector:  ; NOTE: 34849
         TRIGN SinTable, $31
         rts
 
+
 .reloc
 SpeedConversionTable:
         .byte $00 ; 0: 0.5 pixels/frame
@@ -190,159 +177,189 @@ SpeedConversionTable:
         .byte $06 ; f: 2.0 *
 
 
-;;; OLD CODE BELOW
-.ifdef ___FALSE___
-    ;; First step: multiply te direction by the right factor.
-    ;;   $340,x:40 => 64-dir mode
-    ;;   A & $80   => 16-dir mode
-    ;; We also want to end up with $31 having the speed in high nibble.
-    ;; Start by saving the accumulator in Y temporarily while we shift
-    ;; the speed into the high nibble and save flags for later inspection.
-    tay
-    lda $0340,x
-    pha
-    asl
-    php  ; At this point, C and N tell us whether we're in 64-dir mode
-    asl
-    asl
-    asl
-    sta $31  ; $31 now has the speed in the high nibble
-    ;; Check $380,x:40 for slowdown.
-    lda $0380,x
-    asl
-    bpl ++
-     sec
-     sbc #$20
-     bcs +
-      lda #$00
-+    sta $31
-    ;; Check direction mode
-++  plp
-    bpl +    ; $340,x had a zero 40 bit -> not 64-dir -> do the shifts
-    tya      ; restore original input in case we're not shifting
-    bcc ++   ; $340,x:c0 was $40 => 64-dir => skip shifts
-+   tya
-    ;; Shift 2 or 3 times.  Only need the 3rd shift if in 8-dir mode (dir pos)
-    asl
-    bcs +    ; 16-dir mode: skip a shift
-     asl
-+   asl
-++  and #$3f ; in case there's a knockback
-    ;; From here on, assume 64-dir mode.
-    ;; Figure out quadrant.
-    ;;    for 00..0f,  X = sin = cos-    Y = -cos
-    ;;    for 10..1f,  X = cos           Y = sin = cos-
-    ;;    for 20..2f,  X = -sin = -cos-  Y = cos
-    ;;    for 30..3f,  X = -cos          Y = -sin = -cos-
-    pha
-     tay
-     lda XIndex,y
-     jsr ComputeDisplacement
-     sta $30
-    pla
-    tay
-    lda YIndex,y
-    jsr ComputeDisplacement
-    sta $31
-    rts    
 
-ComputeDisplacement___:
-    ;; A|$31 holds an index into the CosineTable, then cross-ref with
-    ;; step counter to get actual displacement.  Output => A.
-    php ; Negate the result at the end if N
-     bit XIndex  ; $10 means zero
-     beq +
-      ;; Result of trig function is zero, nothing more to do.
-      lda #$00
-      rts
-+    ora $31
-     tay
-     lda CosineTable,y
-     ;; Now pull the result apart: high nibble is whole part, low is fraction
-     pha
-      lsr
-      lsr
-      lsr
-      lsr
-      sta $10
-     pla
-     and #$0f
-     asl
-     tay
-     lda $0480,x
-     bit XIndex+8  ; $08 bit clear indicates we need to iny?
-     bne +
-      iny
-+    lda BitsTable,y
-     pha
-      lda $0480,x
-      and #$07
-      tay
-     pla
-     and PowersOfTwo,y
-     beq +
-      inc $10
-+    lda $10
-    plp
-    bpl +
-     ;; negate the result
-     eor #$ff
-     sec
-     adc #$00
-+   rts
+.segment "1a", "1b", "fe", "ff"
+;;; Switch mado shurikens to alternate frames that they curve at
+;;; We can't have them _all_ go at different frames since it drastically
+;;; changes their trajectory, but we can alternate even/odd without much
+;;; noticeable change.  TODO - we'll probably want to rewrite more of this.
+.org $b0fc
+        jsr +
+.reloc
++       txa
+        and #1
+        eor $0480,x
+        rts
 
-;;; shift to 64-dir - used by KnockbackObject patch
-ShiftDirection:
-    bpl +
-    bcs +
-    rts
-+   asl
-    bcs +
-     asl
-+   asl
-    rts
+;;; De-lag projectile motion
+;;; We define a _second_ version of ComputeDisplacementVector that
+;;; caches the trig results, saving a lot of computation time.
 
-CosineTable:
-;;; Stores 16*SPD[i]*cos(DIR*pi/32) for DIR=0..15, i=0..15
-.res 256,0
+.macro PROJ_SPEED
+        pha
+          ;; Convert speed to new system
+          lda SpeedConversionTable,y
+          sta $10
+        pla
+        ;; OR the (shifted) direction into the speed to get trig table index
+        ora $10
+.endmacro
 
-YIndex:  ; -cos/sin/cos/-sin
-  .byte $80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8a,$8b,$8c,$8d,$8e,$8f
-XIndex:  ; sin/cos/-sin/-cos
-  .byte $10,$0f,$0e,$0d,$0c,$0b,$0a,$09,$08,$07,$06,$05,$04,$03,$02,$01
-  .byte $00,$01,$02,$03,$04,$05,$06,$07,$08,$09,$0a,$0b,$0c,$0d,$0e,$0f
-  .byte $10,$8f,$8e,$8d,$8c,$8b,$8a,$89,$88,$87,$86,$85,$84,$83,$82,$81
-  .byte $80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8a,$8b,$8c,$8d,$8e,$8f
+;;; Positive trig function
+.macro PROJ_TRIGP table, memWhole, memFrac1, memFrac2
+        tay
+        lda table,y
+        pha
+          ;; Put the fraction into y
+          lsr
+          lsr
+          lsr
+          tay
+        pla
+        ;; Store whole number from low nibble
+        and #$0f
+        sta memWhole,x
+        ;; Store two fraction bytes
+        ;lda FracTable,y
+        ;sta memFrac1,x
+        lda FracTable+1,y
+        sta memFrac2,x
+.endmacro
 
-BitsTable:
-  .byte $00,$00 ;  0 => 00000000 00000000
-  .byte $00,$01 ;  1 => 00000000 00000001
-  .byte $01,$01 ;  2 => 00000001 00000001
-  .byte $08,$41 ;  3 => 00001000 01000001
-  .byte $11,$11 ;  4 => 00010001 00010001
-  .byte $24,$49 ;  5 => 00100100 01001001
-  .byte $49,$49 ;  6 => 01001001 01001001
-  .byte $52,$a9 ;  7 => 01010010 10101001
-  .byte $55,$55 ;  8 => 01010101 01010101
-  .byte $ad,$56 ;  9 => 10101101 01010110
-  .byte $b6,$b6 ; 10 => 10110110 10110110
-  .byte $9b,$b6 ; 11 => 11011011 10110110
-  .byte $ee,$ee ; 12 => 11101110 11101110
-  .byte $f7,$ce ; 13 => 11110111 10111110
-  .byte $fe,$fe ; 14 => 11111110 11111110
-  .byte $ff,$fe ; 15 => 11111111 11111110
+;;; Negative trig function
+.macro PROJ_TRIGN table, memWhole, memFrac1, memFrac2
+        tay
+        lda table,y
+        pha
+          ;; Put the fraction into y
+          lsr
+          lsr
+          lsr
+          and #$1e
+          tay
+        pla
+        ;; Store whole number from low nibble, inverted
+        and #$0f
+        eor #$ff
+        sta memWhole,x
+        ;; Store two fraction bytes, inverted
+        ;lda FracTable,y
+        ;eor #$ff
+        ;sta memFrac1,x
+        lda FracTable+1,y
+        eor #$ff
+        sta memFrac2,x
+.endmacro
 
-;; ;;; Update KnockbackObject to work for 64-dir projectiles
-;; .org $95d4
-;;     lda $0340,x
-;;     asl
-;;     php
-;;     lda $0360,x
-;;     plp    
-;;     jsr ShiftDirection
-;;     asl
-;;     and #$70
+;;; Projectile speed data
+PSpdVX = $3c0       ; whole part of X velocity (signed 4-bit)
+PSpdVY = $400       ; whole part of Y velocity (signed 4-bit)
+PSpdFX1 = $440      ; fractional frames 1-8 for X velocity
+PSpdFX2 = $520      ; fractional frames 9-16 for X velocity
+PSpdFY1 = $640      ; fractional frames 1-8 for Y velocity
+PSpdFY2 = $660      ; fractional frames 9-16 for Y velocity
+PSpdOK = $680       ; $80 if valid, 00 if invalid
 
-.endif ; ___FALSE___
+;; PSpdVX = $7060       ; whole part of X velocity (signed 4-bit)
+;; PSpdVY = $7080       ; whole part of Y velocity (signed 4-bit)
+;; PSpdFX1 = $70a0      ; fractional frames 1-8 for X velocity
+;; PSpdFX2 = $70c0      ; fractional frames 9-16 for X velocity
+;; PSpdFY1 = $70e0      ; fractional frames 1-8 for Y velocity
+;; PSpdFY2 = $7100      ; fractional frames 9-16 for Y velocity
+;; PSpdOK = $3c0        ; $80 if valid, 00 if invalid
+
+;;; This is a drop-in replacement for ComputeDisplacementVector,
+;;; so direction is in A and speed is in 340,x
+.reloc
+ComputeProjectileMotionCached:
+
+;;; TODO - don't write into $30, but inline all of AddDisplacementVectorShort
+;;; and write directly into the position
+;;;   - this should speed up quite a bit; the only difference is that if the
+;;;     thing dies then it will drop its replacement one step further, into
+;;;     the illegal terrain?  - but the only children are FF, 0, 2, and 3
+;;;     which all just zero out the object, so it's truly irrelevant!
+
+        ;; 30 gets dx, 31 gets dy
+        lda PSpdVX,x
+        sta $30
+        asl PSpdFX2,x
+        ;rol PSpdFX1,x
+        bcc +
+         inc $30
+         inc PSpdFX2,x
++       lda PSpdVY,x
+        sta $31
+        asl PSpdFY2,x
+        ;rol PSpdFY1,x
+        bcc +
+         inc $31
+         inc PSpdFY2,x
++       rts
+ComputeProjectileMotion:
+        ;; Check if we have a cached direction
+        ldy PSpdOK,x
+        bne ComputeProjectileMotionCached
+        ;; Cache invalid: recompute from A/$340
+        sec                     ; mark cache as valid
+        ror PSpdOK,x
+        ;; Figure out if we have an 8-dir or a 16-dir
+        sta $12                 ; stash direction
+        lda $0340,x             ; load speed to y
+        and #$0f                ; remove knockback bits
+        tay                     ; move to Y
+        cpy #$0b                ; check against $b
+        lda $12                 ; reload direction
+        bcs +                   ; if SPD < $b...
+          asl                   ;   then it's 8-dir, so shift an extra time
++       asl                     ; direction is now 32-dir
+        ;; Shift direction to MSB
+        asl
+        asl
+        asl
+        ;; Shift off the top two bits to figure out which quadrant we're in
+        asl
+        bcs @q3
+        asl
+        bcc @q1
+        jmp @q2
+@q1:
+        ;; north -> east (dx = +sin, dy = -cos)
+        PROJ_SPEED
+        pha
+        PROJ_TRIGP SinTable, PSpdVX, PSpdFX1, PSpdFX2
+        pla
+        PROJ_TRIGN CosTable, PSpdVY, PSpdFY1, PSpdFY2
+        jmp ComputeProjectileMotionCached
+@q3:
+        asl
+        bcs @q4
+        ;; south -> west (dx = -sin, dy = +cos)
+        PROJ_SPEED
+        pha
+        PROJ_TRIGN SinTable, PSpdVX, PSpdFX1, PSpdFX2
+        pla
+        PROJ_TRIGP CosTable, PSpdVY, PSpdFY1, PSpdFY2
+        jmp ComputeProjectileMotionCached
+@q4:
+        ;; west -> north (dx = -cos, dy = -sin)
+        PROJ_SPEED
+        pha
+        PROJ_TRIGN CosTable, PSpdVX, PSpdFX1, PSpdFX2
+        pla
+        PROJ_TRIGN SinTable, PSpdVY, PSpdFY1, PSpdFY2
+        jmp ComputeProjectileMotionCached
+@q2:
+        ;; east -> south (dx = +cos, dy = +sin)
+        PROJ_SPEED
+        pha
+        PROJ_TRIGP CosTable, PSpdVX, PSpdFX1, PSpdFX2
+        pla
+        PROJ_TRIGP SinTable, PSpdVY, PSpdFY1, PSpdFY2
+        jmp ComputeProjectileMotionCached
+
+;;; Replace ObjectActionJump_57 call to CDV with CPM
+.org $b0d4
+        jsr ComputeProjectileMotion
 
 .endif ; _EXPAND_SPEEDS

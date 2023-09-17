@@ -54920,27 +54920,27 @@ ObjectActionJump_57:
         <@370be@>
         <@370c1 +@> ; $370c6
          <@370c3 ClearSpawnSlot@>
-        ;; ----
+         ;; ----
 +       <@370c6 ObjectTimer@>
         <@370c9 +@> ; $370ce
          <@370cb _358cd@>
-        ;; ----
+         ;; ----
 +       <@370ce ReadObjectCoordinatesInto_34_37@>
         <@370d1 ObjectDirection@>
         <@370d4 ComputeDisplacementVector@>
         <@370d7 AddDisplacementVectorShort@>
         <@370da ObjectTerrainSusceptibility@>
         <@370dd +@> ; $370e2
-        <@370df WriteObjectCoordinatesFrom_34_37@>
-        ;; ----
+         <@370df WriteObjectCoordinatesFrom_34_37@>
+         ;; ----
 +       <@370e2@> ; force check, update $380,x
         <@370e4 CheckTerrainUnderObject@>
         <@370e7@>
         <@370e9@>
         <@370ec@>
         <@370ee +@> ; $370f3
-        <@370f0 _358cd@>
-        ;; ----
+         <@370f0 _358cd@>
+         ;; ----
 +       <@370f3 WriteObjectCoordinatesFrom_34_37@>
 ;;; --------------------------------
 ;;; Mado shurikens

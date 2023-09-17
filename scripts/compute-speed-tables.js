@@ -64,15 +64,19 @@ writer.print(`.segment "1a", "fe", "ff"`);
 // First build up the fractions tables
 writer.print(`.org $8500`); // .reloc`);
 writer.print(`SpeedFractionTable:`);
+const fracData = [];
 for (let s = 0; s < 16; s++) {
+  let fracs = 0;
   let total = 0;
   for (let f = 0; f < 16; f++) {
     total += s
     const next = Math.trunc(total / 16);
     total -= next * 16;
     const term = next ? 0x80 : 0;
+    fracs = fracs << 1 | (next ? 1 : 0);
     writer.push(term);
   }
+  fracData.push(fracs);
 }
 
 // Sin-cosine tables
@@ -86,6 +90,14 @@ for (let i = 0; i < 16; i++) {
   for (let s = 2; s < 34; s++) {
     writer.push(toComponent16((s / 4) * sin));
   }
+}
+
+
+// Write out the secondary fractions table
+writer.print(`.org $84e0`);
+writer.print(`FracTable:`);
+for (const f of fracData) {
+  writer.push(f >>> 8, f & 0xff);
 }
 
 writer.print(`.endif`);

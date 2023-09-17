@@ -112,8 +112,12 @@ ComputeDisplacementVector:  ; NOTE: 34849
 ;;; and we have conversion tables into our more general system.
 
         ;; Figure out if we have an 8-dir or a 16-dir
-        ldy $0340,x             ; load speed to y
+        sta $12                 ; stash direction
+        lda $0340,x             ; load speed to y
+        and #$0f                ; remove knockback bits
+        tay                     ; move to Y
         cpy #$0b                ; check against $b
+        lda $12                 ; reload direction
         bcs +                   ; if SPD < $b...
           asl                   ;   then it's 8-dir, so shift an extra time
 +       asl                     ; direction is now 32-dir

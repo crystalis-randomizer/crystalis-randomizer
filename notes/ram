@@ -1050,7 +1050,7 @@ for NPC's, this is the ID of the PersonData
 
 $6a0,x
 ------
-For player, $680 tracks frames for navigating around obstacles
+For player, $6a0 tracks frames for navigating around obstacles
   - when a diagonal direction is converted to a cardinal direction because it's
     blocked, we set this to 8 as a timer - for the next 8 movement frames we'll
     make the same promotion to the side even if the diagonal is no longer pressed

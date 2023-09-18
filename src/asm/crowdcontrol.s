@@ -9,7 +9,7 @@
 ; these should be set in messages.ts
 .import LevelDownMessagePart, LevelDownMessageId
 
-UnconditionallyResetCheckpointFile = $f1cd
+
 .org $f374
   jsr ClearCrowdControlFlagsOnColdBoot
 
@@ -178,3 +178,4 @@ DoWildWarpToFirstLocation:
   rts
 
 ; .endif
+

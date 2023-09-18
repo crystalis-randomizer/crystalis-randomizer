@@ -170,6 +170,8 @@ FREE "3d" [$a000, $c000)
 .define GameMode   $41
 .define BankSelectShadow $50
 .define ScreenMode $51
+.define CurrentLocation $6c
+.define CurrentEntrance $6d
 
 ObjectRecoil = $340
 ObjectHP = $3c0
@@ -445,6 +447,8 @@ MainLoopItemGet            = $d3ff
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
+HandleStatusConditions        = $ef55
+; UnconditionallyResetCheckpointFile = $f1cd
 
 ;;; Various free sections
 

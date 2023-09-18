@@ -177,11 +177,12 @@ StoreObjectExp:
     ;; first double check here that we aren't already max level
     lda PlayerLevel
     and #$f0
-    bne +
+    bne UpdateStatsAfterLevelChange
      ;; Adding the PlayerExp hi byte will have set carry if we're back to being
      ;; "positive".  If we _didn't_ carry then we need to add a second level.
      bcc @LevelUp
-+   jsr UpdatePlayerMaxHPAndMPAfterLevelUp
+UpdateStatsAfterLevelChange:
+    jsr UpdatePlayerMaxHPAndMPAfterLevelUp
     jsr UpdateDisplayAfterLevelUp
     jmp UpdateCurrentEXPAndExit
 FREE_UNTIL $91ef

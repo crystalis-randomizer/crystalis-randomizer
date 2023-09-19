@@ -94,7 +94,7 @@ cdv_q2:         ; Put this before the main routine to keep jumps in bounds
         ;; east -> south (dx = +cos, dy = +sin)
         CONVERT_SPEED
         pha
-        TRIGP CosTable, $30
+          TRIGP CosTable, $30
         pla
         TRIGP SinTable, $31
         rts
@@ -133,7 +133,7 @@ ComputeDisplacementVector:  ; NOTE: 34849
         ;; north -> east (dx = +sin, dy = -cos)
         CONVERT_SPEED
         pha
-        TRIGP SinTable, $30
+          TRIGP SinTable, $30
         pla
         TRIGN CosTable, $31
         rts
@@ -143,7 +143,7 @@ ComputeDisplacementVector:  ; NOTE: 34849
         ;; south -> west (dx = -sin, dy = +cos)
         CONVERT_SPEED
         pha
-        TRIGN SinTable, $30
+          TRIGN SinTable, $30
         pla
         TRIGP CosTable, $31
         rts
@@ -151,7 +151,7 @@ ComputeDisplacementVector:  ; NOTE: 34849
         ;; west -> north (dx = -cos, dy = -sin)
         CONVERT_SPEED
         pha
-        TRIGN CosTable, $30
+          TRIGN CosTable, $30
         pla
         TRIGN SinTable, $31
         rts
@@ -177,23 +177,153 @@ SpeedConversionTable:
         .byte $06 ; f: 2.0 *
 
 
+;;; ----------------------------------------------------------------
+;;; De-lag projectile motion
+;;; We define a _second_ version of ComputeDisplacementVector that
+;;; caches the trig results, saving a lot of computation time.
+
 
 .segment "1a", "1b", "fe", "ff"
+
+;;; smudge from 370be
+.org $b0be
+OVERRIDE
+ObjectActionJump_57:
+        <@370be@>
+        <@370c1 +@> ; $370c6
+         <@370c3 ClearSpawnSlot@>
++:       ;; ----
+        <@370c6 ObjectTimer@>
+        <@370c9 +@> ; $370ce
+         <@370cb ReplaceWithOnDeathChild@>
++:       ;; ----
+        <@370ce ComputeProjectileMotion@>
+        <@370d1 ObjectTerrainSusceptibility@>
+        <@370ee +@>
+         <@370f0 CheckProjectileTerrain@>
++       <@37108@>
+;;; smudge off
+FREE_UNTIL $b0f6
+
+;;; This is copied form CheckTerrainUnderObject (smudge from $35a30) but is
+;;; adapted to look at the current position, rather than $34..37
+;;; Uses $34 as a signal that a lookup is needed
+
+.reloc
+CheckProjectileTerrain:
+        ;; If $10 is positive then there's nothing to do
+        <@374f3@>
+        <@37536 +@>
+          <@3754b@>
++       <@35acb ObjYHi@> ; smudge from $35a4d
+        <@35b4f@>
+        <@35c2d@>
+        <@35cad@>
+        <@35e41 ObjXHi@>
+        <@35efb@>
+        <@3ebb2@>
+        <@3ec4f@>
+        <@1320c@>
+        <@185cc@>
+        <@35a55@>
+        <@35a61@>
+        <@35a62@>
+        <@35a63@>
+        <@35a64@>
+        <@35a65@>
+        <@35a67@>
+        <@35a69@>
+        <@35a6b@>
+        <@35a6d BANKSELECT@>
+        <@35a70 BANKDATA@>
+        <@35acb ObjYLo@>
+        <@35bfb@>
+        <@36db8@>
+        <@36e16 ObjXLo@>
+        <@36e1f@>
+        <@36e20@>
+        <@36e21@>
+        <@36ec1@>
+        <@381fe@>
+        <@3c068@>
+        <@3c287@>
+        <@3c778@>
+        <@3de2b@>
+        <@20a89@>
+        <@236c9@>
+        <@26224@>
+        <@2885e@>
+        <@28860 BANKSELECT@>
+        <@28944 BANKDATA@>
+        <@29497@>
+        <@35a99@>
+        <@35a9b@>
+        <@35a9d@>
+        <@35a9f +@>
+          <@35e39 ObjYHi@>
+          <@35e99 CurrentLocationFlags@>
+          <@35eff ObjXHi@>
+          <@36396 PowersOfTwo@>
+          <@3642e +@>
+            <@35aad@>
+            <@35aaf@>
+            <@35ab1@>
+            <@35ab3@>
+            <@35ab5@>
+            <@35ab7@>
++       <@35ab9@>
+        <@35abb@>
+        <@35abd@>
+        <@35abf@>
+        <@35ac1 BANKSELECT@>
+        <@35ac4 BANKDATA@>
+        ;; ;; the following not used for projectiles???
+        ;; lda $0380,x
+        ;; and #$af ; overwrite the :50 bits no matter what.
+        ;; sta $10
+        ;; lda $20
+        ;; and $0460,x ; Use 460,x as a mask for copying.
+        ;; and #$50 ; only rewriting :50 (in front, slow)
+        ;; ora $10
+        ;; sta $0380,x
+        ;; ;; smudge off
+        lda $20
+        and $0460,x
+        and #$06
+        beq +
+          jmp ReplaceWithOnDeathChild
++       rts
+
+
 ;;; Switch mado shurikens to alternate frames that they curve at
 ;;; We can't have them _all_ go at different frames since it drastically
 ;;; changes their trajectory, but we can alternate even/odd without much
 ;;; noticeable change.  TODO - we'll probably want to rewrite more of this.
-.org $b0fc
-        jsr +
-.reloc
-+       txa
+.org $b0f6
+        dec $04e0,x
+        dec $04e0,x
+        txa
         and #1
-        eor $0480,x
-        rts
+        eor ObjectTimer,x
+        and #$0f
+        bne ++ ; $37118
+         txa
+         lsr
+         bcc + ; $3710d
+          dec $0360,x
+          dec $0360,x
++        jsr @incAndInvalidate
+         and #$0f
+         sta $0360,x
+++      jmp ObjectActionJump_57
+.assert * = $b11b
 
-;;; De-lag projectile motion
-;;; We define a _second_ version of ComputeDisplacementVector that
-;;; caches the trig results, saving a lot of computation time.
+.reloc
+@incAndInvalidate:
+        lsr PSpdOK,x
+        inc $0360,x
+        lda $0360,x
+        rts
 
 .macro PROJ_SPEED
         pha
@@ -273,12 +403,11 @@ PSpdOK = $680       ; $80 if valid, 00 if invalid
 .reloc
 ComputeProjectileMotionCached:
 
-;;; TODO - don't write into $30, but inline all of AddDisplacementVectorShort
-;;; and write directly into the position
-;;;   - this should speed up quite a bit; the only difference is that if the
-;;;     thing dies then it will drop its replacement one step further, into
-;;;     the illegal terrain?  - but the only children are FF, 0, 2, and 3
-;;;     which all just zero out the object, so it's truly irrelevant!
+;;; Looks up the cached displacement, then adds it directly into the object
+;;; position.
+;;; Result:
+;;;   - $70..d0,x updated with new position
+;;;   - $10 is negative if projectile moved to a new tile
 
         ;; 30 gets dx, 31 gets dy
         lda PSpdVX,x
@@ -286,30 +415,77 @@ ComputeProjectileMotionCached:
         asl PSpdFX2,x
         ;rol PSpdFX1,x
         bcc +
-         inc $30
-         inc PSpdFX2,x
+          inc $30
+          inc PSpdFX2,x
 +       lda PSpdVY,x
         sta $31
         asl PSpdFY2,x
         ;rol PSpdFY1,x
         bcc +
-         inc $31
-         inc PSpdFY2,x
-+       rts
+          inc $31
+          inc PSpdFY2,x
++:
+        ;; Now add directly into object coordinates
+        lda #$00
+        sta $10
+@addX:
+        lda ObjXLo,x
+        sta $34
+        clc
+        adc $30
+        sta ObjXLo,x
+        eor $34
+        and #$f0
+        beq +
+          dec $10  ; moved to a new tile
++       bit $30    ; check sign of delta
+        bmi +
+          bcc @addY
+            inc ObjXHi,x        ; NOTE: doesn't clear carry!
+            bcs @addY ; uncond
++       bcs @addY
+          dec ObjXHi,x
+          bcs @addY
+            dec ObjXHi,x
+@addY:
+        lda ObjYLo,x
+        sta $36
+        clc
+        adc $31
+        sta ObjYLo,x
+        eor $36
+        and #$f0
+        beq +
+          dec $10  ; moved to a new tile
++       lda ObjYLo,x
+        cmp #$f0
+        bcs +
+          sta ObjYLo,x
+          rts
+        bit $31
+        bmi +
+          adc #$0f
+          sta ObjYLo,x
+          inc ObjYHi,x
+          rts
++       adc #$ef
+        sta ObjYLo,x
+        dec ObjYHi,x
+        rts
 ComputeProjectileMotion:
         ;; Check if we have a cached direction
         ldy PSpdOK,x
-        bne ComputeProjectileMotionCached
-        ;; Cache invalid: recompute from A/$340
+        bpl +
+          jmp ComputeProjectileMotionCached
++:      ;; Cache invalid: recompute from A/$340
         sec                     ; mark cache as valid
         ror PSpdOK,x
         ;; Figure out if we have an 8-dir or a 16-dir
-        sta $12                 ; stash direction
         lda $0340,x             ; load speed to y
         and #$0f                ; remove knockback bits
         tay                     ; move to Y
         cpy #$0b                ; check against $b
-        lda $12                 ; reload direction
+        lda $360,x              ; reload direction
         bcs +                   ; if SPD < $b...
           asl                   ;   then it's 8-dir, so shift an extra time
 +       asl                     ; direction is now 32-dir
@@ -327,7 +503,7 @@ ComputeProjectileMotion:
         ;; north -> east (dx = +sin, dy = -cos)
         PROJ_SPEED
         pha
-        PROJ_TRIGP SinTable, PSpdVX, PSpdFX1, PSpdFX2
+          PROJ_TRIGP SinTable, PSpdVX, PSpdFX1, PSpdFX2
         pla
         PROJ_TRIGN CosTable, PSpdVY, PSpdFY1, PSpdFY2
         jmp ComputeProjectileMotionCached
@@ -337,7 +513,7 @@ ComputeProjectileMotion:
         ;; south -> west (dx = -sin, dy = +cos)
         PROJ_SPEED
         pha
-        PROJ_TRIGN SinTable, PSpdVX, PSpdFX1, PSpdFX2
+          PROJ_TRIGN SinTable, PSpdVX, PSpdFX1, PSpdFX2
         pla
         PROJ_TRIGP CosTable, PSpdVY, PSpdFY1, PSpdFY2
         jmp ComputeProjectileMotionCached
@@ -345,7 +521,7 @@ ComputeProjectileMotion:
         ;; west -> north (dx = -cos, dy = -sin)
         PROJ_SPEED
         pha
-        PROJ_TRIGN CosTable, PSpdVX, PSpdFX1, PSpdFX2
+          PROJ_TRIGN CosTable, PSpdVX, PSpdFX1, PSpdFX2
         pla
         PROJ_TRIGN SinTable, PSpdVY, PSpdFY1, PSpdFY2
         jmp ComputeProjectileMotionCached
@@ -353,13 +529,9 @@ ComputeProjectileMotion:
         ;; east -> south (dx = +cos, dy = +sin)
         PROJ_SPEED
         pha
-        PROJ_TRIGP CosTable, PSpdVX, PSpdFX1, PSpdFX2
+          PROJ_TRIGP CosTable, PSpdVX, PSpdFX1, PSpdFX2
         pla
         PROJ_TRIGP SinTable, PSpdVY, PSpdFY1, PSpdFY2
         jmp ComputeProjectileMotionCached
-
-;;; Replace ObjectActionJump_57 call to CDV with CPM
-.org $b0d4
-        jsr ComputeProjectileMotion
 
 .endif ; _EXPAND_SPEEDS

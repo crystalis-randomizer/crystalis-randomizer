@@ -51351,7 +51351,7 @@ ClearSpawnSlot:
         <@358cc@>
 ;;; --------------------------------
 .org $98cd
-_358cd:
+ReplaceWithOnDeathChild:
         <@358cd@>
         <@358d0@>
         <@358d2@>
@@ -54923,7 +54923,7 @@ ObjectActionJump_57:
          ;; ----
 +       <@370c6 ObjectTimer@>
         <@370c9 +@> ; $370ce
-         <@370cb _358cd@>
+         <@370cb ReplaceWithOnDeathChild@> ; $358cd
          ;; ----
 +       <@370ce ReadObjectCoordinatesInto_34_37@>
         <@370d1 ObjectDirection@>
@@ -54939,7 +54939,7 @@ ObjectActionJump_57:
         <@370e9@>
         <@370ec@>
         <@370ee +@> ; $370f3
-         <@370f0 _358cd@>
+         <@370f0 ReplaceWithOnDeathChild@> ; $358cd
          ;; ----
 +       <@370f3 WriteObjectCoordinatesFrom_34_37@>
 ;;; --------------------------------
@@ -55797,7 +55797,7 @@ ObjectActionJump_7b:
         <@3777b@>
         <@3777e ObjectTimer@>
         <@37781 +@> ; $37786
-         <@37783 _358cd@>
+         <@37783 ReplaceWithOnDeathChild@> ; $358cd
          ;; ----
 +       <@37786 ObjectTimer@>
         <@37789@>
@@ -55950,7 +55950,7 @@ DoExplosion:
         <@378b6@>
         <@378b8 +@> ; $378bf
         <@378ba@>
-++      <@378bc _358cd@>
+++      <@378bc ReplaceWithOnDeathChild@> ; $358cd
         ;; ----
 +       <@378bf DataTable_378e6+1@>
         <@378c2@>

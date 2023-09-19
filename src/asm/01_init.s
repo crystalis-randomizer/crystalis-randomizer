@@ -171,7 +171,14 @@ FREE "3d" [$a000, $c000)
 .define BankSelectShadow $50
 .define ScreenMode $51
 
+ObjXLo = $70
+ObjXHi = $90
+ObjYLo = $b0
+ObjYHi = $d0
+
+ObjectMetasprite = $300
 ObjectRecoil = $340
+ObjectDirection = $360
 ObjectHP = $3c0
 PlayerHP = $3c1
 PlayerMaxHP = $3c0
@@ -179,6 +186,8 @@ ObjectAtk = $3e0
 PlayerAtk = $3e1
 ObjectDef = $400
 PlayerLevel = $421
+ObjectTerrainSusceptibility = $460
+ObjectTimer = $480
 ObjectActionScript = $4a0
 ObjectGold = $500
 ObjectElementalDefense = $500
@@ -207,6 +216,7 @@ ScrollYHi = $07db
 
 WarriorRingStabCounter = $61fb  ; added in rando
 PlayerStandingTimer = $61fc     ; added in rando
+CurrentLocationFlags = $62f0
 InvSwords = $6430
 InvConsumables = $6440
 InvPassive = $6448

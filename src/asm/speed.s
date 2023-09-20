@@ -16,88 +16,8 @@
 ;;; Mark this whole area as free
 FREE "1a" [$8480,$8b7f)
 
-;;; Do the speed conversion, once per branch.  Leaves DDDS.SSSS in A
-.macro CONVERT_SPEED
-        pha
-          ;; Check for slow terrain
-          lda $0380,x
-          asl
-          bpl +
-            dey
-            dey
-            bpl +
-              ldy #$00
-          ;; Convert speed to new system
-+         lda SpeedConversionTable,y
-          sta $10
-          ;; Store step counter in $11
-          lda $0480,x
-          and #$0f
-          sta $11
-        pla
-        ;; OR the (shifted) direction into the speed to get trig table index
-        ora $10
-.endmacro
-
-;;; Positive trig function
-.macro TRIGP table, mem
-        ;; At this point, A has index into one of the trig tables
-        ;; Read the component and add the fraction to the whole part
-        tay
-        lda table,y
-        pha
-          ;; Put the fraction into y
-          and #$f0
-          ora $11
-          tay
-        pla
-        and #$0f
-        sta mem
-        lda SpeedFractionTable,y
-        asl
-        bcc +
-          inc mem
-+:
-.endmacro
-
-;;; Negative trig function
-.macro TRIGN table, mem
-        ;; At this point, A has index into one of the trig tables
-        ;; Read the component, then negate and add the fraction (inverse carry)
-        ;; This is effectively a two's complement but rather than always
-        ;; incrementing and then somtimes decrementing, we just conditionally
-        ;; increment on the opposite condition (carry clear)
-        tay
-        lda table,y
-        pha
-          ;; Put the fraction into y
-          and #$f0
-          ora $11
-          tay
-        pla
-        and #$0f
-        eor #$ff
-        sta mem
-        lda SpeedFractionTable,y
-        asl
-        bcs +
-          inc mem
-+:
-.endmacro
-
-
-
 ;.reloc
 .org $8800
-;;; NOTE: can't use a cheap local because of the named label below... :-(
-cdv_q2:         ; Put this before the main routine to keep jumps in bounds
-        ;; east -> south (dx = +cos, dy = +sin)
-        CONVERT_SPEED
-        pha
-          TRIGP CosTable, $30
-        pla
-        TRIGP SinTable, $31
-        rts
 OVERRIDE ; !!!
 ComputeDisplacementVector:  ; NOTE: 34849
 ;;; Inputs:
@@ -111,51 +31,127 @@ ComputeDisplacementVector:  ; NOTE: 34849
 ;;; speeds are the same wonky nonsense that the vanilla game uses,
 ;;; and we have conversion tables into our more general system.
         ;; Figure out if we have an 8-dir or a 16-dir
+        asl                     ; always need 4 shifts
+        asl
+        asl
+        asl
         sta $12                 ; stash direction
+
+        ;; Set $31 from step counter
+        lda $0480,x
+        and #$0f
+        sta $31
+
+        ;; Load speed
         lda $0340,x             ; load speed to y
         and #$0f                ; remove knockback bits
-        tay                     ; move to Y
+        sta $11
+        tay
+        lda $0380,x
+        asl
+        bpl +
+          dey
+          dey
+          bpl +
+            ldy #$00
+        ;; Convert speed to new system
+        ;; NOTE: 16-dir speeds are never slow-able
++       lda SpeedConversionTable,y
+        sta $10                 ; $10 is now slow-adjusted speed (5 bits)
+
+        ;; Check for 16-dir
+        lda $12                 ; direction << 4
+        ldy $11                 ; original speed & f
         cpy #$0b                ; check against $b
-        lda $12                 ; reload direction
         bcs +                   ; if SPD < $b...
           asl                   ;   then it's 8-dir, so shift an extra time
-+       asl                     ; direction is now 32-dir
-        ;; Shift direction to MSB
-        asl
-        asl
-        asl
-        ;; Shift off the top two bits to figure out which quadrant we're in
-        asl
-        bcs @q3
-        asl
-        bcs cdv_q2
-@q1:
-        ;; north -> east (dx = +sin, dy = -cos)
-        CONVERT_SPEED
-        pha
-          TRIGP SinTable, $30
-        pla
-        TRIGN CosTable, $31
-        rts
-@q3:
-        asl
-        bcs @q4
-        ;; south -> west (dx = -sin, dy = +cos)
-        CONVERT_SPEED
-        pha
-          TRIGN SinTable, $30
-        pla
-        TRIGP CosTable, $31
-        rts
-@q4:
-        ;; west -> north (dx = -cos, dy = -sin)
-        CONVERT_SPEED
-        pha
-          TRIGN CosTable, $30
-        pla
-        TRIGN SinTable, $31
-        rts
++:
 
+        ;; A has direction at far left - shift off 2 bits to figure out quadrant
+        ldy #$00
+        asl                     ; carry = quadrant 3 or 4 - determines sign
+        bcc +
+          dey
++       sty $11                 ; $11 is sign to apply after trig
+        asl
+
+        ora $10
+        sta $12               ; save direction|speed
+        tay
+
+        bcs ++
+          ;; Quadrants 1 and 3
+
+          ;; At this point, A has index into one of the trig tables
+          ;; Read the component and add the fraction to the whole part
+          lda SinTable,y
+          sta $10               ; stash table result
+            ;; Put the fraction into y
+            and #$f0
+            ora $31             ; frame fraction
+            tay
+          lda $10               ; recover table result
+          and #$0f
+          eor $11
+          sta $30
+          lda SpeedFractionTable,y
+          eor $11
+          bpl +
+            inc $30             ; store dx coordinate
+
+          ;; Same thing, but for -cos
++         ldy $12
+          lda CosTable,y
+          sta $10               ; stash table result
+            ;; Put the fraction into y
+            and #$f0
+            ora $31             ; frame fraction
+            tay
+          lda $10               ; recover table result
+          and #$0f
+          eor #$ff
+          eor $11
+          sta $31
+          lda SpeedFractionTable,y
+          eor $11
+          bmi +
+            inc $31
++         rts                   ; 169 cycles max, compared to 89 vanilla...
+        ;; ----
+++:
+          ;; Quadrants 2 and 4
+          lda CosTable,y
+          sta $10
+            ;; Put the fraction into y
+            and #$f0
+            ora $31             ; frame fraction
+            tay
+          lda $10
+          and #$0f
+          eor $11
+          sta $30
+          lda SpeedFractionTable,y
+          eor $11
+          bpl +
+            inc $30             ; store dx coordinate
+
+          ;; Same thing, but for +sin
++         ldy $12
+          lda SinTable,y
+          sta $10
+            ;; Put the fraction into y
+            and #$f0
+            ora $31             ; frame fraction
+            tay
+          lda $10
+          and #$0f
+          eor $11
+          sta $31
+          lda SpeedFractionTable,y
+          eor $11
+          bpl +
+            inc $31
++         rts
 
 .reloc
 SpeedConversionTable:

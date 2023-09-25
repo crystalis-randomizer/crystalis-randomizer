@@ -1,3 +1,39 @@
+Maybe a simpler approach is in order?
+ - keep same fast lookup routine, 8/16 directions, but compress the tables
+   by removing 60% of each
+ - make all tables 16-dir (remove width lookup)
+ - now each table is 8x8 -> 64 bytes (4 per page?)
+
+ lda SpeedTableLo,y
+ sta $10
+ lda SpeedTableHi,y
+ sta $11
+ ; skip width
+ lda ObjectTimer,x
+ and $#07
+ ora $12  ; direction << 3
+ bvc +
+  and #$3f
+  tay
+  lda ($10),y
+  eof #$ff
+  sec
+  adc #$00
+  jmp ++
++:
+  tay
+  lda ($10),y
+++:
+ sta $31
+ tya
+ clc
+ adc $20
+
+ ; repeat same thing for $30 ... ?
+
+
+========= OLD NOTES 9/21/23 ==========
+
 Even the non-trig versions are way too laggy, but we can maybe
 fix this by doing large branches.  Two main approaches, depending
 on whether we're going for 32 or 64 directions.

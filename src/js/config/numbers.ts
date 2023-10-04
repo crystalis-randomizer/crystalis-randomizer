@@ -154,12 +154,13 @@ export function decode(encoding: string, declType: string, value: number): unkno
   }
   const enc = encoding != undefined ? getEncoding(encoding) : undefined;
   const jsType = protoToJsType[declType];
-  if (typeof value === 'string') {
+  if (typeof value === 'string' || declType === 'string' || declType === 'bytes') {
     throw new Error(`Can't decode string from number`);
   } else if (enc) {
     return jsType(enc.decode(value));
   } else {
-    throw new Error(`Don't know how to handle ${declType} (type ${encoding})`);
+    return jsType(value);
+    //throw new Error(`Don't know how to handle ${declType} (type ${encoding})`);
   }
 }
 

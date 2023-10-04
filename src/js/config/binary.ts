@@ -20,7 +20,7 @@ export function serialize(message: Message<any>): number[] {
     assertType<Field>(spec);
     // check existence
     const val = message[f];
-    if (val == undefined) break;
+    if (val == undefined) continue;
     // is it a primitive, enum, or submessage?
     // need to look up type in scope
     const ft = spec.parent.lookup(spec.type);
@@ -54,12 +54,13 @@ export function serialize(message: Message<any>): number[] {
   return out.toArray();
 }
 
-export function deserialize(message: Message<any>, buffer: ReadBuffer) {
+export function deserialize<T extends Message<any>>(message: T, buffer: ReadBuffer|NumArray): T {
+  if (!(buffer instanceof ReadBuffer)) buffer = new ReadBuffer(buffer);
   // Need to pull the reflection data
   const t = message.$type;
   // For each field, see if it's defined on this message
   while (!buffer.eof()) {
-    const header = buffer.readVarint();
+    const header: number = buffer.readVarint();
     // TODO - can header have anything other than a '0' type?
     //      - maybe when we start handling maps...
     const id = header >>> 2;
@@ -90,6 +91,7 @@ export function deserialize(message: Message<any>, buffer: ReadBuffer) {
       throw new Error(`Unknown spec type: ${spec.type}`);
     }
   }
+  return message;
 }
 
 function readPrimitiveFields(message: Message<any>, reader: ReadBuffer) {

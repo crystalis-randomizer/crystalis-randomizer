@@ -27,8 +27,21 @@ message Config {
   // NOTE: must be exactly 1 for the filled message
   optional uint32 version = 1 [(type) = "u8"];
 
+  Items items = 2;
+  Quality quality = 3;
+  Triggers triggers = 4;
+  Maps maps = 5;
+  Enemies enemies = 6;
+  Towns towns = 7;
+  Glitches glitches = 8;
+  Fun fun = 9;
+  Accessibility accessibility = 10;
+  Fixes fixes = 11;
+  Debug debug = 12;
+
   // if this is set, just show the opaque serialization...
-  optional bool hide_config = 12 [(default) = false];
+  optional bool hide_config = 13 [(default) = false];
+  optional bool race = 14 [(default) = false];
 
   enum Randomization {
     UNSPECIFIED = 0;

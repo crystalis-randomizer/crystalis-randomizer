@@ -1,0 +1,907 @@
+syntax = "proto3";
+
+// 
+    // how to serialize the packing size???
+    // field 0 => length delimited
+    //   - signed varint mask length (bytes)
+    //   - mask for >=1-bit values
+    //   - if mask length was negative, repeat but for 2-bit values
+    //   - then 4-bit, 8-bit, 16-bit, etc
+    //   - if a size is 0 then skip that step and immediately go to next
+    // can we pack u8/255 as a sort of continued fraction???
+    //   - reverse bits, then treat as XOR's
+    //      - 00000000 => 0
+    //      - 00000001 => 10000000 => 11111111
+    //      - 00000011 => 11000000 => 10000000
+    //      - 00000010 => 01000000 => 01111111 (wasteful)
+    //        - can't get exactly 1/2 !
+    //   - fold over: (0,) 1, 1/2, 1/4, 3/4, 1/8, 7/8, 3/8, 5/8, ...
+    //      - note: there's one /256 that's missing here... 129/256 missing?
+    //        or just don't allow 256ths? - waste _most_ of last bit..., oh well
+    // varint: (5 bits = 256 fields)(0)(1) -> 1=continued, 0=+1
+    //         (4 bits = 128 fields)(01)(1) -> 1=continued, 01=+2 bits (unary)
+
+
+message Config {
+
+  // NOTE: must be exactly 1 for the filled message
+  optional uint32 version = 1 [(type) = "u8"];
+
+  // if this is set, just show the opaque serialization...
+  optional bool hide_config = 12 [(default) = false];
+
+  enum Randomization {
+    UNSPECIFIED = 0;
+    VANILLA = 1;
+    SHUFFLED = 2;
+    RANDOM = 3;
+  }
+  
+  message Items {
+    
+    Placement placement = 1;
+
+    message Placement {
+
+      Algorithm algorithm = 1;
+
+      // NOTE: changing float encodings is NOT a compatible change!
+      // It requires parsing to JSON and back with a different version
+      // if we want to migrate versions...
+      message Algorithm {
+        optional Type type = 1
+          [(default) = ASSUMED_FILL,
+           (preset.vanilla) = VANILLA];
+        optional bool use_temperature = 2
+          [(default) = true];
+        optional float check_temperature = 3
+          [(type) = "f8:1.3.1", // ?? or 1.4.3? or i8/32?
+           (default) = 2];
+        optional float item_temperature = 4
+          [(type) = "i8/32",
+           (default) = 2];
+        optional float balance_weight = 5
+          [(type) = "u8/32",
+           (default) = 5];
+        enum Type {
+          VANILLA = 0;
+          ASSUMED_FILL = 1;
+        }
+      }
+
+      // NOTE: if RANDOM then it's possible that there will be more or fewer
+      // than the correct number of mimics.  In that case, we'll randomly swap
+      // out consumables.
+      optional Randomization mimics = 2 // TODO
+        [(default) = SHUFFLE,
+         (preset.vanilla) = VANILLA];
+
+      optional Randomization consumables = 3
+        [(default) = SHUFFLE,
+         (preset.vanilla) = VANILLA];
+
+      optional bool allow_lost_opel = 4 // TODO
+        [(default) = false];
+
+      optional bool all_reachable = 5 // TODO
+        [(default) = true];
+
+      // Positive indicates minimum requires sphere, negative is upper bound
+      // e.g. -1 means must be in zero-sphere
+      // TODO - how to implement beside just checking and retrying??
+      //   - remove from assumed-fill pool and place later?
+      // NOTE: map<enum, prim> should just be a single bitset...?
+      //       - we could try two encodings to compare, depending on size
+      //       - single element -> build into owning bitset as u8.u8
+      //       - repeated primitive (or pair of primitives) -> nested bitset
+
+      map<uint32, int32> bury = 6 // TODO
+        [(key) = ItemName, (value) = "u8"];
+      map<uint32, int32> early = 7 // TODO
+        [(key) = ItemName, (value) = "u8"];
+
+      repeated ItemName initial_inventory = 8
+        [(type) = "bitset"]; // TODO - define this type!!!
+
+      optional bool early_sword = 9
+        [(default) = false];
+
+      // Any way to clear maps?
+      map<uint32, ItemName> force = 10
+        [(key) = CheckName];
+    }
+
+    Logic logic = 2;
+    message Logic {
+      optional bool require_gas_mask_for_swamp = 1
+        [(default) = true];
+      optional bool require_barrier_for_statues = 2
+        [(default) = true];
+      optional bool require_refresh_for_bosses = 3
+        [(default) = false];
+      // note: karmine maxes at 2
+      optional uint32 minimum_sword_level_for_bosses = 4
+        [(type) = u8, (default) = 1];
+      // defined as (bracelet OR power ring OR warrior ring)
+      optional bool require_offensive_upgrade_for_bosses = 5
+        [(default) = false];
+    }
+
+
+    // group under Behavior???
+    optional bool deo_restores_mp_while_walking = 3
+      [(default) = true];
+    optional bool hazmat_suit = 4
+      [(default) = true];
+    optional bool speed_boots = 5
+      [(default) = true];
+    // TODO - other adjustments???
+    optional uint32 speed_boots_speed = 6
+      [(type) = u8, (default) = 1]; // TODO
+    optional bool rabbit_boots_charge_while_walking = 7
+      [(default) = true];
+    optional bool slow_tornado = 8
+      [(default) = true];
+    optional uint32 medical_herb_heal = 9
+      [(type) = u8, (default) = 80];
+    optional uint32 fruit_of_power_mp = 10
+      [(type) = u8, (default) = 56];
+
+    optional uint32 sword_level_for_walls = 11
+      [(type) = u8, (default) = 1];
+
+    optional bool nerf_flight_stab = 12
+      [(default) = true];
+
+    optional bool charge_shots_only = 13
+      [(default) = false];
+    optional bool charge_while_walking = 14
+      [(default) = false];
+    optional bool rabbit_boots_double_charge = 15
+      [(default) = false];
+    optional bool warrior_ring_turret = 16
+      [(default) = false];
+
+    optional bool add_aquatic_herb = 17
+      [(default) = false]; // TODO
+    optional bool unidentified_items = 18
+      [(default) = false];
+
+    // is this an item property (i.e. teleport/warp boots) or a map property?
+    optional bool warp_from_anywhere = 19
+      [(default) = true];
+    optional bool zombie_warp = 20
+      [(default) = true];
+
+  }
+
+
+
+  message Quality {
+    optional bool auto_equip_bracelet = 1
+      [(default) = true];
+    optional bool quick_swap_sword = 2
+      [(default) = true];
+    optional bool quick_wild_warp = 3
+      [(default) = true];
+    optional bool color_sword_by_element = 4
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool update_hud = 5
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool enemy_hp_in_hud = 6
+      [(default) = true,
+       (preset.vanilla) = false];
+  }
+
+
+  message Triggers {
+    optional bool barrier_check_requies_calm_sea = 1
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool zebu_student_gives_item = 2
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool beach_kensu_triggers_dolphin = 3
+      [(default) = false,
+       (preset.vanilla) = true];
+    optional bool beach_kensu_gives_item = 4
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool heal_dolphin_to_ride = 5
+      [(default) = false,
+       (preset.vanilla) = true];
+    optional bool deo_requires_telepathy = 6
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool draygon2_requires_all_swords = 7
+      [(default) = false];
+    optional bool draygon2_requires_all_bosses = 8
+      [(default) = false];
+    optional bool draygon2_requires_bow_of_truth = 9
+      [(default) = true];
+
+    optional bool thunder_sword_warps = 10
+      [(default) = true];
+    optional LocationName thunder_sword_warp = 11
+      [(default) = SHYRON,
+       (preset.vanilla) = SHYRON__TEMPLE];
+    optional ThunderSwordWarpLocation thunder_sword_warp_location = 12
+      [(default) = VANILLA];
+    enum ThunderSwordWarpLocation {
+      VANILLA = 0;
+      TOWN = 1;
+      RANDOM = 2;
+    }
+    optional ItemName thunder_sword_warp_item = 13
+      [(default) = SWORD_OF_THUNDER];
+    optional ThunderSwordWarpItemTrigger thunder_sword_item_trigger = 14
+      [(default) = VANILLA];
+    enum ThunderSwordWarpItemTrigger {
+      VANILLA = 0;
+      SWORD = 1;
+      UNIQUE = 2;
+      RANDOM = 3;
+    }
+
+    // TODO - random sabre N entrance requirement?
+    // TODO - move to random transition????
+
+  }
+
+
+  message Maps {
+    optional uint32 mezame_chests = 1
+      [(type) = "u8", (min) = 0, (max) = 2,
+       (default) = 0];
+    optional bool mezame_draygon2_portal = 2
+      [(default) = false];
+
+    optional bool add_east_cave = 3
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool add_east_cave_northeast_exit = 4
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool add_east_cave_southwest_exit = 5
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    optional bool reversible_swan_gate = 6
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool blackout = 7
+      [(default) = false];
+    optional bool mirror = 8 // mirror everything?
+      [(default) = false];
+
+    optional bool remove_sahara_whirlpool = 9
+      [(default) = false];
+    optional bool remove_pyramid_whirlpool = 10
+      [(default) = false];
+    optional bool remove_crypt_whirlpool = 11
+      [(default) = false];
+
+    Shuffle shuffle = 20;
+    message Shuffle {
+      optional Randomization wall_elements = 1
+        [(default) = true,
+         (preset.vanilla) = false];
+      // what is difference from shuffle here???
+      //   - pick algorithm???
+      optional Randomization dungeon_maps = 2
+        [(default) = VANILLA];
+      optional float shuffle_town_entrances = 3
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float shuffle_cave_entrances = 4
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float shuffle_fortress_entrances = 5
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float shuffle_house_entrances = 6
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float shuffle_area_connections = 7
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float shuffle_goa_floor_connections = 8
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float reverse_goa_floor_directions = 9
+        [(type) = "u8/128",
+         (default) = 0];
+      optional float mirror_caves = 10
+        [(type) = "u8/128",
+         (default) = 0];
+      optional bool shuffle_basement_entrances = 11
+        [(default) = false];
+      optional float remove_desert_whirlpools = 12
+        [(type) = "u8/128",
+         (default) = 0];
+    }
+
+    map<uint32, LocationData> force = 21
+      [(key) = LocationName];
+
+    message LocationData {
+      // TODO - screens, connections, tileset, spawns, etc
+    }
+
+    // map<uint32, MetascreenData> screens = 9; // this key is 16-bit maybe?
+    // // or else we need an enum of metascreen names...?!?
+    // //  - how to keep everything in sync???
+    // //  - can we use the early parsed `Rom` itself for the rewriting, rather than enum?
+
+    // message MetascreenData {
+    //   // is this even something we can do?
+    // }
+  }
+  
+
+  message Enemies {
+    optional float items_from_mimics = 1
+      [(type) = "u8/128",
+       (default) = 0];
+      //[(type) = "f8:0.3.5.6", (default) = 0, (min) = 0, (max) = 1];
+    optional bool remove_level_minimums = 2
+      [(default) = true];
+    optional bool rescale_enemies = 3
+      [(default) = true];
+    optional Randomization randomize_enemies = 4
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+    optional Randomization randomize_enemy_weaknesses = 5
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+    optional Randomization randomize_boss_weaknesses = 6
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+    optional bool palette_swap = 7
+        [(default) = false];
+    optional float robots_outside_tower = 8
+      [(type) = "u8/128",
+       (default) = 0.05];
+    optional bool max_scaling_in_tower = 9
+      [(default) = false];
+    optional bool buff_dyna = 10
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool tink_mode = 11
+      [(default) = false];
+    optional bool tink_required_by_logic = 12
+      [(default) = false];
+    optional float exp_scaling_factor = 13
+      [(type) = "f8:0.3.5",
+       (default) = 1];
+    // note: guarantee matching sword is the same as tink not required?
+    optional bool nerf_mado2 = 14 // ???? TODO
+      [(default) = false];
+    optional bool randomize_flyer_spawns = 15 // note: important for rage skip
+      [(default) = true,
+       (preset.vanilla) = false];
+  }
+
+  message Towns {
+    optional Randomization shop_contents = 1
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+    optional bool rescale_prices = 2
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional float price_variation = 3
+      [(type) = "f8:0.4.4",
+       (default) = 0.6, // TODO - check what we're currently doing?
+       (preset.vanilla) = 0];
+    optional bool shuffle_trades = 4
+      [(default) = false];
+    optional bool chaotic_trades = 5 // all items eligible...?
+      [(default) = false];
+    optional bool heal_stom = 6
+      [(default) = false];
+    // TODO - force trade-ins, force shops, etc
+  }
+
+  message Glitches {
+    optional bool allow_shop_glitch = 1
+      [(default) = false,
+       (preset.vanilla) = true];
+    optional GlitchMode statue_glitch = 2
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode sword_charge_glitch = 3
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode teleport_skip = 4
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode rabbit_skip = 5
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode rage_skip = 6
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode trigger_skip = 7
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode flight_statue_skip = 8
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional GlitchMode ghetto_flight = 9
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW];
+    optional bool require_long_trigger_skip = 10
+      [(default) = false];
+
+    enum GlitchMode {
+      FORBID = 0;
+      REQUIRE = 1;
+      ALLOW = 2;
+    }
+  }
+
+  message Fun {
+    // modes: none, full, shuffle???
+    optional bool palette_swap_backgrounds = 1
+      [(default) = false];
+    optional bool randomize_music = 2
+      [(default) = false];
+    optional bool disable_music = 3
+      [(default) = false];
+    // TODO - do sprite swaps belong here?
+  }
+
+  message Accessibility {
+    // todo - quick soft reset?
+    optional bool audible_wall_cues = 1
+      [(default) = false];
+  }
+
+  message Fixes {
+    // Fixes the screen-shake effect from missed IRQ timing
+    optional bool fix_screen_shake = 1
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Despawns blizzard shots before trying to shoot new ones
+    optional bool fix_blizzard_despawn = 2
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Replace all coin sprites with the same one (TODO: different per page?)
+    optional bool fix_coin_sprites = 3
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Fix opel statues to work even if not equipped
+    optional bool fix_opel_statue = 4
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Allow using sword magic even if it would drop MP to exactly zero
+    optional bool fix_sword_magic_mp = 5
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Fix Vampire 2's teleport speed to not blow up at very low HP
+    optional bool fix_vampire_speed = 6
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Simplify invisible chest logic to be more generalizable (required for
+    // most randomization).
+    optional bool simplify_invisible_chests = 7
+      [(default) = true,
+       (preset.vanilla) = false];
+  }
+
+  message Debug {
+    optional bool trainer = 1
+      [(default) = false];
+    optional bool never_die = 2
+      [(default) = false];
+    optional bool check_flag0 = 3
+      [(default) = true];
+  }
+
+}
+
+enum ItemName {
+  SWORD_OF_WIND = 0x00;
+  SWORD_OF_FIRE = 0x01;
+  SWORD_OF_WATER = 0x02;
+  SWORD_OF_THUNDER = 0x03;
+  CRYSTALIS = 0x04;
+  BALL_OF_WIND = 0x05;
+  TORNADO_BRACELET = 0x06;
+  BALL_OF_FIRE = 0x07;
+  FLAME_BRACELET = 0x08;
+  BALL_OF_WATER = 0x09;
+  BLIZZARD_BRACELET = 0x0a;
+  BALL_OF_THUNDER = 0x0b;
+  STORM_BRACELET = 0x0c;
+  CARAPACE_SHIELD = 0x0d;
+  BRONZE_SHIELD = 0x0e;
+  PLATINUM_SHIELD = 0x0f;
+  MIRRORED_SHIELD = 0x10;
+  CERAMIC_SHIELD = 0x11;
+  SACRED_SHIELD = 0x12;
+  BATTLE_SHIELD = 0x13;
+  PSYCHO_SHIELD = 0x14;
+  TANNED_HIDE = 0x15;
+  LEATHER_ARMOR = 0x16;
+  BRONZE_ARMOR = 0x17;
+  PLATINUM_ARMOR = 0x18;
+  SOLDIER_SUIT = 0x19;
+  CERAMIC_SUIT = 0x1a;
+  BATTLE_ARMOR = 0x1b;
+  PSYCHO_ARMOR = 0x1c;
+  MEDICAL_HERB = 0x1d;
+  ANTIDOTE = 0x1e;
+  LYSIS_PLANT = 0x1f;
+  FRUIT_OF_LIME = 0x20;
+  FRUIT_OF_POWER = 0x21;
+  MAGIC_RING = 0x22;
+  FRUIT_OF_REPUN = 0x23;
+  WARP_BOOTS = 0x24;
+  STATUE_OF_ONYX = 0x25;
+  OPEL_STATUE = 0x26;
+  INSECT_FLUTE = 0x27;
+  FLUTE_OF_LIME = 0x28;
+  GAS_MASK = 0x29;
+  POWER_RING = 0x2a;
+  WARRIOR_RING = 0x2b;
+  IRON_NECKLACE = 0x2c;
+  DEOS_PENDANT = 0x2d;
+  RABBIT_BOOTS = 0x2e;
+  LEATHER_BOOTS = 0x2f;
+  SHIELD_RING = 0x30;
+  ALARM_FLUTE = 0x31;
+  WINDMILL_KEY = 0x32;
+  KEY_TO_PRISON = 0x33;
+  KEY_TO_STYX = 0x34;
+  FOG_LAMP = 0x35;
+  SHELL_FLUTE = 0x36;
+  EYE_GLASSES = 0x37;
+  BROKEN_STATUE = 0x38;
+  GLOWING_LAMP = 0x39;
+  STATUE_OF_GOLD = 0x3a;
+  LOVE_PENDANT = 0x3b;
+  KIRISA_PLANT = 0x3c;
+  IVORY_STATUE = 0x3d;
+  BOW_OF_MOON = 0x3e;
+  BOW_OF_SUN = 0x3f;
+  BOW_OF_TRUTH = 0x40;
+  REFRESH = 0x41;
+  PARALYSIS = 0x42;
+  TELEPATHY = 0x43;
+  TELEPORT = 0x44;
+  RECOVER = 0x45;
+  BARRIER = 0x46;
+  CHANGE = 0x47;
+  FLIGHT = 0x48;
+}
+
+enum LocationName {
+  // TODO - matching against these is tricky
+  //   - "__" means some sort of extra punctuation?
+  MEZAME_SHRINE = 0x00;
+  LEAF__OUTSIDE_START = 0x01;
+  LEAF = 0x02;
+  VALLEY_OF_WIND = 0x03;
+  SEALED_CAVE_1 = 0x04;
+  SEALED_CAVE_2 = 0x05;
+  SEALED_CAVE_3 = 0x06;
+  SEALED_CAVE_4 = 0x07;
+  SEALED_CAVE_5 = 0x08;
+  SEALED_CAVE_6 = 0x09;
+  SEALED_CAVE_7 = 0x0a;
+  SEALED_CAVE_8 = 0x0c;
+  WINDMILL_CAVE = 0x0e;
+  WINDMILL = 0x0f;
+  ZEBU_CAVE = 0x10;
+  MT_SABRE_WEST__CAVE_1 = 0x11;
+  CORDEL_PLAINS_WEST = 0x14;
+  CORDEL_PLAINS_EAST = 0x15;
+  BRYNMAER = 0x18;
+  OUTSIDE_STOM_HOUSE = 0x19;
+  SWAMP = 0x1a;
+  AMAZONES = 0x1b;
+  OAK = 0x1c;
+  STOM_HOUSE = 0x1e;
+  MT_SABRE_WEST__LOWER = 0x20;
+  MT_SABRE_WEST__UPPER = 0x21;
+  MT_SABRE_WEST__CAVE_2 = 0x22;
+  MT_SABRE_WEST__CAVE_3 = 0x23;
+  MT_SABRE_WEST__CAVE_4 = 0x24;
+  MT_SABRE_WEST__CAVE_5 = 0x25;
+  MT_SABRE_WEST__CAVE_6 = 0x26;
+  MT_SABRE_WEST__CAVE_7 = 0x27;
+  MT_SABRE_NORTH__MAIN = 0x28;
+  MT_SABRE_NORTH__MIDDLE = 0x29;
+  MT_SABRE_NORTH__CAVE_1 = 0x2a;
+  MT_SABRE_NORTH__CAVE_2 = 0x2b;
+  MT_SABRE_NORTH__CAVE_3 = 0x2c;
+  MT_SABRE_NORTH__CAVE_4 = 0x2d;
+  MT_SABRE_NORTH__CAVE_5 = 0x2e;
+  MT_SABRE_NORTH__CAVE_6 = 0x2f;
+  MT_SABRE_NORTH__LEFT_CELL = 0x30;
+  MT_SABRE_NORTH__PRISON_KEY_HALL = 0x31;
+  MT_SABRE_NORTH__RIGHT_CELL = 0x32;
+  MT_SABRE_NORTH__CAVE_7 = 0x33;
+  MT_SABRE_NORTH__CAVE_8 = 0x34;
+  MT_SABRE_NORTH__SUMMIT_CAVE = 0x35;
+  MT_SABRE_NORTH__ENTRANCE_CAVE = 0x38;
+  MT_SABRE_NORTH__CAVE_5A = 0x39;
+  NADARE__INN = 0x3c;
+  NADARE__TOOL_SHOP = 0x3d;
+  NADARE__BACK_ROOM = 0x3e;
+  WATERFALL_VALLEY_NORTH = 0x40;
+  WATERFALL_VALLEY_SOUTH = 0x41;
+  LIME_TREE_VALLEY = 0x42;
+  LIME_TREE_LAKE = 0x43;
+  KIRISA_PLANT_CAVE_1 = 0x44;
+  KIRISA_PLANT_CAVE_2 = 0x45;
+  KIRISA_PLANT_CAVE_3 = 0x46;
+  KIRISA_MEADOW = 0x47;
+  FOG_LAMP_CAVE_1 = 0x48;
+  FOG_LAMP_CAVE_2 = 0x49;
+  FOG_LAMP_CAVE_3 = 0x4a;
+  FOG_LAMP_CAVE_DEAD_END = 0x4b;
+  FOG_LAMP_CAVE_4 = 0x4c;
+  FOG_LAMP_CAVE_5 = 0x4d;
+  FOG_LAMP_CAVE_6 = 0x4e;
+  FOG_LAMP_CAVE_7 = 0x4f;
+  PORTOA = 0x50;
+  PORTOA__FISHERMAN_ISLAND = 0x51;
+  MESIA_SHRINE = 0x52;
+  WATERFALL_CAVE_1 = 0x54;
+  WATERFALL_CAVE_2 = 0x55;
+  WATERFALL_CAVE_3 = 0x56;
+  WATERFALL_CAVE_4 = 0x57;
+  TOWER__ENTRANCE = 0x58;
+  TOWER_1 = 0x59;
+  TOWER_2 = 0x5a;
+  TOWER_3 = 0x5b;
+  TOWER__OUTSIDE_MESIA = 0x5c;
+  TOWER__OUTSIDE_DYNA = 0x5d;
+  TOWER__MESIA = 0x5e;
+  TOWER__DYNA = 0x5f;
+  ANGRY_SEA = 0x60;
+  CABIN = 0x61;
+  JOEL__LIGHTHOUSE = 0x62;
+  UNDERGROUND_CHANNEL = 0x64;
+  ZOMBIE_TOWN = 0x65;
+  EVIL_SPIRIT_ISLAND_1 = 0x68;
+  EVIL_SPIRIT_ISLAND_2 = 0x69;
+  EVIL_SPIRIT_ISLAND_3 = 0x6a;
+  EVIL_SPIRIT_ISLAND_4 = 0x6b;
+  SABERA_PALACE_1 = 0x6c;
+  SABERA_PALACE_2 = 0x6d;
+  SABERA_PALACE_3 = 0x6e;
+  JOEL__SECRET_PASSAGE = 0x70;
+  JOEL = 0x71;
+  SWAN = 0x72;
+  SWAN__GATE = 0x73;
+  GOA_VALLEY = 0x78;
+  MT_HYDRA = 0x7c;
+  MT_HYDRA__CAVE_1 = 0x7d;
+  MT_HYDRA__OUTSIDE_SHYRON = 0x7e;
+  MT_HYDRA__CAVE_2 = 0x7f;
+  MT_HYDRA__CAVE_3 = 0x80;
+  MT_HYDRA__CAVE_4 = 0x81;
+  MT_HYDRA__CAVE_5 = 0x82;
+  MT_HYDRA__CAVE_6 = 0x83;
+  MT_HYDRA__CAVE_7 = 0x84;
+  MT_HYDRA__CAVE_8 = 0x85;
+  MT_HYDRA__CAVE_9 = 0x86;
+  MT_HYDRA__CAVE_10 = 0x87;
+  STYX_1 = 0x88;
+  STYX_2 = 0x89;
+  STYX_3 = 0x8a;
+  SHYRON = 0x8c;
+  GOA = 0x8e;
+  GOA_FORTRESS__OASIS_ENTRANCE = 0x8f;
+  DESERT_1 = 0x90;
+  OASIS_CAVE__MAIN = 0x91;
+  DESERT_CAVE_1 = 0x92;
+  SAHARA = 0x93;
+  SAHARA__OUTSIDE_CAVE = 0x94;
+  DESERT_CAVE_2 = 0x95;
+  SAHARA_MEADOW = 0x96;
+  DESERT_2 = 0x98;
+  PYRAMID__ENTRANCE = 0x9c;
+  PYRAMID__BRANCH = 0x9d;
+  PYRAMID__MAIN = 0x9e;
+  PYRAMID__DRAYGON = 0x9f;
+  CRYPT__ENTRANCE = 0xa0;
+  CRYPT__HALL_1 = 0xa1;
+  CRYPT__BRANCH = 0xa2;
+  CRYPT__DEAD_END_LEFT = 0xa3;
+  CRYPT__DEAD_END_RIGHT = 0xa4;
+  CRYPT__HALL_2 = 0xa5;
+  CRYPT__DRAYGON_REVISITED = 0xa6;
+  CRYPT__TELEPORTER = 0xa7;
+  GOA_FORTRESS__ENTRANCE = 0xa8;
+  GOA_FORTRESS__KELBESQUE = 0xa9;
+  GOA_FORTRESS__ZEBU = 0xaa;
+  GOA_FORTRESS__SABERA = 0xab;
+  GOA_FORTRESS__TORNEL = 0xac;
+  GOA_FORTRESS__MADO_1 = 0xad;
+  GOA_FORTRESS__MADO_2 = 0xae;
+  GOA_FORTRESS__MADO_3 = 0xaf;
+  GOA_FORTRESS__KARMINE_1 = 0xb0;
+  GOA_FORTRESS__KARMINE_2 = 0xb1;
+  GOA_FORTRESS__KARMINE_3 = 0xb2;
+  GOA_FORTRESS__KARMINE_4 = 0xb3;
+  GOA_FORTRESS__KARMINE_5 = 0xb4;
+  GOA_FORTRESS__KARMINE_6 = 0xb5;
+  GOA_FORTRESS__KARMINE_7 = 0xb6;
+  GOA_FORTRESS__EXIT = 0xb7;
+  OASIS_CAVE__ENTRANCE = 0xb8;
+  GOA_FORTRESS__ASINA = 0xb9;
+  GOA_FORTRESS__KENSU = 0xba;
+  GOA__HOUSE = 0xbb;
+  GOA__INN = 0xbc;
+  GOA__TOOL_SHOP = 0xbe;
+  GOA__TAVERN = 0xbf;
+  LEAF__ELDER_HOUSE = 0xc0;
+  LEAF__RABBIT_HUT = 0xc1;
+  LEAF__INN = 0xc2;
+  LEAF__TOOL_SHOP = 0xc3;
+  LEAF__ITEM_SHOP = 0xc4;
+  LEAF__STUDENT_HOUSE = 0xc5;
+  BRYNMAER__TAVERN = 0xc6;
+  BRYNMAER__PAWN_SHOP = 0xc7;
+  BRYNMAER__INN = 0xc8;
+  BRYNMAER__ARMOR_SHOP = 0xc9;
+  BRYNMAER__ITEM_SHOP = 0xcb;
+  OAK__ELDER_HOUSE = 0xcd;
+  OAK__MOTHER_HOUSE = 0xce;
+  OAK__TOOL_SHOP = 0xcf;
+  OAK__INN = 0xd0;
+  AMAZONES__INN = 0xd1;
+  AMAZONES__ITEM_SHOP = 0xd2;
+  AMAZONES__ARMOR_SHOP = 0xd3;
+  AMAZONES__ELDER = 0xd4;
+  NADARE = 0xd5;
+  PORTOA__FISHERMAN_HOUSE = 0xd6;
+  PORTOA__PALACE_ENTRANCE = 0xd7;
+  PORTOA__FORTUNE_TELLER = 0xd8;
+  PORTOA__PAWN_SHOP = 0xd9;
+  PORTOA__ARMOR_SHOP = 0xda;
+  PORTOA__INN = 0xdc;
+  PORTOA__TOOL_SHOP = 0xdd;
+  PORTOA__PALACE_LEFT = 0xde;
+  PORTOA__PALACE_THRONE_ROOM = 0xdf;
+  PORTOA__PALACE_RIGHT = 0xe0;
+  PORTOA__ASINA_ROOM = 0xe1;
+  AMAZONES__ELDER_DOWNSTAIRS = 0xe2;
+  JOEL__ELDER_HOUSE = 0xe3;
+  JOEL__SHED = 0xe4;
+  JOEL__TOOL_SHOP = 0xe5;
+  JOEL__INN = 0xe7;
+  ZOMBIE_TOWN__HOUSE = 0xe8;
+  ZOMBIE_TOWN__HOUSE_BASEMENT = 0xe9;
+  SWAN__TOOL_SHOP = 0xeb;
+  SWAN__STOM_HUT = 0xec;
+  SWAN__INN = 0xed;
+  SWAN__ARMOR_SHOP = 0xee;
+  SWAN__TAVERN = 0xef;
+  SWAN__PAWN_SHOP = 0xf0;
+  SWAN__DANCE_HALL = 0xf1;
+  SHYRON__TEMPLE = 0xf2;
+  SHYRON__TRAINING_HALL = 0xf3;
+  SHYRON__HOSPITAL = 0xf4;
+  SHYRON__ARMOR_SHOP = 0xf5;
+  SHYRON__TOOL_SHOP = 0xf6;
+  SHYRON__INN = 0xf7;
+  SAHARA__INN = 0xf8;
+  SAHARA__TOOL_SHOP = 0xf9;
+  SAHARA__ELDER_HOUSE = 0xfa;
+  SAHARA__PAWN_SHOP = 0xfb;
+}
+
+enum CheckName {
+  LEAF_ELDER = 0x00;
+  OAK_ELDER = 0x01;
+  WATERFALL_CAVE_SWORD_OF_WATER_CHEST = 0x02;
+  STXY_LEFT_UPPER_SWORD_OF_THUNDER_CHEST = 0x03;
+  MESIA_IN_TOWER = 0x04;
+  SEALED_CAVE_BALL_OF_WIND_CHEST = 0x05;
+  MT_SABRE_WEST_TORNADO_BRACELET_CHEST = 0x06;
+  GIANT_INSECT = 0x07;
+  KELBESQUE1 = 0x08;
+  RAGE = 0x09;
+  ARYLLIS_BASEMENT_CHEST = 0x0a;
+  MADO1 = 0x0b;
+  STORM_BRACELET_CHEST = 0x0c;
+  WATERFALL_CAVE_RIVER_LEFT_CHEST = 0x10;
+  MADO2 = 0x12;
+  STXY_RIGHT_MIDDLE_CHEST = 0x14;
+  BATTLE_ARMOR_CHEST = 0x1b;
+  DRAYGON1 = 0x1c;
+  SEALED_CAVE_SMALL_ROOM_BACK_CHEST = 0x1d;
+  SEALED_CAVE_BIG_ROOM_NORTHEAST_CHEST = 0x1e;
+  FOG_LAMP_CAVE_FRONT_CHEST = 0x1f;
+  MT_HYDRA_RIGHT_CHEST = 0x20;
+  SABERA_UPSTAIRS_LEFT_CHEST = 0x21;
+  EVIL_SPIRIT_ISLAND_LOWER_CHEST = 0x22;
+  SABERA2 = 0x23;
+  SEALED_CAVE_SMALL_ROOM_FRONT_CHEST = 0x24;
+  CORDEL_GRASS = 0x25;
+  KELBESQUE2 = 0x26;
+  OAK_MOTHER = 0x27;
+  PORTOA_QUEEN = 0x28;
+  AKAHANA_STATUE_OF_ONYX_TRADEIN = 0x29;
+  OASIS_CAVE_FORTRESS_BASEMENT_CHEST = 0x2a;
+  BROKAHANA = 0x2b;
+  EVIL_SPIRIT_ISLAND_RIVER_LEFT_CHEST = 0x2c;
+  DEO = 0x2d;
+  VAMPIRE1 = 0x2e;
+  OASIS_CAVE_NORTHWEST_CHEST = 0x2f;
+  AKAHANA_FLUTE_OF_LIME_TRADEIN = 0x30;
+  ZEBU_STUDENT = 0x31 [(alias) = "MEZAME_RIGHT_CHEST"];
+  WINDMILL_GUARD_ALARM_FLUTE_TRADEIN = 0x32;
+  MT_SABRE_NORTH_BACK_OF_PRISON_CHEST = 0x33;
+  ZEBU_IN_SHYRON = 0x34;
+  FOG_LAMP_CAVE_BACK_CHEST = 0x35;
+  INJURED_DOLPHIN = 0x36;
+  CLARK = 0x37;
+  SABERA1 = 0x38;
+  KENSU_IN_LIGHTHOUSE = 0x39;
+  REPAIRED_STATUE = 0x3a;
+  UNDERGROUND_CHANNEL_UNDERWATER_CHEST = 0x3b;
+  KIRISA_MEADOW = 0x3c;
+  KARMINE = 0x3d;
+  ARYLLIS = 0x3e;
+  MT_HYDRA_SUMMIT_CHEST = 0x3f;
+  AZTECA_IN_PYRAMID = 0x40;
+  ZEBU_AT_WINDMILL = 0x41;
+  MT_SABRE_NORTH_SUMMIT = 0x42;
+  STOM_FIGHT_REWARD = 0x43;
+  MT_SABRE_WEST_TORNEL = 0x44;
+  ASINA_IN_BACK_ROOM = 0x45;
+  BEHIND_WHIRLPOOL = 0x46;
+  KENSU_IN_SWAN = 0x47;
+  SLIMED_KENSU = 0x48;
+  MEZAME_SHRINE_LEFT_CHEST = 0x49;
+  SEALED_CAVE_BIG_ROOM_SOUTHWEST_CHEST = 0x50;
+  MT_SABRE_WEST_RIGHT_CHEST = 0x52;
+  MT_SABRE_NORTH_MIDDLE_CHEST = 0x53;
+  FORTRESS_MADO_HELLWAY_CHEST = 0x54;
+  SABERA_UPSTAIRS_RIGHT_CHEST = 0x55;
+  MT_HYDRA_FAR_LEFT_CHEST = 0x56;
+  STXY_LEFT_LOWER_CHEST = 0x57;
+  KARMINE_BASEMENT_LOWER_MIDDLE_CHEST = 0x58;
+  EAST_CAVE_NORTHEAST_CHEST = 0x59;
+  OASIS_CAVE_ENTRANCE_ACROSS_RIVER_CHEST = 0x5a;
+  EVIL_SPIRIT_ISLAND_EXIT_CHEST = 0x5c;
+  FORTRESS_SABERA_MIDDLE_CHEST = 0x5d;
+  MT_SABRE_NORTH_UNDER_BRIDGE_CHEST = 0x5e;
+  KIRISA_PLANT_CAVE_CHEST = 0x5f;
+  FORTRESS_MADO_UPPER_NORTH_CHEST = 0x60;
+  VAMPIRE2 = 0x61;
+  FORTRESS_SABERA_NORTHWEST_CHEST = 0x62;
+  FORTRESS_MADO_LOWER_CENTER_NORTH_CHEST = 0x63;
+  OASIS_CAVE_NEAR_ENTRANCE_CHEST = 0x64;
+  MT_HYDRA_LEFT_RIGHT_CHEST = 0x65;
+  FORTRESS_SABERA_SOUTHEAST_CHEST = 0x66;
+  KENSU_IN_CABIN = 0x67;
+  MT_SABRE_WEST_NEAR_TORNEL_CHEST = 0x69;
+  MT_SABRE_WEST_LEFT_CHEST = 0x6a;
+  FORTRESS_MADO_UPPER_BEHIND_WALL_CHEST = 0x6b;
+  PYRAMID_CHEST = 0x6c;
+  CRYPT_RIGHT_CHEST = 0x6d;
+  KARMINE_BASEMENT_LOWER_LEFT_CHEST = 0x6e;
+  FORTRESS_MADO_LOWER_SOUTHEAST_CHEST = 0x6f;
+  FOG_LAMP_CAVE_MIDDLE_NORTH_MIMIC = 0x70;
+  FOG_LAMP_CAVE_MIDDLE_SOUTHWEST_MIMIC = 0x71;
+  WATERFALL_CAVE_FRONT_MIMIC = 0x72;
+  EVIL_SPIRIT_ISLAND_RIVER_RIGHT_MIMIC = 0x73;
+  MT_HYDRA_FINAL_CAVE_MIMIC = 0x74;
+  STXY_LEFT_NORTH_MIMIC = 0x75;
+  STXY_RIGHT_NORTH_MIMIC = 0x76;
+  STXY_RIGHT_SOUTH_MIMIC = 0x77;
+  CRYPT_LEFT_PIT_MIMIC = 0x78;
+  KARMINE_BASEMENT_UPPER_MIDDLE_MIMIC = 0x79;
+  KARMINE_BASEMENT_UPPER_RIGHT_MIMIC = 0x7a;
+  KARMINE_BASEMENT_LOWER_RIGHT_MIMIC = 0x7b;
+  EAST_CAVE_NORTHWEST_MIMIC = 0x7c;
+}

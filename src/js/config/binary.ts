@@ -10,6 +10,22 @@ import { assertType } from '../util';
 import { pack, unpack } from './pack';
 import { NumArray, ReadBuffer, WriteBuffer } from './buffer';
 
+// Consider other possible encodings:
+//   1. traditional binary proto
+//   2. some sort of RLE where we say how many values, then give a byte,
+//      or even just a nibble, and the next # bytes are field numbers
+//      that all have the same value?
+//   3. a slightly more packed version of #1 where we can do T/F with a
+//      single byte?
+// Can we pack this choice into the size delimiter, to know what format
+// to expect to read???  Most messages won't be >64 bytes anyway, except
+// maybe the top-level?
+
+// TODO - de-nest item.placement.algorithm into just config.placement
+//      - avoid anything deeper than 1
+
+// TODO - maps, sets, etc
+
 export function serialize(message: Message<any>): number[] {
   // Need to pull the reflection data
   const t = message.$type;
@@ -21,12 +37,14 @@ export function serialize(message: Message<any>): number[] {
     // check existence
     const val = message[f];
     if (val == undefined) continue;
+    // TODO - handle maps!
+    if (spec.map) continue;
     // is it a primitive, enum, or submessage?
     // need to look up type in scope
     const ft = spec.parent.lookup(spec.type);
     if (ft == undefined) {
       // primitive - try to pack it
-      const encoded = encode(spec.options['(type)'], spec.type, val);
+      const encoded = encode(spec.options['(type)'], spec.type, val, f);
       if (typeof encoded === 'number') {
         primitives[spec.id] = encoded;
       } else {

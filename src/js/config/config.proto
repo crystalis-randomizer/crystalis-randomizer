@@ -22,26 +22,36 @@ syntax = "proto3";
     //         (4 bits = 128 fields)(01)(1) -> 1=continued, 01=+2 bits (unary)
 
 
+    // NOTE: changing float encodings is NOT a compatible change!
+    // It requires parsing to JSON and back with a different version
+    // if we want to migrate versions...
+
+    // Any way to clear lists/maps via a merge???
+
+
 message Config {
 
   // NOTE: must be exactly 1 for the filled message
-  optional uint32 version = 1 [(type) = "u8"];
+  optional uint32 version = 1;
+  // If this is set then the randomizer will not display the exact options.
+  // The only way to unset it is to reset the entire config to empty.  We
+  // will ask for confirmation before proceeding.
+  optional bool hide_config = 2 [(default) = false];
+  // Indicates that this is a "race rom": prevents pulling the spoiler log.
+  optional bool race = 3 [(default) = false];
 
-  Items items = 2;
-  Quality quality = 3;
-  Triggers triggers = 4;
-  Maps maps = 5;
-  Enemies enemies = 6;
-  Towns towns = 7;
-  Glitches glitches = 8;
-  Fun fun = 9;
-  Accessibility accessibility = 10;
-  Fixes fixes = 11;
-  Debug debug = 12;
-
-  // if this is set, just show the opaque serialization...
-  optional bool hide_config = 13 [(default) = false];
-  optional bool race = 14 [(default) = false];
+  Placement placement = 9;
+  Items items = 10;
+  Quality quality = 11;
+  Triggers triggers = 12;
+  Maps maps = 13;
+  Enemies enemies = 14;
+  Towns towns = 15;
+  Glitches glitches = 16;
+  Fun fun = 17;
+  Accessibility accessibility = 18;
+  Fixes fixes = 19;
+  Debug debug = 20;
 
   enum Randomization {
     UNSPECIFIED = 0;
@@ -49,119 +59,187 @@ message Config {
     SHUFFLED = 2;
     RANDOM = 3;
   }
+
+  message Placement {
+    // Which algorithm to use.
+    optional Algorithm type = 1
+      [(default) = ASSUMED_FILL,
+       (preset.vanilla) = VANILLA];
+    enum Type {
+      // Vanilla - don't actually rearrange the items at all.
+      VANILLA = 0;
+      // Assumed fill, with optional temperature-based sorting.
+      // This is the default algorithm.
+      ASSUMED_FILL = 1;
+    }
+    // The "inverse temperature" to use when pre-sorting the list of
+    // checks.  If this is zero, then the checks won't be sorted at all.
+    // The larger this number is, the more likely "deeper" checks are
+    // to be filled earlier.  If this is negative, then "shallower"
+    // checks will be filled first.  This is multiplied by the delta in
+    // average sphere depth, which tends to range from 1..20 or so.
+    optional float check_beta = 2
+      [(type) = "f8:1.3.1.4", // ?? or 1.4.3? or i8/32?
+       (default) = 0.25];
+    // The "inverse temperature" to use when pre-sorting the list of
+    // progression items.  If this is zero, then the items won't be
+    // sorted at all.  The larger this number is, the more likely
+    // "powerful" items are to be placed first, where "power" is
+    // measured in terms of how many checks the item tends to unlock,
+    // on average.  Can be negative, in which case powerful items will
+    // tend to be placed later.  This is multiplied by the delta in
+    // average number of checks unlocked, which tends to range from
+    // 1..10 or so.
+    optional float item_beta = 3
+      [(type) = "f8:1.3.1.4",
+       (default) = 0.25];
+    // If nonzero, then multiple checks in the same area will be
+    // separated during the check sort.  The checks will be shuffled
+    // and successive checks after the first in each area will be
+    // penalized by this amount, in units of sphere depth.
+    optional uint32 check_distribution_weight = 4
+      [(default) = 2];
+
+    // How to deal with mimics.  If VANILLA, then mimics will be left where
+    // they are.  If SHUFFLE, then they'll be swapped with other chests, but
+    // the total number of mimics will stay the same.  If RANDOM, then the
+    // number of mimics may change, in which case some consumables may be
+    // swapped out (even if the `consumables` field is not RANDOM as well).
+    optional Randomization mimics = 5 // TODO
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+
+    // Whether mimics are shuffled in with key items.  If false, then mimics
+    // will only be eligible to go into consumable chests.
+    optional bool shuffle_mimics_with_key_items = 6
+      [(default) = true];
+
+    // How to deal with consumables.  If VANILLA, then consumables will not
+    // be shuffled at all.  If SHUFFLE, then the distribution of consumables
+    // will be retained as much as possible.  If RANDOM, then consumables
+    // will be picked with the same proportion as the vanilla, but will not
+    // be constrained to exactly the same numbers (so there could be more or
+    // fewer of each, including opel statues).
+    optional Randomization consumables = 7
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+
+    // Whether consumables and key items are shuffled together into the same
+    // pool.  If this is false, then key item will only be found from key
+    // item checks (including all boss rewards). 
+    optional bool shuffle_consumables_with_key_items = 8
+      [(default) = true];
+
+    // Whether to randomize which armors are found in checks.  Note that if
+    // armors that are _not_ found in any shops are guaranteed to be included.
+    optional bool random_armors = 9
+      [(default) = false];
+
+    // Whether to protect opel statues from being lost.  Some checks (mainly
+    // trade-ins) can be lost if they contain a consumable and there's no
+    // inventory room when they're given.  This flag controls whether we allow
+    // opels in those checks.
+    optional bool allow_lost_opel = 10 // TODO
+      [(default) = false];
+
+    // Whether we force all items in the game to be reachable.  If this is
+    // false then it's possible some items/areas may be impossible to reach
+    // (within logic) in some seeds (i.e. Oak Mother has Telepathy).  In
+    // that case, the seed should always still be winnable (unless other
+    // options force an unwinnable seed).
+    optional bool all_reachable = 11 // TODO
+      [(default) = true];
+
+    // Positive indicates minimum requires sphere, negative is upper bound
+    // e.g. -1 means must be in zero-sphere
+    // TODO - how to implement beside just checking and retrying??
+    //   - remove from assumed-fill pool and place later?
+    // NOTE: map<enum, prim> should just be a single bitset...?
+    //       - we could try two encodings to compare, depending on size
+    //       - single element -> build into owning bitset as u8.u8
+    //       - repeated primitive (or pair of primitives) -> nested bitset
+
+    // Map of items to attempt to bury, in terms of minimum sphere to look
+    // for the item in.
+    map<uint32, int32> bury = 48 // TODO
+      [(key) = ItemName];
+
+    // Map of items to attempt to place early, in terms of maximum sphere
+    // to place them in.  TODO - not quite sure exactly what this means in
+    // practice?
+    map<uint32, int32> early = 49 // TODO
+      [(key) = ItemName];
+
+    // Set of items to just give immediately at the start of the game.
+    // These items will be in the inventory at the start, and will be
+    // excluded from the shuffle.  Any relevant "item get" flags will be
+    // set at the start as well.  (TODO - allow multiple copies of
+    // consumables? - this would ruin the bitset... or we could add them
+    // on after the bitset)
+    repeated ItemName initial_inventory = 50
+      [(type) = "bitset"]; // TODO - define this type!!!
+
+    // Whether to guarantee a sword in the earliest possible check.
+    optional bool early_sword = 12
+      [(default) = false];
+
+    // Map of check-item pairings to ensure are used.  These checks and
+    // items are _removed_ from the shuffle.  Note that this can cause
+    // unwinnable seeds if items are placed poorly.  TODO - figure out
+    // whether we allow it, or it's an error - maybe a config to opt out
+    // of safety checks???
+    map<uint32, ItemName> force = 51
+      [(key) = CheckName];
+
+    optional bool require_gas_mask_for_swamp = 13
+      [(default) = true];
+    optional bool require_barrier_for_statues = 14
+      [(default) = true];
+    optional bool require_refresh_for_bosses = 15
+      [(default) = false];
+    // note: karmine maxes at 2
+    optional uint32 minimum_sword_level_for_bosses = 16
+      [(default) = 1];
+    // defined as (bracelet OR power ring OR warrior ring)
+    optional bool require_offensive_upgrade_for_bosses = 17
+      [(default) = false];
+
+    // TODO - any way to still get _some_ checking, but allow a minimum
+    // of breakage???  what exactly does this actually do???
+    optional bool disable_safety_checks = 18
+      [(default) = false];
+  }
   
   message Items {
-    
-    Placement placement = 1;
-
-    message Placement {
-
-      Algorithm algorithm = 1;
-
-      // NOTE: changing float encodings is NOT a compatible change!
-      // It requires parsing to JSON and back with a different version
-      // if we want to migrate versions...
-      message Algorithm {
-        optional Type type = 1
-          [(default) = ASSUMED_FILL,
-           (preset.vanilla) = VANILLA];
-        optional bool use_temperature = 2
-          [(default) = true];
-        optional float check_temperature = 3
-          [(type) = "f8:1.3.1", // ?? or 1.4.3? or i8/32?
-           (default) = 2];
-        optional float item_temperature = 4
-          [(type) = "i8/32",
-           (default) = 2];
-        optional float balance_weight = 5
-          [(type) = "u8/32",
-           (default) = 5];
-        enum Type {
-          VANILLA = 0;
-          ASSUMED_FILL = 1;
-        }
-      }
-
-      // NOTE: if RANDOM then it's possible that there will be more or fewer
-      // than the correct number of mimics.  In that case, we'll randomly swap
-      // out consumables.
-      optional Randomization mimics = 2 // TODO
-        [(default) = SHUFFLE,
-         (preset.vanilla) = VANILLA];
-
-      optional Randomization consumables = 3
-        [(default) = SHUFFLE,
-         (preset.vanilla) = VANILLA];
-
-      optional bool allow_lost_opel = 4 // TODO
-        [(default) = false];
-
-      optional bool all_reachable = 5 // TODO
-        [(default) = true];
-
-      // Positive indicates minimum requires sphere, negative is upper bound
-      // e.g. -1 means must be in zero-sphere
-      // TODO - how to implement beside just checking and retrying??
-      //   - remove from assumed-fill pool and place later?
-      // NOTE: map<enum, prim> should just be a single bitset...?
-      //       - we could try two encodings to compare, depending on size
-      //       - single element -> build into owning bitset as u8.u8
-      //       - repeated primitive (or pair of primitives) -> nested bitset
-
-      map<uint32, int32> bury = 6 // TODO
-        [(key) = ItemName, (value) = "u8"];
-      map<uint32, int32> early = 7 // TODO
-        [(key) = ItemName, (value) = "u8"];
-
-      repeated ItemName initial_inventory = 8
-        [(type) = "bitset"]; // TODO - define this type!!!
-
-      optional bool early_sword = 9
-        [(default) = false];
-
-      // Any way to clear maps?
-      map<uint32, ItemName> force = 10
-        [(key) = CheckName];
-    }
-
-    Logic logic = 2;
-    message Logic {
-      optional bool require_gas_mask_for_swamp = 1
-        [(default) = true];
-      optional bool require_barrier_for_statues = 2
-        [(default) = true];
-      optional bool require_refresh_for_bosses = 3
-        [(default) = false];
-      // note: karmine maxes at 2
-      optional uint32 minimum_sword_level_for_bosses = 4
-        [(type) = u8, (default) = 1];
-      // defined as (bracelet OR power ring OR warrior ring)
-      optional bool require_offensive_upgrade_for_bosses = 5
-        [(default) = false];
-    }
-
-
     // group under Behavior???
-    optional bool deo_restores_mp_while_walking = 3
+    optional bool deo_restores_mp_while_walking = 2
       [(default) = true];
-    optional bool hazmat_suit = 4
+    optional bool hazmat_suit = 3
       [(default) = true];
-    optional bool speed_boots = 5
+    optional bool speed_boots = 4
       [(default) = true];
     // TODO - other adjustments???
-    optional uint32 speed_boots_speed = 6
-      [(type) = u8, (default) = 1]; // TODO
-    optional bool rabbit_boots_charge_while_walking = 7
+    optional uint32 speed_boots_speed = 5
+      [(default) = 1]; // TODO
+    optional bool rabbit_boots_charge_while_walking = 6
       [(default) = true];
-    optional bool slow_tornado = 8
+    optional bool slow_tornado = 7
       [(default) = true];
-    optional uint32 medical_herb_heal = 9
-      [(type) = u8, (default) = 80];
-    optional uint32 fruit_of_power_mp = 10
-      [(type) = u8, (default) = 56];
+    optional uint32 medical_herb_heal = 8
+      [(min) = 0, (max) = 255,
+       (default) = 80,
+       (preset.vanilla) = 32];
+    optional uint32 fruit_of_power_mp = 9
+      [(min) = 0, (max) = 255,
+       (default) = 56,
+       (preset.vanilla) = 28]; // TODO - check me
+    optional uint32 magic_ring_mp = 10
+      [(min) = 0, (max) = 255,
+       (default) = 255];
 
     optional uint32 sword_level_for_walls = 11
-      [(type) = u8, (default) = 1];
+      [(min) = 1, (max) = 3,
+       (default) = 1];
 
     optional bool nerf_flight_stab = 12
       [(default) = true];
@@ -179,6 +257,12 @@ message Config {
       [(default) = false]; // TODO
     optional bool unidentified_items = 18
       [(default) = false];
+
+    // TODO - change armor protection
+    // TODO - psycho armor heals while walking??
+    // TODO - diminishing armor defense
+    // TODO - taper armor defense
+
 
     // is this an item property (i.e. teleport/warp boots) or a map property?
     optional bool warp_from_anywhere = 19
@@ -415,6 +499,10 @@ message Config {
     optional bool heal_stom = 6
       [(default) = false];
     // TODO - force trade-ins, force shops, etc
+
+    // TODO - 3 options for (psycho armor|psycho shield|battle armor) in shops
+    //      - and maybe an option to just totally randomize armors?
+    //      - if other armors dropped, still make them (optionally?) sellable?
   }
 
   message Glitches {

@@ -29,7 +29,6 @@ export const U8_128: NumberEncoding = {
     if (!byte) return 1; // special case: numerator == denominator would cancel.
     // Denominator is determined by leftmost bit
     const denominator = 1 << (32 - Math.clz32(byte));
-    console.log(`denominator: ${denominator}`);
     const numerator = ((2 * byte + 1) & ~denominator) >>> 0;
     if (numerator > denominator) return 1; // should never happen.
     return numerator / denominator;
@@ -113,14 +112,22 @@ function minifloatEncoding(mf: Minifloat): NumberEncoding {
 }
 
 // allows us to find an encoding by name.
-export const ENCODINGS = [U8_128, I8_64, U8_64, I8_32, U8_32, I8_16, I8_1, F8_1_4_3];
+export const ENCODINGS = [U8_128, I8_64, U8_64, I8_32, U8_32, I8_16, I8_1];
 const ENCODING_MAP = new Map<string, NumberEncoding>(ENCODINGS.map(e => [e.name, e]));
 
 export function getEncoding(name: string): NumberEncoding|undefined {
-  return ENCODING_MAP.get(name);
+  let encoding = ENCODING_MAP.get(name);
+  if (!encoding && name.startsWith('f8:')) {
+    encoding =
+        minifloatEncoding(
+            new Minifloat(
+                ...name.substring(3).split(/\./g).slice(0, 4).map(Number)));
+    ENCODING_MAP.set(name, encoding);
+  }
+  return encoding;
 }
 
-export function encode(encoding: string, declType: string, value: unknown): number|NumArray {
+export function encode(encoding: string, declType: string, value: unknown, prop: string): number|NumArray {
   if (encoding == undefined) {
     if (declType === 'float' || declType === 'double') {
       // default to small floats?
@@ -138,7 +145,7 @@ export function encode(encoding: string, declType: string, value: unknown): numb
   } else if (typeof value === 'string') {
     return new TextEncoder().encode(value);
   } else {
-    throw new Error(`Don't know how to handle ${declType} (type ${encoding})`);
+    throw new Error(`Don't know how to handle ${declType} (type ${encoding} ${typeof value}) for ${prop}`);
   }
 }
 

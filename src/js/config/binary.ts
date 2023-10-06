@@ -37,8 +37,31 @@ export function serialize(message: Message<any>): number[] {
     // check existence
     const val = message[f];
     if (val == undefined) continue;
-    // TODO - handle maps!
-    if (spec.map) continue;
+    if (spec.map) {
+      // three ways to serialize a map:
+      //  0. with pack() - if value is small numbers and many dense keys
+      //  1. as byte-pairs - if KV are 1-byte each
+      //  2. as repeated (1,2) entries - if values are messages
+      // compare all three types to find shortest - NOTE: this makes maps
+      // forward-incompatible with repeated fields
+      let keyTypeName = spec.options['(key)'] || spec.keyType;
+      let keyType = t.lookup(keyTypeName);
+      if (keyType instanceof Enum) {
+        // 
+      }
+      if (!keyType) {
+        keyType = spec.keyType;
+      }
+
+      continue;
+    } else if (spec.repeated) {
+      // three ways to serialize a list:
+      //  0. with pack() - if values are small numbers
+      //  1. as a bitset - if values unique small numbers and may be dense
+      //  2. as a list of fixed-length numbers
+      //  3. as repeated entries - if values are individually length-delimited
+      continue;
+    }
     // is it a primitive, enum, or submessage?
     // need to look up type in scope
     const ft = spec.parent.lookup(spec.type);

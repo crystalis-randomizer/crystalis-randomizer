@@ -471,7 +471,7 @@ message Config {
 
   message Maps {
     optional uint32 mezame_chests = 1
-      [(type) = "u8", (min) = 0, (max) = 2,
+      [(min) = 0, (max) = 2,
        (default) = 0];
     optional bool mezame_draygon2_portal = 2
       [(default) = false];

@@ -65,7 +65,7 @@ message Config {
     optional Algorithm type = 1
       [(default) = ASSUMED_FILL,
        (preset.vanilla) = VANILLA];
-    enum Type {
+    enum Algorithm {
       // Vanilla - don't actually rearrange the items at all.
       VANILLA = 0;
       // Assumed fill, with optional temperature-based sorting.
@@ -77,7 +77,7 @@ message Config {
     // The larger this number is, the more likely "deeper" checks are
     // to be filled earlier.  If this is negative, then "shallower"
     // checks will be filled first.  This is multiplied by the delta in
-    // average sphere depth, which tends to range from 1..20 or so.
+    // average progression item count, which tends to range from 1..40.
     optional float check_beta = 2
       [(type) = "f8:1.3.1.4", // ?? or 1.4.3? or i8/32?
        (default) = 0.25];
@@ -96,9 +96,10 @@ message Config {
     // If nonzero, then multiple checks in the same area will be
     // separated during the check sort.  The checks will be shuffled
     // and successive checks after the first in each area will be
-    // penalized by this amount, in units of sphere depth.
-    optional uint32 check_distribution_weight = 4
-      [(default) = 2];
+    // penalized by this amount, in units of progression item count.
+    optional float check_distribution_weight = 4
+      [(type) = "f8:0.3.1.1",  // 0.2.3.-1 ?
+       (default) = 2];
 
     // How to deal with mimics.  If VANILLA, then mimics will be left where
     // they are.  If SHUFFLE, then they'll be swapped with other chests, but
@@ -191,83 +192,203 @@ message Config {
     map<uint32, ItemName> force = 51
       [(key) = CheckName];
 
-    optional bool require_gas_mask_for_swamp = 13
+    // Ensures the logic provides the gas mask (or hazmat suit, as
+    // appropriate) before requiring going into the swamp.  If this is
+    // false, then any source of healing is considered sufficient.
+    optional bool ensure_gas_mask_before_swamp = 13
       [(default) = true];
-    optional bool require_barrier_for_statues = 14
+    // Ensures the logic provides the gas mask (or hazmat suit, as
+    // appropriate) before requiring to fight the insect.  IF this is
+    // false, then any source of healing is considered sufficient.
+    optional bool ensure_gas_mask_before_insect = 14
       [(default) = true];
-    optional bool require_refresh_for_bosses = 15
+    // Ensures the logic provides barrier before requiring to walk
+    // through the shooting statue guantlets.  If this is false, then
+    // any source of healing is considered sufficient.
+    optional bool ensure_barrier_before_statues = 15
+      [(default) = true];
+    // Ensures the logic provides refresh before requiring to fight
+    // any bosses.
+    optional bool ensure_refresh_before_bosses = 16
       [(default) = false];
-    // note: karmine maxes at 2
-    optional uint32 minimum_sword_level_for_bosses = 16
-      [(default) = 1];
-    // defined as (bracelet OR power ring OR warrior ring)
-    optional bool require_offensive_upgrade_for_bosses = 17
+    // Ensures the logic provides a minimum sword level before requiring
+    // boss fights with the tetrarchs.  Note that Karmine and Draygon
+    // max out at requiring level 2, even if this is set to 3.
+    optional uint32 ensure_minimum_sword_level_before_tetrarchs = 17
+      [(min) = 1, (max) = 3,
+       (default) = 1];
+    // Ensures the logic provides any sort of offensive upgrade before
+    // requiring a boss fight with a tetrarch.  This is satisfied by
+    // any of {power ring, warrior ring, matching bracelet}.
+    optional bool ensure_offensive_upgrade_before_tetrarchs = 18
       [(default) = false];
 
-    // TODO - any way to still get _some_ checking, but allow a minimum
-    // of breakage???  what exactly does this actually do???
-    optional bool disable_safety_checks = 18
+    // Disables logical safety checks.  This allows the seed to roll
+    // even if the logic doesnt think it's possible.  Unfortunately,
+    // there's not really an in-between where it tries to at least
+    // minimize the breakage...?
+    optional bool disable_safety_checks = 19
       [(default) = false];
   }
   
   message Items {
-    // group under Behavior???
-    optional bool deo_restores_mp_while_walking = 2
-      [(default) = true];
-    optional bool hazmat_suit = 3
-      [(default) = true];
-    optional bool speed_boots = 4
-      [(default) = true];
-    // TODO - other adjustments???
-    optional uint32 speed_boots_speed = 5
-      [(default) = 1]; // TODO
-    optional bool rabbit_boots_charge_while_walking = 6
-      [(default) = true];
-    optional bool slow_tornado = 7
-      [(default) = true];
-    optional uint32 medical_herb_heal = 8
-      [(min) = 0, (max) = 255,
-       (default) = 80,
-       (preset.vanilla) = 32];
-    optional uint32 fruit_of_power_mp = 9
-      [(min) = 0, (max) = 255,
-       (default) = 56,
-       (preset.vanilla) = 28]; // TODO - check me
-    optional uint32 magic_ring_mp = 10
-      [(min) = 0, (max) = 255,
-       (default) = 255];
+    // TODO - should this go somewhere else?
+    optional bool unidentified_items = 1
+      [(default) = false];
 
-    optional uint32 sword_level_for_walls = 11
+    optional bool add_aquatic_herb = 2
+      [(default) = false]; // TODO
+
+    // Sword shot level required to break walls.
+    optional uint32 sword_level_for_walls = 3
       [(min) = 1, (max) = 3,
        (default) = 1];
 
-    optional bool nerf_flight_stab = 12
+    // Nerf sword so that stabbing doesn't hit enemies.  This should
+    // be turned on with other modifications, like charge while walking.
+    optional bool charge_shots_only = 4
+      [(default) = false];
+    // 0: disabled, 1: 8 sec/tick, 2: 4 sec/tick, 3: 2 sec/tick, 4: 1 sec/tick
+    // 5: 2 tick/sec, 6: 4 tick/sec, 7: 8 tick/sec, 8: 15 tick/sec, 9: 30 tick/sec
+    // The normal charge speed, on a logarithmic scale:
+    optional uint32 charge_speed = 5
+      [(min) = 1, (max) = 9,
+       (default) = 7];
+    // Enable sword charging while walking without any items equipped.
+    // This is recommended when charge_shots_only is enabled.
+    optional uint32 charge_while_walking_speed = 6
+      [(min) = 0, (max) = 9,
+       (default) = 0];
+    // Charge speed while equipped item (rabbit boots and/or charge ring) and
+    // standing still.
+    optional uint32 charge_with_item_speed = 7
+      [(min) = 1, (max) = 9,
+       (default) = 7];
+    // Charge speed while walking w/ charge boost item.
+    optional uint32 charge_while_walking_with_item_speed = 8
+      [(min) = 0, (max) = 9,
+       (default) = 7];
+
+    // Turns warrior ring into "turret mode".  TODO - parameters???
+    optional bool warrior_ring_turret = 9
+      [(default) = false];
+    // Frame delay before entering turret mode.
+    optional uint32 warrior_ring_turret_delay = 10
+      [(default) = 30];
+    // Frequency of "free" shots during turret delay.
+    // For value N, every Nth stab will be a shot.
+    optional uint32 warrior_ring_turret_delay_shot_frequency = 11
+      [(min) = 1, (max) = 255,
+       (default) = 3];
+
+    // Specifies the medical herb heal amount.
+    optional uint32 medical_herb_heal = 12
+      [(min) = 0, (max) = 255,
+       (default) = 80,
+       (preset.vanilla) = 32];
+    // Specifies the fruit of power MP recover amount.
+    optional uint32 fruit_of_power_mp = 13
+      [(min) = 0, (max) = 255,
+       (default) = 56,
+       (preset.vanilla) = 32];
+    // Specifies the magic ring MP recover amount.
+    optional uint32 magic_ring_mp = 14
+      [(min) = 0, (max) = 255,
+       (default) = 255];
+
+    // MP restore rate for Deo's Pendant
+    // 0: none, 1: 8 sec/MP, 2: 4 sec/MP, 3: 2 sec/MP, 4: 1 sec/MP,
+    // 5: 2 MP/sec, 6: 4 MP/sec, 7: 8 MP/sec, 8: 15 MP/sec, 9: 30 MP/sec
+    optional uint32 deos_pendant_mp_restore_speed = 15
+      [(min) = 0, (max) = 9,
+       (default) = 3];
+    // Buffs Deo's Pendant to restore MP while walking, at this speed.
+    optional uint32 deos_pendant_mp_restore_while_walking_speed = 16
+      [(min) = 0, (max) = 9,
+       (default) = 3,
+       (preset.vanilla) = 0];
+    // Combines Leather Boots and Gas Mas into a new Hazmat Suit item,
+    // which protects from both swamp and desert/spike terrain.
+    // This marks Leather Boots as the preferred item to replace.
+    optional bool hazmat_suit = 17
       [(default) = true];
+    // Adds Speed Boots, replacing the most preferred item.  If there is
+    // no preferred replacement item, then replaces a random item?
+    optional bool add_speed_boots = 18
+      [(default) = true];
+    // Speed delta from speed boots...?  TODO - details
+    // TODO - other adjustments???
+    optional int32 speed_boots_speed = 19
+      [(default) = 1]; // TODO
+    // Buffs Rabbit Boots to also charge sword while walking.
+    // TODO - we can maybe make this a separate item instead?
+    optional bool rabbit_boots_charge_while_walking = 20
+      [(default) = true];
+    // Adds a Charge Ring item that allows charging while walking.
+    // Replaces the preferred replacement item, if available.  Otherwise
+    // replaces a random item.
+    optional bool add_charge_ring = 21
+      [(default) = false];
 
-    optional bool charge_shots_only = 13
-      [(default) = false];
-    optional bool charge_while_walking = 14
-      [(default) = false];
-    optional bool rabbit_boots_double_charge = 15
-      [(default) = false];
-    optional bool warrior_ring_turret = 16
-      [(default) = false];
+    // Adjusts the Tornado Bracelet magic speed from the default.
+    optional int32 adjust_tornado_speed = 22
+      [(type) = "i8/1",
+       (default) = -1,
+       (preset.vanilla) = 0];
 
-    optional bool add_aquatic_herb = 17
-      [(default) = false]; // TODO
-    optional bool unidentified_items = 18
-      [(default) = false];
+    // Nerf sword to not hit enemies while flying (since the player
+    // is invincible, it makes flight even more OP).
+    optional bool nerf_flight_stab = 23
+      [(default) = true,
+       (preset.vanilla) = false];
 
-    // TODO - change armor protection
-    // TODO - psycho armor heals while walking??
-    // TODO - diminishing armor defense
-    // TODO - taper armor defense
+    // Whether ceramic shield should be buffed to prevent paralysis.
+    optional bool ceramic_shield_prevents_paralysis = 24
+      [(default) = true,
+       (preset.vanilla) = false];
+    // Whether sacred shield should be buffed to prevent nuper.
+    optional bool sacred_shield_prevents_curse = 25
+      [(default) = true,
+       (preset.vanilla) = false];
 
+    // HP restore rate for Deo's Pendant
+    // 0: none, 1: 8 sec/HP, 2: 4 sec/HP, 3: 2 sec/HP, 4: 1 sec/HP,
+    // 5: 2 HP/sec, 6: 4 HP/sec, 7: 8 HP/sec, 8: 15 HP/sec, 9: 30 HP/sec
+    optional uint32 psycho_armor_heal_speed = 26
+      [(min) = 0, (max) = 9,
+       (default) = 5];
+    // Buffs Psycho Armor to restore HP while walking, at the given rate.
+    optional uint32 psycho_armor_heal_while_walking_speed = 27
+      [(min) = 0, (max) = 9,
+       (default) = 0];
+
+    // Whether the armor/shield defense values should be a balanced
+    // progression with ceramic suit and battle shield (the last ones
+    // with no special powers) having the max defense.  If this is true
+    // then we adjust all the armor tiers to have a smooth progression
+    // for the first 5 (3, 6, 9, 13, 18), max out at tier 6 (32), and
+    // then drop down to 18..20 for the top two tiers since they have
+    // other special abilities.  If this is false then we leave the
+    // defense values as their vanilla amounts.
+    optional bool balanced_armor_defense = 28
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    // If nonzero, cap the maximum armor defense at this multiplier
+    // times the player level.
+    optional uint32 cap_armor_defense_by_level = 29
+      [(default) = 3,
+       (preset.vanilla) = 0];
+
+    // Specify specific defense values for each armor/shield.
+    map<uint32, uint32> armor_defense = 48
+      [(key) = "ItemName"];
 
     // is this an item property (i.e. teleport/warp boots) or a map property?
-    optional bool warp_from_anywhere = 19
+    // - move to "rules"?  next to pity mp, etc?
+    optional bool warp_from_anywhere = 30
       [(default) = true];
-    optional bool zombie_warp = 20
+    optional bool zombie_warp = 31
       [(default) = true];
 
   }
@@ -479,6 +600,10 @@ message Config {
     optional bool randomize_flyer_spawns = 15 // note: important for rage skip
       [(default) = true,
        (preset.vanilla) = false];
+
+    // TODO - make this enum, and then we only spawn the given enemies anywhere
+    // (i.e. "oops all robots", "oops all flail guys", etc)
+    // repeated EnemyName only_spawn = 16;
   }
 
   message Towns {

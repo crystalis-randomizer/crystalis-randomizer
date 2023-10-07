@@ -28,6 +28,10 @@ syntax = "proto3";
 
     // Any way to clear lists/maps via a merge???
 
+// Multiple configs, which we can simplify, merge, and/or rearrange as needed.
+message Configs {
+  repeated Config config = 1;
+}
 
 message Config {
 

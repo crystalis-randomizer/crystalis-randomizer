@@ -4,9 +4,9 @@ TARGET = target
 RELDIR = $(TARGET)/release
 DBGDIR = $(TARGET)/debug
 BLDDIR = $(TARGET)/build
-BROTLI = $(BLDDIR)/brotli
-EXTRACT_REFS = $(BLDDIR)/extract-refs
-EXTRACT_SYMBOLS = $(BLDDIR)/extract-symbols
+BROTLI = $(BLDDIR)/brotli.cjs
+EXTRACT_REFS = $(BLDDIR)/extract-refs.cjs
+EXTRACT_SYMBOLS = $(BLDDIR)/extract-symbols.cjs
 DATADIR = $(BLDDIR)/data
 
 # Flags

@@ -37,39 +37,44 @@ function parseConfigJson(json: unknown): Config {
   // enum values, etc.
   const warnings: string[] = [];
   fixMessageJson(config, Config, warnings);
-  if (warnings.length) {
-    console.warn(warnings.join('\n'));
-  }
+  const verify = Config.verify(config);
+  if (verify) warnings.push(verify);
+  if (warnings.length) console.warn(warnings.join('\n'));
   return config;
 }
 
 function fixMessageJson(message: Message<any>, t: Type, warnings: string[]) {
-  for (const [f, spec] of Object.entries(t.fields)) {
-    // TODO - field transformer for all entries of message????
-    const value = message[f];
-    if (value == undefined) continue;
+  const xform = nameTransformer(t);
+  for (let [key, value] of Object.entries(message)) {
+    const originalKey = key;
+    const f = xform(key, warnings);
+    if (!f) continue;
     assertType<string>(f);
+    const spec = t.fields[f];
+    if (!spec) throw new Error(`missing spec for ${t.name}: ${key} => ${f}\n${warnings.join('\n')}`);
     assertType<Field>(spec);
     resolve(spec);
-    console.log(`spec: ${spec.name} ${spec.map} ${spec.options}`);
+    if (f !== originalKey) {
+      message[f] = value;
+      delete message[originalKey];
+    }
     if (spec.map) {
+      assertType<object>(value);
       const resolvedKeyType = spec.resolvedKeyType || keyMap.get(spec)
       if (!spec.resolvedType && !resolvedKeyType) continue;
-      console.log(`map: ${spec.resolvedType?.name} ${resolvedKeyType?.name}`);
       const out: Record<string, unknown> = {};
-      const keyTransform = enumTransformer(resolvedKeyType);
-      const valueTransform = enumTransformer(spec.resolvedType);
+      const keyTransform = nameTransformer(resolvedKeyType);
+      const valueTransform = nameTransformer(spec.resolvedType);
       for (const [k, v] of Object.entries(value)) {
         const kt = keyTransform(k, warnings);
         const vt = valueTransform(v, warnings);
-        console.log(`map (${k}, ${v}) => (${kt}, ${vt})`);
         if (kt == undefined || vt == undefined) continue;
         out[kt as string] = vt;
       }
       message[f] = out;
       continue;
     } else if (spec.resolvedType instanceof Enum) {
-      const transform = enumTransformer(spec.resolvedType);
+      const transform = nameTransformer(spec.resolvedType);
       if (spec.repeated) {
         message[f] = (Array.isArray(value) ? value : [value]).map(x => transform(x, warnings));
       } else {
@@ -90,48 +95,70 @@ function fixMessageJson(message: Message<any>, t: Type, warnings: string[]) {
 
 // NOTE: we do a case-insensitive match of letters and numbers only.
 // TODO - allow a top-level enum option specifying maximum hamming distance?
-class EnumParser {
-  constructor(private readonly map: Map<string, number>,
-              readonly spec: Enum) {}
-  static for(enumSpec: Enum): EnumParser {
-    let parser = enumParsers.get(enumSpec)
+class NameParser<T extends string|number> {
+  constructor(private readonly map: Map<string, T>,
+              readonly spec: Enum|Type) {}
+  static for(spec: Enum): NameParser<number>;
+  static for(spec: Type): NameParser<string>;
+  static for(spec: Enum|Type): NameParser<number|string> {
+    let parser = nameParsers.get(spec)
     if (!parser) {
-      const map = new Map<string, number>();
-      for (const [k, v] of Object.entries(enumSpec.values)) {
-        assertType<string>(k);
-        assertType<number>(v);
-        const opts = enumSpec.valuesOptions?.[k] || {};
-        
-        for (const name of [k, ...enumAliases(opts)]) {
-          const canonical = canonicalizeEnum(name);
-          if (map.has(canonical)) {
-            const prev = enumSpec.valuesById[v];
-            throw new Error(`Conflict in enum ${enumSpec.name}: ${name} vs ${prev}`);
-          }
-          map.set(canonical, v);
-        }
-      }
-      enumParsers.set(enumSpec, parser = new EnumParser(map, enumSpec));
+      nameParsers.set(spec, parser = spec instanceof Type ? fieldParser(spec) : enumParser(spec));
     }
     return parser;
   }
-  parse(name: string): number|undefined {
-    return this.map.get(canonicalizeEnum(name));
+  parse(name: string): T|undefined {
+    return this.map.get(canonicalizeName(name));
   }
 }
-const enumParsers = new Map<unknown, EnumParser>();
-function enumAliases(opts: any): string[] {
+function fieldParser(spec: Type): NameParser<string> {
+  const map = new Map<string, string>();
+  for (const [f, s] of Object.entries(spec.fields)) {
+    assertType<string>(f);
+    assertType<Field>(s);
+    const opts = s.opts || {};
+    for (const name of [f, ...aliases(opts)]) {
+      const canonical = canonicalizeName(name);
+      if (map.has(canonical)) {
+        const prev = map.get(canonical);
+        throw new Error(`Field name conflict in ${spec.name}: ${name} vs ${prev}`);
+      }
+      map.set(canonical, f);
+    }
+  }
+  return new NameParser(map, spec);
+}
+function enumParser(spec: Enum): NameParser<number> {
+  const map = new Map<string, number>();
+  for (const [k, v] of Object.entries(spec.values)) {
+    assertType<string>(k);
+    assertType<number>(v);
+    const opts = spec.valuesOptions?.[k] || {};
+    for (const name of [k, ...aliases(opts)]) {
+      const canonical = canonicalizeName(name);
+      if (map.has(canonical)) {
+        const prev = spec.valuesById[map.get(canonical)];
+        throw new Error(`Conflict in enum ${spec.name}: ${name} vs ${prev}`);
+      }
+      map.set(canonical, v);
+    }
+  }
+  return new NameParser(map, spec);
+}
+
+const nameParsers = new Map<unknown, NameParser<any>>();
+function aliases(opts: any): string[] {
   return (opts['(alias)'] || '').split(/,/g).filter((x: string) => x);
 }
-function canonicalizeEnum(name: string) {
+function canonicalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/gi, '');
 }
-type EnumTransformer = (arg: unknown, warnings: string[]) => unknown;
-function enumTransformer(spec: unknown): EnumTransformer {
-  if (!(spec instanceof Enum)) return x => x;
-  const parser = EnumParser.for(spec);
+type NameTransformer = (arg: unknown, warnings: string[]) => unknown;
+function nameTransformer(spec: Enum|Type): NameTransformer {
+  if (!(spec instanceof Enum || spec instanceof Type)) return x => x;
+  const parser = NameParser.for(spec);
   return (x, warnings) => {
-    if (typeof x === 'number') return x;
+    if (spec instanceof Enum && typeof x === 'number') return x;
     const parsed = parser.parse(x as string);
     if (parsed == undefined) {
       warnings.push(`Unknown ${parser.spec.name} value: ${x}`);

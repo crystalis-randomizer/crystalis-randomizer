@@ -11,21 +11,149 @@ import { Config /*, Configs*/ } from '../../../target/build/config_proto';
 import { Enum, Field, Message, Type } from 'protobufjs/light.js';
 //import { compress, decompress } from 'brotli';
 import { assertType } from '../util';
+//import { Random } from '../random';
+
+export { Config }
 
 export class Conf {
   constructor(readonly configs: Config[]) {}
 
-  /**
-   * Given a list of Config proto jsons, process them into the protobuf.
-   */
+  /** Given a list of Config proto jsons, process them into the protobuf. */
   static fromJson(json: unknown): Conf {
     if (!Array.isArray(json)) json = [json];
     assertType<unknown[]>(json);
     return new Conf(json.map(parseConfigJson));
   }
 
+  /** Returns an array of parseable config jsons. */
+  toJson(): unknown[] {
+    return this.configs.map(c => cleanJsonEnums(c.toJSON(), Config));
+  }
+
+  /** Merge all the configs into a single one. */
+  merge(/*random: Random, */fill = false): Conf {
+    const out = fill ? makeDefault(Config) : new Config();
+    for (const c of this.configs) {
+      mergeProto(out, c, Config);
+    }
+    return new Conf([out]);
+  }  
+
+  /** Simplify a config by consolidating presets and removing defaults. */
+  simplify(): Conf {
+    throw '';
+  }
+
+  static fromFlagString(str: string): Conf {
+    throw '';
+  }
+
+  toFlagString(): string {
+    throw '';
+  }  
 }
 
+function makeDefault(t: Type): Message<any> {
+  const out = t.create();
+  for (const [f, spec] of Object.entries(t.fields)) {
+    assertType<Field>(spec);
+    resolve(spec);
+    if (spec.map || spec.repeated) continue;
+    if (spec.resolvedType instanceof Type) {
+      out[f] = makeDefault(spec.resolvedType);
+      continue;
+    }
+    const def = spec.options?.['(default)'];
+    if (def == undefined) continue;
+    out[f] = interpretValue(def, spec);
+  }
+  return out;
+}
+
+function interpretValue(value: unknown, spec: Field): unknown {
+  if (isNumeric(spec.type)) return Number(value);
+  if (spec.type === 'string') return String(value);
+  if (spec.type === 'bool') {
+    const v = String(value).toLowerCase();
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+    throw new Error(`Could not interpret ${value} as bool`);
+  }
+  resolve(spec);
+  if (spec.resolvedType instanceof Enum) {
+    const v = typeof value === 'string' ? spec.resolvedType.values[value] : undefined;
+    if (v == undefined) throw new Error(`Bad enum value ${value} for ${spec.resolvedType.name} at ${qname(spec)}`);
+    return v;
+  }
+  // enum ?!?
+  throw new Error(`Don't know how to interpret ${value} as ${spec.type}`);
+}
+function isNumeric(t: unknown): boolean {
+  return typeof t === 'string' && /([us]?int|s?fixed)(16|32)|double|float/.test(t);
+}
+
+// TODO: with randomization
+function mergeProto(out: Message<any>, c: Message<any>, t: Type) {
+  for (const [f, v] of Object.entries(c)) {
+    const spec = t.fields[f];
+    if (!spec) continue;
+    if (spec.repeated) {
+      out[f] = (out[f] || []).concat(v);
+    } else if (spec.map) {
+      const map = out[f] || (out[f] = {});
+      for (const [mk, mv] of Object.entries(v as object)) {
+        map[mk] = mv;
+      }
+    } else if (spec instanceof Type) {
+      const msg = out[f] || (out[f] = spec.create());
+      mergeProto(msg, v, spec);
+    } else {
+      out[f] = v;
+    }
+  }
+}
+
+function cleanJsonEnums(json: unknown, t: unknown): unknown {
+  if (t instanceof Enum) {
+    assertType<Enum>(t);
+    //const id = typeof json === 'string' && t.values[json] != undefined ? t.values[json] : json;
+    //console.log(`clean ${t}   json=${json} id=${id}`);
+    let byId = t.valuesById[json];
+    if (byId) return byId.toLowerCase();
+    byId = t.valuesById[t.values[json]];
+    if (byId) return byId.toLowerCase();
+    return json;
+  } else if (!(t instanceof Type) || !json || typeof json !== 'object') {
+    return json;
+  }
+  // message type
+  assertType<Type>(t);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(json)) {
+    const key = k.replace(/[A-Z]/g, (x) => ` ${x.toLowerCase()}`);
+    //console.log(`${k} => ${key}`);
+    const spec = t.fields[k];
+    resolve(spec);
+    if (spec.repeated) {
+      out[key] = Array.isArray(v) ? v.map(e => cleanJsonEnums(e, spec.resolvedType)) : v;
+    } else if (spec.map) {
+      assertType<object>(v);
+      const kt = keyMap.get(spec);
+      //console.log(`field ${spec.name}   key ${kt}`);
+      //console.dir(kt.values);
+      const map: Record<string, unknown> = {};
+      for (let [mk, mv] of Object.entries(v)) {
+        map[cleanJsonEnums(mk, kt) as string] = cleanJsonEnums(mv, spec.resolvedType);
+      }
+      out[key] = map;
+    } else if (spec.resolvedType instanceof Type) {
+      out[key] = cleanJsonEnums(v, spec.resolvedType);
+    } else {
+      out[key] = v;
+    }
+  }
+  return out;
+}
 
 function parseConfigJson(json: unknown): Config {
   if (!json || typeof json !== 'object') {
@@ -148,7 +276,12 @@ function enumParser(spec: Enum): NameParser<number> {
 
 const nameParsers = new Map<unknown, NameParser<any>>();
 function aliases(opts: any): string[] {
-  return (opts['(alias)'] || '').split(/,/g).filter((x: string) => x);
+  // TODO: consider searching for `(alias).x` for any `x`, which would allow
+  // writing `[(alias) = {
+  //             x: 'a b c'
+  //             y: 'd e f'
+  //          }`
+  return (opts['(alias)'] || '').split(/,\s*/g).filter((x: string) => x);
 }
 function canonicalizeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/gi, '');
@@ -161,7 +294,8 @@ function nameTransformer(spec: Enum|Type): NameTransformer {
     if (spec instanceof Enum && typeof x === 'number') return x;
     const parsed = parser.parse(x as string);
     if (parsed == undefined) {
-      warnings.push(`Unknown ${parser.spec.name} value: ${x}`);
+      warnings.push(`Unknown ${parser.spec.name} ${
+                     spec instanceof Enum ? 'value' : 'field'}: "${x}"`);
     }
     return parsed;
   }
@@ -176,4 +310,8 @@ function resolve(spec: Field) {
     if (resolved == null) throw new Error(`Unknown key type: ${key}`);
     keyMap.set(spec, resolved);
   }
+}
+
+function qname(spec: Field|Type): string {
+  return spec === Config ? 'Config' : !spec ? '(Root)' : `${qname(spec.parent)}.${spec.name}`;
 }

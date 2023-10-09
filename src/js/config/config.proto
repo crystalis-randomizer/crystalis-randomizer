@@ -44,6 +44,13 @@ message Config {
   // Indicates that this is a "race rom": prevents pulling the spoiler log.
   optional bool race = 3 [(default) = false];
 
+  // Force a seed??? Allows deterministically specifying the output
+  // with just a single file
+  optional uint32 seed = 4;
+
+  optional bool coop = 8 [(default) = false];
+  optional bool crowd_control = 7 [(default) = false];
+
   Placement placement = 9;
   Items items = 10;
   Quality quality = 11;
@@ -57,11 +64,21 @@ message Config {
   Fixes fixes = 19;
   Debug debug = 20;
 
+  // Shuffle the configuration
+  repeated Vars vars = 21;
+  repeated Pick pick = 22;
+
+  message Vars {
+
+  }
+  message Pick {
+    
+  }
+
   enum Randomization {
-    UNSPECIFIED = 0;
-    VANILLA = 1;
-    SHUFFLED = 2;
-    RANDOM = 3;
+    VANILLA = 0;
+    SHUFFLE = 1;
+    RANDOM = 2;
   }
 
   message Placement {
@@ -419,7 +436,7 @@ message Config {
 
 
   message Triggers {
-    optional bool barrier_check_requies_calm_sea = 1
+    optional bool whirlpool_item_requires_calm_sea = 1
       [(default) = true,
        (preset.vanilla) = false];
     optional bool zebu_student_gives_item = 2
@@ -505,11 +522,12 @@ message Config {
     optional bool remove_crypt_whirlpool = 11
       [(default) = false];
 
+    // TODO - merge this into top level?
     Shuffle shuffle = 20;
     message Shuffle {
       optional Randomization wall_elements = 1
-        [(default) = true,
-         (preset.vanilla) = false];
+        [(default) = RANDOM,
+         (preset.vanilla) = VANILLA];
       // what is difference from shuffle here???
       //   - pick algorithm???
       optional Randomization dungeon_maps = 2
@@ -738,13 +756,17 @@ enum ItemName {
   SWORD_OF_WATER = 0x02;
   SWORD_OF_THUNDER = 0x03;
   CRYSTALIS = 0x04;
-  BALL_OF_WIND = 0x05;
+  BALL_OF_WIND = 0x05
+    [(alias) = 'ORB_OF_WIND'];
   TORNADO_BRACELET = 0x06;
-  BALL_OF_FIRE = 0x07;
+  BALL_OF_FIRE = 0x07
+    [(alias) = 'ORB_OF_FIRE'];
   FLAME_BRACELET = 0x08;
-  BALL_OF_WATER = 0x09;
+  BALL_OF_WATER = 0x09
+    [(alias) = 'ORB_OF_WATER'];
   BLIZZARD_BRACELET = 0x0a;
-  BALL_OF_THUNDER = 0x0b;
+  BALL_OF_THUNDER = 0x0b
+    [(alias) = 'ORB_OF_THUNDER'];
   STORM_BRACELET = 0x0c;
   CARAPACE_SHIELD = 0x0d;
   BRONZE_SHIELD = 0x0e;
@@ -774,7 +796,8 @@ enum ItemName {
   OPEL_STATUE = 0x26;
   INSECT_FLUTE = 0x27;
   FLUTE_OF_LIME = 0x28;
-  GAS_MASK = 0x29;
+  GAS_MASK = 0x29
+    [(alias) = 'HAZMAT_SUIT'];
   POWER_RING = 0x2a;
   WARRIOR_RING = 0x2b;
   IRON_NECKLACE = 0x2c;
@@ -1032,7 +1055,8 @@ enum CheckName {
   LEAF_ELDER = 0x00;
   OAK_ELDER = 0x01;
   WATERFALL_CAVE_SWORD_OF_WATER_CHEST = 0x02;
-  STXY_LEFT_UPPER_SWORD_OF_THUNDER_CHEST = 0x03;
+  STXY_LEFT_UPPER_SWORD_OF_THUNDER_CHEST = 0x03
+    [(alias) = 'STYX_LEFT_UPPER_SWORD_OF_THUNDER_CHEST'];
   MESIA_IN_TOWER = 0x04;
   SEALED_CAVE_BALL_OF_WIND_CHEST = 0x05;
   MT_SABRE_WEST_TORNADO_BRACELET_CHEST = 0x06;
@@ -1044,7 +1068,8 @@ enum CheckName {
   STORM_BRACELET_CHEST = 0x0c;
   WATERFALL_CAVE_RIVER_LEFT_CHEST = 0x10;
   MADO2 = 0x12;
-  STXY_RIGHT_MIDDLE_CHEST = 0x14;
+  STXY_RIGHT_MIDDLE_CHEST = 0x14
+    [(alias) = 'STYX_RIGHT_MIDDLE_CHEST'];
   BATTLE_ARMOR_CHEST = 0x1b;
   DRAYGON1 = 0x1c;
   SEALED_CAVE_SMALL_ROOM_BACK_CHEST = 0x1d;
@@ -1098,7 +1123,8 @@ enum CheckName {
   FORTRESS_MADO_HELLWAY_CHEST = 0x54;
   SABERA_UPSTAIRS_RIGHT_CHEST = 0x55;
   MT_HYDRA_FAR_LEFT_CHEST = 0x56;
-  STXY_LEFT_LOWER_CHEST = 0x57;
+  STXY_LEFT_LOWER_CHEST = 0x57
+    [(alias) = 'STYX_LEFT_LOWER_CHEST'];
   KARMINE_BASEMENT_LOWER_MIDDLE_CHEST = 0x58;
   EAST_CAVE_NORTHEAST_CHEST = 0x59;
   OASIS_CAVE_ENTRANCE_ACROSS_RIVER_CHEST = 0x5a;
@@ -1126,9 +1152,12 @@ enum CheckName {
   WATERFALL_CAVE_FRONT_MIMIC = 0x72;
   EVIL_SPIRIT_ISLAND_RIVER_RIGHT_MIMIC = 0x73;
   MT_HYDRA_FINAL_CAVE_MIMIC = 0x74;
-  STXY_LEFT_NORTH_MIMIC = 0x75;
-  STXY_RIGHT_NORTH_MIMIC = 0x76;
-  STXY_RIGHT_SOUTH_MIMIC = 0x77;
+  STXY_LEFT_NORTH_MIMIC = 0x75
+    [(alias) = 'STYX_LEFT_NORTH_MIMIC'];
+  STXY_RIGHT_NORTH_MIMIC = 0x76
+    [(alias) = 'STYX_RIGHT_NORTH_MIMIC'];
+  STXY_RIGHT_SOUTH_MIMIC = 0x77
+    [(alias) = 'STYX_RIGHT_SOUTH_MIMIC'];
   CRYPT_LEFT_PIT_MIMIC = 0x78;
   KARMINE_BASEMENT_UPPER_MIDDLE_MIMIC = 0x79;
   KARMINE_BASEMENT_UPPER_RIGHT_MIMIC = 0x7a;

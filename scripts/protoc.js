@@ -55,7 +55,11 @@ let dts = String(fs.readFileSync(tsFile));
 // we've got strings now - time to mangle them
 
 dts = dts.replace(/^import Long\s*=.*$/mi, '');
-dts = dts.replace(/implements I.*{\n/g, '$&public readonly \$type: \$protobuf.Type;\n');
+dts = dts.replace(/implements I.*{\n/g,`$&
+public static ctor: {new(): IConfig};
+public static readonly \$type: \$protobuf.Type;
+public readonly \$type: \$protobuf.Type;
+`);
 
 let js = `import protobuf from 'protobufjs';
 import {decompress} from '../../src/js/compress.js';

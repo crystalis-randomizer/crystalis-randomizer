@@ -7,7 +7,7 @@
 // with brotli compression to try to shrink things a bit, but
 // it's likely we can improve on it quite a bit.
 
-import { Config /*, Configs*/ } from '../../../target/build/config_proto';
+import { Config as ConfigPb } from '../../../target/build/config_proto';
 import { Enum, Field, Message, Type } from 'protobufjs/light.js';
 //import { compress, decompress } from 'brotli';
 import { assertType } from '../util';
@@ -15,14 +15,30 @@ import { assertType } from '../util';
 
 export { Config }
 
+interface Config extends ConfigPb {
+  has(field: string): boolean;
+}
+
+const Config = class Config extends ConfigPb.ctor {
+  has(field: string) {
+    return (this as any)[field] != undefined;
+  }
+
+  static bar() {
+    return 42;
+  }
+}
+
+root.Config.ctor = Config;
+
+
+
 export class Conf {
-  constructor(readonly configs: Config[]) {}
+  constructor(readonly config: Config) {}
 
   /** Given a list of Config proto jsons, process them into the protobuf. */
   static fromJson(json: unknown): Conf {
-    if (!Array.isArray(json)) json = [json];
-    assertType<unknown[]>(json);
-    return new Conf(json.map(parseConfigJson));
+    return new Conf(parseConfigJson(json));
   }
 
   /** Returns an array of parseable config jsons. */
@@ -314,4 +330,31 @@ function resolve(spec: Field) {
 
 function qname(spec: Field|Type): string {
   return spec === Config ? 'Config' : !spec ? '(Root)' : `${qname(spec.parent)}.${spec.name}`;
+}
+
+// Given a property, we can look for it either in the normal place or else
+// in the `with` map (which will be much less efficient...)
+//  x: rand()
+//  y: x < 0.5 ? true : false
+//  this.placement.bury
+
+class UiSetting {
+  
+
+
+}
+const chargeShotsOnly = Config.fromObject({
+  items: {
+    chargeShotsOnly: true,
+    chargeWhileWalkingSpeed: 7,
+    chargeWithItemSpeed: 8,
+    chargeWhileWalkingWithItemSpeed: 8,
+  },
+  
+});
+// Returns true if it's always a proper subset, false if never, and
+// undefined if it's indeterminate: it may or may not be, randomly.
+function isSubset(parent: Config, needle: Config): boolean|undefined {
+
+
 }

@@ -28,11 +28,6 @@ syntax = "proto3";
 
     // Any way to clear lists/maps via a merge???
 
-// Multiple configs, which we can simplify, merge, and/or rearrange as needed.
-message Configs {
-  repeated Config config = 1;
-}
-
 message Config {
 
   // NOTE: must be exactly 1 for the filled message
@@ -64,16 +59,44 @@ message Config {
   Fixes fixes = 19;
   Debug debug = 20;
 
-  // Shuffle the configuration
-  repeated Vars vars = 21;
-  repeated Pick pick = 22;
+  // UI: Any given checkbox can be (1) definite (off/on), (2) random, (3) complex
+  //  - we can identify if there's an orthogonal pick that touches only the single
+  //    term, in which case we expose the values/probabilities as a separate thing?
+  //  - if it's any more complex than that, then we expose it as "complex" - writing
+  //    to it will be irreversible, and we can maybe display the affected terms?
+  //  - what about more complex configurations, like charge shots only?
+  //     - won't show up as a single-term pick...?
+  //     - we could identify known config terms by hash?
+  //     - maybe ALL toggles are just hard-coded single-term configs???
+  //     - but how to decompose? could check every option against given?
 
-  message Vars {
+  // what if we had a handful more named presets, which could be used with
+  // pick options?  and maybe allow defining custom ones as well?
+  //  - maybe every pick in the UI requires using a named preset?
+  //     - pick { empty | charge-shots-only }
+  //  - every option is a named config?  but for simpler ones we have simple
+  //    diagnostics?
 
-  }
-  message Pick {
-    
-  }
+  // test(mainConfig, subConfig)
+  //   - for picks, don't do it recursively...?
+  //   - except maybe in sub-ui?
+
+  // TODO - test this without any fancy graphics
+
+  // NOTE: these all affect other flags.  We can conditionally apply
+  // presets by adding them in `with` - we recognize that presets may
+  // affect anything...
+  //   - x < 0.5 && this.presets += vanilla
+  repeated string presets = 21;
+  // (maybe-conditional) assignment expressions, e.g.
+  //   x = rand()
+  //   x < 0.5 && this.initialInventory += fluteOfLime
+  // we parse the expression and iterate through to find which actually
+  // affect what, and whether the relevant fields are affected for the
+  // UI's sake.  In particular, 
+  repeated string mystery = 22;
+
+  map<string, Config> nested = 23;
 
   enum Randomization {
     VANILLA = 0;

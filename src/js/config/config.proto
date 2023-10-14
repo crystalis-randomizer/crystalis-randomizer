@@ -87,7 +87,7 @@ message Config {
   // presets by adding them in `with` - we recognize that presets may
   // affect anything...
   //   - x < 0.5 && this.presets += vanilla
-  repeated string presets = 21;
+  repeated string presets = 21 [(alias) = 'preset'];
   // (maybe-conditional) assignment expressions, e.g.
   //   x = rand()
   //   x < 0.5 && this.initialInventory += fluteOfLime

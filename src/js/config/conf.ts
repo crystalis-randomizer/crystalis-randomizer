@@ -19,17 +19,20 @@ interface Config extends ConfigPb {
   has(field: string): boolean;
 }
 
+type Qname<T extends object> = `${keyof T}`
+
 const Config = class Config extends ConfigPb.ctor {
-  has(field: string) {
-    return (this as any)[field] != undefined;
+  has(field: ) {
+    return this[field] != undefined;
   }
 
-  static bar() {
-    return 42;
-  }
 }
 
 root.Config.ctor = Config;
+
+
+
+}
 
 
 

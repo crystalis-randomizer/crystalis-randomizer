@@ -1,455 +1,358 @@
-import { Config as ConfigPb, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto.js';
-import { Type, Field, MapField, Message, Enum } from 'protobufjs';
+import { Config, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto.js';
+import { TypeInfo, FieldInfo, MessageFieldInfo, qnameVisitor, resolve, RepeatedFieldInfo, MapFieldInfo } from './info.js';
+import { assert, assertType } from './assert.js';
 import * as jsep from 'jsep';
 import jsepAssignment from '@jsep-plugin/assignment';
 import jsepObject from '@jsep-plugin/object';
+import { Type } from 'protobufjs';
 
 jsep.plugins.register(jsepAssignment, jsepObject);
 
 export { ItemName, CheckName, LocationName };
 
-export class ConfigSnapshot {
-  constructor(
-      readonly mystery: readonly jsep.Expression[],
-      readonly presets: readonly string[],
-      readonly nested: ReadonlyMap<string, ConfigSnapshot>,
-      readonly fields: ReadonlyMap<string, Result>) {}
+// type DeepReadonly<T> =
+//     T extends (infer U)[] ? readonly DeepReadonly<U>[] :
+//     T extends object ? {+readonly [K in keyof T]: DeepReadonly<T[K]>} : T;
+type ReadonlyConfig = ReadonlyMessage<IConfig>;
+type ReadonlyMessage<T> = {+readonly [K in keyof T]-?: ReadonlyField<T[K]>}
+type ReadonlyField<T> = [T] extends [string|boolean|number] ? T :
+  //[T] extends [string|boolean|number|null|undefined] ? T|undefined :
+  [T] extends [Array<infer V>|null|undefined] ? ReadonlyField<V>[] :
+  [T] extends [Record<string, infer V>|null|undefined] ? Record<string, ReadonlyField<V>> :
+  [T] extends [(infer V extends object)|null|undefined] ? ReadonlyMessage<V> :
+  {unknown: T};
 
-  // given a field, is it affected by any mystery exprs?
-  //   - which presets are affected by mystery exprs?
-  //     - do any of those affect the given flag?
-  // build up a map of field -> preset
-  // and a set of mystery-affected field/preset
+// DeepReadonly<IConfig>;
+export {ReadonlyConfig as Config};
 
-  // carry this through a full UI update
-
+export interface Reporter {
+  report(msg: string|null): void;
 }
 
-interface Result {
-  // value, if determined
-  value?: unknown;
-  // Whether the value is actually random
-  random?: boolean;
-  // Whether the value is a "simple" random
-  simple?: boolean;
-  // Preset that determined the result, if any
-  preset?: string;
+export class BasicReporter {
+  messages: string[] = [];
+  report(msg: string|null) { if (msg) this.messages.push(msg); }
+  result(): string|null {
+    if (this.messages.length <= 1) return this.messages[0] || null;
+    return `Errors during commit:\n  ${this.messages.join('\n  ')}`;
+  }
 }
 
-export interface Config extends ConfigPb {
-  /** Fills in the default value for unspecified fields. */
-  filled(): Config;
-  /** Evaluates all the 'mystery' expressions. */
-  evaluate(): Config;
+export const PICK: unique symbol = Symbol();
+type Pick = typeof PICK;
 
-  /** Trim out any unnecessary fields. */
-  trim(): Config;
-
-  /** Compute an immutable snapshot of the. */
-  snapshot(): ConfigSnapshot;
+export interface FieldMutation {
+  type: 'field';
+  field: string;
+  value?: unknown|Pick;
+  random: boolean;
 }
-
-type ConfigPbStatic = typeof ConfigPb;
-
-interface ConfigStatic extends ConfigPbStatic {
-  create(arg?: IConfig): Config;
-  fromObject(arg: object): Config;
+interface PresetMutation {
+  type: 'preset';
+  add: string[];
+  delete: string[]|'all';
+  random: boolean;
+  // TODO - can we model simple-random presets?
+  //  i.e. `round(rand()) && presets += 'charge-shots-only'
 }
+export type Mutation = FieldMutation|PresetMutation;
 
-export const Config: ConfigStatic = class Config extends ConfigPb.ctor {
+function mutation(expr: jsep.Expression, reporter?: Reporter): Mutation[] {
+  // Take apart the expression.
 
-  presetMap(): PresetMap {
-    const newPresets =
-        mapObject(this.nested || {}, (c) => ({value: c instanceof Config ? c : Config.create(c)}));
-    return Object.create(getStandardPresets(), newPresets);
+  function getPreset(e: jsep.Expression): string[] {
+    if (e.type === 'Literal') {
+      if (typeof e.value === 'string') return [e.value];
+      reporter?.report(`cannot use non-string-literal value ${e.value} as a preset`);
+    }
+    reporter?.report(`presets must be string literal values: got ${e.type}`);
+    return [];
   }
 
-  snapshot(): ConfigSnapshot {
-
-    const fields = new Map<string, unknown>();
-    function walkPreset(config: Config, random: boolean, simple: boolean, preset?: string) {
-      const exprs: jsep.Expression[] = (this.mystery || []).map(jsep); 
-      const presets = new Set(config.presets || []);
-      const presetMap = config.presetMap();
-      
-
-
-
-    }
-    walkPreset(this, false, true);
-
-
-
-    scanMessage('', this, configInfo);
-    function scanMessage(prefix: string, message: object, ti: TypeInfo,
-                         random = defaultRandom, simple = defaultSimple) {
-      for (const [f, v] of Object.entries(message)) {
-        const fi = ti.fields.get(canonicalizeName(f));
-        assert(fi); // if (!spec) continue; // silently skip unknown fields...?
-
-        // TODO - what if it's a repeated message??
-
-        if (fi instanceof MessageFieldInfo) {
-          assert(typeof v === 'object');
-          scanMessage(`${prefix}${f}.`, v, fi.type); 
-        } else {
-          // TODO - do we care to pull out map keys?
-          fields.set(prefix + f, {random, simple, value: v});
-        }
+  if (expr.type === 'AssignmentExpression') {
+    assertType<jsep.Expression>(expr.left);
+    assertType<jsep.Expression>(expr.right);
+    if (expr.left.type === 'Identifier' && expr.left.name === 'presets') {
+      let del: string[]|'all' = [];
+      let add: string[] = [];
+      let elems: string[];
+      if (expr.right.type === 'ArrayExpression') {
+        assertType<jsep.Expression[]>(expr.right.elements);
+        elems = expr.right.elements.flatMap(getPreset);
+      } else if (expr.operator !== '=') {
+        elems = getPreset(expr.right);
+      } else {
+        reporter?.report('direct assignment to presets must be an array');
+        elems = [];
       }
-    }
-
-    // we now know all the determined fields before presets or mystery are applied
-    // next we need to figure out which presets and fields are touched by mysteries
-    const randomPresets = new Set<string>();
-    for (let e of mystery) {
-      evaluate(e);
-    }
-
-    // now look at presets transitively
-    for (const p of presets) {
-      if (!randomPresets.has(p)) scanPreset(p, false);
-    }
-    for (const p of randomPresets) {
-      scanPreset(p, true);
-    }
-
-    return new ConfigSnapshot(mystery, fields);
-
-    function scanPreset(p: string, randomPreset: boolean) {
-      const c = presetMap[p];
-      if (!c) return;
-      const s = c.snapshot(random, false);
-      for (let [f, {value, random, simple}] of s.fields) {
-        if (randomPreset) {
-          random = true;
-          simple = false;
-        } else {
-          const prev = fields.get(f);
-          if (prev) {
-            random ||= prev.random;
-            simple &&= prev.simple;
-          }
-        }
-        fields.set(f, {value, random, simple});
+      if (expr.operator === '=') {
+        del = 'all';
+        add = elems;
+      } else if (expr.operator === '+=') {
+        add = elems;
+      } else if (expr.operator === '-=') {
+        del = elems;
+      } else {
+        reporter?.report(`unknown operation on presets: ${expr.operator}`);
+        return [];
       }
-    }
-
-    function evaluate(e: jsep.Expression) {
-      if (e.type === 'AssignmentExpression') {
-        assertType<jsep.Expression>(e.left);
-        assertType<jsep.Expression>(e.right);
-        const lhs = qname(e.left);
-        if (lhs === 'presets') {
-          if (e.operator === '=') {
-            presets.forEach(p => randomPresets.add(p));
-          } else if (e.right.type === 'Identifier') {
-            // TODO - do we allow writing `presets += foo` or do we require quotes?
-            randomPresets.add(e.right.name as string);
-          } else if (e.right.type === 'Literal' && typeof e.right.value === 'string') {
-            randomPresets.add(e.right.value);
-          } else {
-            // no idea what this would be...?
-            presets.forEach(p => randomPresets.add(p));
-          }
-        } else {
-          fields.set(lhs, {random: true, simple: defaultSimple && isSimple(e.right)});
-        }
-      } else if (e.type === 'ConditionalExpression') {
-        evaluate(e.consequent as jsep.Expression);
-        evaluate(e.alternate as jsep.Expression);
-      } else if (e.type === 'BinaryExpression' &&
-          (e.operator === '&&' || e.operator === '||')) {
-        evaluate(e.right as jsep.Expression);
-      }
-    }
-    function qname(e: jsep.Expression): string {
-      if (e.type === 'Identifier') return e.name as string;
-      if (e.type === 'MemberExpression') {
-        assertType<jsep.Expression>(e.object);
-        if (e.computed) return `${qname(e.object)}[]`;
+      return [{type: 'preset', add, delete: del, random: false}];
+    } else if (expr.left.type === 'Identifier') {
+      return []; // local variable
+    } else if (expr.left.type === 'MemberExpression') {
+      // build the qualified name
+      let terms: string[] = [];
+      let e: jsep.Expression = expr.left;
+      while (e.type === 'MemberExpression') {
         assertType<jsep.Expression>(e.property);
-        if (e.property.type === 'Identifier') return '?';
-        return `${qname(e.object)}.${e.property.name || '?'}`;
+        if (e.computed) {
+          terms = ['?'];
+        } else if (e.property.type !== 'Identifier') {
+          terms = ['!' + e.property.type];
+        } else {
+          terms.push(e.property.name as string);
+        }
+        e = e.object as jsep.Expression;
       }
-      return '?';
+      if (e.type !== 'Identifier') {
+        reporter?.report(`cannot assign to property of non-identifier: ${e.type}`);
+        return [];
+      }
+      terms.push(e.name as string);
+      // now look up the field info
+      let field: string[] = [];
+      let info = configInfo;
+      let fi: FieldInfo|undefined;
+      while (terms.length) {
+        const term = terms.pop()!;
+        if (term === '?') {
+          reporter?.report(`cannot assign to computed message fields`);
+          return [];
+        } else if (term.startsWith('!')) {
+          reporter?.report(`unknown non-identifier property: ${term.substring(1)}`);
+          return [];
+        }
+        fi = info.field(term);
+        if (!fi) {
+          reporter?.report(`unknown field ${field.map(f => f + '.')}${term}`);
+          return [];
+        }
+        field.push(fi.name);
+        if (fi instanceof RepeatedFieldInfo || fi instanceof MapFieldInfo) break;
+        if (fi instanceof MessageFieldInfo) {
+          info = fi.type;
+        } else if (terms.length) {
+          reporter?.report(`cannot assign to property of primitive field ${field.join('.')}`);
+          return [];
+        }
+      }
+      if (!fi) throw new Error(`missing field info?`);
+      // analyze RHS
+      let random = false;
+      if (expr.operator !== '=') {
+        random = true; // not strictly true, but best guess since it depends on earlier edits
+        if (expr.operator === '+=' || expr.operator === '-=') {
+          if (!(fi instanceof RepeatedFieldInfo)) {
+            reporter?.report(`can only append/remove from repeated field`);
+          }
+        } else {
+          reporter?.report(`invalid assignment operator: ${expr.operator}`);
+        }
+        // TODO - can we warn about incorrect map usage?!?
+        // maybe we can continue iterating through the terms...?
+      } else if (terms.length) {
+        random = true; // same here - depends on earlier edits, so treat as random/complex
+      }
+      if (expr.right.type === 'Literal') {
+        const value = fi.coerce(expr.right.value, reporter);
+        return [{type: 'field', field: field.join('.'), value, random}];
+      } else if (expr.right.type === 'CallExpression') {
+        assertType<jsep.Expression>(expr.right.callee);
+        assertType<jsep.Expression[]>(expr.right.arguments);
+        if (expr.right.callee.type === 'Identifier' &&
+            expr.right.callee.name === 'pick' &&
+            expr.right.arguments.length === 0) {
+          return [{type: 'field', field: field.join('.'), value: PICK, random}];
+        }        
+      }
+      return [{type: 'field', field: field.join('.'), random: true}];
+    } else {
+      reporter?.report(`unknown assignment target: ${expr.left.type}`);
+      return [];
+    }
+  } else if (expr.type === 'ConditionalExpression') {
+    // ignore LHS for now... (validate it by trying to evaluate later?)
+    return [...mutation(expr.consequent as jsep.Expression, reporter),
+            ...mutation(expr.alternate as jsep.Expression, reporter)]
+        .map(makeRandom);
+  } else if (expr.type === 'BinaryExpression') {
+    if (expr.operator !== '&&' && expr.operator !== '||') {
+      reporter?.report(`top-level operators may only be "&&" or "||", but got ${expr.operator}`);
+      return [];
+    }
+    return mutation(expr.right as jsep.Expression, reporter).map(makeRandom);
+  } else {
+    reporter?.report(`invalid top-level expression type: ${expr.type}`);
+    return [];
+  }
+  function makeRandom(m: Mutation): Mutation {
+    return {...m, random: true};
+  }
+}
+
+function setField(message: any, info: TypeInfo, field: string, value: unknown) {
+  const index = field.indexOf('.');
+  if (index === -1) {
+    const fi = info.field(field);
+    if (!fi) return; // error message??
+    const v = fi.coerce(value);
+    if (v != undefined) message[fi.name] = v;
+  } else {
+    const parent = field.substring(0, index);
+    const rest = field.substring(index + 1);
+    const fi = info.field(parent);
+    if (!fi || !(fi instanceof MessageFieldInfo)) return; // error??
+    setField(message[fi.name] || (message[fi.name] = fi.type.type.create()), fi.type, rest, value);
+  }
+}
+
+export class ConfigBuilder {
+  private internal: Config = Config.create();
+  private pending?: IConfig = undefined;
+  // keyed by field, value is _last_ mutation (including presets)
+  private mystery?: Map<string, FieldMutation> = undefined
+
+  constructor(config?: IConfig) {
+    if (config) {
+      const result = this.merge(config);
+      if (result) throw new Error(result);
     }
   }
 
-  //$type: Type;
-  static create: (arg?: IConfig) => Config;
-
-  static fromObject(arg: object): Config {
-    // TODO - fix arg
-    return ConfigPb.fromObject(arg) as unknown as Config;
+  private checkState() {
+    if (this.pending) throw new Error(`mutable reference out`);
   }
-} as any;
-ConfigPb.ctor = Config;
 
-export type PresetMap = {readonly [key: string]: Config};
+  // TODO: clone?
+  merge(_config: IConfig): string|null {
+    this.checkState();
+    throw new Error('not implemented');
+  }
+  mutate(): IConfig {
+    this.checkState();
+    this.mystery = undefined;
+    return this.pending = Config.fromObject(this.internal.toJSON());
+  }
+  commit(): string|null {
+    // check mutations and return any errors as a string
+    if (!this.pending) throw new Error(`commit with no mutable reference`);
+    const reporter = new BasicReporter();
+    this.internal = configInfo.coerce(this.pending, reporter) as Config;
+    this.pending = undefined;
+    reporter.report(Config.verify(this.internal));
+    return reporter.result();
+  }
+
+  build(): ReadonlyConfig {
+    this.checkState();
+    return configInfo.fill(this.internal) as ReadonlyConfig;
+  }
+
+  // query stuff about fields, presets, and expressions
+  snapshot(): Map<string, FieldMutation> {
+    this.checkState();
+    if (this.mystery) return this.mystery;
+    // build the mutations
+    const mysteryMutations = (this.internal.mystery || []).flatMap(e => mutation(jsep(e)));
+    const presets = new Map<string, boolean>(); // maps to randomness.
+    for (const m of mysteryMutations) {
+      if (m.type !== 'preset') continue;
+      const del = m.delete === 'all' ? [...presets.keys()] : m.delete;
+      for (const p of del) {
+        if (m.random) {
+          presets.set(p, true);
+        } else {
+          presets.delete(p);
+        }
+      }
+      for (const p of m.add) {
+        presets.delete(p);
+        presets.set(p, m.random);
+      }
+    }
+
+    let presetMap: Record<string, ConfigBuilder>|undefined = undefined;
+    let hidden = false;
+
+    const fieldMutations = new Map<string, FieldMutation>();
+    for (const [p, r] of presets) {
+      // look up the config
+      if (!presetMap) {
+        const newPresets = mapObject(this.internal.nested || {},
+                                     (c) => ({value: new ConfigBuilder(c)}));
+        presetMap = Object.create(getStandardPresets(), newPresets);
+      }
+      const c = presetMap![p];
+      if (!c) continue;
+      const s = c.snapshot();
+      if (s.get('hideConfig')?.value) hidden = true; // PICK or true.
+      for (let [f, m] of s) {
+        fieldMutations.set(f, r ? {...m, random: true} : {...m});
+      }
+    }
+
+    // After we visit all the presets, then visit the fields
+    const visitor = qnameVisitor((_f: FieldInfo, v: unknown, qname: string) => {
+      if (/^(preset|mystery|nested)/.test(qname)) return;
+      fieldMutations.set(qname, {type: 'field', field: qname, value: v, random: false});
+    });
+
+    configInfo.visit(this.internal, visitor, '');
+
+    // Finally re-visit the random fields
+    for (const m of mysteryMutations) {
+      if (m.type !== 'field') continue;
+      if (m.field === 'hideConfig') continue; // no effect - cannot override!
+      fieldMutations.set(m.field, m);
+    }
+
+    // Check the hidden status
+    const hm = fieldMutations.get('hideConfig');
+    if (hm?.value === true) {
+      fieldMutations.clear();
+      fieldMutations.set('hideConfig', hm); // only reveal that we're hidden.
+    } else if (hidden) {
+      fieldMutations.set('hideConfig', {type: 'field', field: 'hideConfig',
+                                        value: PICK, random: false});
+    }
+    return this.mystery = fieldMutations;
+  }
+}
+
+export type PresetMap = {readonly [key: string]: ConfigBuilder};
 const getStandardPresets = (() => {
   // NOTE: This is lazy because it relies on TypeInfo having been resolved.
   // We could possibly just put it after the `resolve(ConfigPb)` call.
-  let presets: Record<string, Config>|undefined;
+  let standardPresets: Record<string, ConfigBuilder>|undefined = undefined;
   function buildStandardPresets() {
-    presets = {};
-    walk(configInfo, (c) => c);
-    function walk(t: TypeInfo, fn: (c: Config) => object) {
-      for (const [f, fi] of t.fields) {
-        // NOTE: repeated/map fields default to empty!
-        if (fi instanceof MessageFieldInfo) {
-          walk(fi.type, (c: Config) => {
-            const child: any = fn(c);
-            return child[f] || (child[f] = fi.type.type.create());
-          });
-          continue;
-        }
-        // Primitives can have presets directly
-        for (const [opt, val] of Object.entries(fi.field.options || {})) {
-          const p = opt.replace(/^preset\./, '');
-          if (opt === p) continue;
-          const message = fn(presets![p] || (presets![p] = Config.create())) as any;
-          message[f] = fi.clamp(val);
-        }
+    const presets: Record<string, Config> = {};
+    const visitor = qnameVisitor((f: FieldInfo, _v: unknown, name: string) => {
+      // Primitives can have presets directly
+      for (const [opt, val] of Object.entries(f.field.options || {})) {
+        const p = opt.replace(/^preset\./, '');
+        if (opt === p) continue;
+        const message = presets[p] || (presets[p] = Config.create());
+        setField(message, configInfo, name, val);
       }
-    }
+    });
+    configInfo.visit(null, visitor, '');
+    standardPresets = mapObject(presets, c => new ConfigBuilder(c));
   }
   return () => {
-    if (!presets) buildStandardPresets();
-    return presets;
+    if (!standardPresets) buildStandardPresets();
+    return standardPresets as PresetMap;
   };
-}
-
-
-
-// Resolve all nested types
-// NOTE: The following code streamlines the introspection
-
-function resolve(t: Type): TypeInfo;
-function resolve(e: Enum): EnumInfo;
-function resolve(f: Field): FieldInfo;
-function resolve(o: unknown): unknown {
-  const r = resolved.get(o);
-  if (r != null) return r;
-  if (o instanceof Type) return TypeInfo.resolve(o);
-  if (o instanceof Enum) return EnumInfo.resolve(o);
-  if (o instanceof Field) return FieldInfo.resolve(o);
-  assert(false);
-}
-const resolved = new Map<unknown, unknown>();
-
-class TypeInfo {
-  fields = new Map<string, FieldInfo>();
-  // TODO - any options?
-
-  constructor(readonly type: Type) {}
-
-  static resolve(t: Type) {
-    t.resolve();
-    const info = new TypeInfo(t);
-    resolved.set(t, info);
-    for (const [name, field] of t.fieldsArray) {
-      assert(typeof name === 'string');
-      assert(field instanceof Field);
-      const c = canonicalizeName(name);
-      if (info.fields.has(c)) {
-        throw new Error(`Canonicalized enum name conflict in ${t.name}: ${name} vs ${
-                         info.fields.get(c)!.name}`);
-      }
-      info.fields.set(c, resolve(field));
-    }
-    return info;
-  }
-}
-class EnumInfo {
-  canonical = new Map<string, number>();
-
-  static resolve(e: Enum): EnumInfo {
-    const info = new EnumInfo();
-    resolved.set(e, info);
-    for (const [name, value] of Object.entries(e.values)) {
-      assert(typeof name === 'string');
-      assert(typeof value === 'number');
-      const names = [name];
-      const alias = e.valuesOptions?.[name];
-      for (const a of alias ? String(alias).split(/,\s*/g) : []) {
-        names.push(a);
-      }
-      // TODO - add aliases for (alias).x or something...?
-      for (const n of names) {
-        const c = canonicalizeName(n);
-        if (info.canonical.has(c)) {
-          throw new Error(`Canonicalized enum name conflict in ${e.name}: ${n} vs ${
-                           e.valuesById[info.canonical.get(c)!]}`);
-        }
-        info.canonical.set(c, value);
-      }
-    }
-    return info;
-  }
-}
-
-abstract class FieldInfo {
-  constructor(readonly field: Field) {}
-  get name(): string { return this.field.name; }
-  abstract resolve(): void;
-  // TODO - implement?
-  clamp(value: unknown): unknown { return value; }
-
-  static resolve(f: Field): FieldInfo {
-    f.resolve();
-    const sfi = singularFieldInfo(f.type, f.resolvedType, f);
-    let fi: FieldInfo;
-    if (f.repeated) {
-      fi = new RepeatedFieldInfo(sfi);
-    } else if (f.map) {
-      assert(f instanceof MapField);
-      assert(f.parent instanceof Type);
-      const keyType = f.options?.['(key)'] || f.keyType;
-      const resolvedKeyType = f.parent.lookup(keyType);
-      fi = new MapFieldInfo(singularFieldInfo(keyType, resolvedKeyType, f), sfi);
-    } else {
-      fi = sfi;
-    }
-    resolved.set(f, fi);
-    fi.resolve();
-    return fi;
-  }
-}
-abstract class SingularFieldInfo extends FieldInfo {}
-class RepeatedFieldInfo extends FieldInfo {
-  constructor(readonly element: SingularFieldInfo) { super(element.field); }
-  resolve() { this.element.resolve(); }
-}
-class MapFieldInfo extends FieldInfo {
-  constructor(
-    readonly key: SingularFieldInfo,
-    readonly value: SingularFieldInfo) { super(value.field); }
-  resolve() { this.key.resolve(); this.value.resolve(); }
-}
-abstract class PrimitiveFieldInfo extends SingularFieldInfo {
-  abstract readonly primitive: Primitive;
-  abstract readonly default?: unknown;
-  resolve() {}
-}
-class NumberFieldInfo extends PrimitiveFieldInfo {
-  readonly min: number;
-  readonly max: number;
-  readonly default?: number;
-  readonly primitive: NumberPrimitive;
-  readonly round: (arg: number) => number;
-  
-  constructor(field: Field) {
-    super(field);
-    let min, max: number;
-    if (field.type === 'int32') {
-      min = ~(max = 0x7fffffff);
-      this.primitive = 'int32';
-      this.round = Math.round;
-    } else if (field.type === 'uint32') {
-      min = 0; max = 0xffffffff;
-      this.primitive = 'uint32';
-      this.round = Math.round;
-    } else if (field.type === 'float') {
-      min = -(max = 3.402823e38);
-      this.primitive = 'float';
-      this.round = (x) => x;
-    } else {
-      throw Error(`Bad number type ${field.type}`);
-    }
-    const {'(min)': minOpt, '(max)': maxOpt, '(default)': defaultOpt} = field.options || {};
-    this.min = minOpt != null ? this.round(Number(minOpt)) : min;
-    this.max = maxOpt != null ? this.round(Number(maxOpt)) : max;
-    this.default = defaultOpt != null ? this.round(Number(defaultOpt)) : undefined;
-  }
-  clamp(arg: unknown): number {
-    if (typeof arg === 'string') {
-      // NOTE: Number() does not understand negative with 0x prefix!
-      arg = arg.trim();
-      if ((arg as string).startsWith('-')) {
-        arg = -Number((arg as string).substring(1));
-      }
-    }
-    return Math.max(this.min, Math.min(this.round(Number(arg)), this.max));
-  }
-}
-class StringFieldInfo extends PrimitiveFieldInfo {
-  readonly default?: number;
-  readonly primitive: 'string' = 'string';
-
-  constructor(field: Field) {
-    super(field);
-    assert(field.type === 'string');
-    const {'(default)': defaultOpt} = field.options || {};
-    this.default = defaultOpt != null ? defaultOpt : undefined;
-  }
-  clamp(arg: unknown): string {
-    return String(arg);
-  }
-}
-class BoolFieldInfo extends PrimitiveFieldInfo {
-  readonly default?: boolean;
-  readonly primitive: 'bool' = 'bool';
-
-  constructor(field: Field) {
-    super(field);
-    assert(field.type === 'string');
-    const {'(default)': defaultOpt} = field.options || {};
-    this.default = defaultOpt != null ? this.clamp(defaultOpt) : undefined;
-  }
-  clamp(arg: unknown): boolean {
-    return typeof arg === 'string' && arg.toLowerCase() === 'false' ? false : Boolean(arg);
-  }
-}
-class EnumFieldInfo extends SingularFieldInfo {
-  readonly enum!: EnumInfo;
-  constructor(field: Field, private readonly e: Enum) { super(field); }
-  resolve() { (this as any).enum = resolve(this.e); }
-}
-class MessageFieldInfo extends SingularFieldInfo {
-  readonly type!: TypeInfo;
-  constructor(field: Field, private readonly t: Type) { super(field); }
-  resolve() { (this as any).type = resolve(this.t); }
-}
-
-function singularFieldInfo(type: string, resolvedType: unknown, f: Field) {
-  if (resolvedType instanceof Type) {
-    return new MessageFieldInfo(f, resolvedType);
-  } else if (resolvedType instanceof Enum) {
-    return new EnumFieldInfo(f, resolvedType);
-  } else if (type === 'string') {
-    return new StringFieldInfo(f);
-  } else if (type === 'bool') {
-    return new BoolFieldInfo(f);
-  } else if (isPrimitive(type)) {
-    return new NumberFieldInfo(f);
-  }
-  throw new Error(`Could not resolve type ${type} (${resolvedType}) of ${f.parent?.name}.${f.name}`);
-}
-
-// NOTE: We don't support any other primitive types!
-type NumberPrimitive = 'float'|'int32'|'uint32';
-type Primitive = 'bool'|'string'|NumberPrimitive;
-// const primitives = new Map<Primitive, (arg: unknown) => unknown>([
-//   // special handling for the string 'false'
-//   ['bool', (x: unknown) => typeof x === 'string' && x.toLowerCase() === 'false' ? false : Boolean(x)], 
-//   ['float', (x: unknown) => Math.fround(Number(x))],
-//   ['int32', (x: unknown) => Math.max(-0x80000000, Math.min(Math.round(Number(x)), 0x7fffffff))],
-//   ['string', String],
-//   ['uint32', (x: unknown) => Math.max(0, Math.min(Math.round(Number(x)), 0xffffffff))],
-// ]);
-function isPrimitive(s: unknown): s is Primitive {
-  return typeof s === 'string' && /^(bool|u?int32|float|string)$/.test(s);
-}
-
-function canonicalizeName(s: string): string {
-  return s.toLowerCase().replace(/[^a-z0-9]/ig, '');
-}
-
-function assert(x: unknown): asserts x {
-  if (!x) throw new Error('Assertion Failed');
-}
-function assertType<T>(_x: unknown): asserts _x is T {}
+})();
 
 function mapObject<K extends string|number|symbol, T, U>(
     obj: Record<K, T>, fn: (arg: T, key: K) => U): Record<K, U> {
@@ -460,15 +363,15 @@ function mapObject<K extends string|number|symbol, T, U>(
   return out;
 }
 
-function isSimple(e: jsep.Expression): boolean {
-  if (e.type !== 'CallExpression') return false;
-  const callee = e.callee as jsep.Expression;
-  if (callee.type !== 'Identifier' || callee.name !== 'pick') return false;
-  return (e.arguments as unknown[])!.length === 0;
-}
+// function isSimple(e: jsep.Expression): boolean {
+//   if (e.type !== 'CallExpression') return false;
+//   const callee = e.callee as jsep.Expression;
+//   if (callee.type !== 'Identifier' || callee.name !== 'pick') return false;
+//   return (e.arguments as unknown[])!.length === 0;
+// }
 
-assert(ConfigPb instanceof Type);
-const configInfo = resolve(ConfigPb);
+assert(Config instanceof Type);
+const configInfo = resolve(Config);
 
 // When parsing stuff, build up the translation map?
 // Preset operations need to be constrained:

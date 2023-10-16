@@ -5,6 +5,7 @@ import * as jsep from 'jsep';
 import jsepAssignment from '@jsep-plugin/assignment';
 import jsepObject from '@jsep-plugin/object';
 import { Type } from 'protobufjs';
+import { FieldMutation, Mutation } from './expr.js';
 
 jsep.plugins.register(jsepAssignment, jsepObject);
 
@@ -41,21 +42,6 @@ export class BasicReporter {
 export const PICK: unique symbol = Symbol();
 type Pick = typeof PICK;
 
-export interface FieldMutation {
-  type: 'field';
-  field: string;
-  value?: unknown|Pick;
-  random: boolean;
-}
-interface PresetMutation {
-  type: 'preset';
-  add: string[];
-  delete: string[]|'all';
-  random: boolean;
-  // TODO - can we model simple-random presets?
-  //  i.e. `round(rand()) && presets += 'charge-shots-only'
-}
-export type Mutation = FieldMutation|PresetMutation;
 
 function mutation(expr: jsep.Expression, reporter?: Reporter): Mutation[] {
   // Take apart the expression.

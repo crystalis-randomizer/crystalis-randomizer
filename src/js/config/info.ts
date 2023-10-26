@@ -52,6 +52,8 @@ export class TypeInfo {
 
   constructor(readonly type: Type) {}
 
+  toString() { return this.fullName; }
+
   get name(): string { return this.type.name; }
   get fullName(): string { return qname(this.type); }
 
@@ -145,9 +147,9 @@ export class EnumInfo {
   enum: Enum;
   canonical = new Map<string, number>();
 
-  constructor(e: Enum) {
-    this.enum = e;
-  }
+  constructor(e: Enum) { this.enum = e; }
+
+  toString() { return this.fullName; }
 
   get name(): string { return this.enum.name; }
   get fullName(): string { return qname(this.enum); }
@@ -170,6 +172,11 @@ export class EnumInfo {
     }
     reporter?.report(`Cannot coerce to ${this.fullName}: ${value}`);
     return undefined;
+  }
+
+  coerceOrd(value: unknown, reporter?: Reporter): number|undefined {
+    const name = this.coerce(value, reporter);
+    return name != undefined ? this.enum.values[name] : undefined;
   }
 
   static resolve(e: Enum): EnumInfo {
@@ -199,6 +206,7 @@ export class EnumInfo {
 
 export abstract class FieldInfo {
   constructor(readonly field: Field) {}
+  toString() { return this.fullName; }
   get name(): string { return this.field.name; }
   get fullName(): string { return qname(this.field); }
   abstract resolve(): void;
@@ -225,7 +233,9 @@ export abstract class FieldInfo {
     return fi;
   }
 }
-export abstract class SingularFieldInfo extends FieldInfo {}
+export abstract class SingularFieldInfo extends FieldInfo {
+  abstract readonly type: unknown;
+}
 export class RepeatedFieldInfo extends FieldInfo {
   constructor(readonly element: SingularFieldInfo) { super(element.field); }
   resolve() { this.element.resolve(); }
@@ -269,6 +279,7 @@ export class NumberFieldInfo extends PrimitiveFieldInfo {
   readonly default?: number;
   readonly primitive: NumberPrimitive;
   readonly round: (arg: number) => number;
+  readonly type = 'number';
   
   constructor(field: Field) {
     super(field);
@@ -312,6 +323,7 @@ export class NumberFieldInfo extends PrimitiveFieldInfo {
 export class StringFieldInfo extends PrimitiveFieldInfo {
   readonly default?: number;
   readonly primitive: 'string' = 'string';
+  readonly type = 'string';
 
   constructor(field: Field) {
     super(field);
@@ -326,6 +338,7 @@ export class StringFieldInfo extends PrimitiveFieldInfo {
 export class BoolFieldInfo extends PrimitiveFieldInfo {
   readonly default?: boolean;
   readonly primitive: 'bool' = 'bool';
+  readonly type = 'boolean';
 
   constructor(field: Field) {
     super(field);
@@ -339,8 +352,13 @@ export class BoolFieldInfo extends PrimitiveFieldInfo {
 }
 export class EnumFieldInfo extends SingularFieldInfo {
   readonly enum!: EnumInfo;
-  constructor(field: Field, private readonly e: Enum, private readonly isKey: boolean) { super(field); }
-  resolve() { (this as any).enum = resolve(this.e); }
+  readonly type!: EnumInfo;
+  constructor(field: Field, private readonly e: Enum, private readonly isKey: boolean) {
+    super(field);
+  }
+  resolve() {
+    (this as any).type = (this as any).enum = resolve(this.e);
+  }
   coerce(value: unknown, reporter?: Reporter): unknown {
     const result = this.enum.coerce(value, reporter);
     if (result == undefined) return result;

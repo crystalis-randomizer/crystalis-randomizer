@@ -3,402 +3,30 @@
 import { parse, Expression } from './jsep.js';
 import { BoolFieldInfo, EnumFieldInfo, EnumInfo, FieldInfo, MapFieldInfo, MessageFieldInfo, NumberFieldInfo, PrimitiveFieldInfo, RepeatedFieldInfo, SingularFieldInfo, StringFieldInfo, TypeInfo } from './info.js';
 import { assertType } from './assert.js';
+import { Arr, BasicVal, Bool, CallContext, Err, ErrBuilder, Func, Mut, Num, Obj, RANDOM, Rand, Str, Val, isErr, wrapValue } from './val.js';
+import { Random } from '../random.js';
 
-// path to variable - may be a local, a config field, presets, etc
-export type Path = [string, ...(Prim|Rand)[]];
 
-class LValueBuilder {
-  private props: Prop[] = [];
-  private errs = new ErrBuilder();
-  rand = false;
-  constructor(private root: string, private field?: FieldInfo) {}
-
-  private fieldError(str: string) {
-    this.errs.push(str);
-    this.field = undefined;
-  }
-
-  private err(err: string) {
-    this.errs.push(err);
-  }
-
-  getprop(val: Val) {
-    if (val instanceof Rand) {
-      // Dereference with random prop -> will return a random
-      // (though depending on the field, we may know something
-      // about it).
-      this.rand = true;
-      if (this.field instanceof RepeatedFieldInfo) {
-        this.field = this.field.element;
-      } else if (this.field instanceof MapFieldInfo) {
-        this.field = this.field.value;
-      } else {
-        this.field = undefined; // signal unknown somehow??
-      }
-    } else if (val instanceof Prim) {
-      // Known key
-      if (this.field instanceof MessageFieldInfo) {
-        // expect a literal string, no enum
-        if (val.type === 'str') {
-          const child = this.field.type.field(val.str()!);
-          if (child) {
-            this.field = child;
-          } else {
-            this.fieldError(`bad field ${val.str()} on ${this.field.type.fullName}`);
-          }
-        } else {
-          this.fieldError(`message lhs must have string-typed properties, got ${val.type}`);
-        }
-      } else if (this.field instanceof SingularFieldInfo) {
-        this.fieldError(`cannot write properties of primitive field: ${this.field.fullName}`);
-      } else if (this.field instanceof RepeatedFieldInfo) {
-        if (val.type === 'num') {
-          this.field = this.field.element;
-        } else {
-          this.fieldError(`can only write to numeric property of repeated ${this.field.fullName}`);
-        }
-      } else if (this.field instanceof MapFieldInfo) {
-        val = this.errs.check(checkMapKey(this.field, val));
-        this.field = this.field.value;
-      }
-      this.props.push(val as Prim);
-    } else if (val instanceof Err) {
-      this.errs.check(val);
-    } else {
-      this.errs.push(`bad computed property type in lvalue: ${val.type}`);
-    }
-  }
-
-  build(): LValue|Err {
-    return this.errs.build() || new LValue(this.root, this.props, this.field);
-  }
+interface IConfig {
+  presets: string[];
+  exprs: string[];
+  //other fields...
+  nested: Record<string, IConfig>;
 }
 
-type Prop = Prim|Rand;
-export class LValue {
-  constructor(readonly root: string, readonly props: readonly Prop[], readonly field?: FieldInfo) {}
-  isPreset(): boolean {
-    return this.root === 'presets';
-  }
-  isProto(): boolean {
-    return this.field != undefined;
-  }
-  isSimple(): boolean {
-    return this.props.length === 1 && this.field == undefined;
-  }
+export function evaluate(config: IConfig, info: TypeInfo, random: Random): IConfig {
+  // how simple can we make this?
+  // will need to be called recursively, obvi (for presets)
+
 }
 
-export abstract class Val {
-  //                      [            Prim              ] [   Obj   ] [Func] [Rand] [Mut] [Err]
-  abstract readonly type: 'num'|'str'|'bool'|'enum'|'null'|'obj'|'arr'|'func'|'rand'|'mut'|'err';
-  static wrap(arg: unknown): Val {
-    if (typeof arg === 'number') return new Num(arg);
-    if (typeof arg === 'string') return new Str(arg);
-    if (typeof arg === 'boolean') return arg ? Bool.TRUE : Bool.FALSE;
-    if (arg == undefined) return NUL;
-    if (Array.isArray(arg)) return new ArrWrap(arg);
-    if (typeof arg == 'object') return new ObjWrap(arg);
-    return Err.of(`cannot wrap ${arg} (${typeof arg})`);
-  }
+export function analyze(config: IConfig, info: TypeInfo): Map<string, Mutation> {
+  
 }
 
-//type Val = Prim|Obj|Rand|Func|Mutation|Err;
-
-export abstract class Prim extends Val {
-  abstract readonly type: 'num'|'str'|'bool'|'enum'|'null';
-  static wrap(val: unknown): Val {
-    if (val == undefined) return NUL;
-    if (typeof val === 'number') return new Num(val);
-    if (typeof val === 'string') return new Str(val);
-    if (typeof val === 'boolean') return val ? Bool.TRUE : Bool.FALSE;
-    return Err.of(`bad type for Prim.wrap: ${typeof val}`);
-  }
-  enum(): EnumInfo|undefined { return undefined; }
-  str(): string|undefined { return undefined; }
-  num(): number|undefined { return undefined; }
-}
-
-abstract class Obj extends Val {
-  abstract readonly type: 'obj'|'arr';
-  abstract readonly key: 'num'|'str'|EnumInfo;
-  abstract at(arg: Val): Val;
-  static wrap(arg: unknown): Val {
-    if (Array.isArray(arg)) {
-      return new ArrWrap(arg);
-    } else if (arg && typeof arg === 'object') {
-      return new ObjWrap(arg);
-    }
-    return Err.of(`cannot wrap object ${arg}`);
-  }
-}
-
-class Func extends Val {
-  readonly type = 'func';
-  // TODO - how to implement pick?
-  //   - placement.thunder_sword_warps = pick()
-  constructor(readonly name: string, readonly apply: (args: Val[]) => Val) { super(); }
-  toString() { return this.name; }
-}
-
-export class Rand extends Val {
-  readonly type = 'rand';
-}
-
-export class Mut extends Val {
-  readonly type = 'mut';
-  constructor(readonly mutations: Mutation[]) { super(); }
-}
-
-export interface Mutation {
-  readonly lhs: LValue;
-  readonly op: string;
-  readonly rhs: Val;
-  // whether mutation may not actually happen
-  readonly random?: boolean;
-  // which preset this mutation came from
-  readonly preset?: string;
-}
-
-export class Err extends Val {
-  readonly type = 'err';
-  constructor(readonly errors: string[]) { super(); }
-  static of(err: string) { return new Err([err]); }
-}
-
-const NUL = new class Nul extends Prim {
-  readonly type = 'null';
-  override toString() { return 'null'; }
-}();
-class Num extends Prim {
-  readonly type = 'num';
-  constructor(readonly val: number) { super(); }
-  override num() { return this.val; }
-  override toString() { return String(this.val); }
-}
-class Bool extends Prim {
-  readonly type = 'bool';
-  constructor(readonly val: boolean) { super(); }
-  override num() { return +this.val; }
-  override toString() { return String(this.val); }
-  readonly static FALSE = new Bool(false);
-  readonly static TRUE = new Bool(true);
-}
-class Str extends Prim {
-  readonly type = 'str';
-  constructor(readonly val: string) { super(); }
-  override str() { return this.val; }
-  override toString() { return JSON.stringify(this.val); }
-}
-class Enum extends Prim {
-  readonly type = 'enum';
-  constructor(readonly value: number, readonly info: EnumInfo) { super(); }
-  override enum() { return this.info; }
-  override num() { return this.value; }
-  override str() { return this.info.enum.valuesById[this.value]; }
-  override toString() { return this.str(); }
-}
-
-class ArrWrap extends Obj {
-  readonly type = 'arr';
-  readonly key = 'num';
-  constructor(readonly arr: unknown[]) { super(); }
-  override at(arg: Val): Val {
-    if (arg instanceof Err) return arg;
-    if (arg instanceof Rand) return RANDOM;
-    if (arg instanceof Prim && arg.type === 'num') return Val.wrap(this.arr[arg.num()!]);
-    return Err.of(`cannot index array with ${arg}`);
-  }
-  override toString() { return `[${this.arr.join(', ')}]`; }
-}
-class ObjWrap extends Obj {
-  readonly type = 'obj';
-  readonly key = 'str';
-  constructor(readonly obj: object) { super(); }
-  override at(arg: Val): Val {
-    if (arg instanceof Err) return arg;
-    if (arg instanceof Rand) return RANDOM;
-    if (arg instanceof Prim && arg.type === 'str') return Val.wrap((this.obj as any)[arg.str()!]);
-    return Err.of(``);
-  }
-  override toString() { return `{${Object.entries(this.obj).map(([k, v]) => `${k}: ${v}`).join(', ')}}`; }
-}
-
-// class Enum {
-//   constructor(readonly value: number, readonly info: EnumInfo) {}
-// }
-export class Pick extends Rand {
-  constructor(readonly preset?: string) { super(); }
-}
-const RANDOM = new Rand();
-const PICK = new Pick();
-
-// function isNumber(val: Val, allowRandom = false): boolean {
-//   return typeof val === 'number' || typeof val === 'boolean' ||
-//       val instanceof Enum || (allowRandom && val instanceof Rand);
-// }
-// function toNumber(val: Val): number {
-//   if (typeof val === 'boolean') return +val;
-//   if (typeof val === 'number') return val;
-//   if (val instanceof Enum) return val.value;
-//   throw new Error(`toNumber on non-number: ${val}`);
-// }
-// function isString(val: Val, allowRandom = false): boolean {
-//   return typeof val === 'string' || val instanceof Enum || (allowRandom && val instanceof Rand);
-// }
-// function toString(val: Val): string {
-//   if (typeof val === 'string') return val;
-//   if (val instanceof Enum) return val.info.enum.valuesById[val.value];
-//   throw new Error(`toString on non-string: ${val}`);
-// }
-
-// a message, repeated field, or map field - abstracts over name canonicalization
-
-// NOTE: work around https://github.com/microsoft/TypeScript/issues/4628
-const Obj_nowrap: {new(): Obj}&Omit<typeof Obj, 'wrap'> = Obj as any;
-
-abstract class Proto extends Obj_nowrap {
-  abstract data: unknown;
-  static wrap(data: unknown, info: FieldInfo): Val {
-    if (info instanceof EnumFieldInfo) {
-      if (typeof data === 'number') {
-        if (data in info.enum.enum.valuesById) return new Enum(data as number, info.enum);
-      } else if (typeof data === 'string') {
-        const num = info.enum.enum.values[data];
-        if (num != undefined) return new Enum(num, info.enum);
-      } else if (data instanceof Enum) {
-        if (data.info === info.enum) return data;
-        return Err.of(`incompatible enum ${data.info.name} for field ${info.name}`);
-      }
-      return Err.of(`invalid element ${data} in enum ${info.enum.name}`);
-    } else if (info instanceof PrimitiveFieldInfo) {
-      const t = typeof data;
-      if (t === 'number' || t === 'string' || t === 'boolean' || data == undefined) {
-        return Prim.wrap(data);
-      }
-      return Err.of(`bad primitive field value: ${data}`);
-    } else if (info instanceof MessageFieldInfo) {
-      return new ProtoMessage(data || info.type.type.create(), info);
-    } else if (info instanceof RepeatedFieldInfo) {
-      if (data != undefined && !Array.isArray(data)) {
-        return Err.of(`unexpected non-array for repeated field ${info}: ${data}`);
-      }
-      return new ProtoRepeated(data || [], info);
-    } else if (info instanceof MapFieldInfo) {
-      if (data != undefined && typeof data !== 'object') {
-        return Err.of(`unexpected non-object for map field ${info}: ${data}`);
-      }
-      return new ProtoMap(data || {}, info);
-    }
-    return Err.of(`unknown field info type: ${info}`);
-  }
-  abstract at(key: Val): Val;
-}
-
-class ProtoMessage extends Proto {
-  readonly type = 'obj';
-  readonly key = 'str';
-  constructor(readonly data: object, private readonly info: MessageFieldInfo) { super(); }
-  override at(key: Val): Val {
-    if (key instanceof Rand) return RANDOM;
-    if (typeof key === 'string') {
-      const field = this.info.type.field(key);
-      if (field == undefined) return Err.of(`unknown field ${key} for type ${this.info.fullName}`);
-      const result = (this.data as any)[field.name];
-      return Proto.wrap(result, field);
-    }
-    return Err.of(`bad type for message field: ${key} (${typeof key})`);
-  }
-}
-
-class ProtoRepeated extends Proto {
-  readonly type = 'arr';
-  readonly key = 'num';
-  constructor(readonly data: unknown[], private readonly info: RepeatedFieldInfo) { super(); }
-  override at(key: Val): Val {
-    // NOTE: errors should already be checked
-    if (key instanceof Rand) return RANDOM;
-    if (key instanceof Prim && key.str() === 'length') return new Num(this.data.length);
-    if (typeof key === 'number') {
-      const result = this.data[key];
-      if (result == undefined) return NUL; // NOTE: don't wrap undefined.
-      return Proto.wrap(result, this.info.element);
-    }
-    return Err.of(`bad type for repeated field index: ${key} (${typeof key})`);
-  }
-}
-
-class ProtoMap extends Proto {
-  readonly type = 'obj';
-  constructor(readonly data: object, private readonly info: MapFieldInfo) {
-    super();
-  }
-  get key(): 'num'|'str'|EnumInfo {
-    return this.info.key instanceof NumberFieldInfo ? 'num' :
-        this.info.key instanceof EnumFieldInfo ? this.info.key.enum : 'str';
-  }
-  override at(key: Val): Val {
-    if (key instanceof Rand) return RANDOM;
-    const k = checkMapKey(this.info, key);
-    if (k instanceof Err) return k;
-    const result = (this.data as any)[k.num() ?? k.str()!];
-    if (result == undefined) return NUL; // NOTE: don't wrap undefined.
-    return Proto.wrap(result, this.info.value);
-  }
-}
-
-// Checks a map key against a given value, checking enums, etc.
-// Returns a 'str', 'num', 'enum', or 'err'.  If it's not an error then
-// it can be dereferenced with `k.num() ?? k.str()`.
-function checkMapKey(f: MapFieldInfo, v: Val): Prim|Err {
-  if (f.key instanceof EnumFieldInfo) {
-    const e = Proto.wrap(v, f.key);
-    if (e instanceof Err) return e;
-    if (!(e instanceof Enum)) {
-      return Err.of(`could not resolve enum key ${f.key.enum.name} from ${v}`);
-    }
-    return e;
-  } else if (f.key instanceof NumberFieldInfo) {
-    if (v.type !== 'num') return Err.of(`expected number map key: ${v}`);
-    return v as Prim;
-  } else if (f.key instanceof StringFieldInfo) {
-    if (v.type !== 'str') return Err.of(`expected string map key: ${v}`);
-    return v as Prim;
-  }
-  return Err.of(`don't know how to handle map key type for ${f.fullName}`);
-}
-
-
-class ErrBuilder {
-  private errors: string[] = [];
-  ok(): boolean { return !this.errors.length; }
-  build(): Err|undefined {
-    return this.errors.length ? new Err(this.errors) : undefined;
-  }
-  push(err: string): ErrBuilder {
-    this.errors.push(err);
-    return this;
-  }
-  fatal(err: string): Err {
-    return this.push(err).build()!;
-  }
-  isError(v: Val): boolean {
-    if (v instanceof Err) {
-      this.errors.push(...v.errors);
-      return true;
-    } else if (v instanceof Mut) {
-      this.errors.push(`cannot compose assignment result`);
-      return true;
-    }
-    return false;
-  }
-  check(v: Val): Val {
-    this.isError(v);
-    return v;
-  }
-}
 
 class Evaluator {
-  constructor(readonly root: object, readonly rootInfo: TypeInfo) {}
+  constructor(readonly root: object|null, readonly rootInfo: TypeInfo) {}
   vars = new Map<string, Val>();
   // warnings: string[] = [];
   // warn(msg: string): Val {
@@ -406,30 +34,29 @@ class Evaluator {
   //   return UNDEF;
   // }
 
-
-  evaluate(expr: Expression): Val {
+  evaluate(expr: Expression, ctx: CallContext = {}): Val {
     switch (expr.type) {
       case 'Literal': {
         switch (typeof expr.value) {
-          case 'number':
-          case 'boolean':
-          case 'string':
-            return Prim.wrap(expr.value);
+          case 'number': return new Num(expr.value);
+          case 'boolean': return Bool.of(expr.value);
+          case 'string': return new Str(expr.value);
         }
         return Err.of(`unknown literal type ${expr.value} (${typeof expr.value})`);
       }
+
       case 'ArrayExpression': {
         const err = new ErrBuilder();
         const els: Val[] = [];
         for (const e of expr.elements) {
           els.push(err.check(this.evaluate(e)));
         }
-        return err.build() || new ArrWrap(els);
+        return err.build() || new Arr(els);
       }
+
       case 'ObjectExpression': {
         const props: Record<string, Val> = {};
         const err = new ErrBuilder();
-        let random = false;
         for (const prop of expr.properties) {
           //if (prop.shorthand) return Err.of(`shorthand properties not allowed`);
           // TODO - we could maybe support this at some point, but in case it
@@ -441,27 +68,9 @@ class Evaluator {
           // return new Err(`unexpected ${keyExpr.type}`);
           // }
           if (prop.computed) {
-            const result = this.evaluate(keyExpr);
-            if (err.isError(result)) {
-              continue;
-            } else if (result instanceof Rand) {
-              random = true;
-              continue;
-            } else if (result instanceof Prim) {
-              if (result.type === 'bool') {
-                key = +result.num()!;
-              } else if (result.type === 'num' || result.type === 'enum') {
-                key = result.num()!;
-              } else if (result.type === 'str') {
-                key = result.str()!;
-              } else {
-                err.push(`bad computed property: ${result}`);
-                continue;
-              }
-            } else {
-              err.push(`bad computed property: ${result}`);
-              continue;
-            }
+            const result = this.evaluate(keyExpr).toKey();
+            if (err.isError(result)) continue;
+            key = result;
           } else if (prop.key.type !== 'Identifier') {
             err.push(`bad non-computed key type: ${prop.key.type}`);
             continue;
@@ -471,15 +80,16 @@ class Evaluator {
           props[key] = err.check(this.evaluate(prop.value));
         }
         if (!err.ok()) return err.build()!
-        if (random) return RANDOM;
-        return new ObjWrap(props);
+        return new Obj(props);
       }
+
       case 'Identifier': {
         // TODO - smart nulls? return new Nul(`no such variable ${name}`)?
         const name = expr.name as string;
         if (name in funcs) return funcs[name]; // TODO - check mutations to prevent shadowing??
         return this.lookupVar(name);
       }
+
       case 'MemberExpression': {
         let key: Val;
         const err = new ErrBuilder();
@@ -490,82 +100,79 @@ class Evaluator {
         } else if (prop.type !== 'Identifier') {
           return Err.of(`unexpected property node type: ${prop.type}`);
         } else {
-          key = Prim.wrap(prop.name);
+          key = wrapValue(prop.name);
         }
         if (!(obj instanceof Obj)) {
           return err.push(`cannot lookup property ${key} on ${obj}`).build()!;
         }
         return err.build() || obj.at(key);
       }
+
       case 'CallExpression': {
         const err = new ErrBuilder();
         const callee = err.check(this.evaluate(expr.callee));
         const args = expr.arguments.map(e => err.check(this.evaluate(e)));
         if (!(callee instanceof Func)) {
-          return err.push(`may only call a definite function, but got ${callee}`).build()!;
+          return err.fatal(`may only call a definite function, but got ${callee}`);
         }
-        return err.build() || callee.apply(args);
+        return err.build() || callee.call(args as BasicVal[], ctx);
       }
-      case 'UnaryExpression': 
-        return this.unary(expr.operator, this.evaluate(expr.argument));
 
-      case 'BinaryExpression': {
-        const left = this.evaluate(expr.left);
-
-        if (expr.operator === '&&' || expr.operator === '||') {
-          if (left instanceof Err) return left;
-          // Look at lvalue in case we need to short-circuit
-          let cond = true;
-          let rand = false;
-          if (left instanceof Rand) {
-            rand = true;
-          } else if (left instanceof Prim) {
-            cond = Boolean(left.num() || left.str());
-          }
-
-          // Special handling for short-circuiting: only evaluate RHS if appropriate, and
-          // also pay attention to forwarding Mut objects (i.e. don't use `err.check` here).
-          if (expr.operator === '&&') {
-            // forward mut appropriately (no err.check)
-            if (rand) return makeRandom(this.evaluate(expr.right));
-            return cond ? this.evaluate(expr.right) : left;
-          } else if (expr.operator === '||') {
-            if (rand) return makeRandom(this.evaluate(expr.right));
-            return !cond ? this.evaluate(expr.right) : left;
-          }
+      case 'UnaryExpression': {
+        const err = new ErrBuilder();
+        const arg = err.check(this.evaluate(expr.argument));
+        if (!err.ok()) return err.build()!;
+        switch (expr.operator) {
+          case '!': return arg.not();
+          case '+': return arg.pos();
+          case '-': return arg.neg();
+          case '~': return arg.cpl();
         }
-        const right = this.evaluate(expr.right);
-        return this.binary(left, expr.operator, right);
+        return err.fatal(`unknown unary operator: ${expr.operator}`);
       }
+      case 'BinaryExpression':
+        return this.binary(expr.operator, this.evaluate(expr.left), expr.right, ctx);
 
       case 'ConditionalExpression': {
         let test = this.evaluate(expr.test);
-        if (test instanceof Err) return test;
-        let cond = true;
-        let rand = false;
+        if (isErr(test)) return test;
+        if (test instanceof Mut) return Err.of(`cannot use assignment as ternary test`);
         if (test instanceof Rand) {
-          rand = true;
-        } else if (test instanceof Prim) {
-          cond = Boolean(test.num() || test.str());
+          // Random: evaluate both and concatenate results.  The only thing that matters
+          const err = new ErrBuilder();
+          const r1 = this.evaluate(expr.consequent, ctx);
+          const r2 = this.evaluate(expr.alternate, ctx);
+          if (isErr(r1)) err.check(r1);
+          if (isErr(r2)) err.check(r2);
+          if (!err.ok()) return err.build()!;
+          const mut: Mutation[] = [];
+          if (r1 instanceof Mut) mut.push(...r1.withRandom().mutations);
+          if (r2 instanceof Mut) mut.push(...r2.withRandom().mutations);
+          return mut.length ? new Mut(mut) : RANDOM;
         }
-        const results: Val[] = [];
-        if (rand || cond) results.push(this.evaluate(expr.consequent));
-        if (rand || !cond) results.push(this.evaluate(expr.alternate));
-        // check for errors and results
-        
-
-        break;
+        const result = test.toBool();
+        if (isErr(result)) return result;
+        return result ? this.evaluate(expr.consequent, ctx) : this.evaluate(expr.alternate, ctx);
       }
+
       case 'AssignmentExpression': {
         // parse the LHS as an lvalue
         const err = new ErrBuilder();
         const lhs = this.parseLValue(expr.left).build();
+        let op = expr.operator;
         if (lhs instanceof Err) err.check(lhs);
-        let rhs = err.check(this.evaluate(expr.right));
+        let rhs = err.check(this.evaluate(expr.right, op === '=' ? {lvalue: lhs} : {}));
         if (!err.ok || lhs instanceof Err) return err.build()!;
         // TODO - if operator is arithmetic assignment, then try evaluating it
-        let op = expr.operator;
+        //   - how to know when???  - if it's a field and we have no concrete root
+
         if (op !== '=') {
+          // Depending on the situation, we either want to compute the result right here,
+          // or else we want to store the actual assignment operator.
+          // 1. we're analyzing the expression for UI purposes (this.root == null)
+          //    - only compute if it's not assigned to a field, 
+          
+          && (!lhs.field || this.root)) {
           if (!op.endsWith('=')) {
             err.push(`unknown assignment operator: ${op}`);
           } else {
@@ -589,6 +196,10 @@ class Evaluator {
       }
     }
     return Err.of(`can't handle expression type ${expr.type}`);
+  }
+
+  isAnalysis(): boolean {
+    return this.root == null;
   }
 
   unary(op: string, arg: Val): Val {
@@ -618,14 +229,47 @@ class Evaluator {
     return err.fatal(`unknown unary operator: ${op}`);
   }
 
-  binary(left: Val, op: string, right: Val): Val {
+  binary(op: string, left: Val, rightExpr: Expression, ctx: CallContext): Val {
+    if (op === '&&' || op === '||') {
+      // short-circuit
+      if (isErr(left)) return left;
+      if (left instanceof Mut) return Err.of(`cannot assign on left side of ${expr.operator}`);
+      // propagate random condition into mutations
+      if (left instanceof Rand) {
+        const result = this.evaluate(rightExpr, ctx);
+        if (isErr(result)) return result;
+        return result instanceof Mut ? result.withRandom() : RANDOM;
+      }
+      // evaluate RHS only if necessary, return directly
+      const v = left.toBool();
+      if (isErr(v)) return v; // Mut/Rand OK.
+      return ((op === '&&') === v) ? this.evaluate(rightExpr, ctx) : left;
+    }
     const err = new ErrBuilder();
     err.check(left);
-    err.check(right);
-    if (!err.ok) return err.build()!;
-
-    //if (
-    
+    const right = err.check(this.evaluate(rightExpr));
+    if (!err.ok()) return err.build()!;
+    switch (op) {
+      case '+': return left.add(right);
+      case '-': return left.sub(right);
+      case '*': return left.mul(right);
+      case '/': return left.div(right);
+      case '%': return left.mod(right);
+      case '**': return left.pow(right);
+      case '<<': return left.asl(right);
+      case '>>': return left.asr(right);
+      case '>>>': return left.lsr(right);
+      case '&': return left.and(right);
+      case '|': return left.or(right);
+      case '^': return left.xor(right);
+      case '==': case '===': return Bool.of(left.eq(right));
+      case '!=': case '!==': return Bool.of(!left.eq(right));
+      case '<': return cmp(left.cmp(right), x => x < 0);
+      case '<=': return cmp(left.cmp(right), x => x <= 0);
+      case '>': return cmp(left.cmp(right), x => x > 0);
+      case '>=': return cmp(left.cmp(right), x => x >= 0);
+    }
+    return err.fatal(`unknown binary operator: ${op}`);
   }
 
   /** Given an `LValue` qname, looks up the root var then calls `at` to get the actual value. */
@@ -646,7 +290,7 @@ class Evaluator {
     return this.vars.get(name) || (() => {
       const field = this.rootInfo.field(name);
       const result = field == undefined ? NUL :
-        Proto.wrap((this.root as any)[field.name], field);
+        this.root ? Proto.wrap((this.root as any)[field.name], field) : RANDOM;
       this.vars.set(name, result);
       return result;
     })();
@@ -672,6 +316,11 @@ class Evaluator {
     builder.err(`bad expression type in lvalue: ${expr.type}`);
     return builder;
   }
+}
+
+function cmp(result: number|Err, f: (arg: number) => boolean): Val {
+  if (isErr(result)) return result;
+  return Bool.of(f(result));
 }
 
 /** Transform `Mut`s to mark the `random` prop. */
@@ -805,3 +454,98 @@ const binary: Record<string, (left: number, right: number) => Val> = {
   '>': (a, b) => a > b,
   '>=': (a, b) => a >= b,
 }
+
+
+class LValueBuilder {
+  private props: Prop[] = [];
+  private errs = new ErrBuilder();
+  rand = false;
+  constructor(private root: string, private field?: FieldInfo) {}
+
+  private fieldError(str: string) {
+    this.errs.push(str);
+    this.field = undefined;
+  }
+
+  private err(err: string) {
+    this.errs.push(err);
+  }
+
+  getprop(val: Val) {
+    if (val instanceof Rand) {
+      // Dereference with random prop -> will return a random
+      // (though depending on the field, we may know something
+      // about it).
+      this.rand = true;
+      if (this.field instanceof RepeatedFieldInfo) {
+        this.field = this.field.element;
+      } else if (this.field instanceof MapFieldInfo) {
+        this.field = this.field.value;
+      } else {
+        this.field = undefined; // signal unknown somehow??
+      }
+    } else if (val instanceof Prim) {
+      // Known key
+      if (this.field instanceof MessageFieldInfo) {
+        // expect a literal string, no enum
+        if (val.type === 'str') {
+          const child = this.field.type.field(val.str()!);
+          if (child) {
+            this.field = child;
+          } else {
+            this.fieldError(`bad field ${val.str()} on ${this.field.type.fullName}`);
+          }
+        } else {
+          this.fieldError(`message lhs must have string-typed properties, got ${val.type}`);
+        }
+      } else if (this.field instanceof SingularFieldInfo) {
+        this.fieldError(`cannot write properties of primitive field: ${this.field.fullName}`);
+      } else if (this.field instanceof RepeatedFieldInfo) {
+        if (val.type === 'num') {
+          this.field = this.field.element;
+        } else {
+          this.fieldError(`can only write to numeric property of repeated ${this.field.fullName}`);
+        }
+      } else if (this.field instanceof MapFieldInfo) {
+        val = this.errs.check(checkMapKey(this.field, val));
+        this.field = this.field.value;
+      }
+      this.props.push(val as Prim);
+    } else if (val instanceof Err) {
+      this.errs.check(val);
+    } else {
+      this.errs.push(`bad computed property type in lvalue: ${val.type}`);
+    }
+  }
+
+  build(): LValue|Err {
+    return this.errs.build() || new LValue(this.root, this.props, this.field);
+  }
+}
+
+// Checks a map key against a given value, checking enums, etc.
+// Returns a 'str', 'num', 'enum', or 'err'.  If it's not an error then
+// it can be dereferenced with `k.num() ?? k.str()`.
+function checkMapKey(f: MapFieldInfo, v: Val): Prim|Err {
+  if (f.key instanceof EnumFieldInfo) {
+    const e = Proto.wrap(v, f.key);
+    if (e instanceof Err) return e;
+    if (!(e instanceof Enum)) {
+      return Err.of(`could not resolve enum key ${f.key.enum.name} from ${v}`);
+    }
+    return e;
+  } else if (f.key instanceof NumberFieldInfo) {
+    if (v.type !== 'num') return Err.of(`expected number map key: ${v}`);
+    return v as Prim;
+  } else if (f.key instanceof StringFieldInfo) {
+    if (v.type !== 'str') return Err.of(`expected string map key: ${v}`);
+    return v as Prim;
+  }
+  return Err.of(`don't know how to handle map key type for ${f.fullName}`);
+}
+
+// What can be done to a Val?
+//  - at
+//  - call
+//  - operator
+//  - coerce(num, str, bool, enum) - for index or other.

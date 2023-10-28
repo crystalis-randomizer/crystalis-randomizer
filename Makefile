@@ -36,7 +36,8 @@ WEB_JS_DBG = $(addprefix $(DBGDIR)/js/,$(WEB_ENTRY_OUTS)) \
 WEB_JS_REL = $(addprefix $(RELDIR)/js/,$(WEB_ENTRY_OUTS))
 STATIC_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
 STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
-JS_FILES = $(shell find src/js -type f -name '*.[tj]s')
+CONFIG_PROTO_JS = $(BLDDIR)/config_proto.js
+JS_FILES = $(shell find src/js -type f -name '*.[tj]s') $(CONFIG_PROTO_JS)
 ASM_JS_FILES = $(shell find src/js/asm -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
 ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
@@ -146,6 +147,10 @@ $(RELDIR)/bin/js65: $(JS_FILES)
 $(RELDIR)/bin/cryr: $(JS_FILES) $(DATA_TBR) $(BUILD_INFO)
 	$(ESBUILD) $(NODEFLAGS) $(RELFLAGS) $(LOADERFLAGS) --outfile=$@ \
 		src/js/cli.ts
+
+$(CONFIG_PROTO_JS): scripts/protoc.mjs src/js/config/config.proto
+	cd src/js/config; \
+	    ../../../scripts/protoc.mjs -d ../../../target/build config.proto
 
 # TODO - make a phony file to track tests up to date
 # make testfiles to build them

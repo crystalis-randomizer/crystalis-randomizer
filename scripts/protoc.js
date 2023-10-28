@@ -11,8 +11,8 @@ import * as fs from 'node:fs';
 import {execFile} from 'node:child_process';
 import * as tmp from 'tmp';
 import protobuf from 'protobufjs';
-import { compress } from '../src/js/compress.js';
-//import { compress } from 'brotli';
+//import { compress } from '../src/js/compress.js';
+import { compress } from 'brotli';
 
 // Usage: node build.js [-d outdir] foo.proto
 
@@ -61,19 +61,34 @@ public static readonly \$type: \$protobuf.Type;
 public readonly \$type: \$protobuf.Type;
 `);
 
+// let js = `import protobuf from 'protobufjs';
+// import {decompress} from '../../src/js/compress.js';
+// export const root = new protobuf.Root();
+// async function add(b64) {
+//   const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+//   const src = new TextDecoder().decode(await decompress(data));
+//   protobuf.parse(src, root);
+// }
+// `;
+// for (const f of protos) {
+//   const proto = Buffer.from(await compress(fs.readFileSync(f)));
+//   js += `await add('${proto.toString('base64')}');\n`;
+// }
+
 let js = `import protobuf from 'protobufjs';
-import {decompress} from '../../src/js/compress.js';
+import {decompress} from 'brotli';
 export const root = new protobuf.Root();
-async function add(b64) {
+function add(b64) {
   const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-  const src = new TextDecoder().decode(await decompress(data));
+  const src = new TextDecoder().decode(decompress(data));
   protobuf.parse(src, root);
 }
 `;
 for (const f of protos) {
   const proto = Buffer.from(await compress(fs.readFileSync(f)));
-  js += `await add('${proto.toString('base64')}');\n`;
+  js += `add('${proto.toString('base64')}');\n`;
 }
+
 for (const key of Object.keys(json.nested)) {
   js = js + `export const ${key} = root.${key};\n`;
 }

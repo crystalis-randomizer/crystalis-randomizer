@@ -2,9 +2,9 @@ import {describe, it} from 'mocha';
 import {expect} from 'chai';
 import {BitSet, IntervalSet, SparseArray, SparseByteArray,
         binaryInsert, binarySearch} from '../../src/js/asm/util';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 describe('binarySearch', function() {
   const arr = [3, 6, 8, 10, 12, 16, 18, 22, 27, 35];

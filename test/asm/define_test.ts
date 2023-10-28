@@ -3,9 +3,9 @@ import {expect} from 'chai';
 import {Define} from '../../src/js/asm/define';
 import {Token} from '../../src/js/asm/token';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 describe('Define', function() {
 

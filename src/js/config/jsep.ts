@@ -1,6 +1,6 @@
 import * as jsep from 'jsep';
-import jsepAssignment from '@jsep-plugin/assignment';
-import jsepObject from '@jsep-plugin/object';
+import * as jsepAssignment from '@jsep-plugin/assignment';
+import * as jsepObject from '@jsep-plugin/object';
 
 jsep.plugins.register(jsepAssignment, jsepObject);
 
@@ -29,6 +29,7 @@ interface CallExpression {
 interface Literal {
   readonly type: 'Literal';
   readonly value: unknown;
+  readonly raw: string;
 }
 interface ArrayExpression {
   readonly type: 'ArrayExpression';

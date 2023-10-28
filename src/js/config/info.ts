@@ -1,5 +1,5 @@
 import { Type, Field, MapField, Enum } from 'protobufjs';
-import { assert } from './assert.js';
+import { assert } from './assert';
 
 export interface Reporter {
   report(error: string): void;

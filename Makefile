@@ -146,3 +146,8 @@ $(RELDIR)/bin/js65: $(JS_FILES)
 $(RELDIR)/bin/cryr: $(JS_FILES) $(DATA_TBR) $(BUILD_INFO)
 	$(ESBUILD) $(NODEFLAGS) $(RELFLAGS) $(LOADERFLAGS) --outfile=$@ \
 		src/js/cli.ts
+
+# TODO - make a phony file to track tests up to date
+# make testfiles to build them
+#   - esbuild --outdir=target/test test/**/*.ts
+#   - mocha 

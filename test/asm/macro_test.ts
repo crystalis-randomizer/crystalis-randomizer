@@ -3,9 +3,9 @@ import {expect} from 'chai';
 import {Macro} from '../../src/js/asm/macro';
 import {Token} from '../../src/js/asm/token';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 const nullId = {next() { return 1; }};
 

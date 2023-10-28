@@ -5,9 +5,9 @@ import {Expr} from '../../src/js/asm/expr';
 import {Module} from '../../src/js/asm/module';
 import {Assembler} from '../../src/js/asm/assembler';
 import {Token} from '../../src/js/asm/token';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 function ident(str: string): Token { return {token: 'ident', str}; }
 function num(num: number): Token { return {token: 'num', num}; }

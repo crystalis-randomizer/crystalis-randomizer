@@ -2,7 +2,6 @@
   "name": "crystalis-randomizer",
   "version": "0.0.0",
   "main": "target/debug/js/patch.js",
-  "type": "module",
   "scripts": {
     "tsc-watch": "tsc --watch",
     "flycheck": "elisp/flycheck-tsc-watch",

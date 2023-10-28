@@ -2,9 +2,9 @@ import {describe, it} from 'mocha';
 import {expect} from 'chai';
 import {Expr} from '../../src/js/asm/expr';
 import {Linker} from '../../src/js/asm/linker';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 const link = Linker.link;
 

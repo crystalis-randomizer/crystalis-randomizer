@@ -2,9 +2,10 @@ import {describe, it} from 'mocha';
 import {expect} from 'chai';
 import {Expr} from '../../src/js/asm/expr';
 import {Token} from '../../src/js/asm/token';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
+
 const {COMMA, LP, RP} = Token;
 const [] = [tstr, tcs, tid, num, op, sym, COMMA, LP, RP];
 function tid(str: string): Token { return {token: 'ident', str}; }

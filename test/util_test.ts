@@ -3,9 +3,9 @@ import {describe, it} from 'mocha';
 import {expect} from 'chai';
 import {Random} from '../src/js/random';
 import {Deque} from '../src/js/util';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 describe('Deque', function() {
   it('should support various splices', function() {

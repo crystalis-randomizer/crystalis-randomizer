@@ -2,9 +2,9 @@ import {describe, it} from 'mocha';
 import {expect} from 'chai';
 import {Token} from '../../src/js/asm/token';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 //const MATCH = Symbol();
 

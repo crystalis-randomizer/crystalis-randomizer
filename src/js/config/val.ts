@@ -11,7 +11,7 @@ import type { Mutation } from "./mutation.js";
 
 // Subtypes:
 //   - primitives (Num, Str, Bool, Enum, Nul)
-//   - objects (Obj, Arr), which may have proto info's attached
+//   - arrays (Arr)
 //   - Err, Rand, Mut  =>  these will never be passed to the methods,
 //     but are handled directly by Evaluator.
 export abstract class Val {
@@ -314,123 +314,30 @@ export class Enum extends BasicVal {
 }
 
 export class Arr extends BasicVal {
-  constructor(readonly arr: unknown[], readonly field?: RepeatedFieldInfo) { super(); }
+  constructor(readonly arr: unknown[]) { super(); }
 
   toString() { return `(Array)`; }
 
-  withInfo(info: FieldInfo): Val { return wrapValue(this.obj, info) }
   toBool() { return true; }
-  checkField(that: Arr): Err|undefined {
-    if (this.field && that.field) {
-      if (this.field.element.type !== that.field.element.type) {
-        return Err.of(`incompatible array types: ${
-                       this.field.element.type}[] and ${that.field.element.type}[]`);
-      }
-    }
-    return undefined;
-  }
   add(that: BasicVal) {
     // adding arrays concatenates; fields must be compat if both present
     if (that instanceof Arr) {
-      const err = this.checkField(that);
-      return err || new Arr([...this.arr, ...that.arr], this.field || that.field);
+      return new Arr([...this.arr, ...that.arr]);
     }
     return Err.of(`array concatenation (+) with non-array ${that}`);
   }
 
-  sub(that: BasicVal) {
-    // subtracting arrays does a (multi)set difference
-    if (!(that instanceof Arr)) return Err.of(`array difference (-) with non-array ${that}`);
-    const err = this.checkField(that);
-    if (err) return err;
-    if (!this.field) return Err.of(`array subtraction with unknown type not allowed`);
-    if (!(this.field instanceof PrimitiveFieldInfo)) {
-      return Err.of(`array substraction with non-primitive field ${this.field} not allowed`);
-    }
-    const remove = [...that.arr];
-    return new Arr(this.arr.filter(x => {
-      const i = remove.indexOf(x);
-      if (i >= 0) remove.splice(i, 1);
-      return i < 0;
-    }));
-  }
-
   at(index: BasicVal) {
     if (index instanceof Num) { // NOTE: must be exactly a number.
-      return wrapValue(this.arr[index.num], this.field?.element);
+      return wrapValue(this.arr[index.num]);
     } else if (index instanceof Str) {
       switch (index.str) {
         case 'length': return new Num(this.arr.length);
-        case 'has':
-          if (!this.field || !(this.field instanceof PrimitiveFieldInfo)) {
-            return Err.of(`Array.has requires known primitive fields`);
-          }
-          return new Func('Array.has', (x) => Bool.of(this.arr.includes(x)));
       }
       return Err.of(`not a known array member: ${index.str}`);
     }
     return Err.of(`bad index type for array: ${index}`);
   }
-}
-
-export class Obj extends BasicVal {
-  constructor(readonly obj: object) { super(); }
-
-  toString() { return `(Object)`; }
-  withInfo(info: FieldInfo): Val { return wrapValue(this.obj, info) }
-
-  toBool() { return true; }
-  at(index: BasicVal) {
-    const i = index instanceof Str ? index.str : index.toNum() ?? Err.of(`bad index: ${index}`);
-    if (isErr(i)) return i;
-    return wrapValue((this.obj as any)[i]);
-  }
-}
-
-class ObjMsg extends Obj {
-  constructor(obj: object, readonly info: MessageFieldInfo) { super(obj); }
-  withInfo(info: FieldInfo): Val { return wrapValue(this.obj, info) }
-  at(index: BasicVal) {
-    if (index instanceof Str) {
-      const f = this.info.type.field(index.str);
-      if (f == undefined) return Err.of(`unknown field ${index} in ${this.info}`);
-      return wrapValue((this.obj as any)[f.name], f);
-    } else {
-      return Err.of(`cannot index message ${this.info} with non-string ${index}`);
-    }
-  }
-  // TODO - add to merge?
-}
-
-class ObjMap extends Obj {
-  constructor(obj: object, readonly info: MapFieldInfo) { super(obj); }
-  withInfo(info: FieldInfo): Val { return wrapValue(this.obj, info) }
-  at(index: BasicVal) {
-    // deal with info.key
-    let k!: number|string;
-    if (this.info.key instanceof NumberFieldInfo) {
-      if (index instanceof Num) {
-        k = index.num;
-      } else {
-        return Err.of(`cannot index number-keyed map with ${index}`);
-      }
-    } else if (this.info.key instanceof StringFieldInfo) {
-      if (index instanceof Str) {
-        k = index.str;
-      } else {
-        return Err.of(`cannot index string-keyed map with ${index}`);
-      }
-    } else if (this.info.key instanceof EnumFieldInfo) {
-      // handle enums, nums, and strs
-      const e = index.toEnum(this.info.key.enum);
-      if (isErr(e)) return e;
-      k = e;
-    } else {
-      return Err.of(`bad map key type: ${this.info.key}`);
-    }
-    return wrapValue((this.obj as any)[k], this.info.value);
-  }
-  // TODO - add to merge?
 }
 
 export class Func extends BasicVal {
@@ -446,10 +353,10 @@ export class Mut extends ExoticVal {
   constructor(readonly mutations: Mutation[]) { super(); }
 
   withRandom(): Mut {
-    return new Muw(this.mutations.map(m => {...m, random: true}));
+    return new Muw(this.mutations.map(m => ({...m, random: true})));
   }
   withPreset(preset: string): Mut {
-    return new Mut(this.mutations.map(m => {...m, preset}));
+    return new Mut(this.mutations.map(m => ({...m, preset})));
   }
 }
 
@@ -460,21 +367,8 @@ export class Pick extends Rand {
 export const RANDOM = new Rand();
 export const PICK = new Pick();
 
-export function wrapValue(value: unknown, info?: FieldInfo): Val {
-  if (value instanceof Val) {
-    if (info) {
-      if (value instanceof Arr && value.field !== info) {
-        return Err.of(`cannot overwrite incompatible info`);
-      } else if (value instanceof ObjMsg && value.info !== info) {
-        return Err.of(`cannot overwrite incompatible info`);
-      } else if (value instanceof ObjMap && value.key !== info) {
-        return Err.of(`cannot overwrite incompatible info`);
-      }
-      // TODO - if it's an object or array, we need to add info?!?
-    }
-    // no info, just return as-is?
-    return value;
-  }
+export function wrapValue(value: unknown): Val {
+  if (value instanceof Val) return value;
 
   if (info) {
     if (info instanceof NumberFieldInfo) {

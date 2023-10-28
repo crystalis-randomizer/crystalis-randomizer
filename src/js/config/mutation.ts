@@ -102,3 +102,8 @@ export interface Mutation {
 //  - deleting presets
 //  - reading config values
 
+//////////////////
+
+// Expressions are nice because super general
+// but also lots of complexity
+// if we just want to assign probabilities, we can do that separately?

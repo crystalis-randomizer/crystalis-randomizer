@@ -1,11 +1,11 @@
 {
   "compilerOptions": {
     "allowJs": false,
-    "target": "es2020",
+    "target": "es2022",
     "inlineSourceMap": true,
     "inlineSources": true,
-    "module": "bundler",
-    "moduleResolution": "nodenext",
+    // "module": "bundler",
+    // "moduleResolution": "nodenext",
     "noEmit": true,
     "noImplicitAny": true,
     "noImplicitThis": true,

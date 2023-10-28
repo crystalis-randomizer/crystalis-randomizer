@@ -4,9 +4,9 @@ import {Preprocessor} from '../../src/js/asm/preprocessor';
 import {Token} from '../../src/js/asm/token';
 import {TokenStream} from '../../src/js/asm/tokenstream';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
-import * as util from 'util';
 
-const [] = [util];
+// import * as util from 'util';
+// const [] = [util];
 
 describe('Preprocessor', function() {
 

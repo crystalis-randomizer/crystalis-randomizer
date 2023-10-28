@@ -135,7 +135,7 @@ export class TypeInfo {
     for (const field of t.fieldsArray) {
       const c = canonicalizeName(field.name);
       if (info.fields.has(c)) {
-        throw new Error(`Canonicalized enum name conflict in ${t.fullName}: ${field.name} vs ${
+        throw new Error(`Canonicalized field name conflict in ${t.fullName}: ${field.name} vs ${
                          info.fields.get(c)!.name}`);
       }
       info.fields.set(c, resolve(field));
@@ -186,7 +186,7 @@ export class EnumInfo {
       assert(typeof name === 'string');
       assert(typeof value === 'number');
       const names = [name];
-      const alias = e.valuesOptions?.[name];
+      const alias = e.valuesOptions?.[name]?.['(alias)'];
       for (const a of alias ? String(alias).split(/,\s*/g) : []) {
         names.push(a);
       }
@@ -224,7 +224,7 @@ export abstract class FieldInfo {
       assert(f.parent instanceof Type);
       const keyType = f.options?.['(key)'] || f.keyType;
       const resolvedKeyType = f.parent.lookup(keyType);
-      fi = new MapFieldInfo(singularFieldInfo(keyType, resolvedKeyType, f), sfi);
+      fi = new MapFieldInfo(singularFieldInfo(keyType, resolvedKeyType, f, true), sfi);
     } else {
       fi = sfi;
     }
@@ -281,7 +281,7 @@ export class NumberFieldInfo extends PrimitiveFieldInfo {
   readonly round: (arg: number) => number;
   readonly type = 'number';
   
-  constructor(field: Field) {
+  constructor(field: Field, isKey = false) {
     super(field);
     let min, max: number;
     if (field.type === 'int32') {
@@ -325,9 +325,10 @@ export class StringFieldInfo extends PrimitiveFieldInfo {
   readonly primitive: 'string' = 'string';
   readonly type = 'string';
 
-  constructor(field: Field) {
+  constructor(field: Field, isKey = false) {
     super(field);
-    assert(field.type === 'string');
+    const typ = isKey ? (field as any).keyType : field.type;
+    assert(typ === 'string');
     const {'(default)': defaultOpt} = field.options || {};
     this.default = defaultOpt != null ? defaultOpt : undefined;
   }
@@ -340,9 +341,10 @@ export class BoolFieldInfo extends PrimitiveFieldInfo {
   readonly primitive: 'bool' = 'bool';
   readonly type = 'boolean';
 
-  constructor(field: Field) {
+  constructor(field: Field, isKey = false) {
     super(field);
-    assert(field.type === 'string');
+    const typ = isKey ? (field as any).keyType : field.type;
+    assert(typ === 'bool');
     const {'(default)': defaultOpt} = field.options || {};
     this.default = defaultOpt != null ? this.coerce(defaultOpt) : undefined;
   }
@@ -380,9 +382,9 @@ function singularFieldInfo(type: string, resolvedType: unknown, f: Field, isKey 
   } else if (resolvedType instanceof Enum) {
     return new EnumFieldInfo(f, resolvedType, isKey);
   } else if (type === 'string') {
-    return new StringFieldInfo(f);
+    return new StringFieldInfo(f, isKey);
   } else if (type === 'bool') {
-    return new BoolFieldInfo(f);
+    return new BoolFieldInfo(f, isKey);
   } else if (isPrimitive(type)) {
     return new NumberFieldInfo(f);
   }

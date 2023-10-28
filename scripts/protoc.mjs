@@ -74,10 +74,14 @@ public readonly \$type: \$protobuf.Type;
 //   const proto = Buffer.from(await compress(fs.readFileSync(f)));
 //   js += `await add('${proto.toString('base64')}');\n`;
 // }
+// for (const key of Object.keys(json.nested)) {
+//   js = js + `exports const ${key} = root.${key};\n`;
+// }
 
-let js = `import protobuf from 'protobufjs';
-import {decompress} from 'brotli';
-export const root = new protobuf.Root();
+let js = `const protobuf = require('protobufjs');
+const {decompress} = require('brotli');
+const root = new protobuf.Root();
+exports.root = root;
 function add(b64) {
   const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
   const src = new TextDecoder().decode(decompress(data));
@@ -88,10 +92,27 @@ for (const f of protos) {
   const proto = Buffer.from(await compress(fs.readFileSync(f)));
   js += `add('${proto.toString('base64')}');\n`;
 }
-
 for (const key of Object.keys(json.nested)) {
-  js = js + `export const ${key} = root.${key};\n`;
+  js = js + `exports.${key} = root.${key};\n`;
 }
+
+// let js = `import protobuf from 'protobufjs';
+// import {decompress} from 'brotli';
+
+// export const root = new protobuf.Root();
+// function add(b64) {
+//   const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+//   const src = new TextDecoder().decode(decompress(data));
+//   protobuf.parse(src, root);
+// }
+// `;
+// for (const f of protos) {
+//   const proto = Buffer.from(await compress(fs.readFileSync(f)));
+//   js += `add('${proto.toString('base64')}');\n`;
+// }
+// for (const key of Object.keys(json.nested)) {
+//   js = js + `export const ${key} = root.${key};\n`;
+// }
 
 const base = protos[0].replace(/\.proto$/, '_proto');
 

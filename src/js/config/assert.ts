@@ -1,7 +1,7 @@
-export function assert(x: false): never;
-export function assert(x: unknown): asserts x;
-export function assert(x: unknown): void {
-  if (!x) throw new Error('Assertion Failed');
+export function assert(x: false, msg?: string): never;
+export function assert(x: unknown, msg?: string): asserts x;
+export function assert(x: unknown, msg?: string): void {
+  if (!x) throw new Error(`Assertion Failed${msg ? ': ' + msg : ''}`);
 }
 export function assertType<T>(_x: unknown): asserts _x is T {}
 

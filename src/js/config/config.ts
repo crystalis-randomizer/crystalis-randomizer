@@ -1,7 +1,7 @@
-import { Config, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto.js';
+import { Config, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto';
 // import { TypeInfo, FieldInfo, MessageFieldInfo, qnameVisitor, resolve, RepeatedFieldInfo, MapFieldInfo } from './info.js';
-import { resolve } from './info.js';
-import { assert /*, assertType*/ } from './assert.js';
+import { resolve } from './info';
+import { assert /*, assertType*/ } from './assert';
 import { Type } from 'protobufjs';
 //import { FieldMutation, Mutation } from './expr.js';
 

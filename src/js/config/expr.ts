@@ -45,7 +45,7 @@ interface NumberLiteral {
   value: number;
   raw: string;
 }
-function extractLiteral(e: Expression): unknown {
+function extractLiteral(e: Expression, lhs?: LValue): unknown {
   if (e.type === 'Literal') return e.value;
   if (e.type === 'ArrayExpression') {
     const out: unknown[] = [];
@@ -68,6 +68,27 @@ function extractLiteral(e: Expression): unknown {
       return NaN; // should never happen?
     }
   }
+  if (e.type === 'CallExpression') {
+    // look for `pick()`, `pick('sword of wind', 'sword of fire', ...)`,
+    // or maybe even `pick(default(), preset('vanilla'))`?
+    // UI can expose different types of random:
+    //  - definite value
+    //  - probability of overriding value
+    //  - definite assignment to probablity of values
+    //      placement.mimics = pick()
+    //      enemies.enemy_weaknesses = pick('random', 'shuffle')
+    //      enemies.enemy_weaknesses = pick(['random', 0.4], ['shuffle': 0.5])
+    //    what does any remainder map to?
+    //     - would need to ban ordinary lists....?
+    //        ... = rand() < 0.4 ? 'random' : rand() < 0.5 ? 'shuffle' : 'vanilla'
+    //     - need to recognize chained independent randoms?
+    //  - boolean <- rand()  - rounds to 0 or 1.
+    //    boolean <- rand() < 0.3  - more definite than `rand() < 0.3 && (x = true)`
+    //    do we actually want to recognize the other case?
+    //     - advantage is we can choose _not_ to override...?
+    //       actually seems more complicated, so maybe skip!
+    //     - foo = rand() < 0.3 ? 1 : rand() < 0.5 ? preset('vanilla') : preset('default')
+  }
   if (e.type === 'AssignmentExpression' && e.operator === '=') return extractLiteral(e.right);
   // everything else is NOT a literal so just return NaN
   return NaN;
@@ -86,7 +107,7 @@ function extractLiteral(e: Expression): unknown {
 //   readonly info?: FieldInfo;
 // }
 
-class LValue {
+export class LValue {
   private constructor(readonly terms: readonly (string|number)[],
                       readonly base?: LValue,
                       readonly info?: FieldInfo) {}
@@ -123,7 +144,7 @@ class LValue {
   qname(): string {
     let out = '';
     for (const t of this.terms) {
-      if (/^[a-z_$][a-z0-9_$]*$/.test(String(t))) {
+      if (/^[a-z_$][a-z0-9_$]*$/i.test(String(t))) {
         out += (out ? '.' : '') + t;
       } else {
         out += `[${t}]`;
@@ -168,7 +189,7 @@ export class Analyzer {
         const lhs = this.parseLValue(expr.left);
         this.analyze(expr.right);
         if (lhs) {
-          const value = extractLiteral(expr.right);
+          const value = extractLiteral(expr.right, lhs);
           this.mutations.set(lhs.qname(), {lhs, op: expr.operator, value, random});
         }
         break;
@@ -178,7 +199,7 @@ export class Analyzer {
         if (expr.operator === '&&' || expr.operator === '||') {
           const left = expr.left;
           let r = random;
-          // match exact pattern `rand() < 0.2 && foo = bar`
+          // match exact pattern `rand() < 0.2 && (foo = bar)`
           if (left.type === 'BinaryExpression' && left.operator === '<' &&
               isRandCall(left.left) && isNumberLiteral(left.right)) {
             const v = Math.max(0, Math.min(left.right.value, 1));
@@ -191,6 +212,7 @@ export class Analyzer {
         break;
       case 'ConditionalExpression':
         this.analyze(expr.test, random);
+        // TODO - consider recognizing `rand() < 0.1 ? foo = bar : null`
         this.analyze(expr.consequent, NaN);
         this.analyze(expr.alternate, NaN);
         break;
@@ -232,8 +254,6 @@ export class Analyzer {
     switch (expr.type) {
       case 'Identifier': {
         const lvalue = LValue.of(expr.name, this.rootInfo);
-        console.error(`Identifier`);
-        console.dir(lvalue);
         return lvalue.info ? lvalue : undefined;
       }
       case 'MemberExpression': {

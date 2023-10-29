@@ -228,5 +228,8 @@ describe('TypeInfo', function() {
   });
 });
 
+// TODO - min/max/round
+// TODO - field and enum aliases
+
 // TODO - EnumInfo coercions?
 //      - FieldInfo?

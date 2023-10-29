@@ -616,10 +616,10 @@ message Config {
     optional Randomization randomize_enemies = 4
       [(default) = SHUFFLE,
        (preset.vanilla) = VANILLA];
-    optional Randomization randomize_enemy_weaknesses = 5
+    optional Randomization enemy_weaknesses = 5
       [(default) = SHUFFLE,
        (preset.vanilla) = VANILLA];
-    optional Randomization randomize_boss_weaknesses = 6
+    optional Randomization boss_weaknesses = 6
       [(default) = SHUFFLE,
        (preset.vanilla) = VANILLA];
     optional bool palette_swap = 7

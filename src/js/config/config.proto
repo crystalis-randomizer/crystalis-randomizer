@@ -221,8 +221,8 @@ message Config {
     // set at the start as well.  (TODO - allow multiple copies of
     // consumables? - this would ruin the bitset... or we could add them
     // on after the bitset)
-    repeated ItemName initial_inventory = 50
-      [(type) = "bitset"]; // TODO - define this type!!!
+    repeated ItemName initial_inventory = 50;
+      //[(type) = "bitset"]; // TODO - define this type!!!
 
     // Whether to guarantee a sword in the earliest possible check.
     optional bool early_sword = 12

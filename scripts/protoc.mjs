@@ -98,7 +98,6 @@ for (const key of Object.keys(json.nested)) {
 
 // let js = `import protobuf from 'protobufjs';
 // import {decompress} from 'brotli';
-
 // export const root = new protobuf.Root();
 // function add(b64) {
 //   const data = Uint8Array.from(atob(b64), c => c.charCodeAt(0));

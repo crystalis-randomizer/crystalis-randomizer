@@ -232,6 +232,8 @@ export class Analyzer {
     switch (expr.type) {
       case 'Identifier': {
         const lvalue = LValue.of(expr.name, this.rootInfo);
+        console.error(`Identifier`);
+        console.dir(lvalue);
         return lvalue.info ? lvalue : undefined;
       }
       case 'MemberExpression': {

@@ -18,6 +18,25 @@ describe('Analyzer', function() {
     expect([...mutations]).to.eql([]);
   });
 
+  it('should ignore local variable assignments', function() {
+    const [warnings, mutations] = analyze('x = 42');
+    expect(warnings).to.eql([]);
+    expect([...mutations]).to.eql([]);
+  });
+
+  it.only('should recognize definite config property assignments', function() {
+    const [warnings, mutations] = analyze('placement.random_armors = true');
+    expect(warnings).to.eql([]);
+    expect([...mutations.keys()]).to.eql(['placement.randomArmors']);
+    const mutation = mutations.get('placement.randomArmors')!;
+    expect(mutation.lhs.terms).to.eql(['placement', 'randomArmors']);
+    expect(mutation.lhs.base).to.equal(undefined);
+    expect(mutation.lhs.info).to.equal((configInfo.field('placement') as any).type.field('randomArmors'));
+    expect(mutation.op).to.equal('=');
+    expect(mutation.value).to.equal(true);
+    expect(mutation.random).to.equal(1);
+  });
+
 });
 
 describe('Evaluator', function() {

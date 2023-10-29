@@ -1,4 +1,4 @@
-import { Type, Field, MapField, Enum } from 'protobufjs';
+import { Enum, Field, MapField, Message, Type } from 'protobufjs';
 import { assert } from './assert';
 
 export interface Reporter {
@@ -20,10 +20,11 @@ const resolved = new Map<unknown, unknown>();
 
 export type Visitor<T> = (field: FieldInfo, value: unknown, data: T) => void;
 
-export function qnameVisitor(elementVisitor: (f: FieldInfo, v: unknown, qname: string) => void
-                            ): Visitor<string> {
+export type QnameVisitorArg = (f: FieldInfo, v: unknown, qname: string) => void;
+export function qnameVisitor(elementVisitor: QnameVisitorArg): Visitor<string> {
   const visitElement = (f: FieldInfo, v: unknown, name: string) => {
     if (f instanceof MessageFieldInfo) {
+      // TODO - visit message fields, too?
       f.type.visit(v as object, visitor, name + '.');
     } else {
       elementVisitor(f, v, name);
@@ -72,54 +73,59 @@ export class TypeInfo {
     for (const [k, v] of Object.entries(value)) {
       const f = this.field(k);
       if (f == undefined) {
+        // TODO - "did you mean"?
         reporter?.report(`Unknown field "${k}" of ${this.fullName}`);
         continue;
       }
-      o[f.name] = f.coerce(v, reporter);
+      const coerced = f.coerce(v, reporter);
+      if (coerced != undefined) o[f.name] = coerced;
     }
     return o;
   }
 
   // Return a new copy with defaults filled in
-  fill(src: any): object {
+  // NOTE: not the type-safest... we'd need to instead resolve based on the
+  // ctor of the parameter in order to ensure it works correctly.
+  fill<T extends Message<any>>(src: T): T {
     const dst: any = {};
     for (const f of this.fields.values()) {
+      const n = f.name as keyof T;
       if (f instanceof RepeatedFieldInfo) {
         const e = f.element;
-        if (e instanceof MessageFieldInfo && Array.isArray(src[f.name])) {
-          dst[f.name] = src[f.name].map((v: object) => e.type.fill(v));
-        } else if (Array.isArray(src[f.name])) {
-          dst[f.name] = src[f.name];
+        if (e instanceof MessageFieldInfo && Array.isArray(src[n])) {
+          dst[n] = (src[n] as object[]).map((v: object) => e.type.fill(v as any));
+        } else if (Array.isArray(src[n])) {
+          dst[n] = src[n];
         }
       } else if (f instanceof MapFieldInfo) {
         const e = f.value;
-        const orig = src[f.name];
+        const orig = src[n];
         if (e instanceof MessageFieldInfo && orig && typeof orig === 'object') {
-          dst[f.name] = {};
+          dst[n] = {};
           for (const [k, v] of Object.entries(orig)) {
-            dst[f.name][k] = e.type.fill(v);
+            dst[n][k] = e.type.fill(v);
           }
         } else if (orig) {
-          dst[f.name] = orig;
+          dst[n] = orig;
         }
       } else if (f instanceof MessageFieldInfo) {
-        dst[f.name] = f.type.fill(src[f.name] || {});
-      } else if (f instanceof PrimitiveFieldInfo && src[f.name] == undefined) {
+        dst[n] = f.type.fill(src[n] || {} as any);
+      } else if (f instanceof PrimitiveFieldInfo && src[n] == undefined) {
         if (f.default != undefined) {
-          dst[f.name] = f.default;
+          dst[n] = f.default;
         }
-      } else if (src[f.name] != undefined) {
-        dst[f.name] = src[f.name];
+      } else if (src[n] != undefined) {
+        dst[n] = src[n];
       }
     }
     // note: will throw if anything is amiss
-    return this.type.fromObject(dst);
+    return this.type.fromObject(dst) as T;
   }
 
   visit(obj: object|null, visitor: Visitor<undefined>): void;
   visit<T>(obj: object|null, visitor: Visitor<T>, data: T): void;
   visit<T>(obj: object|null, visitor: Visitor<T>, data?: T): void {
-    const names = obj ? Object.keys(obj) : this.type.fieldsArray.map(f => f.name);
+    const names = obj ? Object.keys(obj) : this.type.fieldsArray.map((f: Field) => f.name);
     for (const name of names) {
       const value = obj ? (obj as any)[name] : undefined;
       const f = this.field(name);
@@ -314,7 +320,7 @@ export class NumberFieldInfo extends PrimitiveFieldInfo {
       }
     }
     if (typeof arg !== 'number') {
-      reporter?.report(`Cannot coerce non-number: ${arg} (${typeof arg})`);
+      reporter?.report(`Cannot coerce non-number ${JSON.stringify(arg)} for ${this.fullName}`);
       return undefined;
     }
     return Math.max(this.min, Math.min(this.round(Number(arg)), this.max));

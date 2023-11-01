@@ -150,8 +150,9 @@ export class TypeInfo {
   }
 }
 export class EnumInfo {
-  enum: Enum;
-  canonical = new Map<string, number>();
+  readonly enum: Enum;
+  private readonly canonical = new Map<string, number>();
+  readonly values: readonly string[] = [];
 
   constructor(e: Enum) { this.enum = e; }
 
@@ -191,6 +192,7 @@ export class EnumInfo {
     for (const [name, value] of Object.entries(e.values)) {
       assert(typeof name === 'string');
       assert(typeof value === 'number');
+      (info.values as string[]).push(name);
       const names = [name];
       const alias = e.valuesOptions?.[name]?.['(alias)'];
       for (const a of alias ? String(alias).split(/,\s*/g) : []) {
@@ -218,6 +220,7 @@ export abstract class FieldInfo {
   abstract resolve(): void;
   // TODO - implement?
   abstract coerce(value: unknown, reporter?: Reporter): unknown;
+  abstract empty(): unknown;
 
   static resolve(f: Field): FieldInfo {
     f.resolve();
@@ -252,6 +255,7 @@ export class RepeatedFieldInfo extends FieldInfo {
     }
     return value.map(v => this.element.coerce(v, reporter));
   }
+  empty() { return []; }
 }
 export class MapFieldInfo extends FieldInfo {
   constructor(
@@ -273,11 +277,13 @@ export class MapFieldInfo extends FieldInfo {
     }
     return o;
   }
+  empty() { return {}; }
 }
 export abstract class PrimitiveFieldInfo extends SingularFieldInfo {
   abstract readonly primitive: Primitive;
   abstract readonly default?: unknown;
   resolve() {}
+  empty() { return undefined; }
 }
 export class NumberFieldInfo extends PrimitiveFieldInfo {
   readonly min: number;
@@ -372,6 +378,7 @@ export class EnumFieldInfo extends SingularFieldInfo {
     if (result == undefined) return result;
     return this.isKey ? this.enum.enum.values[result] : result;
   }
+  empty() { return undefined; }
 }
 export class MessageFieldInfo extends SingularFieldInfo {
   readonly type!: TypeInfo;
@@ -380,6 +387,7 @@ export class MessageFieldInfo extends SingularFieldInfo {
   coerce(value: unknown, reporter?: Reporter): unknown {
     return this.type.coerce(value, reporter);
   }
+  empty() { return this.type.type.create(); }
 }
 
 function singularFieldInfo(type: string, resolvedType: unknown, f: Field, isKey = false) {

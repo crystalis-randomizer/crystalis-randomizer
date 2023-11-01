@@ -1,18 +1,12 @@
 // handles expressions
 
 import { Expression } from './jsep';
-import { FieldInfo, MapFieldInfo, MessageFieldInfo, PrimitiveFieldInfo, RepeatedFieldInfo, TypeInfo } from './info';
+import { FieldInfo, MapFieldInfo, MessageFieldInfo, RepeatedFieldInfo, Reporter, TypeInfo } from './info';
 import { checkExhaustive } from './assert';
+import { CallContext, LValue, Mutation, Pick } from './lvalue';
+import { Fn, IRandom, functions } from './functions';
 // import { Arr, BasicVal, Bool, CallContext, Err, ErrBuilder, Func, Mut, Num, RANDOM, Rand, Str, Val, isErr, wrapValue } from './val.js';
 // import { Random } from '../random.js';
-
-interface CallContext {
-  lvalue?: LValue;
-}
-
-interface Reporter {
-  report(msg: string): void;
-}
 
 // interface IConfig {
 //   presets: string[];
@@ -45,53 +39,132 @@ interface NumberLiteral {
   value: number;
   raw: string;
 }
-function extractLiteral(e: Expression, lhs?: LValue): unknown {
-  if (e.type === 'Literal') return e.value;
-  if (e.type === 'ArrayExpression') {
+
+// Given an expression like `rand() < x`, returns the probability x.
+// Otherwise returns undefined.
+function extractRand(e: Expression): number|undefined {
+  if (e.type === 'BinaryExpression') {
+    if (e.operator === '<' || e.operator === '<=') {
+      if (isRandCall(e.left) && isNumberLiteral(e.right)) {
+        return clampFrac(e.right.value);
+      } else if (isRandCall(e.right) && isNumberLiteral(e.left)) {
+        return clampFrac(1 - e.left.value);
+      }
+    } else if (e.operator === '>' || e.operator === '>=') {
+      if (isRandCall(e.left) && isNumberLiteral(e.right)) {
+        return clampFrac(1 - e.right.value);
+      } else if (isRandCall(e.right) && isNumberLiteral(e.left)) {
+        return clampFrac(e.left.value);
+      }
+    }
+  }
+  return undefined;
+  // TODO - rand() ? a : b => round before booleanizing?
+}
+function clampFrac(x: number) {
+  return Math.max(0, Math.min(x, 1));
+}
+
+// Determines whether the expression is a set of known values with known probabilities.
+// Returns undefined if it's not.
+function analyzeValue(e: Expression, lhs?: LValue, reporter?: Reporter): Pick|'all'|undefined {
+  if (e.type === 'Literal') {
+    const info = lhs?.info;
+    const value = info ? info.coerce(e.value, reporter) : e.value;
+    return [[1, value]];
+  } else if (e.type === 'ArrayExpression') {
     const out: unknown[] = [];
     for (const x of e.elements) {
-      const xl = extractLiteral(x);
-      if (Number.isNaN(xl)) return NaN;
-      out.push(xl); // string, number, boolean, or other literal
+      const analyzed = analyzeValue(x, undefined, reporter);
+      // NOTE: we don't attempt to expand the monad.
+      if (analyzed?.length !== 1) return undefined;
+      out.push(analyzed[0][1]);
     }
-    return out;
-  }
-  if (e.type === 'ObjectExpression') {
+    return [[1, out]];
+  } else if (e.type === 'ObjectExpression') {
     const out: Record<string, unknown> = {};
     for (const p of e.properties) {
-      if (p.computed) return NaN;
+      if (p.computed) return undefined;
       if (p.key.type === 'Identifier') {
-        const xl = extractLiteral(p.value);
-        if (Number.isNaN(xl)) return NaN;
-        out[p.key.name] = xl;
+        const analyzed = analyzeValue(p.value, undefined, reporter);
+        if (analyzed?.length !== 1) return undefined;
+        out[p.key.name] = analyzed[0][1];
       }
-      return NaN; // should never happen?
+      return undefined; // should never happen?
     }
+    return [[1, out]];
+  } else if (e.type === 'BinaryExpression') {
+    // `rand() < x` is a known boolean.
+    const r = extractRand(e);
+    if (r != undefined) return [[r, true], [1 - r, false]];
+    // TODO - any other pattern we care about?
+    return undefined;
+  } else if (e.type === 'ConditionalExpression') {
+    // look for `rand() < x` in e.test.
+    const r = extractRand(e.test);
+    if (r == undefined) return undefined;
+    const c = analyzeValue(e.consequent, lhs, reporter);
+    const a = analyzeValue(e.alternate, lhs, reporter);
+    if (c == undefined || a == undefined || c === 'all' || a === 'all') {
+      return undefined;
+    }
+    return [...scalePick(c, r), ...scalePick(a, 1 - r)];
+    // todo - look for any other patterns?
+
+  } else if (e.type === 'CallExpression') {
+    // rand() may be valid if we're casting to an integer/boolean??
+    // it's a little odd that coercing to booleann. is different than assigning
+    // to a boolean field...?
+    if (e.callee.type !== 'Identifier') return undefined;
+    const callee = e.callee.name;
+    if (callee === 'pick') {
+      // usage:
+      //   items.useFoo = pick() - equal chance of all values.
+      //   items.bar = pick('vanilla') ????
+      if (!lhs?.info) {
+        reporter?.report(`cannot use pick() in nested context`);
+        return undefined;
+      }
+      return e.arguments.length === 0 ? 'all' : undefined;
+    } else if (callee === 'hybrid') {
+      // usage:
+      //   items.initial = hybrid(rand(), 'sword of wind', 0.6, 'sword of fire')
+      if (e.arguments.length < 2 || e.arguments.length % 2) return undefined;
+      if (!isRandCall(e.arguments[0])) return undefined;
+      // expect number literals for all odd indices
+      const pick = [];
+      let cumulative = 0;
+      for (let i = 0; i < e.arguments.length; i += 2) {
+        const val = analyzeValue(e.arguments[i + 1], lhs, reporter);
+        if (val == undefined || val === 'all') return undefined;
+        let prob: number;
+        const arg = e.arguments[i + 2];
+        if (!arg) {
+          prob = clampFrac(1 - cumulative);
+        } else if (isNumberLiteral(arg)) {
+          const c = clampFrac(arg.value);
+          prob = clampFrac(c - cumulative);
+          cumulative = Math.max(cumulative, c);
+        } else {
+          return undefined;
+        }
+        pick.push(...scalePick(val, prob));
+      }
+      return pick;
+    // } else if (callee === 'default') {
+    //   // TODO - maybe don't bother with this...?
+    // } else if (callee === 'preset') {
+    //   // TODO - what about user presets??
+    //   //      - might have random values, etc...?
+    //   // instead probably just expose the standard options in the UI
+    } else {
+      return undefined;
+    }
+  } else if (e.type === 'AssignmentExpression' && e.operator === '=') {
+    return analyzeValue(e.right, undefined, reporter);
   }
-  if (e.type === 'CallExpression') {
-    // look for `pick()`, `pick('sword of wind', 'sword of fire', ...)`,
-    // or maybe even `pick(default(), preset('vanilla'))`?
-    // UI can expose different types of random:
-    //  - definite value
-    //  - probability of overriding value
-    //  - definite assignment to probablity of values
-    //      placement.mimics = pick()
-    //      enemies.enemy_weaknesses = pick('random', 'shuffle')
-    //      enemies.enemy_weaknesses = pick(['random', 0.4], ['shuffle': 0.5])
-    //    what does any remainder map to?
-    //     - would need to ban ordinary lists....?
-    //        ... = rand() < 0.4 ? 'random' : rand() < 0.5 ? 'shuffle' : 'vanilla'
-    //     - need to recognize chained independent randoms?
-    //  - boolean <- rand()  - rounds to 0 or 1.
-    //    boolean <- rand() < 0.3  - more definite than `rand() < 0.3 && (x = true)`
-    //    do we actually want to recognize the other case?
-    //     - advantage is we can choose _not_ to override...?
-    //       actually seems more complicated, so maybe skip!
-    //     - foo = rand() < 0.3 ? 1 : rand() < 0.5 ? preset('vanilla') : preset('default')
-  }
-  if (e.type === 'AssignmentExpression' && e.operator === '=') return extractLiteral(e.right);
   // everything else is NOT a literal so just return NaN
-  return NaN;
+  return undefined;
 }
 
 // States of an lvalue:
@@ -107,62 +180,8 @@ function extractLiteral(e: Expression, lhs?: LValue): unknown {
 //   readonly info?: FieldInfo;
 // }
 
-export class LValue {
-  private constructor(readonly terms: readonly (string|number)[],
-                      readonly base?: LValue,
-                      readonly info?: FieldInfo) {}
-  static of(name: string, typeInfo?: TypeInfo): LValue {
-    const f = typeInfo?.field(name);
-    if (f) return new LValue([f.name], undefined, f);
-    return new LValue([name]);
-  }
-  // NOTE: will never lose info: an lvalue w/ info will always map to another with info
-  at(term: string|number): LValue|string {
-    if (!this.info) return new LValue([...this.terms, term]);
-    // cannot descend into primitive field
-    if (this.info instanceof PrimitiveFieldInfo) return `cannot index primitive ${this.info}`;
-    if (this.info instanceof RepeatedFieldInfo) {
-      if (typeof term !== 'number') return `repeated field ${this.info} requires numeric index`;
-      return new LValue([...this.terms, term], this.base || this, this.info.element);
-    } else if (this.info instanceof MapFieldInfo) {
-      // look at the key type
-      const errs: string[] = [];
-      const k = this.info.key.coerce(term, {report(msg: string) {errs.push(msg);}});
-      if (k == undefined) return errs[0] || `failed to coerce ${term} to key of ${this.info}`;
-      if (typeof k === 'string' || typeof k === 'number') {
-        return new LValue([...this.terms, k], this.base || this, this.info.value);
-      }
-      return `unexpected coerced key type ${typeof k} for ${this.info}`;
-    } else if (this.info instanceof MessageFieldInfo) {
-      if (typeof term === 'number') return `message ${this.info} requires string fields`;
-      const f = this.info.type.field(term);
-      if (!f) return `unknown field ${term} in ${this.info}`;
-      return new LValue([...this.terms, f.name], this.base, f);
-    }
-    return `unknown info type: ${this.info}`;
-  }
-  qname(): string {
-    let out = '';
-    for (const t of this.terms) {
-      if (/^[a-z_$][a-z0-9_$]*$/i.test(String(t))) {
-        out += (out ? '.' : '') + t;
-      } else {
-        out += `[${t}]`;
-      }
-    }
-    return out;
-  }
-}
-
-export interface Mutation {
-  // lvalue being assigned to
-  readonly lhs: LValue;
-  // operator
-  readonly op: string;
-  // value as a primitive, array, or object
-  readonly value: unknown;
-  // independent chance of accepting mutation, or NaN if not independent
-  readonly random: number;
+function scalePick(pick: Pick, scale: number): Pick {
+  return pick.map(([p, v]) => [p * scale, v]);
 }
 
 // // return this after issuing an error...?
@@ -182,39 +201,30 @@ export class Analyzer {
     this.warnings.push(message);
   }
 
-  analyze(expr: Expression, random: number = 1) {
+  analyze(expr: Expression, random = false) {
     switch (expr.type) {
       case 'AssignmentExpression': {
         // parse lhs, deal with rhs
+        const op = expr.operator;
         const lhs = this.parseLValue(expr.left);
         this.analyze(expr.right);
         if (lhs) {
-          const value = extractLiteral(expr.right, lhs);
-          this.mutations.set(lhs.qname(), {lhs, op: expr.operator, value, random});
+          const values = random ? undefined : analyzeValue(expr.right, lhs);
+          this.mutations.set((lhs.base || lhs).qname(), {lhs, op, values});
         }
         break;
       }
-      case 'BinaryExpression':
+      case 'BinaryExpression': {
         this.analyze(expr.left, random);
-        if (expr.operator === '&&' || expr.operator === '||') {
-          const left = expr.left;
-          let r = random;
-          // match exact pattern `rand() < 0.2 && (foo = bar)`
-          if (left.type === 'BinaryExpression' && left.operator === '<' &&
-              isRandCall(left.left) && isNumberLiteral(left.right)) {
-            const v = Math.max(0, Math.min(left.right.value, 1));
-            r = random * (expr.operator === '&&' ? v : 1 - v);
-          }
-          this.analyze(expr.right, r);
-        } else {
-          this.analyze(expr.right, random);
-        }
+        const op = expr.operator;
+        this.analyze(expr.right, random || op === '&&' || op === '||');
         break;
+      }
       case 'ConditionalExpression':
         this.analyze(expr.test, random);
         // TODO - consider recognizing `rand() < 0.1 ? foo = bar : null`
-        this.analyze(expr.consequent, NaN);
-        this.analyze(expr.alternate, NaN);
+        this.analyze(expr.consequent, true);
+        this.analyze(expr.alternate, true);
         break;
       case 'MemberExpression':
         this.analyze(expr.object, random);
@@ -297,48 +307,53 @@ function fromEntries(entries: ReadonlyArray<readonly [string|number, unknown]>):
   return obj;
 }
 
-function defaultValue(info: FieldInfo): unknown {
-  // PROBLEM - do we start with the preset? no
-  //   - do we just go with the regular default?
-  // presets: vanilla
-  // items.medicalHerbHeal *= 2
-  //
-  // what does that do? if inherited from preset?
-  // seems reasonable if already set, but if undefined...?
-  //  - same problem as reading from fields...!
-  //  - even deferring mutations doesn't help
-  //
-  // maybe the thing to do is just to say that reads are direct on _this_ proto,
-  // and that there's just no way to observe a preset?  They're prepended AFTER
-  // expressions (unless maybe a `flushPresets()` call?)  Does that make sense??
-  //
-  // in that case, we can simplify - no need for complex lvalue parsing in evaluator,
-  // instead just evaluate the LHS mostly normally...?  just look at LHS of assignment
-  // and see "if identifier then assign, else if getprop then setprop", where objet of
-  // setprop is an ordinary object (with defaults as needed)
-  //  - we can lookup field by checking $type on objects [need to always Type.create()
-  //    them], and need special handling for repeated arrays and maps [maybe a weakmap?]
-  //  - CallContext can maybe just be FieldInfo?
+const infoMap = new WeakMap<object, FieldInfo>();
 
-  if (info instanceof RepeatedFieldInfo) return [];
-  if (info instanceof MapFieldInfo) return {};
-  if (info instanceof MessageFieldInfo) return info.type.type.create();
-  throw '';
+function tagInfo<T>(arg: T, info: FieldInfo): T {
+  if (arg && typeof arg === 'object') infoMap.set(arg, info);
+  return arg;
 }
 
-type Fn = (args: unknown[], reporter: Reporter|undefined, ctx: CallContext) => unknown;
+function lookupKey(info: FieldInfo, key: string|number,
+                   reporter?: Reporter): [string|number, FieldInfo?] {
+  if (info instanceof MessageFieldInfo) {
+    const f = info.type.field(key as string);
+    if (!f) {
+      reporter?.report(`unknown field ${key} on ${info.type}`);
+      return [key];
+    }
+    return [f.name, f];
+  } else if (info instanceof RepeatedFieldInfo) {
+    if (typeof key !== 'number') {
+      reporter?.report(`cannot index repeated field with non-number: ${key}`);
+      return [key];
+    }
+    return [key, info.element];
+  } else if (info instanceof MapFieldInfo) {
+    const k = info.key.coerce(key, reporter);
+    if (!k) return [key]; // already reported.
+    return [k as string|number, info.value];
+  }
+  reporter?.report(`cannot index non-repeated/non-message field ${info}`);
+  return [key];
+}
 
 export class Evaluator {
-  vars = new Map<string, unknown>();
-  functions: Record<string, Fn> = {};
+  readonly vars = new Map<string, unknown>();
+  readonly functions: Record<string, Fn>;
 
-  constructor(readonly root: object, readonly rootInfo: TypeInfo) {}
+  constructor(readonly root: object,
+              readonly rootInfo: TypeInfo,
+              random: IRandom) {
+    this.functions = functions(random);
+  }
   // warnings: string[] = [];
   // warn(msg: string): Val {
   //   this.warnings.push(msg);
   //   return UNDEF;
   // }
 
+  // Given a Property expression, returns the string|number key.
   private prop(computed: boolean, prop: Expression, reporter?: Reporter): string|number|undefined {
     if (computed) {
       const key = this.evaluate(prop, reporter);
@@ -352,6 +367,7 @@ export class Evaluator {
     return undefined;
   }
 
+  // Evaluates an exression, returning its value and carrying out any side effects.
   evaluate(expr: Expression, reporter?: Reporter, ctx: CallContext = {}): unknown {
     switch (expr.type) {
       case 'Literal': return expr.value;
@@ -360,16 +376,34 @@ export class Evaluator {
         const key = this.prop(p.computed, p.key, reporter);
         return key != null ? [[key, this.evaluate(p.value, reporter)]] : [];
       }));
-      case 'Identifier': return this.vars.get(expr.name);
+      case 'Identifier': {
+        if (this.vars.has(expr.name)) {
+          return this.vars.get(expr.name);
+        }
+        const f = this.rootInfo.field(expr.name);
+        if (f) {
+          const root: any = this.root;
+          return tagInfo(root[f.name] ?? (root[f.name] = f.empty()), f);
+        }
+        reporter?.report(`variable undefined: ${expr.name}`);
+        return undefined;
+      }
       case 'MemberExpression': {
         const key = this.prop(expr.computed, expr.property, reporter);
         if (key == undefined) return undefined; // already reported.
-        const obj = this.evaluate(expr.object, reporter);
-        if (!obj || typeof obj !== 'object') {
-          reporter?.report(`property access on non-object: ${obj}`);
-          return undefined; // note: may lead to further errors...?
+        const obj: any = this.evaluate(expr.object, reporter);
+        if (obj && typeof obj === 'object') {
+          const info = infoMap.get(obj);
+          if (info) {
+            const [k, childInfo] = lookupKey(info, key);
+            return childInfo ? tagInfo(obj[k as keyof typeof obj], childInfo) : undefined;
+          }
+          // ordinary object - just index it, may be undefined
+          return (obj as any)[key];
         }
-        return (obj as any)[key];
+        // non-object
+        reporter?.report(`property access on non-object: ${obj}`);
+        return undefined; // note: may lead to further errors...?
       }
       case 'CallExpression': {
         // restrict this to only known functions!
@@ -396,7 +430,9 @@ export class Evaluator {
         return undefined;
       }
       case 'BinaryExpression':
-        return this.binary(expr.operator, this.evaluate(expr.left, reporter), expr.right, reporter);
+        return this.binary(expr.operator,
+                           this.evaluate(expr.left, reporter),
+                           expr.right, reporter, ctx);
 
       case 'ConditionalExpression':
         return this.evaluate(expr.test, reporter) ?
@@ -404,97 +440,208 @@ export class Evaluator {
             this.evaluate(expr.alternate, reporter, ctx);
 
       case 'AssignmentExpression': {
-        // parse the LHS as an lvalue
-        const lhs = this.parseLValue(expr.left, reporter);
-        if (lhs == undefined) return undefined; // already reported error.
-        let op = expr.operator;
-        // if (lhs instanceof Err) err.check(lhs);
-        let value: unknown;
-        if (op !== '=') {
-          if (!op.endsWith('=')) {
-            reporter?.report(`unknown assignment operator: ${op}`);
+        // look at LHS - it needs to be either an identifier or a getprop
+        let base: unknown = undefined;
+        let key: string|number|undefined = undefined;
+        let info: FieldInfo|undefined = undefined;
+        let name: string|undefined = undefined;
+        if (expr.left.type === 'MemberExpression') {
+          key = this.prop(expr.left.computed, expr.left.property, reporter);
+          if (key == undefined) return undefined; // already reported.
+          base = this.evaluate(expr.left.object, reporter);
+          if (!base || typeof base !== 'object') {
+            reporter?.report(`cannot assign to property of non-object ${base}`);
             return undefined;
           }
-          const left = this.evaluateLValue(lhs, reporter);
-          value = this.binary(op, left, expr.right, reporter);
-          //   // We've got an operator like +=
-          //   //  - see if we can compute it right here?
-          //   const v = this.lookupLValue(lhs);
-          //   if (v instanceof Rand) {
-              
-          //   } else if (v instanceof Err) {
-
-          //   } else if (v instanceof Prim) {
-              
-          //   }
-          // } else if (!lhs.isRandom()) {
-          //   const value = err.check(this.lookupLValue(lhs));
-            
-          // }
+          const baseInfo = infoMap.get(base as object);
+          if (baseInfo) {
+            [key, info] = lookupKey(baseInfo, key!);
+          }
+        } else if (expr.left.type === 'Identifier') {
+          info = this.rootInfo.field(expr.left.name);
+          if (info) {
+            key = info.name;
+            base = this.root;
+            if (!base || typeof base !== 'object') {
+              reporter?.report(`cannot assign to property of non-object ${base}`);
+              return undefined;
+            }
+          } else {
+            name = expr.left.name;
+          }
         } else {
-          value = this.evaluate(expr.right, reporter, {lvalue: lhs});
+          reporter?.report(`left-hand of assignment must be qualified name but was ${
+                            expr.left.type}`);
+          return undefined;
         }
-        // TODO ... handle setprop!
 
-        this.vars.set(lhs.qname(), value);
+        // look at operator and maybe do a mutation
+        let value;
+        const op = expr.operator;
+        if (op !== '=') {
+          if (!op.endsWith('=')) throw new Error(`unknown assignment operator: ${op}`);
+          // TODO - can both name and key be missing?
+          const left = key != undefined ? (base as any)[key] : this.vars.get(name!)!;
+          value = this.binary(op.substring(0, op.length - 1), left, expr.right, reporter, {info});
+        } else {
+          value = this.evaluate(expr.right, reporter, {info});
+        }
 
+        // conform value to expectation
+        if (info) value = info.coerce(value);
+
+        // make the assignment
+        if (key == undefined) {
+          // local variable assignment
+          this.vars.set(name!, value);
+        } else {
+          // property assignment (including top-level config props)
+          (base as any)[key] = value;
+        }
         return value;
-
-        //return new Mut([{lhs, op: expr.operator, rhs}]);
       }
     }
+    // unreachable default case
     reporter?.report(`can't handle expression type ${(expr as any).type}`);
     return undefined;
   }
 
-  parseLValue(expr: Expression, reporter?: Reporter): LValue|undefined {
-    if (expr.type === 'Identifier') return LValue.of(expr.name, this.rootInfo);
-    if (expr.type !== 'MemberExpression') {
-      reporter?.report(`bad expression type in lvalue: ${expr.type}`);
-      return undefined;
-    }
-    const key = this.prop(expr.computed, expr.property, reporter);
-    if (key == undefined) return undefined;
-    const obj = this.parseLValue(expr.object, reporter);
-    if (!obj) return undefined; // already reported.
-    const lvalue = obj.at(key);
-    if (typeof lvalue === 'string') { // error case.
-      reporter?.report(lvalue);
-      return undefined;
-    }
-    return lvalue;
-  }
-
-  evaluateLValue(lhs: LValue, reporter?: Reporter): unknown {
-    if (lhs.info) {
-      // config field
-      let val: Record<string|number, unknown> = this.root as any;
-      let info: FieldInfo|undefined = undefined;
-      for (const k of lhs.terms) {
-        const nextInfo: FieldInfo|undefined =
-            !info ? this.rootInfo.field(k as string) :
-            info instanceof MessageFieldInfo ? info.type.field(k as string) :
-            info instanceof RepeatedFieldInfo ? info.element :
-            info instanceof MapFieldInfo ? info.value :
-            undefined;
-        if (!nextInfo) {
-          reporter?.report(`bad field ${k} of ${info || this.rootInfo}`);
-          return undefined;
-        }
-        let next = val[k] ?? (val[k] = info && defaultValue(info));
-        val = next as any;
-        info = nextInfo;
+  binary(op: string, left: unknown, rightExpr: Expression,
+         reporter?: Reporter, ctx: CallContext = {}): unknown {
+    // special handling for short-circuiting
+    if (op === '&&') return left && this.evaluate(rightExpr, reporter, ctx);
+    if (op === '||') return left || this.evaluate(rightExpr, reporter, ctx);
+    let right = this.evaluate(rightExpr, reporter); // no ctx
+    // special handling for array concatenation
+    if (op === '+') {
+      const leftIsArray = Array.isArray(left);
+      if (leftIsArray && Array.isArray(right)) {
+        return [...(left as unknown[]), ...right];
+      } else if (leftIsArray || Array.isArray(right)) {
+        reporter?.report(`can only add arrays to other arrays`);
+        return undefined;
       }
-    } else {
-      // local
-      return null!;
     }
+    // All other operations are full numeric: cast booleans but accept
+    // no other types than numbers.  NOTE: we don't even support string
+    // concatenation.
+    if (typeof left === 'boolean') left = +left;
+    if (typeof right === 'boolean') right = +right;
+    if (typeof left !== 'number' || typeof right !== 'number') {
+      reporter?.report(`can only do math on numbers: ${typeof left} ${op} ${typeof right}`);
+      return undefined;
+    }
+
+    switch (op) {
+      case '+': return left + right;
+      case '-': return left - right;
+      case '*': return left * right;
+      case '/': return left / right;
+      case '%': return left % right;
+      case '**': return left ** right;
+      case '<<': return left << right;
+      case '>>': return left >> right;
+      case '>>>': return left >>> right;
+      case '&': return left & right;
+      case '|': return left | right;
+      case '^': return left ^ right;
+      case '==': case '===': return left=== right;
+      case '!=': case '!==': return left !== right;
+      case '<': return left < right;
+      case '<=': return left <= right;
+      case '>': return left > right;
+      case '>=': return left >= right;
+    }
+    reporter?.report(`unknown binary operator: ${op}`);
     return undefined;
   }
+}
 
-  binary(op: string, left: unknown, right: Expression, reporter?: Reporter): unknown {
-    return null!;
-  }
+// function defaultValue(info: FieldInfo): unknown {
+//   // PROBLEM - do we start with the preset? no
+//   //   - do we just go with the regular default?
+//   // presets: vanilla
+//   // items.medicalHerbHeal *= 2
+//   //
+//   // what does that do? if inherited from preset?
+//   // seems reasonable if already set, but if undefined...?
+//   //  - same problem as reading from fields...!
+//   //  - even deferring mutations doesn't help
+//   //
+//   // maybe the thing to do is just to say that reads are direct on _this_ proto,
+//   // and that there's just no way to observe a preset?  They're prepended AFTER
+//   // expressions (unless maybe a `flushPresets()` call?)  Does that make sense??
+//   //
+//   // in that case, we can simplify - no need for complex lvalue parsing in evaluator,
+//   // instead just evaluate the LHS mostly normally...?  just look at LHS of assignment
+//   // and see "if identifier then assign, else if getprop then setprop", where objet of
+//   // setprop is an ordinary object (with defaults as needed)
+//   //  - we can lookup field by checking $type on objects [need to always Type.create()
+//   //    them], and need special handling for repeated arrays and maps [maybe a weakmap?]
+//   //  - CallContext can maybe just be FieldInfo?
+
+//   if (info instanceof RepeatedFieldInfo) return [];
+//   if (info instanceof MapFieldInfo) return {};
+//   if (info instanceof MessageFieldInfo) return info.type.type.create();
+//   return undefined;
+//   //throw '';
+// }
+
+
+  // parseLValue(expr: Expression, reporter?: Reporter): LValue|undefined {
+  //   if (expr.type === 'Identifier') return LValue.of(expr.name, this.rootInfo);
+  //   if (expr.type !== 'MemberExpression') {
+  //     reporter?.report(`bad expression type in lvalue: ${expr.type}`);
+  //     return undefined;
+  //   }
+  //   const key = this.prop(expr.computed, expr.property, reporter);
+  //   if (key == undefined) return undefined;
+  //   const obj = this.parseLValue(expr.object, reporter);
+  //   if (!obj) return undefined; // already reported.
+  //   const lvalue = obj.at(key);
+  //   if (typeof lvalue === 'string') { // error case.
+  //     reporter?.report(lvalue);
+  //     return undefined;
+  //   }
+  //   return lvalue;
+  // }
+
+  // evaluateLValue(lhs: LValue, reporter?: Reporter): unknown {
+  //   if (lhs.info) {
+  //     // config field
+  //     let val: Record<string|number, unknown> = this.root as any;
+  //     let info: FieldInfo|undefined = undefined;
+  //     for (const k of lhs.terms) {
+  //       const nextInfo: FieldInfo|undefined =
+  //           !info ? this.rootInfo.field(k as string) :
+  //           info instanceof MessageFieldInfo ? info.type.field(k as string) :
+  //           info instanceof RepeatedFieldInfo ? info.element :
+  //           info instanceof MapFieldInfo ? info.value :
+  //           undefined;
+  //       if (!nextInfo) {
+  //         reporter?.report(`bad field ${k} of ${info || this.rootInfo}`);
+  //         return undefined;
+  //       }
+  //       info = nextInfo;
+  //       // NOTE: this is a bit of a lie for the terminal field...
+  //       val = val[k] ?? (val[k] = defaultValue(info)) as any;
+  //     }
+  //     return val;
+  //   } else {
+  //     // local
+  //     let obj = this.vars.get(lhs.terms[0] as string);
+  //     for (const k of lhs.terms.slice(1)) {
+  //       if (!obj || typeof obj !== 'object') {
+  //         reporter?.report(`cannot dereference null lvalue: ${lhs.qname}`);
+  //         return undefined;
+  //       }
+  //       obj = (obj as any)[k];
+  //     }
+  //     return obj;
+  //   }
+  //   return undefined;
+  // }
+
 
   // isAnalysis(): boolean {
   //   return this.root == null;
@@ -515,8 +662,8 @@ export class Evaluator {
   //       return err.fatal(`unknown type for unary !: ${arg}`);
   //     }
   //   } else if (!(arg instanceof Prim) || arg.type === 'null') {
-  //     return err.fatal(`unknown type for unary ${op}: ${arg}`);          
   //   }
+  //     return err.fatal(`unknown type for unary ${op}: ${arg}`);          
   //   let num = arg.num();
   //   if (num == undefined) num = Number(arg.str());
   //   switch (op) {
@@ -614,7 +761,6 @@ export class Evaluator {
   //   builder.err(`bad expression type in lvalue: ${expr.type}`);
   //   return builder;
   // }
-}
 
 // function cmp(result: number|Err, f: (arg: number) => boolean): Val {
 //   if (isErr(result)) return result;

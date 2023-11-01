@@ -396,7 +396,7 @@ describe('Evaluator', function() {
   //   expect(result).to.equal(e.root.items);
   // });
 
-  it('should evaluate the numeric function', function() {
+  it('should evaluate numeric functions', function() {
     const e = evaluator();
     expect(e.evaluate(parse(`round(3.2)`), new ExpectErrors())).to.equal(3);
     expect(e.evaluate(parse(`round(3.8)`), new ExpectErrors())).to.equal(4);
@@ -411,6 +411,5 @@ describe('Evaluator', function() {
     expect(e.evaluate(parse(`rand()`), new ExpectErrors())).to.equal(0.8);
   });
 
-  // TODO - mockable rand()
-
+  // TODO - test hybrid() and pick()
 });

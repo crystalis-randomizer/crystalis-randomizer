@@ -443,6 +443,12 @@ export class Evaluator {
           return undefined;
         }
 
+        // special case: don't allw assigning messages
+        if (info instanceof MessageFieldInfo) {
+          reporter?.report(`cannot assign to a message field: ${info}`);
+          return undefined;
+        }
+
         // look at operator and maybe do a mutation
         let value;
         const op = expr.operator;

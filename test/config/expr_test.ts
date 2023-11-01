@@ -373,6 +373,29 @@ describe('Evaluator', function() {
     expect(result).to.eql('SWORD_OF_WIND');
   });
 
+  // note: we don't strictly need it to be this way; we could instead
+  // opt to allow this, though it would make analysis a little harder
+  it('should refuse to assign a message field', function() {
+    const e = evaluator({items: {chargeSpeed: 4}});
+    const orig = e.root.items;
+    const result = e.evaluate(parse(`items = {chargeWhileWalkingSpeed: 3}`),
+                              new ExpectErrors(/cannot assign to a message field/));
+    expect(e.root.items!.chargeSpeed).to.equal(4);
+    expect(e.root.items!.chargeWhileWalkingSpeed).to.equal(null);
+    expect(e.root.items).to.equal(orig);
+    expect(result).to.equal(undefined);
+  });
+
+  // it('should overwrite a message field', function() {
+  //   const e = evaluator({items: {chargeSpeed: 4}});
+  //   const result = e.evaluate(parse(`items = {chargeWhileWalkingSpeed: 3}`),
+  //                             new ExpectErrors());
+  //   expect(e.root.items!.chargeSpeed).to.equal(null);
+  //   expect(e.root.items!.chargeWhileWalkingSpeed).to.equal(3);
+  //   expect(e.root.items).to.be.instanceof(Config.Items.ctor);
+  //   expect(result).to.equal(e.root.items);
+  // });
+
   it('should evaluate the numeric function', function() {
     const e = evaluator();
     expect(e.evaluate(parse(`round(3.2)`), new ExpectErrors())).to.equal(3);

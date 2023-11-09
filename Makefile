@@ -11,13 +11,14 @@ DATADIR = $(BLDDIR)/data
 
 # Flags
 NODEFLAGS   = --bundle --platform=node
-WEBFLAGS    = --bundle --splitting --format=esm
+WEBFLAGS    = --bundle --splitting --format=esm \
+	      --jsx-factory=h --jsx-fragment=Fragment
 DBGFLAGS    = --sourcemap=inline
 RELFLAGS    = --minify
 LOADERFLAGS = --loader:.br=binary
 
 # Hand-written list of entry points (relative to src/js)
-WEB_ENTRY_POINTS = main.js check.js $(addprefix view/,$(VIEW_ENTRY_POINTS))
+WEB_ENTRY_POINTS = main.js check.js ui.tsx $(addprefix view/,$(VIEW_ENTRY_POINTS))
 WEB_DBG_ENTRY_POINTS = patch.ts debug.js
 VIEW_ENTRY_POINTS = maps.js messages.js screens.js sprites.js tileset.js npcs.js
 
@@ -34,10 +35,14 @@ WEB_DBG_ENTRY_OUTS = $(WEB_DBG_ENTRY_POINTS:.ts=.js)
 WEB_JS_DBG = $(addprefix $(DBGDIR)/js/,$(WEB_ENTRY_OUTS)) \
 	     $(addprefix $(DBGDIR)/js/,$(WEB_DBG_ENTRY_OUTS))
 WEB_JS_REL = $(addprefix $(RELDIR)/js/,$(WEB_ENTRY_OUTS))
-STATIC_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
+SCSS_FILES = $(shell find src/css -type f -name '*.scss')
+CSS_DBG = $(SCSS_FILES:src/css/%.scss=$(DBGDIR)/css/%.css)
+CSS_REL = $(SCSS_FILES:src/css/%.scss=$(RELDIR)/css/%.css)
+STATIC_PATTERNS = %.html %.gif %.png %.nss %.css %.ico %.woff src/ga.tag
 STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
 CONFIG_PROTO_JS = $(BLDDIR)/config_proto.js
 JS_FILES = $(shell find src/js -type f -name '*.[tj]s') $(CONFIG_PROTO_JS)
+JSX_FILES = $(shell find src/js -type f -name '*.[tj]sx')
 ASM_JS_FILES = $(shell find src/js/asm -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
 ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
@@ -54,8 +59,8 @@ DBG_STATIC = $(STATIC_FILES:src/%=target/debug/%)
 REL_STATIC = $(STATIC_FILES:src/%=target/release/%)
 DBG_WEB_OUTS = $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
 REL_WEB_OUTS = $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
-DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS)
-REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS)
+DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS) $(CSS_DBG)
+REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS) $(CSS_REL)
 TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON)
 
 .PHONY: all debug release clean web-debug web-release x
@@ -73,6 +78,7 @@ release: $(REL_OUTS)
 debug: $(DBG_OUTS)
 web-debug: $(DBG_WEB_OUTS)
 web-release: $(REL_WEB_OUTS)
+css: $(CSS_DBG) $(CSS_REL)
 
 clean:
 	rm -rf target
@@ -125,13 +131,13 @@ $(REFS_JSON): vanilla/crystalis.s $(EXTRACT_REFS) $(SYMBOL_TABLE)
 $(SYMBOL_TABLE): $(ASM_FILES) $(EXTRACT_SYMBOLS)
 	$(EXTRACT_SYMBOLS) -o $@ $(ASM_FILES)
 
-$(WEB_JS_DBG): $(JS_FILES) $(DATA_TBR)
+$(WEB_JS_DBG): $(JS_FILES) $(JSX_FILES) $(DATA_TBR)
 	rm -f $(DBGDIR)/js/*-????????.js
 	$(ESBUILD) $(WEBFLAGS) $(DBGFLAGS) $(LOADERFLAGS) \
 		--outdir=$(DBGDIR)/js $(WEB_ENTRY_POINTS_FULL) \
 	        $(WEB_DBG_ENTRY_POINTS_FULL)
 
-$(WEB_JS_REL): $(JS_FILES) $(DATA_TBR)
+$(WEB_JS_REL): $(JS_FILES) $(JSX_FILES) $(DATA_TBR)
 	rm -f $(RELDIR)/js/*-????????.js
 	$(ESBUILD) $(WEBFLAGS) $(RELFLAGS) $(LOADERFLAGS) \
 		--outdir=$(RELDIR)/js $(WEB_ENTRY_POINTS_FULL)
@@ -152,7 +158,7 @@ $(CONFIG_PROTO_JS): scripts/protoc.mjs src/js/config/config.proto
 	cd src/js/config; \
 	    ../../../scripts/protoc.mjs -d ../../../target/build config.proto
 
-# TODO - make a phony file to track tests up to date
-# make testfiles to build them
-#   - esbuild --outdir=target/test test/**/*.ts
-#   - mocha 
+$(CSS_DBG): $(DBGDIR)/css/%.css: src/css/%.scss
+	npx sass $<:$@ 
+$(CSS_REL): $(RELDIR)/css/%.css: src/css/%.scss
+	npx sass --no-source-map $<:$@ 

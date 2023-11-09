@@ -1,0 +1,202 @@
+@font-face {
+  font-family: "Crystalis";
+  src: url("Crystalis.woff") format("woff");
+}
+
+select {
+  background: url("../images/select-arrow.png") right no-repeat;
+  color: white;
+  font-family: "Crystalis";
+  font-size: 8px;
+  border: 1px solid white;
+  appearance: none;
+  padding: 2px 20px 2px 2px;
+}
+
+/*
+
+grey out disabled options
+ - highlight non-default options as either green or red
+   (darker when option is "off")
+ - special display for random options
+   - fixed percentage boolean (maybe purple?)
+   - hybrid options - expand?
+   - complex...?
+
+ - maybe fixed button for "random" and "help"
+   - which gets a "?" icon?
+   - click button then click field to expand it out?
+
+*/
+
+input[type="checkbox"] {
+  appearance: none;
+  font-family: "Crystalis";
+  color: #888;
+  padding: 0;
+
+  &.g {
+    & + span { color: #0a0; }
+    &:checked, &:checked + span { color: #0f0; }
+  }
+
+  &.r {
+    & + span { color: #b00; }
+    &:checked, &.checked + span { color: #f00; }
+  }
+
+  &:before {
+    content: "☐";
+  }
+  & + span {
+    color: #888;
+  }
+  &:checked {
+    &:before {
+      content: "☑"; /* ☒ */
+    }
+    &, & + span {
+      color: white;
+    }
+  }
+}
+
+input[type="number"] {
+  appearance: textfield;
+  font-family: "Crystalis";
+  font-size: 8px;
+  background: black;
+  color: white;
+  padding: 2px;
+  border: 1px solid white;
+
+  width: 2em;
+
+  &:focus,
+  &:hover,
+  &:active {
+    appearance: textfield;
+  }
+}
+input::-webkit-inner-spin-button {
+  display: none;
+}
+
+/////////////
+
+.page {
+  display: none;
+  &.visible {
+    display: block;
+  }
+}
+
+body.body-main {
+  margin: 0;
+  padding: 0;
+  background: #009038;
+}
+
+body.body-main .main {
+  position: absolute;
+  display: grid;
+  grid-template-rows: 96px auto;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  font-family: "Crystalis";
+  .small {
+    font-family: "Crystalis";
+    font-size: 8px;
+  }
+
+  .header {
+    display: grid;
+    grid-template-columns: 288px auto 288px;
+    width: 100%;
+    height: 96px;
+    & > * {
+      height: 96px;
+    }
+
+    .left {
+      position: relative;
+      background: url("../images/header-left.png");
+      img {
+        position: absolute;
+        top: 48px;
+        right: 48px;
+      }
+    }
+    .right {
+      position: relative;
+      background: url("../images/header-right.png");
+      img {
+        position: absolute;
+        top: 48px;
+        left: 48px;
+      }
+    }
+    .mid {
+      background: repeat-x url("../images/header-mid.png");
+      color: white;
+      padding: 36px 12px;
+    }
+  }
+
+  .body {
+    display: grid;
+    grid-template-rows: 24px auto 24px;
+    grid-template-columns: 48px 192px 24px auto 48px;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    .topleft { background: url("../images/border-top-left.png"); }
+    .topmid { background: repeat-x url("../images/border-top.png"); }
+    .toptee { background: repeat-x url("../images/border-top-tee.png"); }
+    .topright { background: url("../images/border-top-right.png"); }
+    .left { background: repeat-y url("../images/border-left.png"); }
+    .mid {
+      background: black;
+      color: white;
+      padding: 12px;
+      overflow-y: scroll;
+      min-width: 0;
+      min-height: 0;
+
+      .line {
+        padding-bottom: 0.5pc;
+        &.selected {
+          text-decoration: underline;
+          text-decoration-color: #0070ec;
+          text-decoration-thickness: 4px;
+        }
+      }
+    }
+    .sep { background: repeat-y url("../images/border-mid-sep.png"); }
+    .right { background: repeat-y url("../images/border-right.png"); }
+    .botleft { background: url("../images/border-bottom-left.png"); }
+    .botmid { background: repeat-x url("../images/border-bottom.png"); }
+    .bottee { background: repeat-x url("../images/border-bottom-tee.png"); }
+    .botright { background: url("../images/border-bottom-right.png"); }
+  }
+}
+.bar {
+  top: 1px;
+  position: relative;
+  display: inline-block;
+  height: 6px;
+  width: 100px;
+  border: 2px solid white;
+
+  .full {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    left: 0;
+    width: 40%;
+    background: url("../images/bar-full.png") repeat-x;
+  }
+}

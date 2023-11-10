@@ -8,7 +8,7 @@ interface Child {
 interface ComputerProps {
   title?: string;
   selected?: string;
-  children: Child[];
+  children?: Child[];
 }
 
 export function Computer({title = '', selected = '', children}: ComputerProps) {
@@ -66,9 +66,9 @@ export function Computer({title = '', selected = '', children}: ComputerProps) {
 
 interface PageProps {
   name?: string;
-  children: Child[];
+  selected?: boolean;
+  children?: (string|Child)[];
 }
-export function Page({name = '', children}: PageProps) {
-  const [] = [name]; // ignore unused
+export function Page({children}: PageProps) {
   return <>{children}</>;
 }

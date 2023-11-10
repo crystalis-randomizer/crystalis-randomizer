@@ -18,7 +18,7 @@ RELFLAGS    = --minify
 LOADERFLAGS = --loader:.br=binary
 
 # Hand-written list of entry points (relative to src/js)
-WEB_ENTRY_POINTS = main.js check.js ui.tsx $(addprefix view/,$(VIEW_ENTRY_POINTS))
+WEB_ENTRY_POINTS = ui/test.tsx main.js check.js ui.tsx $(addprefix view/,$(VIEW_ENTRY_POINTS))
 WEB_DBG_ENTRY_POINTS = patch.ts debug.js
 VIEW_ENTRY_POINTS = maps.js messages.js screens.js sprites.js tileset.js npcs.js
 
@@ -57,10 +57,10 @@ DBG_INFO = $(DBGDIR)/js/build_info.js
 REL_INFO = $(RELDIR)/js/build_info.js
 DBG_STATIC = $(STATIC_FILES:src/%=target/debug/%)
 REL_STATIC = $(STATIC_FILES:src/%=target/release/%)
-DBG_WEB_OUTS = $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
-REL_WEB_OUTS = $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
-DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS) $(CSS_DBG)
-REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS) $(CSS_REL)
+DBG_WEB_OUTS = $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO) $(CSS_DBG)
+REL_WEB_OUTS = $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO) $(CSS_REL)
+DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS)
+REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS)
 TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON)
 
 .PHONY: all debug release clean web-debug web-release x

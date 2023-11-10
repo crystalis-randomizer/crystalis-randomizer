@@ -61,7 +61,22 @@ input[type="checkbox"] {
   }
 }
 
-input[type="number"] {
+button {
+  cursor: pointer;
+  font-family: 'Crystalis';
+  background: black;
+  color: white;
+  font-size: 8px;
+  border: 2px solid #0070ec;
+  padding: 1px;
+  margin: 2px;
+  &:hover {
+    background: #0070ec;
+  }
+}
+
+input[type="number"],
+input[type="text"] {
   appearance: textfield;
   font-family: "Crystalis";
   font-size: 8px;
@@ -70,7 +85,7 @@ input[type="number"] {
   padding: 2px;
   border: 1px solid white;
 
-  width: 2em;
+  //width: 2em;
 
   &:focus,
   &:hover,
@@ -167,8 +182,12 @@ body.body-main .main {
       min-height: 0;
 
       .line {
+        cursor: pointer;
         padding-bottom: 0.5pc;
         &.selected {
+          color: #0070ec;
+        }
+        &:hover {
           text-decoration: underline;
           text-decoration-color: #0070ec;
           text-decoration-thickness: 4px;

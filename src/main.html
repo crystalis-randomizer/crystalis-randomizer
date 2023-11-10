@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><head>
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="css/main.css">
+</head><body>
+<div class="main">
+  <div class="header">
+    <div class="left"><img src="images/left-animated.gif"></img></div>
+    <div id="title" class="mid">Crystalis Randomizer</div>
+    <div class="right"><img src="images/right-animated.gif"></img></div>
+  </div>
+  <div class="body">
+    <div class="topleft"></div>
+    <div class="topmid"></div>
+    <div class="toptee"></div>
+    <div class="topmid"></div>
+    <div class="topright"></div>
+    <div class="left"></div>
+    <div id="tabs" class="mid"></div>
+    <div class="sep"></div>
+    <div id="content" class="mid">
+      <div id="error">
+        Something went wrong.  Please report an issue on
+        <a href="https://discord.gg/ktyz5E6">the discord</a>.
+      </div>
+    </div>
+    <div class="right"></div>
+    <div class="botleft"></div>
+    <div class="botmid"></div>
+    <div class="bottee"></div>
+    <div class="botmid"></div>
+    <div class="botright"></div>
+  </div>
+</div>
+<!-- <div id="error"> -->
+<!-- Something went wrong.  Please report an issue on -->
+<!-- </div> -->
+<script src="js/build_info.js"></script>
+<script type="module" src="js/ui.js"></script>
+<script>
+// Display a message if the main script hasn't already removed it.
+setTimeout(function() {
+  if (document.body.classList.contains('js-works')) {
+    document.getElementById('error').remove();
+  } else {
+    document.body.classList.add('js-broken');
+  }
+}, 1000);
+</script>
+</body></html>

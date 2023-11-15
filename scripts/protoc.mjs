@@ -60,6 +60,48 @@ public static ctor: {new(): IConfig};
 public static readonly \$type: \$protobuf.Type;
 public readonly \$type: \$protobuf.Type;
 `);
+dts = dts.replace(/^(\s*)(class|interface|enum|namespace)\b/mg, `$1export $2`);
+
+// also build up a "FooPath" template string type for each message type
+//  - don't bother recursing into repeated/dictionary keys
+let pending = [];
+let indent = '';
+function emitPathTypes(obj) {
+  for (const [name, child] of Object.entries(obj)) {
+    if (child instanceof protobuf.Type) {
+      emitPathTypesFor(child);
+      pending.push(`${indent}export namespace ${child.name} {\n`);
+      indent += '  ';
+      if (child.nested) emitPathTypes(child.nested);
+      indent = indent.substring(2);
+      if (pending.length) {
+        pending.pop();
+      } else {
+        dts += `${indent}}\n`;
+      }
+    }
+  }
+}
+function emitPathTypesFor(type) {
+  const terms = [];
+  for (const f of type.fieldsArray) {
+    terms.push(`'${f.name}'`);
+    if (f.repeated || f.map) continue;
+    f.resolve();
+    if (!(f.resolvedType instanceof protobuf.Type)) continue;
+    terms.push(`\`${f.name}.\${${qname(f.resolvedType)}Path}\``);
+  }
+  if (!terms.length) return;
+  dts += pending.join('');
+  pending = [];
+  dts += `${indent}export type ${type.name}Path =\n    ${indent
+            }${terms.join(`\n    ${indent}| `)};\n`;
+}
+function qname(type) {
+  if (type.parent === root) return type.name;
+  return `${qname(type.parent)}.${type.name}`;
+}
+emitPathTypes(root.nested, []);
 
 // let js = `import protobuf from 'protobufjs';
 // import {decompress} from '../../src/js/compress.js';
@@ -79,7 +121,7 @@ public readonly \$type: \$protobuf.Type;
 // }
 
 let js = `const protobuf = require('protobufjs');
-const {decompress} = require('brotli');
+const decompress = require('brotli/decompress');
 const root = new protobuf.Root();
 exports.root = root;
 function add(b64) {

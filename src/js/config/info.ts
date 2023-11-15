@@ -49,6 +49,7 @@ export function qnameVisitor(elementVisitor: QnameVisitorArg): Visitor<string> {
 
 export class TypeInfo {
   readonly fields = new Map<string, FieldInfo>();
+  private asFieldInfo: MessageFieldInfo|undefined;
   // TODO - any options?
 
   constructor(readonly type: Type) {}
@@ -60,6 +61,15 @@ export class TypeInfo {
 
   field(name: string): FieldInfo|undefined {
     return this.fields.get(canonicalizeName(name));
+  }
+
+  asField(): MessageFieldInfo {
+    if (!this.asFieldInfo) {
+      this.asFieldInfo =
+          new MessageFieldInfo({name: 'asField', parent: this.type}, this.type);
+      this.asFieldInfo.resolve();
+    }
+    return this.asFieldInfo;
   }
 
   coerce(value: unknown, reporter?: Reporter): unknown {
@@ -161,7 +171,8 @@ export class EnumInfo {
   get name(): string { return this.enum.name; }
   get fullName(): string { return qname(this.enum); }
 
-  coerce(value: unknown, reporter?: Reporter): string|undefined {
+  // TODO - apparently this is not actually useful?
+  coerceName(value: unknown, reporter?: Reporter): string|undefined {
     if (value == undefined) return undefined;
     if (typeof value === 'boolean') value = String(value); // use true/false alias.
     if (typeof value === 'number') {
@@ -181,8 +192,8 @@ export class EnumInfo {
     return undefined;
   }
 
-  coerceOrd(value: unknown, reporter?: Reporter): number|undefined {
-    const name = this.coerce(value, reporter);
+  coerce(value: unknown, reporter?: Reporter): number|undefined {
+    const name = this.coerceName(value, reporter);
     return name != undefined ? this.enum.values[name] : undefined;
   }
 
@@ -367,16 +378,20 @@ export class BoolFieldInfo extends PrimitiveFieldInfo {
 export class EnumFieldInfo extends SingularFieldInfo {
   readonly enum!: EnumInfo;
   readonly type!: EnumInfo;
+  readonly default?: string;
   constructor(field: Field, private readonly e: Enum, private readonly isKey: boolean) {
     super(field);
   }
   resolve() {
     (this as any).type = (this as any).enum = resolve(this.e);
+    const {'(default)': defaultOpt} = this.field.options || {};
+    (this as any).default =
+        defaultOpt != null ? this.coerce(defaultOpt) as string|undefined : undefined;
   }
   coerce(value: unknown, reporter?: Reporter): unknown {
-    const result = this.enum.coerce(value, reporter);
-    if (result == undefined) return result;
-    return this.isKey ? this.enum.enum.values[result] : result;
+    return /*const result =*/ this.enum.coerce(value, reporter);
+    // if (result == undefined) return result;
+    // return this.isKey ? this.enum.enum.values[result] : result;
   }
   empty() { return undefined; }
 }

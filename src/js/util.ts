@@ -977,6 +977,12 @@ export function lowerCamelToWords(lowerCamel: string): string {
   return split.map(s => s[0].toUpperCase() + s.substring(1)).join(' ');
 }
 
+export function constCaseToWords(constCase: string): string {
+  const split = constCase.split(/_/g);
+  return split.map(s => s[0].toUpperCase() + s.substring(1).toLowerCase())
+      .join(' ');
+}
+
 //////////////
 
 /**

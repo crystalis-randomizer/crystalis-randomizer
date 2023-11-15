@@ -106,7 +106,7 @@ message Config {
 
   message Placement {
     // Which algorithm to use.
-    optional Algorithm type = 1
+    optional Algorithm algorithm = 1
       [(default) = ASSUMED_FILL,
        (preset.vanilla) = VANILLA];
     enum Algorithm {
@@ -124,7 +124,7 @@ message Config {
     // average progression item count, which tends to range from 1..40.
     optional float check_beta = 2
       [(type) = "f8:1.3.1.4", // ?? or 1.4.3? or i8/32?
-       (default) = 0.25];
+       (default) = 0.3];
     // The "inverse temperature" to use when pre-sorting the list of
     // progression items.  If this is zero, then the items won't be
     // sorted at all.  The larger this number is, the more likely
@@ -136,7 +136,7 @@ message Config {
     // 1..10 or so.
     optional float item_beta = 3
       [(type) = "f8:1.3.1.4",
-       (default) = 0.25];
+       (default) = 0.3];
     // If nonzero, then multiple checks in the same area will be
     // separated during the check sort.  The checks will be shuffled
     // and successive checks after the first in each area will be
@@ -154,9 +154,13 @@ message Config {
       [(default) = SHUFFLE,
        (preset.vanilla) = VANILLA];
 
+    optional uint32 mimic_count = 6
+      [(default) = 13,
+       (min) = 0, (max) = 15];
+
     // Whether mimics are shuffled in with key items.  If false, then mimics
     // will only be eligible to go into consumable chests.
-    optional bool shuffle_mimics_with_key_items = 6
+    optional bool shuffle_mimics_with_key_items = 7
       [(default) = true];
 
     // How to deal with consumables.  If VANILLA, then consumables will not
@@ -165,26 +169,26 @@ message Config {
     // will be picked with the same proportion as the vanilla, but will not
     // be constrained to exactly the same numbers (so there could be more or
     // fewer of each, including opel statues).
-    optional Randomization consumables = 7
+    optional Randomization consumables = 8
       [(default) = SHUFFLE,
        (preset.vanilla) = VANILLA];
 
     // Whether consumables and key items are shuffled together into the same
     // pool.  If this is false, then key item will only be found from key
     // item checks (including all boss rewards). 
-    optional bool shuffle_consumables_with_key_items = 8
+    optional bool shuffle_consumables_with_key_items = 9
       [(default) = true];
 
     // Whether to randomize which armors are found in checks.  Note that if
     // armors that are _not_ found in any shops are guaranteed to be included.
-    optional bool random_armors = 9
+    optional bool random_armors = 10
       [(default) = false];
 
     // Whether to protect opel statues from being lost.  Some checks (mainly
     // trade-ins) can be lost if they contain a consumable and there's no
     // inventory room when they're given.  This flag controls whether we allow
     // opels in those checks.
-    optional bool allow_lost_opel = 10 // TODO
+    optional bool allow_lost_opel = 11 // TODO
       [(default) = false];
 
     // Whether we force all items in the game to be reachable.  If this is
@@ -192,7 +196,7 @@ message Config {
     // (within logic) in some seeds (i.e. Oak Mother has Telepathy).  In
     // that case, the seed should always still be winnable (unless other
     // options force an unwinnable seed).
-    optional bool all_reachable = 11 // TODO
+    optional bool all_reachable = 12 // TODO
       [(default) = true];
 
     // Positive indicates minimum requires sphere, negative is upper bound
@@ -225,7 +229,7 @@ message Config {
       //[(type) = "bitset"]; // TODO - define this type!!!
 
     // Whether to guarantee a sword in the earliest possible check.
-    optional bool early_sword = 12
+    optional bool early_sword = 13
       [(default) = false];
 
     // Map of check-item pairings to ensure are used.  These checks and
@@ -239,39 +243,39 @@ message Config {
     // Ensures the logic provides the gas mask (or hazmat suit, as
     // appropriate) before requiring going into the swamp.  If this is
     // false, then any source of healing is considered sufficient.
-    optional bool ensure_gas_mask_before_swamp = 13
+    optional bool ensure_gas_mask_before_swamp = 14
       [(default) = true];
     // Ensures the logic provides the gas mask (or hazmat suit, as
     // appropriate) before requiring to fight the insect.  IF this is
     // false, then any source of healing is considered sufficient.
-    optional bool ensure_gas_mask_before_insect = 14
+    optional bool ensure_gas_mask_before_insect = 15
       [(default) = true];
     // Ensures the logic provides barrier before requiring to walk
     // through the shooting statue guantlets.  If this is false, then
     // any source of healing is considered sufficient.
-    optional bool ensure_barrier_before_statues = 15
+    optional bool ensure_barrier_before_statues = 16
       [(default) = true];
     // Ensures the logic provides refresh before requiring to fight
     // any bosses.
-    optional bool ensure_refresh_before_bosses = 16
+    optional bool ensure_refresh_before_bosses = 17
       [(default) = false];
     // Ensures the logic provides a minimum sword level before requiring
     // boss fights with the tetrarchs.  Note that Karmine and Draygon
     // max out at requiring level 2, even if this is set to 3.
-    optional uint32 ensure_minimum_sword_level_before_tetrarchs = 17
+    optional uint32 ensure_minimum_sword_level_before_tetrarchs = 18
       [(min) = 1, (max) = 3,
        (default) = 1];
     // Ensures the logic provides any sort of offensive upgrade before
     // requiring a boss fight with a tetrarch.  This is satisfied by
     // any of {power ring, warrior ring, matching bracelet}.
-    optional bool ensure_offensive_upgrade_before_tetrarchs = 18
+    optional bool ensure_offensive_upgrade_before_tetrarchs = 19
       [(default) = false];
 
     // Disables logical safety checks.  This allows the seed to roll
     // even if the logic doesnt think it's possible.  Unfortunately,
     // there's not really an in-between where it tries to at least
     // minimize the breakage...?
-    optional bool disable_safety_checks = 19
+    optional bool disable_safety_checks = 20
       [(default) = false];
   }
   

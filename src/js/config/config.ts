@@ -1,11 +1,11 @@
-import { Config, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto';
+import { Config, ConfigPath, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto';
 // import { TypeInfo, FieldInfo, MessageFieldInfo, qnameVisitor, resolve, RepeatedFieldInfo, MapFieldInfo } from './info.js';
-import { resolve } from './info';
+import { EnumFieldInfo, FieldInfo, MessageFieldInfo, PrimitiveFieldInfo, resolve } from './info';
 import { assert /*, assertType*/ } from './assert';
 import { Type } from 'protobufjs';
 //import { FieldMutation, Mutation } from './expr.js';
 
-export { ItemName, CheckName, LocationName };
+export { CheckName, ConfigPath, ItemName, LocationName };
 
 // type DeepReadonly<T> =
 //     T extends (infer U)[] ? readonly DeepReadonly<U>[] :
@@ -208,6 +208,75 @@ export class BasicReporter {
 
 assert(Config instanceof Type);
 export const configInfo = resolve(Config);
+
+export class ConfigField {
+  readonly info: FieldInfo;
+  constructor(readonly path: ConfigPath) {
+    let info: FieldInfo|undefined = configInfo.asField();
+    for (const term of path.split('.')) {
+      if (info instanceof MessageFieldInfo) {
+        info = info.type.field(term);
+      } else {
+        info = undefined;
+      }
+      if (!info) throw new Error(`bad path: ${path}`);
+    }
+    this.info = info;
+  }
+
+  default(): unknown {
+    return this.info instanceof PrimitiveFieldInfo || this.info instanceof EnumFieldInfo ? this.info.default : undefined;
+  }
+
+  // applies defaults, etc
+  get(config: ReadonlyConfig): unknown {
+    let obj: any = config;
+    let info = configInfo.asField();
+    for (const term of this.path.split('.')) {
+      if (!obj) return undefined;
+      if (!(info instanceof MessageFieldInfo)) throw new Error('impossible');
+      // NOTE: protobufjs doesn't implement proto3 optional presence correctly?
+      if (!obj.hasOwnProperty(term)) return undefined;
+      obj = obj[term];
+    }
+    return obj;
+    // TODO - default? other stuff?
+  }
+
+  // applies defaults, etc
+  set(config: ReadonlyConfig, value: unknown): ReadonlyConfig {
+    const cur = this.get(config);
+    if (cur === value) return config;
+
+    // clone - is there a better way???
+    //   - enums are numbers everywhere in actual representation...
+    let obj: any = Config.fromObject((config as unknown as Config).toJSON());
+    config = obj;
+    let info = configInfo.asField();
+    const terms = this.path.split('.');
+    const last = terms.pop();
+    if (!last) throw new Error('impossible');
+    for (const term of terms) {
+      if (!(info instanceof MessageFieldInfo)) throw new Error('impossible');
+      const child = obj[term];
+      const field = info.type.field(term);
+      if (field instanceof MessageFieldInfo && !child) {
+        obj = obj[term] = field.type.type.ctor.create();
+      } else {
+        obj = child;
+      }
+    }
+    obj[last] = this.info.coerce(value, THROWING_REPORTER);
+    // TODO - verify config???
+    return config;
+  }
+}
+
+const THROWING_REPORTER: Reporter = {
+  report(msg: string) {
+    throw new Error(msg);
+  }
+};
 
 // When parsing stuff, build up the translation map?
 // Preset operations need to be constrained:

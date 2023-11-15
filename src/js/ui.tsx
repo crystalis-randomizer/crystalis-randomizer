@@ -1,8 +1,8 @@
 import { Main } from './ui/main';
 import { h, render, Fragment } from 'preact';
 
-render(<Main config={config}/>, document.getElementById(''));
-document.body.classList.add('body-main');
+render(<Main/>, document.body);
+document.body.classList.add('js-works');
 
 // setTitle()
 // addTab()

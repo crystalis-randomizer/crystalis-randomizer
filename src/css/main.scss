@@ -11,6 +11,7 @@ select {
   border: 1px solid white;
   appearance: none;
   padding: 2px 20px 2px 2px;
+  cursor: pointer;
 }
 
 /*
@@ -97,6 +98,13 @@ input::-webkit-inner-spin-button {
   display: none;
 }
 
+.disabled,
+input:disabled {
+  color: #666;
+  border-color: #666;
+}
+
+
 /////////////
 
 .page {
@@ -106,13 +114,13 @@ input::-webkit-inner-spin-button {
   }
 }
 
-body.body-main {
+body {
   margin: 0;
   padding: 0;
   background: #009038;
 }
 
-body.body-main .main {
+body .main {
   position: absolute;
   display: grid;
   grid-template-rows: 96px auto;
@@ -202,20 +210,73 @@ body.body-main .main {
     .botright { background: url("../images/border-bottom-right.png"); }
   }
 }
-.bar {
-  top: 1px;
-  position: relative;
-  display: inline-block;
-  height: 6px;
-  width: 100px;
-  border: 2px solid white;
 
-  .full {
+// input[type="range"] {
+//   border: 2px solid white;
+//   border-radius: 0;
+//   background: green;
+//   height: 6px;
+//   appearance: none;
+//   position: relative;
+//   top: 1px;
+//   cursor: pointer;
+//   &::-webkit-slider-thumb::before {
+//     color:green;
+//   }
+//   accent-color: transparent;
+// }
+
+.pixel-slider {
+  position:relative;
+  top: -10px;
+  display:inline-block;
+  margin-left: 5px;
+
+  input[type="range"] {
+    border: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    height: 6px;
+    appearance: none;
     position: absolute;
-    top: -2px;
-    bottom: -2px;
-    left: 0;
-    width: 40%;
-    background: url("../images/bar-full.png") repeat-x;
+    top: 1px;
+    cursor: pointer;
+
+    .disabled & {
+      cursor: default;
+    }
+    // NOTE: we put the slider ±5px outside the visible bar
+    // to account for the size of the thumb.
+    left: -5px;
+    width: 110px;
+    accent-color: transparent;
+    opacity: 0;
+  }
+
+  .bar {
+    pointer-events: none;
+    top: 1px;
+    position: absolute;
+    display: inline-block;
+    height: 6px;
+    width: 100px;
+    border: 2px solid white;
+
+    .disabled & {
+      border-color: #555;
+    }
+
+    .full {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      left: 0;
+      width: 40%;
+      background: url("../images/bar-full.png") repeat-x;
+
+      .disabled & {
+        background: #555;
+      }
+    }
   }
 }

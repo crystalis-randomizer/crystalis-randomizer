@@ -132,17 +132,17 @@ function Placement() {
     <Slider label="Check Beta"
             path="placement.checkBeta"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={-10} max={10} incr={0.1}
+            min={-3} max={3} incr={0.1} log={2}
             help="check beta"/>
     <Slider label="Item Beta"
             path="placement.itemBeta"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={-10} max={10} incr={0.1}
+            min={-3} max={3} incr={0.1} log={2}
             help="item beta"/>
     <Slider label="Check Distribution"
             path="placement.checkDistributionWeight"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={0} max={10} incr={0.1}
+            min={0} max={10} incr={0.1} log={2}
             help="check distribution"/>
     <Select label="Mimics"
             path="placement.mimics"
@@ -194,17 +194,23 @@ interface SliderProps {
   min?: number;
   max?: number;
   incr?: number;
+  log?: number; // orders of magnitude below 1
   help: string;
   disabled?: string;
+  // TODO - log transformer?
+  // TODO - incorporate cumulative min/max into state???
+  // TODO - validator
 }
 function Slider(props: SliderProps) {
   const [config, field] = useConfig(props.path);
   if (!(field.info instanceof NumberFieldInfo)) {
     throw new Error(`bad slider field ${field.path}, expected number`);
   }
+  const toPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * Math.log10(Math.abs(x)) + props.log : (x: number) => x;
+  const fromPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * 10 ** (Math.abs(x) - props.log) : (x: number) => x;
   const value = (field.get(config.value) ?? field.default()) as number;
-  const min = props.min ?? field.info.min;
-  const max = props.max ?? field.info.max;
+  const min = useSignal(Math.min(toPos(value), props.min ?? field.info.min));
+  const max = useSignal(Math.max(toPos(value), props.max ?? field.info.max));
   const step = props.incr ?? 1;
   // TODO - use a local signal for the value to sync the number with the slider
 
@@ -213,15 +219,22 @@ function Slider(props: SliderProps) {
   // };
 
   const onChangeNum = (e: any) => {
-    config.value = field.set(config.value, numVal.value = barVal.value = sliderVal.value = Number(numRef.current.value));
+    const val = field.info.coerce(Number(numRef.current.value)) as number;
+    barVal.value = sliderVal.value = toPos(numVal.value = val);
+    config.value = field.set(config.value, val);
+    const vp = toPos(val);
+    if (vp < min.value) min.value = vp;
+    if (vp > max.value) max.value = vp;
   };
 
   const onChangeBar = (e: any) => {
-    config.value = field.set(config.value, numVal.value = barVal.value = sliderVal.value = Number(barRef.current.value));
+    const val = field.info.coerce(fromPos(Number(barRef.current.value))) as number;
+    barVal.value = sliderVal.value = toPos(numVal.value = val);
+    config.value = field.set(config.value, val);
   };
   const onDragBar = (e: any) => {
     //(e) => val.value = Number(e.target.value)
-    barVal.value = numVal.value = Number(barRef.current.value);
+    numVal.value = fromPos(barVal.value = Number(barRef.current.value));
   };
 
   // let dragging = false;
@@ -229,9 +242,8 @@ function Slider(props: SliderProps) {
   const barRef = useRef<HTMLInputElement>();
 
   const numVal = useSignal(value);
-  const barVal = useSignal(value);
-  const sliderVal = useSignal(value);
-  const wid = useComputed(() => (Math.max(min, Math.min(barVal.value, max)) - min) / (max - min));
+  const barVal = useSignal(toPos(value));
+  const sliderVal = useSignal(toPos(value));
 
   // const barRef = useRef<HTMLDivElement>();
   // function updateVisual(v: number) {
@@ -262,16 +274,57 @@ function Slider(props: SliderProps) {
            onChange={onChangeNum}
     />
     <div class="pixel-slider">
-      <div class="bar">
-        <div class="full" ref={barRef} style={`width: ${100 * wid.value}%`}/>
-      </div>
+      <PixelBar min={min.value} max={max.value} value={barVal}/>
       <input disabled={!!props.disabled} type="range" ref={barRef}
              min={min} max={max} step={step} value={sliderVal}
-             onChange={onChangeBar} onMouseMove={onDragBar}
+             onChange={onChangeBar} onInput={onDragBar}
       />
     </div>
   </div>
 }
+
+interface PixelBarProps {
+  min: number;
+  max: number;
+  value: Signal<number>;
+}
+
+function PixelBar(props: PixelBarProps) {
+  const {min, max, value} = props;
+
+  const pct = 100 / (max - min);
+  const val = Math.max(min, Math.min(value.value, max));
+  const fullStyle: Record<string, string> = {};
+  const zeroStyle: Record<string, string> = {};
+  if (min >= 0) {
+    zeroStyle.display = 'none';
+    fullStyle.width = `${(val - min) * pct}%`;
+    fullStyle.left = '0';
+  } else if (max <= 0) {
+    zeroStyle.display = 'none';
+    fullStyle.width = `${(max - val) * pct}%`;
+    fullStyle.right = '0';
+  } else {
+    const zero = -min * pct;
+    zeroStyle.left = `${zero}%`;
+    if (value.value < 0) {
+      fullStyle.width = `${-value.value * pct}%`;
+      fullStyle.right = `${100 - zero}%`;
+      fullStyle.backgroundPositionX = 'right';
+    } else {
+      fullStyle.width = `${value.value * pct}%`;
+      fullStyle.left = `${zero}%`;
+      fullStyle.backgroundPositionX = 'left';
+    }
+  }
+  return <div class="bar">
+    <div class="inner">
+      <div class="full" style={fullStyle}/>
+      <div class="zero" style={zeroStyle}/>
+    </div>
+  </div>;
+}
+
 
 interface CheckboxProps {
   label: string;

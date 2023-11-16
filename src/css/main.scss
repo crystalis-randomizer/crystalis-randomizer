@@ -230,7 +230,8 @@ body .main {
   position:relative;
   top: -10px;
   display:inline-block;
-  margin-left: 5px;
+  margin-left: -6px;
+  width: 100px;
 
   input[type="range"] {
     border: 2px solid transparent;
@@ -245,10 +246,8 @@ body .main {
     .disabled & {
       cursor: default;
     }
-    // NOTE: we put the slider ±5px outside the visible bar
-    // to account for the size of the thumb.
-    left: -5px;
-    width: 110px;
+    left: 0px;
+    width: 100%;
     accent-color: transparent;
     opacity: 0;
   }
@@ -259,8 +258,22 @@ body .main {
     position: absolute;
     display: inline-block;
     height: 6px;
-    width: 100px;
-    border: 2px solid white;
+    left: 12px;
+    right: 4px;
+
+    .inner {
+      border: 2px solid white;
+      position: relative;
+      height: 100%;
+    }
+
+    .zero {
+      width: 0;
+      border: 1px solid white;
+      position: absolute;
+      height: 8px;
+      top: -2px;
+    }
 
     .disabled & {
       border-color: #555;
@@ -270,8 +283,6 @@ body .main {
       position: absolute;
       top: -2px;
       bottom: -2px;
-      left: 0;
-      width: 40%;
       background: url("../images/bar-full.png") repeat-x;
 
       .disabled & {

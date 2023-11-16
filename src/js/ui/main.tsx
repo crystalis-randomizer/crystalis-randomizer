@@ -4,7 +4,7 @@ import { useContext, useMemo, useRef } from 'preact/hooks';
 import { Signal, signal, useSignal, computed, useComputed } from '@preact/signals';
 import { Config, ConfigField, ConfigPath } from '../config/config';
 
-import { EnumFieldInfo, NumberFieldInfo } from '../config/info';
+import { BoolFieldInfo, EnumFieldInfo, NumberFieldInfo } from '../config/info';
 import { Computer, Page } from './computer';
 import { constCaseToWords } from '../util';
 
@@ -132,17 +132,17 @@ function Placement() {
     <Slider label="Check Beta"
             path="placement.checkBeta"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={-3} max={3} incr={0.1} log={2}
+            min={-3} max={3} incr={0.1}
             help="check beta"/>
     <Slider label="Item Beta"
             path="placement.itemBeta"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={-3} max={3} incr={0.1} log={2}
+            min={-3} max={3} incr={0.1}
             help="item beta"/>
     <Slider label="Check Distribution"
             path="placement.checkDistributionWeight"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={0} max={10} incr={0.1} log={2}
+            min={0} max={10} incr={0.1}
             help="check distribution"/>
     <Select label="Mimics"
             path="placement.mimics"
@@ -150,12 +150,11 @@ function Placement() {
     <Slider label="Mimic Count"
             path="placement.mimicCount"
             help="mimic count"/>
-    {
-    // <Checkbox label="Shuffle Mimics With Key Items"
-    //           value={placement.shuffleMimicsWithKeyItems ?? true}
-    //           help="mimics with key items"/>
-    }
-    <pre>{JSON.stringify(config.toJSON(), undefined, 2)}</pre>;
+    <Checkbox label="Shuffle Mimics With Key Items"
+              path="placement.shuffleMimicsWithKeyItems"
+              disabled={noShuffle ? 'requires Assumed Fill' : undefined}
+              help="mimics with key items"/>
+    <pre>{JSON.stringify(config.toJSON(), undefined, 2)}</pre>
   </div>;
 }
 
@@ -194,6 +193,7 @@ interface SliderProps {
   min?: number;
   max?: number;
   incr?: number;
+  // NOTE: log is broken, doesn't handle negatives correctly
   log?: number; // orders of magnitude below 1
   help: string;
   disabled?: string;
@@ -207,7 +207,7 @@ function Slider(props: SliderProps) {
     throw new Error(`bad slider field ${field.path}, expected number`);
   }
   const toPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * Math.log10(Math.abs(x)) + props.log : (x: number) => x;
-  const fromPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * 10 ** (Math.abs(x) - props.log) : (x: number) => x;
+  const fromPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * Math.round(10 ** (Math.abs(x) - props.log + 2)) / 100 : (x: number) => x;
   const value = (field.get(config.value) ?? field.default()) as number;
   const min = useSignal(Math.min(toPos(value), props.min ?? field.info.min));
   const max = useSignal(Math.max(toPos(value), props.max ?? field.info.max));
@@ -328,11 +328,21 @@ function PixelBar(props: PixelBarProps) {
 
 interface CheckboxProps {
   label: string;
-  value: boolean;
+  path: ConfigPath;
   help: string;
 }
 function Checkbox(props: CheckboxProps) {
-  return <div>{props.label}: <input type="checkbox" checked="{props.value}"/></div>;
+  const [config, field] = useConfig(props.path);
+  if (!(field.info instanceof BoolFieldInfo)) {
+    throw new Error(`bad checkbox field ${field.path}, expected boolean`);
+  }
+  const value = field.get(config.value);
+  const onChange = (e: any) => {
+    //debugger;
+    config.value = field.set(config.value, Boolean(e.target.checked));
+  };
+  return <div>{props.label}: <input
+    type="checkbox" onChange={onChange} checked={value}/></div>;
 }
 
 

@@ -230,15 +230,15 @@ body .main {
   position:relative;
   top: -10px;
   display:inline-block;
-  margin-left: -6px;
+  margin-left: -2px;
   width: 100px;
 
   input[type="range"] {
     border: 2px solid transparent;
     border-radius: 0;
-    background: transparent;
+    //background: transparent;
     height: 6px;
-    appearance: none;
+    //appearance: none;
     position: absolute;
     top: 1px;
     cursor: pointer;
@@ -250,6 +250,10 @@ body .main {
     width: 100%;
     accent-color: transparent;
     opacity: 0;
+
+    &::-webkit-slider-thumb {
+      width: 1px;
+    }
   }
 
   .bar {
@@ -258,7 +262,7 @@ body .main {
     position: absolute;
     display: inline-block;
     height: 6px;
-    left: 12px;
+    left: 8px;
     right: 4px;
 
     .inner {

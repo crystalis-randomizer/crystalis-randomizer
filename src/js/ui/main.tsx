@@ -1,5 +1,5 @@
 import { Context, Fragment, createContext, h } from 'preact';
-import { useContext, useMemo, useRef } from 'preact/hooks';
+import { useContext, useEffect, useMemo, useRef } from 'preact/hooks';
 
 import { Signal, signal, useSignal, computed, useComputed } from '@preact/signals';
 import { Config, ConfigField, ConfigPath } from '../config/config';
@@ -13,6 +13,7 @@ interface State {
   config: Signal<Config>;
   error: Signal<string|undefined>;
   seed: Signal<string>;
+  shift: boolean;
 }
 
 function createState(): State {
@@ -21,6 +22,7 @@ function createState(): State {
     error: signal(undefined),
     config: signal(Config.create() as Config), // TODO - pull from URL.
     seed: signal(''), // TODO - pull from URL.
+    shift: false,
   };
 }
 
@@ -34,7 +36,24 @@ function createState(): State {
 const MainState: Context<State> = createContext(undefined!);
 
 export function Main() {
-  return <MainState.Provider children={[]} value={useMemo(createState, [])}>
+
+  const state = useMemo(createState, []);
+  const handleKeyDown = (e: any) => {
+    if (e.key === 'Shift') state.shift = true;
+  };
+  const handleKeyUp = (e: any) => {
+    if (e.key === 'Shift') state.shift = false;
+  };
+  useEffect(() => {
+    document.body.addEventListener('keydown', handleKeyDown);
+    document.body.addEventListener('keyup', handleKeyUp);
+    return () => {
+      document.body.removeEventListener('keydown', handleKeyDown);
+      document.body.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
+
+  return <MainState.Provider children={[]} value={state}>
     <div class="main">
       <div class="header">
         <div class="left"><img src="images/left-animated.gif"></img></div>
@@ -65,8 +84,11 @@ export function Main() {
 const TAB_NAMES = [
   'Randomize',
   'Presets',
+  // shows a summary of all the options that differ from a given preset
+  'Summary',
   'Placement',
   'Items',
+  // includes "help" and other things
   'About',
 ] as const;
 type TabName = (typeof TAB_NAMES)[number];
@@ -132,17 +154,20 @@ function Placement() {
     <Slider label="Check Beta"
             path="placement.checkBeta"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={-3} max={3} incr={0.1}
+            min={-4} max={4} incr={0.1}
+            transform={logTransformer(2)}
             help="check beta"/>
     <Slider label="Item Beta"
             path="placement.itemBeta"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={-3} max={3} incr={0.1}
+            min={-4} max={4} incr={0.1}
+            transform={logTransformer(2)}
             help="item beta"/>
     <Slider label="Check Distribution"
             path="placement.checkDistributionWeight"
             disabled={noShuffle ? 'requires Assumed Fill' : undefined}
-            min={0} max={10} incr={0.1}
+            min={0} max={2} incr={0.1}
+            transform={logTransformer(1)}
             help="check distribution"/>
     <Select label="Mimics"
             path="placement.mimics"
@@ -187,6 +212,37 @@ function Select(props: SelectProps) {
   }}>{opts}</select></div>;
 }
 
+interface NumberTransformer {
+  toValue(arg: number): number;
+  toPosition(arg: number): number;
+}
+
+// 0: 0.1
+// 1: 1
+// 2: 10
+// 3: 100
+
+
+function logTransformer(digits: number): NumberTransformer {
+  return {
+    toValue(x: number) {
+      if (!x) return 0;
+      if (x < 0) return -this.toValue(-x);
+      return Math.round(10 ** (x - digits + 2)) / 100;
+    },
+    toPosition(x: number) {
+      if (!x) return 0;
+      if (x < 0) return -this.toPosition(-x);
+      return Math.round(Math.log10(x) * 100) / 100 + digits;
+    },
+  };
+}
+
+const ID_TRANSFORMER = {
+  toValue: (x: number) => x,
+  toPosition: (x: number) => x,
+};
+
 interface SliderProps {
   label: string;
   path: ConfigPath;
@@ -194,7 +250,7 @@ interface SliderProps {
   max?: number;
   incr?: number;
   // NOTE: log is broken, doesn't handle negatives correctly
-  log?: number; // orders of magnitude below 1
+  transform?: NumberTransformer;
   help: string;
   disabled?: string;
   // TODO - log transformer?
@@ -202,15 +258,15 @@ interface SliderProps {
   // TODO - validator
 }
 function Slider(props: SliderProps) {
+  const state = useContext(MainState);
   const [config, field] = useConfig(props.path);
   if (!(field.info instanceof NumberFieldInfo)) {
     throw new Error(`bad slider field ${field.path}, expected number`);
   }
-  const toPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * Math.log10(Math.abs(x)) + props.log : (x: number) => x;
-  const fromPos = props.log != null ? (x: number) => !x ? 0 : Math.sign(x) * Math.round(10 ** (Math.abs(x) - props.log + 2)) / 100 : (x: number) => x;
+  const xf = props.transform ?? ID_TRANSFORMER;
   const value = (field.get(config.value) ?? field.default()) as number;
-  const min = useSignal(Math.min(toPos(value), props.min ?? field.info.min));
-  const max = useSignal(Math.max(toPos(value), props.max ?? field.info.max));
+  const min = useSignal(Math.min(xf.toPosition(value), props.min ?? field.info.min));
+  const max = useSignal(Math.max(xf.toPosition(value), props.max ?? field.info.max));
   const step = props.incr ?? 1;
   // TODO - use a local signal for the value to sync the number with the slider
 
@@ -220,21 +276,22 @@ function Slider(props: SliderProps) {
 
   const onChangeNum = (e: any) => {
     const val = field.info.coerce(Number(numRef.current.value)) as number;
-    barVal.value = sliderVal.value = toPos(numVal.value = val);
+    barVal.value = sliderVal.value = xf.toPosition(numVal.value = val);
     config.value = field.set(config.value, val);
-    const vp = toPos(val);
+    const vp = xf.toPosition(val);
     if (vp < min.value) min.value = vp;
     if (vp > max.value) max.value = vp;
   };
 
   const onChangeBar = (e: any) => {
-    const val = field.info.coerce(fromPos(Number(barRef.current.value))) as number;
-    barVal.value = sliderVal.value = toPos(numVal.value = val);
+    const val = field.info.coerce(xf.toValue(Number(barRef.current.value))) as number;
+    barVal.value = sliderVal.value = xf.toPosition(numVal.value = val);
     config.value = field.set(config.value, val);
+    if (state.shift) console.log(`SHIFT!`); // TODO - trigger advanced
   };
   const onDragBar = (e: any) => {
     //(e) => val.value = Number(e.target.value)
-    numVal.value = fromPos(barVal.value = Number(barRef.current.value));
+    numVal.value = xf.toValue(barVal.value = Number(barRef.current.value));
   };
 
   // let dragging = false;
@@ -242,8 +299,8 @@ function Slider(props: SliderProps) {
   const barRef = useRef<HTMLInputElement>();
 
   const numVal = useSignal(value);
-  const barVal = useSignal(toPos(value));
-  const sliderVal = useSignal(toPos(value));
+  const barVal = useSignal(xf.toPosition(value));
+  const sliderVal = useSignal(xf.toPosition(value));
 
   // const barRef = useRef<HTMLDivElement>();
   // function updateVisual(v: number) {
@@ -330,6 +387,7 @@ interface CheckboxProps {
   label: string;
   path: ConfigPath;
   help: string;
+  disabled?: string;
 }
 function Checkbox(props: CheckboxProps) {
   const [config, field] = useConfig(props.path);
@@ -341,8 +399,11 @@ function Checkbox(props: CheckboxProps) {
     //debugger;
     config.value = field.set(config.value, Boolean(e.target.checked));
   };
-  return <div>{props.label}: <input
-    type="checkbox" onChange={onChange} checked={value}/></div>;
+  const classes = props.disabled ? 'disabled' : '';
+  return <div class={classes}>{props.label}:
+    <input type="checkbox" disabled={props.disabled}
+           onChange={onChange} checked={value}/>
+  </div>;
 }
 
 

@@ -124,7 +124,7 @@ message Config {
     // average progression item count, which tends to range from 1..40.
     optional float check_beta = 2
       [(type) = "f8:1.3.1.4", // ?? or 1.4.3? or i8/32?
-       (default) = 0.3];
+       (default) = 0.25];
     // The "inverse temperature" to use when pre-sorting the list of
     // progression items.  If this is zero, then the items won't be
     // sorted at all.  The larger this number is, the more likely
@@ -136,7 +136,7 @@ message Config {
     // 1..10 or so.
     optional float item_beta = 3
       [(type) = "f8:1.3.1.4",
-       (default) = 0.3];
+       (default) = 0.25];
     // If nonzero, then multiple checks in the same area will be
     // separated during the check sort.  The checks will be shuffled
     // and successive checks after the first in each area will be

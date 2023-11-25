@@ -1,46 +1,14 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
-import { Analyzer, Evaluator } from '../../src/js/config/expr';
+import { Evaluator } from '../../src/js/config/expr';
 import { parse } from '../../src/js/config/jsep';
-import { CheckName, Config, configInfo } from '../../src/js/config/config';
+import { CheckName, Config, ItemName, configInfo } from '../../src/js/config/config';
 import { ExpectErrors } from './util';
 import { IRandom } from '../../src/js/config/functions';
-import { LValue, Pick } from '../../src/js/config/lvalue';
+
+const { SHUFFLE } = Config.Randomization;
 
 ExpectErrors.install();
-
-interface DebugLValue {
-  terms: readonly (string|number)[];
-  base?: DebugLValue;
-  info?: string;
-}
-interface DebugMutation {
-  lhs: DebugLValue;
-  op: string;
-  values?: Pick|'all';
-}
-interface AnalyzeResult {
-  mutations: Record<string, DebugMutation>;
-  warnings?: string[];
-}
-
-function analyze(expr: string): AnalyzeResult {
-  const analyzer = new Analyzer(configInfo);
-  analyzer.analyze(parse(expr));
-  const mutations: Record<string, DebugMutation> = {};
-  for (const [k, m] of analyzer.mutations) {
-    mutations[k] = {...m, lhs: debug(m.lhs)};
-  }
-  const out: AnalyzeResult = {mutations};
-  if (analyzer.warnings.length) out.warnings = analyzer.warnings;
-  return out;
-  function debug(l: LValue): DebugLValue {
-    const out: DebugLValue = {terms: l.terms};
-    if (l.info) out.info = l.info.fullName;
-    if (l.base) out.base = debug(l.base);
-    return out;
-  }
-}
 
 function evaluator(config = {}, ...randomValues: number[]): Evaluator & {root: Config} {
   return new Evaluator(configInfo.coerce(config) as Config,
@@ -49,209 +17,18 @@ function evaluator(config = {}, ...randomValues: number[]): Evaluator & {root: C
 }
 
 function random(...values: number[]): IRandom {
+  // TODO - randomN for expecting normal?
   return {
     next() {
       const result = values.shift();
       if (result != undefined) return result;
       throw new Error(`unexpected call to random.next`);
     },
+    nextNormal() {
+      throw new Error(`unexpected call to random.nextNormal`);
+    },
   };
 }
-
-describe('Analyzer', function() {
-
-  it('should analyze a non-assignment', function() {
-    expect(analyze('1')).to.eql({mutations: {}});
-  });
-
-  it('should ignore local variable assignments', function() {
-    expect(analyze('x = 42')).to.eql({mutations: {}});
-  });
-
-  it('should recognize definite config property assignments', function() {
-    expect(analyze('placement.random_armors = true')).to.eql({
-      mutations: {
-        'placement.randomArmors': {
-          lhs: {
-            terms: ['placement', 'randomArmors'],
-            info: 'Config.Placement.randomArmors',
-          },
-          op: '=',
-          values: [[1, true]],
-        },
-      },
-    });
-  });
-
-  it('should recognize definite op-equals config property assignments', function() {
-    expect(analyze('items.charge_speed += 1')).to.eql({
-      mutations: {
-        'items.chargeSpeed': {
-          lhs: {
-            terms: ['items', 'chargeSpeed'],
-            info: 'Config.Items.chargeSpeed',
-          },
-          op: '+=',
-          values: [[1, 1]],
-        },
-      },
-    });
-  });
-
-  it('should recognize preset append', function() {
-    expect(analyze('presets += ["foo"]')).to.eql({
-      mutations: {
-        'presets': {
-          lhs: {
-            terms: ['presets'],
-            info: 'Config.presets',
-          },
-          op: '+=',
-          values: [[1, ['foo']]],
-        },
-      },
-    });
-  });
-
-  it('should recognize definite config assignment to unknown', function() {
-    expect(analyze('items.charge_speed = x')).to.eql({
-      mutations: {
-        'items.chargeSpeed': {
-          lhs: {
-            terms: ['items', 'chargeSpeed'],
-            info: 'Config.Items.chargeSpeed',
-          },
-          op: '=',
-          values: undefined,
-        },
-      },
-    });
-  });
-
-  it('should recognize known-probability assignment', function() {
-    expect(analyze('items.charge_speed = rand() < 0.4 ? 3 : 4')).to.eql({
-      mutations: {
-        'items.chargeSpeed': {
-          lhs: {
-            terms: ['items', 'chargeSpeed'],
-            info: 'Config.Items.chargeSpeed',
-          },
-          op: '=',
-          values: [[0.4, 3], [0.6, 4]],
-        },
-      },
-    });
-  });
-
-  it('should recognize unknown-probability assignment', function() {
-    expect(analyze('rand() < 0.4 && (items.charge_speed = 3)')).to.eql({
-      mutations: {
-        'items.chargeSpeed': {
-          lhs: {
-            terms: ['items', 'chargeSpeed'],
-            info: 'Config.Items.chargeSpeed',
-          },
-          op: '=',
-          values: undefined,
-        },
-      },
-    });
-  });
-
-  it('should recognize definite assignment to pick()', function() {
-    expect(analyze('placement.mimics = pick()')).to.eql({
-      mutations: {
-        'placement.mimics': {
-          lhs: {
-            terms: ['placement', 'mimics'],
-            info: 'Config.Placement.mimics',
-          },
-          op: '=',
-          values: 'all',
-        },
-      },
-    });
-  });
-
-  it('should recognize definite assignment to hybrid()', function() {
-    expect(analyze('placement.mimics = hybrid(rand(), "shuffle", 0.3, "random")')).to.eql({
-      mutations: {
-        'placement.mimics': {
-          lhs: {
-            terms: ['placement', 'mimics'],
-            info: 'Config.Placement.mimics',
-          },
-          op: '=',
-          values: [[0.3, 'SHUFFLE'], [0.7, 'RANDOM']],
-        },
-      },
-    });
-  });
-
-  it('should recognize assignment to map', function() {
-    expect(analyze('placement.force = {}')).to.eql({
-      mutations: {
-        'placement.force': {
-          lhs: {
-            terms: ['placement', 'force'],
-            info: 'Config.Placement.force',
-          },
-          op: '=',
-          values: [[1, {}]],
-        },
-      },
-    });
-  });
-
-  it('should recognize conditional assignment to map', function() {
-    expect(analyze('rand() < 0.4 ? placement.force = {} : null')).to.eql({
-      mutations: {
-        'placement.force': {
-          lhs: {
-            terms: ['placement', 'force'],
-            info: 'Config.Placement.force',
-          },
-          op: '=',
-          values: undefined,
-        },
-      },
-    });
-  });
-
-  it('should recognize assignment into definite map value', function() {
-    expect(analyze('placement.force.leafElder = "Sword of Wind"')).to.eql({
-      mutations: {
-        'placement.force': {
-          lhs: {
-            terms: ['placement', 'force', CheckName.LEAF_ELDER],
-            base: {
-              terms: ['placement', 'force'],
-              info: 'Config.Placement.force',
-            },
-            info: 'Config.Placement.force',
-          },
-          op: '=',
-          values: [[1, 'SWORD_OF_WIND']],
-        },
-      },
-    });
-  });
-
-  it('should not try to do any math on rhs', function() {
-    expect(analyze('items.charge_speed = 1 + 2')).to.eql({
-      mutations: {
-        'items.chargeSpeed': {
-          lhs: {
-            terms: ['items', 'chargeSpeed'],
-            info: 'Config.Items.chargeSpeed',
-          },
-          op: '=',
-          values: undefined,
-        },
-      },
-    });
-  });
-});
 
 describe('Evaluator', function() {
 
@@ -286,8 +63,8 @@ describe('Evaluator', function() {
   it('should assign to config field', function() {
     const e = evaluator();
     const result = e.evaluate(parse('placement.mimics = "shuffle"'), new ExpectErrors());
-    expect(e.root.placement!.mimics).to.equal('SHUFFLE');
-    expect(result).to.equal('SHUFFLE');
+    expect(e.root.placement!.mimics).to.equal(SHUFFLE);
+    expect(result).to.equal(SHUFFLE);
   });
 
   it('should append preset', function() {
@@ -329,8 +106,8 @@ describe('Evaluator', function() {
                            oakMother: 'alarm flute'}`),
                                       new ExpectErrors());
     expect(e.root.placement!.force).to.eql({
-      [CheckName.LEAF_ELDER]: 'SWORD_OF_FIRE',
-      [CheckName.OAK_MOTHER]: 'ALARM_FLUTE',
+      [CheckName.LEAF_ELDER]: ItemName.SWORD_OF_FIRE,
+      [CheckName.OAK_MOTHER]: ItemName.ALARM_FLUTE,
     });
     expect(result).to.eql(e.root.placement!.force);
   });
@@ -343,10 +120,10 @@ describe('Evaluator', function() {
         `placement.force.oak_mother = 'sword of wind'`),
                                       new ExpectErrors());
     expect(e.root.placement!.force).to.eql({
-      [CheckName.LEAF_ELDER]: 'SWORD_OF_WATER',
-      [CheckName.OAK_MOTHER]: 'SWORD_OF_WIND',
+      [CheckName.LEAF_ELDER]: ItemName.SWORD_OF_WATER,
+      [CheckName.OAK_MOTHER]: ItemName.SWORD_OF_WIND,
     });
-    expect(result).to.eql('SWORD_OF_WIND');
+    expect(result).to.eql(ItemName.SWORD_OF_WIND);
   });
 
   it('should overwrite dictionary element', function() {
@@ -357,9 +134,9 @@ describe('Evaluator', function() {
         `placement.force.oak_mother = 'sword of wind'`),
                                       new ExpectErrors());
     expect(e.root.placement!.force).to.eql({
-      [CheckName.OAK_MOTHER]: 'SWORD_OF_WIND',
+      [CheckName.OAK_MOTHER]: ItemName.SWORD_OF_WIND,
     });
-    expect(result).to.eql('SWORD_OF_WIND');
+    expect(result).to.eql(ItemName.SWORD_OF_WIND);
   });
 
   it('should assign into empty dictionary', function() {
@@ -368,9 +145,9 @@ describe('Evaluator', function() {
         `placement.force.oak_mother = 'sword of wind'`),
                                       new ExpectErrors());
     expect(e.root.placement!.force).to.eql({
-      [CheckName.OAK_MOTHER]: 'SWORD_OF_WIND',
+      [CheckName.OAK_MOTHER]: ItemName.SWORD_OF_WIND,
     });
-    expect(result).to.eql('SWORD_OF_WIND');
+    expect(result).to.eql(ItemName.SWORD_OF_WIND);
   });
 
   // note: we don't strictly need it to be this way; we could instead

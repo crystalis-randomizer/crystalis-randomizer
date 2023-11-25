@@ -21,7 +21,8 @@ const resolved = new Map<unknown, unknown>();
 export type Visitor<T> = (field: FieldInfo, value: unknown, data: T) => void;
 
 export type QnameVisitorArg = (f: FieldInfo, v: unknown, qname: string) => void;
-export function qnameVisitor(elementVisitor: QnameVisitorArg): Visitor<string> {
+// When `aggregate` is true, run the `elementVisitor` on entire lists/maps.
+export function qnameVisitor(elementVisitor: QnameVisitorArg, aggregate = false): Visitor<string> {
   const visitElement = (f: FieldInfo, v: unknown, name: string) => {
     if (f instanceof MessageFieldInfo) {
       // TODO - visit message fields, too?
@@ -32,7 +33,9 @@ export function qnameVisitor(elementVisitor: QnameVisitorArg): Visitor<string> {
   };
   const visitor = (f: FieldInfo, v: unknown, data: string) => {
     const name = data + f.name;
-    if (f instanceof RepeatedFieldInfo) {
+    if (aggregate) { // skip recursing into lists and maps.
+      visitElement(f, v, name);
+    } else if (f instanceof RepeatedFieldInfo) {
       if (!Array.isArray(v)) return;
       v.forEach((e, i) => visitElement(f.element, e, `${name}[${i}]`));
     } else if (f instanceof MapFieldInfo) {
@@ -66,7 +69,8 @@ export class TypeInfo {
   asField(): MessageFieldInfo {
     if (!this.asFieldInfo) {
       this.asFieldInfo =
-          new MessageFieldInfo({name: 'asField', parent: this.type}, this.type);
+          new MessageFieldInfo({name: 'asField', parent: this.type} as any,
+                               this.type);
       this.asFieldInfo.resolve();
     }
     return this.asFieldInfo;
@@ -379,7 +383,7 @@ export class EnumFieldInfo extends SingularFieldInfo {
   readonly enum!: EnumInfo;
   readonly type!: EnumInfo;
   readonly default?: string;
-  constructor(field: Field, private readonly e: Enum, private readonly isKey: boolean) {
+  constructor(field: Field, private readonly e: Enum, _isKey: boolean) {
     super(field);
   }
   resolve() {

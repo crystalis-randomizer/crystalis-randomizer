@@ -1,6 +1,6 @@
 import { Config, ConfigPath, IConfig, ItemName, CheckName, LocationName } from '../../../target/build/config_proto';
 // import { TypeInfo, FieldInfo, MessageFieldInfo, qnameVisitor, resolve, RepeatedFieldInfo, MapFieldInfo } from './info.js';
-import { EnumFieldInfo, FieldInfo, MessageFieldInfo, PrimitiveFieldInfo, resolve } from './info';
+import { EnumFieldInfo, FieldInfo, MessageFieldInfo, PrimitiveFieldInfo, qnameVisitor, resolve } from './info';
 import { assert /*, assertType*/ } from './assert';
 import { Type } from 'protobufjs';
 //import { FieldMutation, Mutation } from './expr.js';
@@ -21,7 +21,8 @@ type ReadonlyField<T> = [T] extends [string|boolean|number] ? T :
   {unknown: T};
 
 // DeepReadonly<IConfig>;
-export {ReadonlyConfig as Config};
+export {ReadonlyConfig as Config, Config as MutableConfig, IConfig};
+export type ConfigLike = Config|ReadonlyConfig|IConfig;
 
 export interface Reporter {
   report(msg: string|null): void;
@@ -35,6 +36,46 @@ export class BasicReporter {
     return `Errors during commit:\n  ${this.messages.join('\n  ')}`;
   }
 }
+
+function lazy<T>(f: () => T): () => T {
+  let fn = () => {
+    const value = f();
+    fn = () => value;
+    return value;
+  }
+  return () => fn();
+}
+
+export const getAllConfigPaths = lazy(() => {
+  // NOTE: This is lazy because it relies on TypeInfo having been resolved.
+  // We could possibly just put it after the `resolve(ConfigPb)` call.
+  const out = new Map<ConfigPath, FieldInfo>();
+  const visitor = qnameVisitor((f: FieldInfo, _v: unknown, name: string) => {
+    out.set(name as ConfigPath, f);
+  }, false);
+  configInfo.visit(null, visitor, '');
+  return out as ReadonlyMap<ConfigPath, FieldInfo>;
+});
+
+export type PresetMap = {readonly [key: string]: ReadonlyConfig};
+export const getStandardPresets = lazy(() => {
+  // NOTE: This additionally depends on ConfigField, which is defined below
+  const out: Record<string, Config> = {};
+  for (const [name, f] of getAllConfigPaths()) {
+    // Primitives can have presets directly
+    const presets =
+        Object.keys(f.field.options || {})
+            .filter(k => k.startsWith('preset.'))
+            .map(k => k.substring(7));
+    if (!presets.length) continue;
+    const cf = new ConfigField(name as ConfigPath);
+    for (const p of presets) {
+      if (!(p in out)) out[p] = new Config();
+      cf.setInPlace(out[p], f.coerce(f.field.options![`preset.${p}`]));
+    }
+  }
+  return out as unknown as PresetMap;
+});
 
 // function setField(message: any, info: TypeInfo, field: string, value: unknown) {
 //   const index = field.indexOf('.');
@@ -229,7 +270,7 @@ export class ConfigField {
   }
 
   // applies defaults, etc
-  get(config: ReadonlyConfig): unknown {
+  get(config: Config|ReadonlyConfig): unknown {
     let obj: any = config;
     let info = configInfo.asField();
     for (const term of this.path.split('.')) {
@@ -247,11 +288,17 @@ export class ConfigField {
   set(config: ReadonlyConfig, value: unknown): ReadonlyConfig {
     const cur = this.get(config);
     if (cur === value) return config;
-
     // clone - is there a better way???
     //   - enums are numbers everywhere in actual representation...
-    let obj: any = Config.fromObject((config as unknown as Config).toJSON());
-    config = obj;
+    this.setInPlace(
+        Config.fromObject((config as unknown as Config).toJSON()), value);
+    // TODO - verify config???
+    return config;
+  }
+
+  // applies defaults, etc
+  setInPlace(config: IConfig, value: unknown) {
+    let obj: any = config;
     let info = configInfo.asField();
     const terms = this.path.split('.');
     const last = terms.pop();
@@ -261,14 +308,12 @@ export class ConfigField {
       const child = obj[term];
       const field = info.type.field(term);
       if (field instanceof MessageFieldInfo && !child) {
-        obj = obj[term] = field.type.type.ctor.create();
+        obj = obj[term] = (field.type.type as {ctor: any}).ctor.create();
       } else {
         obj = child;
       }
     }
     obj[last] = this.info.coerce(value, THROWING_REPORTER);
-    // TODO - verify config???
-    return config;
   }
 }
 

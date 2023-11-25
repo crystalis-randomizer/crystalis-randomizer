@@ -1,8 +1,12 @@
-import { BoolFieldInfo, EnumFieldInfo, NumberFieldInfo, Reporter } from "./info";
-import { CallContext } from "./lvalue";
+import { BoolFieldInfo, EnumFieldInfo, FieldInfo, NumberFieldInfo, Reporter } from "./info";
+
+export interface CallContext {
+  info?: FieldInfo;
+}
 
 export interface IRandom {
   next(): number;
+  nextNormal(): number;
 }
 
 export type Fn = (args: unknown[],
@@ -37,6 +41,7 @@ export function functions(random: IRandom): Record<string, Fn> {
     ceil: nums('ceil', Math.ceil, 1),
     abs: nums('abs', Math.abs, 1),
     rand: nums('rand', () => random.next(), 0),
+    randn: nums('randn', () => random.nextNormal(), 0),
     hybrid: (args: unknown[], reporter?: Reporter) => {
       if (args.length % 2) {
         reporter?.report(`bad argument count to hybrid: ${args.length}, must be even`);

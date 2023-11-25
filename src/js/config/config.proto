@@ -238,7 +238,8 @@ message Config {
     // whether we allow it, or it's an error - maybe a config to opt out
     // of safety checks???
     map<uint32, ItemName> force = 51
-      [(key) = CheckName];
+      [(key) = CheckName,
+       (hidden) = true];
 
     // Ensures the logic provides the gas mask (or hazmat suit, as
     // appropriate) before requiring going into the swamp.  If this is
@@ -591,7 +592,8 @@ message Config {
     }
 
     map<uint32, LocationData> force = 21
-      [(key) = LocationName];
+      [(key) = LocationName,
+       (hidden) = true];
 
     message LocationData {
       // TODO - screens, connections, tileset, spawns, etc

@@ -600,7 +600,15 @@ export class SetMultimap<K, V> {
     (this.map as any)[SIZE] += set.size - size;
   }
 
-  // TODO - iteration?
+  [Symbol.iterator](): Iterator<[K, ReadonlySet<V>]> {
+    return this.map[Symbol.iterator]();
+  }
+}
+
+export interface ReadonlySetMultimap<K, V> {
+  readonly size: number;
+  get(k: K): ReadonlySet<V>;
+  [Symbol.iterator](): Iterator<[K, ReadonlySet<V>]>;
 }
 
 

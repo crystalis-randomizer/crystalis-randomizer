@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 import { /* MapFieldInfo, MessageFieldInfo, PrimitiveFieldInfo, RepeatedFieldInfo, TypeInfo,*/ FieldInfo, qnameVisitor, resolve } from '../../src/js/config/info';
-import { Config, CheckName } from '../../target/build/config_proto';
+import { Config, CheckName, ItemName } from '../../target/build/config_proto';
 import { ExpectErrors } from './util';
 
 ExpectErrors.install();
@@ -168,9 +168,9 @@ describe('TypeInfo', function() {
 
       expect([...visited]).to.eql([
         ['placement.initialInventory[0]',
-          ['Config.Placement.initialInventory', 'SWORD_OF_WIND']],
+          ['Config.Placement.initialInventory', ItemName.SWORD_OF_WIND]],
         ['placement.initialInventory[1]',
-          ['Config.Placement.initialInventory', 'POWER_RING']],
+          ['Config.Placement.initialInventory', ItemName.POWER_RING]],
       ]);
     });
 
@@ -192,9 +192,9 @@ describe('TypeInfo', function() {
 
       expect([...visited]).to.eql([
         [`placement.force[${CheckName.LEAF_ELDER}]`,
-          ['Config.Placement.force', 'SWORD_OF_THUNDER']],
+          ['Config.Placement.force', ItemName.SWORD_OF_THUNDER]],
         [`placement.force[${CheckName.DEO}]`,
-          ['Config.Placement.force', 'BOW_OF_TRUTH']],
+          ['Config.Placement.force', ItemName.BOW_OF_TRUTH]],
       ]);
     });
   });

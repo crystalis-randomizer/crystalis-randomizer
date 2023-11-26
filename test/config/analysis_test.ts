@@ -20,13 +20,13 @@ function analyze(config: IConfig|string, presets = false): AnalyzeResult {
     config = {mystery: [config]};
   }
   let analysis = Analysis.from(config);
-  if (presets) analysis = analysis.applyPresets();
+  if (presets) analysis = analysis.expand();
   const mutations: Record<string, Mutation> = {};
   const warnings: Record<string, string> = {};
 
   for (const [path, source, mut] of analysis.mutations) {
     const sourceStr = String(source);
-    const key = stringInput ? path : `${path}${sourceStr ? ':' + sourceStr : ''}`;
+    const key = stringInput ? path : `${path}${sourceStr ? ' ' + sourceStr : ''}`;
     mutations[key] = mut;
   }
   for (const [source, ws] of analysis.warnings) {
@@ -70,8 +70,25 @@ describe('Analyzer', function() {
       };
       expect(analyze(config, true)).to.eql({
         mutations: {
-          'items.chargeSpeed': {op: '=', value: fixed(6)},
+          'items.chargeSpeed &foo': {op: '=', value: fixed(6)},
           //'presets': {op: '+=', value: fixed(['foo'])},
+        },
+      });
+    });
+
+    it('should fold in multiple presets', function() {
+      const config = {
+        presets: ['foo', 'bar'],
+        nested: {
+          bar: {items: {chargeSpeed: 2, chargeWhileWalkingSpeed: 5}},
+          foo: {items: {chargeSpeed: 6, swordLevelForWalls: 3}},
+        },
+      };
+      expect(analyze(config, true)).to.eql({
+        mutations: {
+          'items.chargeSpeed &bar': {op: '=', value: fixed(2)},
+          'items.chargeWhileWalkingSpeed &bar': {op: '=', value: fixed(5)},
+          'items.swordLevelForWalls &foo': {op: '=', value: fixed(3)},
         },
       });
     });
@@ -94,7 +111,7 @@ describe('Analyzer', function() {
     it('should warn on invalid config property assignments', function() {
       expect(analyze('placement.y = 42')).to.eql({
         mutations: {},
-        warnings: {'(placement.y = 42)@0': 'unknown field y on placement'},
+        warnings: {'placement.y = 42 @0': 'unknown field y on placement'},
       });
     });
 

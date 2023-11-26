@@ -25,12 +25,16 @@ class Source {
   constructor(readonly index: number, readonly expr: string, readonly preset?: string) {}
 
   toString() {
-    let str = this.expr;
-    if (this.index >= 0) str = (str ? `(${str})@` : '@') + this.index;
-    const preset = this.preset ? '&' + this.preset : '';
-    return preset && str ? `${preset}:${str}` : `${preset}${str}`;
+    return [
+      this.expr || '',
+      this.preset ? '&' + this.preset : '',
+      this.index >= 0 ? '@' + this.index : '',
+    ].filter(x => x).join(' ');
   }
 }
+
+const ignoredRe = /^(mystery|nested|hideConfig)$/;
+
 
 export class Analysis {
   constructor(
@@ -52,13 +56,14 @@ export class Analysis {
       const mutations = new Table<string, Source, Mutation>();
       const source = new Source(-1, '', presetName);
       for (const [path] of getAllConfigPaths()) {
+        if (ignoredRe.test(path)) continue;
         mutations.set(path, source, {op: '=', value: hidden});
       }
       // TODO - indicate hiddenness somehow?
-      return new Analysis(config, mutations, new SetMultimap());
+      return new Analysis(config, mutations, new SetMultimap(), presetName);
     }
 
-    const analyzer = new Analyzer();
+    const analyzer = new Analyzer(presetName);
     // TODO - need to get a full LValue, so qnamevisitor probably insufficient.
     const visitor = qnameVisitor((f: FieldInfo, v: unknown, path: string) => {
       if (v == undefined) return;
@@ -82,10 +87,10 @@ export class Analysis {
       // TODO - report default-hidden fields with non-empty values
 
       // add preset names but not expressions or nested preset values.
-      if (/^(mystery|nested|hideConfig)$/.test(f.name)) return;
+      if (ignoredRe.test(f.name)) return;
       // report a real value
-      analyzer.mutations.set(path, analyzer.rootSource,
-                             {op, value: fixed(f.coerce(v))});
+      analyzer.addMutation(path, analyzer.rootSource,
+                           {op, value: fixed(f.coerce(v))});
     }, true);
     configInfo.visit(config, visitor, '');
 
@@ -98,8 +103,11 @@ export class Analysis {
                         analyzer.warnings, presetName);
   }
 
-  applyPresets(): Analysis {
-    // apply presets
+  /**
+   * Recursively expands presets, returning a new Analysis with mutations from
+   * each preset folded in.
+   */
+  expand(): Analysis {
     const presets = new Map<string, [boolean, Source]>(); // true = nondeterministic.
     const warnings = new SetMultimap<Source, string>(this.warnings.entries());
     const standardPresets = getStandardPresets();
@@ -132,7 +140,6 @@ export class Analysis {
       }
     }
 
-    // apply the presets
     const children: [Analysis, boolean][] = [];
     for (const [p, [nd, s]] of presets) {
       const preset = this.config.nested?.[p] ?? standardPresets[p];
@@ -140,27 +147,27 @@ export class Analysis {
         warnings.add(s, `unknown preset: ${p}`);
       } else {
         const childName = this.presetName ? `${this.presetName}.${p}` : p;
-        children.push([Analysis.from(preset, childName).applyPresets(), nd]);
+        children.push([Analysis.from(preset, childName).expand(), nd]);
       }
     }
     children.push([new Analysis(this.config, this.mutations, warnings), false]);
-    const mutations = new Table<string, Source, Mutation>();
+    const analyzer = new Analyzer();
     for (const [analysis, nd] of children) {
       for (const [s, w] of analysis.warnings.entries()) {
         warnings.add(s, w);
       }
       for (const [r, c, m] of analysis.mutations) {
         const value = nd && m.value.type !== 'hidden' ? complex : m.value;
-        mutations.set(r, c, {...m, value});
+        analyzer.addMutation(r, c, {...m, value});
       }
     }
     // delete preset mutations entirely...?
     //   - todo - instead, build up a tree of presets that were applied???
-    mutations.row('presets').clear();
+    analyzer.mutations.row('presets').clear();
 
-    return new Analysis(this.config, mutations, warnings, this.presetName);
+    return new Analysis(this.config, analyzer.mutations,
+                        warnings, this.presetName);
   }
-
 }
 
 export class Analyzer {
@@ -182,6 +189,11 @@ export class Analyzer {
 
   report(message: string): void {
     this.warnings.add(this.source, message);
+  }
+
+  addMutation(path: string, source: Source, mut: Mutation) {
+    if (mut.op === '=') this.mutations.row(path).clear();
+    this.mutations.set(path, source, mut);
   }
 
   analyzeExpression(index: number, expr: string): void {
@@ -224,7 +236,7 @@ export class Analyzer {
           value = pick(validated);
         }
         const mut = random || lhs.sub ? {op: '=', value: complex} : {op, value};
-        this.mutations.set(lhs.path, this.source, mut);
+        this.addMutation(lhs.path, this.source, mut);
         return value;
       }
       case 'BinaryExpression': {

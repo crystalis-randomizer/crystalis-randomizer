@@ -34,6 +34,8 @@ class Source {
 
 export class Analysis {
   constructor(
+      // actual config
+      readonly config: ConfigLike,
       // bi-multimap between expressions and mutated config paths, so that
       // we can figure out which expression to modify in UI.  Note that a
       // single expression that modifies multiple paths should be treated
@@ -41,7 +43,9 @@ export class Analysis {
       // by iterating over the row.
       readonly mutations: ReadonlyTable<string, Source, Mutation>,
       // map from expression to warnings
-      readonly warnings: ReadonlySetMultimap<Source, string>) {}
+      readonly warnings: ReadonlySetMultimap<Source, string>,
+      // name of preset, if nested
+      readonly presetName?: string) {}
 
   static from(config: ConfigLike, presetName?: string): Analysis {
     if (config.hideConfig) {
@@ -51,7 +55,7 @@ export class Analysis {
         mutations.set(path, source, {op: '=', value: hidden});
       }
       // TODO - indicate hiddenness somehow?
-      return new Analysis(mutations, new SetMultimap());
+      return new Analysis(config, mutations, new SetMultimap());
     }
 
     const analyzer = new Analyzer();
@@ -82,7 +86,7 @@ export class Analysis {
       // report a real value
       analyzer.mutations.set(path, analyzer.rootSource,
                              {op, value: fixed(f.coerce(v))});
-    }, false);
+    }, true);
     configInfo.visit(config, visitor, '');
 
     // iterate through expressions
@@ -90,18 +94,24 @@ export class Analysis {
     for (const e of (config.mystery || [])) {
       analyzer.analyzeExpression(i++, e);
     }
+    return new Analysis(config, analyzer.mutations,
+                        analyzer.warnings, presetName);
+  }
 
+  applyPresets(): Analysis {
     // apply presets
     const presets = new Map<string, [boolean, Source]>(); // true = nondeterministic.
+    const warnings = new SetMultimap<Source, string>(this.warnings.entries());
     const standardPresets = getStandardPresets();
-    for (const [s, m] of analyzer.mutations.row('presets')) {
+    for (const [s, m] of this.mutations.row('presets')) {
       if (!isDiscrete(m.value)) {
-        for (const p of Object.keys({...standardPresets, ...config.nested})) {
+        for (const p of Object.keys({...standardPresets,
+                                     ...this.config.nested})) {
           presets.set(p, [true, s]);
         }
         break;
       } else if (!/^[-+]?=$/.test(m.op)) {
-        analyzer.warnings.add(s, `bad preset assignment operator`);
+        warnings.add(s, `bad preset assignment operator`);
         break;
       }
       const ps = [];
@@ -111,7 +121,7 @@ export class Analysis {
         } else if (typeof v === 'string') {
           ps.push(v);
         } else {
-          analyzer.warnings.add(s, `bad preset assignment`);
+          warnings.add(s, `bad preset assignment`);
         }
       }
       const nondeterministic = m.value.type !== 'fixed';
@@ -125,30 +135,30 @@ export class Analysis {
     // apply the presets
     const children: [Analysis, boolean][] = [];
     for (const [p, [nd, s]] of presets) {
-      const preset = config.nested?.[p] ?? standardPresets[p];
+      const preset = this.config.nested?.[p] ?? standardPresets[p];
       if (!preset) {
-        analyzer.warnings.add(s, `unknown preset: ${p}`);
+        warnings.add(s, `unknown preset: ${p}`);
       } else {
-        const childName = presetName ? `${presetName}.${p}` : p;
-        children.push([Analysis.from(preset, childName), nd]);
+        const childName = this.presetName ? `${this.presetName}.${p}` : p;
+        children.push([Analysis.from(preset, childName).applyPresets(), nd]);
       }
     }
-    children.push([new Analysis(analyzer.mutations, analyzer.warnings), false]);
+    children.push([new Analysis(this.config, this.mutations, warnings), false]);
     const mutations = new Table<string, Source, Mutation>();
-    const warnings = new SetMultimap<Source, string>();
     for (const [analysis, nd] of children) {
-      for (const [s, ws] of analysis.warnings) {
-        for (const w of ws) {
-          warnings.add(s, w);
-        }
+      for (const [s, w] of analysis.warnings.entries()) {
+        warnings.add(s, w);
       }
       for (const [r, c, m] of analysis.mutations) {
         const value = nd && m.value.type !== 'hidden' ? complex : m.value;
         mutations.set(r, c, {...m, value});
       }
     }
+    // delete preset mutations entirely...?
+    //   - todo - instead, build up a tree of presets that were applied???
+    mutations.row('presets').clear();
 
-    return new Analysis(mutations, warnings);
+    return new Analysis(this.config, mutations, warnings, this.presetName);
   }
 
 }

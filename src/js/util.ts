@@ -603,11 +603,20 @@ export class SetMultimap<K, V> {
   [Symbol.iterator](): Iterator<[K, ReadonlySet<V>]> {
     return this.map[Symbol.iterator]();
   }
+
+  * entries(): IterableIterator<[K, V]> {
+    for (const [k, vs] of this) {
+      for (const v of vs) {
+        yield [k, v];
+      }
+    }
+  }
 }
 
 export interface ReadonlySetMultimap<K, V> {
   readonly size: number;
   get(k: K): ReadonlySet<V>;
+  entries(): IterableIterator<[K, V]>;
   [Symbol.iterator](): Iterator<[K, ReadonlySet<V>]>;
 }
 

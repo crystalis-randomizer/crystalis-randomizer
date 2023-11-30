@@ -51,6 +51,18 @@ export class Analysis {
       // name of preset, if nested
       readonly presetName?: string) {}
 
+  mutation(path: ConfigPath): Mutation|undefined {
+    const row = [...this.mutations.row(path).values()];
+    if (!row.length) return undefined; // default.
+    const last = row[row.length - 1];
+    if (last.value.type === 'hidden' || last.value.type === 'complex') {
+      return {op: '=', value: last.value};
+    } else if (last.op !== '=' || row.length > 1) {
+      return {op: '=', value: complex};
+    }
+    return last;
+  }
+
   static from(config: ConfigLike, presetName?: string): Analysis {
     if (config.hideConfig) {
       const mutations = new Table<string, Source, Mutation>();

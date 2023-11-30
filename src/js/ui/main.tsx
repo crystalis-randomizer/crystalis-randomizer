@@ -2,6 +2,7 @@ import { Context, Fragment, createContext, h } from 'preact';
 import { useContext, useEffect, useMemo, useRef } from 'preact/hooks';
 
 import { Signal, signal, useSignal, computed, useComputed } from '@preact/signals';
+import { Analysis, Mutation } from '../config/analysis';
 import { Config, ConfigField, ConfigPath } from '../config/config';
 
 import { BoolFieldInfo, EnumFieldInfo, NumberFieldInfo } from '../config/info';
@@ -10,22 +11,28 @@ import { constCaseToWords } from '../util';
 
 interface State {
   selected: Signal<TabName>;
-  config: Signal<Config>;
   error: Signal<string|undefined>;
-  seed: Signal<string>;
   shift: boolean;
+  seed: Signal<string>;
+  config: Signal<Config>;
+  analysis: Signal<Analysis>;
 }
 
 function createState(): State {
+  const config = signal(Config.create() as Config); // TODO - pull from URL.
+  const analysis = computed(() => Analysis.from(config.value).expand());
+  const seed = signal(''); // TODO - pull from URL.
   return {
+    seed,
+    config,
+    analysis,
     selected: signal('Randomize'),
     error: signal(undefined),
-    config: signal(Config.create() as Config), // TODO - pull from URL.
-    seed: signal(''), // TODO - pull from URL.
+    // NOTE: This is _not_ a signal - it's a weird transient UI state that we
+    // shove into this object because it's convenient.
     shift: false,
   };
 }
-
 
 // Add immutable setters to proto
 //   Config.with(cfg, {placement: {check_beta: 5}});
@@ -183,10 +190,12 @@ function Placement() {
   </div>;
 }
 
-function useConfig(path: ConfigPath): [Signal<Config>, ConfigField] {
-  const {config} = useContext(MainState);
+type ConfigTuple = [Signal<Config>, ConfigField, Mutation?];
+
+function useConfig(path: ConfigPath): ConfigTuple {
+  const {config, analysis} = useContext(MainState);
   const field = useMemo(() => new ConfigField(path), [path]);
-  return [config, field];
+  return [config, field, analysis.value.mutation(path)];
 }
 
 interface SelectProps {
@@ -243,30 +252,80 @@ const ID_TRANSFORMER = {
   toPosition: (x: number) => x,
 };
 
-interface SliderProps {
+
+
+interface SliderProps extends NumberControlProps {
   label: string;
   path: ConfigPath;
-  min?: number;
-  max?: number;
-  incr?: number;
-  // NOTE: log is broken, doesn't handle negatives correctly
-  transform?: NumberTransformer;
   help: string;
-  disabled?: string;
-  // TODO - log transformer?
   // TODO - incorporate cumulative min/max into state???
-  // TODO - validator
+  // TODO - validator?
 }
 function Slider(props: SliderProps) {
   const state = useContext(MainState);
-  const [config, field] = useConfig(props.path);
+  const [config, field, mutation] = useConfig(props.path);
   if (!(field.info instanceof NumberFieldInfo)) {
     throw new Error(`bad slider field ${field.path}, expected number`);
   }
+  let disabled = props.disabled;
+
+  const randomness = mutation?.value.type || 'default';
+  switch (randomness) {
+    case 'hidden':
+    case 'complex':
+      return <div class='disabled'>{props.label}: {randomness}</div>;
+    case 'uniform':
+    case 'normal':
+    case 'all':
+    case 'pick':
+      // TODO - drop down a menu for randomness type?
+      // multiple lines...
+  }
+
+  const value =
+      useSignal((field.get(config.value) ?? field.default()) as number);
+  const min = props.min ?? field.info.min;
+  const max = props.max ?? field.info.max;
+
+  const coerce = (arg: number) => field.info.coerce(arg) as number;
+
+  const onChange = (val: number, source: 'bar'|'num') => {
+    config.value = field.set(config.value, val);
+    if (source === 'bar' && state.shift) {
+      console.log('SHIFT!'); // TODO - trigger advanced
+    }
+  };
+
+  return <div class={props.disabled ? 'disabled' : ''}>
+    {props.label}:
+    <BasicSlider min={min} max={max} incr={props.incr} disabled={disabled}
+                 value={value} transform={props.transform}
+                 coerce={coerce} onChange={onChange} />
+  </div>
+
+}
+
+interface NumberControlProps {
+  min?: number;
+  max?: number;
+  incr?: number;
+  
+  // NOTE: log is broken, doesn't handle negatives correctly
+  transform?: NumberTransformer;
+  disabled?: string;
+}
+
+interface BasicSliderProps extends NumberControlProps {
+  value: Signal<number>;
+  coerce: (arg: number) => number;
+  onChange: (arg: number, source: 'bar'|'num') => void;
+}
+
+function BasicSlider(props: BasicSliderProps) {
   const xf = props.transform ?? ID_TRANSFORMER;
-  const value = (field.get(config.value) ?? field.default()) as number;
-  const min = useSignal(Math.min(xf.toPosition(value), props.min ?? field.info.min));
-  const max = useSignal(Math.max(xf.toPosition(value), props.max ?? field.info.max));
+  const value = props.value.peek();
+  const min = useSignal(Math.min(xf.toPosition(value), props.min));
+  const max = useSignal(Math.max(xf.toPosition(value), props.max));
   const step = props.incr ?? 1;
   // TODO - use a local signal for the value to sync the number with the slider
 
@@ -275,19 +334,18 @@ function Slider(props: SliderProps) {
   // };
 
   const onChangeNum = (e: any) => {
-    const val = field.info.coerce(Number(numRef.current.value)) as number;
+    const val = props.coerce(Number(numRef.current.value));
     barVal.value = sliderVal.value = xf.toPosition(numVal.value = val);
-    config.value = field.set(config.value, val);
+    props.onChange(val, 'num');
     const vp = xf.toPosition(val);
     if (vp < min.value) min.value = vp;
     if (vp > max.value) max.value = vp;
   };
 
   const onChangeBar = (e: any) => {
-    const val = field.info.coerce(xf.toValue(Number(barRef.current.value))) as number;
+    const val = props.coerce(xf.toValue(Number(barRef.current.value)));
     barVal.value = sliderVal.value = xf.toPosition(numVal.value = val);
-    config.value = field.set(config.value, val);
-    if (state.shift) console.log(`SHIFT!`); // TODO - trigger advanced
+    props.onChange(val, 'bar');
   };
   const onDragBar = (e: any) => {
     //(e) => val.value = Number(e.target.value)
@@ -324,8 +382,7 @@ function Slider(props: SliderProps) {
   //   if (dragging) updateVisual(getVal(e));
   // }
 
-  return <div class={props.disabled ? 'disabled' : ''}>
-    {props.label}:
+  return <>
     <input disabled={!!props.disabled} type="number" ref={numRef}
            min={min} max={max} step={step} value={numVal}
            onChange={onChangeNum}
@@ -337,7 +394,7 @@ function Slider(props: SliderProps) {
              onChange={onChangeBar} onInput={onDragBar}
       />
     </div>
-  </div>
+  </>;
 }
 
 interface PixelBarProps {

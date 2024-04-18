@@ -120,6 +120,8 @@ const FLUTE_NAMES = [
   'Vuvuzela',
   'Didgeridoo',
   'Dragonzord Flute',
+  'Whoopie Cushion',
+  'Didgeridoo',
   // 'Keytar', // NOTE: ensure not also a key?
 ];
 const LAMP_NAMES = [
@@ -276,6 +278,9 @@ const BOW_NAMES = [
   'Windforce',
   'Eaglehorn',
   'Cupid\'s Bow',
+  'Bow No',
+  'Slingshot',
+  
 ];
 
 // Keep these community ideas here for later

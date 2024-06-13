@@ -15,7 +15,7 @@ const ITEMS: ReadonlyMap<string, string[]> = new Map([
   ['Ivory Statue', ['Ivory Statute']],
   ['Fog Lamp', ['Frog Lamp', 'Smog Lamp', 'Dog Lamp', 'Bog Lamp', 'Fog Lump']],
   ['Glowing Lamp', ['Glowing Lump']],
-  ['Key to Stxy', ['Key to Styx']],
+  ['Key to Stxy', ['Key to Styx', 'Styx Key']],
   ['Insect Flute', ['Bug Flute', 'Bug Whistle']],
   ['Flute of Lime', ['Flute of Grime']],
   ['Iron Necklace', ['I Ron Necklace']],
@@ -51,10 +51,10 @@ const CHARACTERS: ReadonlyMap<string, string[]> = new Map([
   ['Kensu', ['Steve', 'Jerksu']],
   ['Karmine', ['Slimelord']],
   ['Nadare', ['Steve']],
-  ['Mado', ['Steve']],
+  ['Mado', ['Ninja Cannonball', 'Steve', 'Stom']],
   ['Rage', ['Steve']],
   ['Sabera', ['Flamelord']],
-  ['Stom', ['Steve']],
+  ['Stom', ['Steve', 'Mado']],
   ['Tornel', ['Steve']],
   ['Zebu', ['Steve', 'Pervy Old Man']],
 ]);
@@ -70,11 +70,13 @@ const MONSTERS: ReadonlyMap<string, string[]> = new Map([
   ['Flying Plant', ['Obnoxious Turnip']],
   ['Beholder', ['Floating Eye']],
   ['Burt', ['Bert', 'Bort', 'Sorceror']],
+  ['Mimic', ['Chompy', 'Gozen', 'The Gozenator']],
   ['Mummy', ['Tornel Hugger']],
   ['Robot Sentry', ['C-3PO', 'T-1000', 'Johnny 5']],
   ['Robot Enforcer', ['ED-209', 'R2-D2', 'Agent Smith']],
   ['Robocopter', ['Cylon Drone', 'Megatron', 'Roflcopter', 'Roflcopter', 'Roflcopter']],
-  ['DYNA', ['GLaDOS', 'HAL-9000', 'Multivac']],
+  ['DYNA', ['GLaDOS', 'HAL-9000', 'Multivac', 'TASBot']],
+  ['Vampire', ['Captain Telefrag', 'Count Dracula']],
 ]);
 
 export function misspell(rom: Rom, flags: FlagSet, random: Random) {
@@ -169,7 +171,16 @@ function misspellCharacters(rom: Rom, random: Random) {
   const [orig, next] = random.pick(choices);
   const newName = next || transpose(orig, random);
   if (newName === orig) return;
-  replaceCharacterName(rom, replace(orig, newName));
+  let replaceFn = replace(orig, newName);
+  if (newName === 'Stom' || newName === 'Mado') {
+    // Special handling for Stom <--> Mado swap
+    replaceFn = (text: string) => {
+      if (text.includes('Stom')) return replace('Stom', 'Mado')(text);
+      if (text.includes('Mado')) return replace('Mado', 'Stom')(text);
+      return text;
+    };
+  }
+  replaceCharacterName(rom, replaceFn);
 }
 
 function misspellEnemies(rom: Rom, random: Random) {

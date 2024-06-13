@@ -82,7 +82,7 @@
 .define ObjectTimer            $0480
 .define ObjectActionScript     $04a0 ; also includes presence in :80
 .define ObjectReplacement      $04c0 ; ???
-.define ObjectAnimationCounter $04e0
+.define ObjectAnimationCounter $04e0 ; also used as a "step counter"
 .define ObjectGoldDropBucket   $0500 ; hi nibble
 .define ObjectElementalDefense $0500 ; lo nibble
 .define ObjectExperiencePoints $0520
@@ -23004,7 +23004,7 @@ NpcDialog_15: ; sleeping windmill guard
         .byte [@1ccf7@],[@1ccf8@],[@1ccf9@],[@1ccfa@],[@1ccfb@] ; default -> 01:00
 ;;; ----------------------------------------------------------------
 .org $8cfc
-NpcDialog_1b: ; blue treasure hunter in brynmaer tavern
+NpcDialog_1b: ; blue treasure hunter in brynmaer tavern (ski free)
         .byte [@1ccfc@],[@1ccfd@],[@1ccfe@],[@1ccff@]
         .byte [@1cd00@]
         .byte [@1cd01@],[@1cd02@],[@1cd03@],[@1cd04@],[@1cd05@] ; default -> 02:08 (action 0d)
@@ -23022,7 +23022,7 @@ NpcDialog_1c: ; yellow treasure hunter in brynmaer tavern
         .byte [@1cd23@],[@1cd24@],[@1cd25@],[@1cd26@],[@1cd27@] ; default -> 02:09
 ;;; ----------------------------------------------------------------
 .org $8d28
-NpcDialog_2c: ; dying man at foot of mt sabre north
+NpcDialog_2c: ; dying man at foot of mt sabre north (ski free)
         .byte [@1cd28@],[@1cd29@],[@1cd2a@],[@1cd2b@]
         .byte [@1cd2c@]
         .byte [@1cd2d@],[@1cd2e@],[@1cd2f@],[@1cd30@],[@1cd31@] ; 012 NOT -> 05:0e (action 04)
@@ -27077,10 +27077,12 @@ _1eb8a:
          <@1eb93@>
 +       <@1eb95@>
 ;;; --------------------------------
+;;; Kelbesque rock movement
 .org $ab96   ; NOTE: relative jump from 2 above (obj action jump 64)
 _1eb96:
-        <@1eb96@>
+        <@1eb96@> ; A was loaded from $600,x
         <@1eb98 +@> ; $1ebad
+         ;; $600,x == 1
          <@1eb9a@>
           bne :>rts ; $1ebac
          <@1eb9f@>
@@ -27090,6 +27092,10 @@ _1eb96:
          <@1eba9@>
          <@1ebac@>
          ;; ----
+        ;; Actually not a rock, this must be K2 so it's the laser?
+        ;;  - Start by decrementing Y by 1 pixel (?)
+        ;;  - Reset the step counter to #$80 and the action script to #$10
+        ;;  - 16-dir vector to player, add 0,1,-1 randomly and store in $360
 +       <@1ebad@>
         <@1ebaf@>
         bne :<rts ; $1ebac
@@ -28185,15 +28191,17 @@ BossPatternJump_2c:              ; Draygon2 1
 ++      <@1f3f7@>
         <@1f3f9@>
         <@1f3fc _1f71d@>
+        ;; Maybe compute a new direction
         <@1f3ff@>
-        <@1f402@>
+        <@1f402@>               ; Draygon's current x on screen
         <@1f404@>
         <@1f406 +@> ; $1f40a
-         <@1f408@>
+         <@1f408@>               ; If x < $40 then point right
 +       <@1f40a@>
         <@1f40c +@> ; $1f410
-         <@1f40e@>
-+       <@1f410@>
+         <@1f40e@>               ; If x > $c0 then point left
++       <@1f410@>             ; Store maybe-new direction
+        ;; 
         <@1f413@>
         <@1f416@>
         <@1f419 _1e8ff@>
@@ -28266,24 +28274,27 @@ _1f493:
         bcc :>rts ; $1f4ba
         <@1f49c@>
         <@1f49e@>
+        ;; Pick a random 16-direction from the table
         <@1f4a1 GenerateRandomNumber@>
         <@1f4a4@>
-        <@1f4a5 DataTable_1f4bb@>
+        <@1f4a5 @Directions@> ; 1f4bb
         <@1f4a8@>
+        ;; Add D2's x-position to player's
         <@1f4ab@>
         <@1f4ad@>
         <@1f4ae@>
+        ;; Look at the :06 bits to pick a random speed
         <@1f4b0@>
         <@1f4b1@>
         <@1f4b3@>
-        <@1f4b4 DataTable_1f4c4@>
+        <@1f4b4 @Speeds@> ; 1f4c4
         <@1f4b7@>
         <@1f4ba@>
-;;; --------------------------------
-.org $b4bb
-DataTable_1f4bb: 
+        ;; ----
+@Directions:
+        ;;    ESE ESE SE  SSE S   SSW SW  WSW WSW
         .byte [@1f4bb@],[@1f4bc@],[@1f4bd@],[@1f4be@],[@1f4bf@],[@1f4c0@],[@1f4c1@],[@1f4c2@],[@1f4c3@]
-DataTable_1f4c4: 
+@Speeds: 
         .byte [@1f4c4@],[@1f4c5@],[@1f4c6@],[@1f4c7@]
 ;;; --------------------------------
 .org $b4c8
@@ -28317,16 +28328,15 @@ BossPatternJump_2d:              ; Draygon2 2
         <@1f4f9@>
         <@1f4fc GenerateRandomNumber@>
         <@1f4ff@>
-        <@1f500 DataTable_1f51c@>
+        <@1f500 @Directions@> ; 1f51c
         <@1f503@>
         <@1f506@>
         <@1f508@>
         <@1f50b@>
-;;; --------------------------------
-.org $b50c
-DataTable_1f50c: 
-        .byte [@1f50c@],[@1f50d@],[@1f50e@],[@1f50f@],[@1f510@],[@1f511@],[@1f512@],[@1f513@],[@1f514@],[@1f515@],[@1f516@],[@1f517@],[@1f518@],[@1f519@],[@1f51a@],[@1f51b@]
-DataTable_1f51c:
+.org $b51c ;; smudge from $1f51c (NOTE: skipped a bit for locality)
+@Directions:
+        ;; 16-dirs for D2
+        ;;    N   WNW NW  NNW N   NNE NE  ENE
         .byte [@1f51c@],[@1f51d@],[@1f51e@],[@1f51f@],[@1f520@],[@1f521@],[@1f522@],[@1f523@]
 ;;; --------------------------------
 .org $b524
@@ -28547,11 +28557,17 @@ _1f6a3:
 +        <@1f6b1@>
          <@1f6b3@>
          <@1f6b5 +@> ; $1f6c0
+          ;; Follow a permutation on direction (basically just d := 16 - d)
 ++        <@1f6b7@>
-          <@1f6ba DataTable_1f50c@>
+          <@1f6ba @Directions@> ; 1f50c
           <@1f6bd@>
 +       <@1f6c0@>
+.org $b50c ;; smudge from $1f50c (NOTE: pulled from earlier for locality)
+@Directions: 
+        ;;    0:0 1:f 2:e 3:d 4:c 5:b 6:a 7:9 8:8 9:7 a:6 b:5 c:4 d:3 e:2 f:1
+        .byte [@1f50c@],[@1f50d@],[@1f50e@],[@1f50f@],[@1f510@],[@1f511@],[@1f512@],[@1f513@],[@1f514@],[@1f515@],[@1f516@],[@1f517@],[@1f518@],[@1f519@],[@1f51a@],[@1f51b@]
 ;;; --------------------------------
+;;; smudge from $1f6c1
 .org $b6c1
 _1f6c1:
           ;; Probably just updating graphics?
@@ -48914,7 +48930,6 @@ DisplacementToDirectionTable:
         .byte [@340c0@],[@340c1@],[@340c2@],[@340c3@],[@340c4@],[@340c5@],[@340c6@],[@340c7@],[@340c8@],[@340c9@],[@340ca@],[@340cb@],[@340cc@],[@340cd@],[@340ce@],[@340cf@]
         .byte [@340d0@],[@340d1@],[@340d2@],[@340d3@],[@340d4@],[@340d5@],[@340d6@],[@340d7@],[@340d8@],[@340d9@],[@340da@],[@340db@],[@340dc@],[@340dd@],[@340de@],[@340df@]
         .byte [@340e0@],[@340e1@],[@340e2@],[@340e3@],[@340e4@],[@340e5@],[@340e6@],[@340e7@],[@340e8@],[@340e9@],[@340ea@],[@340eb@],[@340ec@],[@340ed@],[@340ee@],[@340ef@]
-;;; --------------------------------
         .byte [@340f0@],[@340f1@],[@340f2@],[@340f3@],[@340f4@],[@340f5@],[@340f6@],[@340f7@],[@340f8@],[@340f9@],[@340fa@],[@340fb@],[@340fc@],[@340fd@],[@340fe@],[@340ff@]
         .byte [@34100@],[@34101@],[@34102@],[@34103@],[@34104@],[@34105@],[@34106@],[@34107@],[@34108@],[@34109@],[@3410a@],[@3410b@],[@3410c@],[@3410d@],[@3410e@],[@3410f@]
         .byte [@34110@],[@34111@],[@34112@],[@34113@],[@34114@],[@34115@],[@34116@],[@34117@],[@34118@],[@34119@],[@3411a@],[@3411b@],[@3411c@],[@3411d@],[@3411e@],[@3411f@]
@@ -48973,7 +48988,7 @@ DisplacementToDirectionTable:
         <@34408@>
 ;;; --------------------------------
 ;;; Point object X toward object Y.
-;;; Puts a result in $20 and/or $21.
+;;; Returns direction in $20 and distance in $21.
 .org $8409
 VectorBetweenObjectsXY:
         <@34409@>
@@ -49090,16 +49105,20 @@ VectorBetweenObjectsXY:
 ;;; row based on direction, then the column based on step count.
 .org $8480
 ComputeDisplacementVector:
+        ;; Stash the direction (times 8) in $12
         <@34480@>
         <@34481@>
         <@34482@>
         <@34483@>
+        ;; Read the speed into Y
         <@34485@>
         <@34488@>
         <@3448a@>
+        ;; Check for "slow terrain" (grass, swamp, etc)
         <@3448b@>
         <@3448e@>
         <@3448f +@> ; $34497
+         ;; Slow terrain: decrease speed by two increments
          <@34491@>
          <@34492@>
          <@34493 +@> ; $34497
@@ -49130,7 +49149,7 @@ ComputeDisplacementVector:
 ;;; first 20%, and is just used for efficient wrap-around.  So there's effectively only
 ;;; 8 rows per table.  These are speed and direction tables.
 .org $84bc
-SpeedTableLo:                    ;  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
+SpeedTableLo: ; 0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
         .byte [@344bc@],[@344bd@],[@344be@],[@344bf@],[@344c0@],[@344c1@],[@344c2@],[@344c3@],[@344c4@],[@344c5@],[@344c6@],[@344c7@],[@344c8@],[@344c9@],[@344ca@],[@344cb@]
 .org $84cc
 SpeedTableHi:
@@ -50862,6 +50881,14 @@ _35535:
 ;;; --------------------------------
 ;;; Knocks back the object indexed $11 in the direction of object indexed $10?
 ;;; Not entirely sure about this - since it looks like direction,x is not used?
+;;; (It's converted to an 8-dir and then stored shifted into the upper nibble).
+;;; The use of $10/$11 as inputs is just because knocking back the player requires
+;;; flipping x and y.  We could simplify a bit by using carry to indicate a flip:
+;;;     plp; jsr SwapXYIfCarry; ... ; php; jsr SwapXYIfCarry; rts
+;;;     SwapXYIfCarry:
+;;;       bcc :>rts; stx $10; tya; tax; ldy $10; rts
+;;; This saves 4 bytes in KnockbackObject and 3*3 bytes at each callsite,
+;;; and costs 9 for the swap routine, which may be usable elsewhere as well?
 .org $95c0
 KnockbackObject:
         <@355c0@>
@@ -50916,77 +50943,79 @@ DoneCheckHitbox:
 .org $95f8
 CheckHitbox:
         <@355f8@>
-         <@355fa ObjectTerrain@>
-         <@355fd DoneCheckHitbox@> ; off screen => no hit
-         <@355ff ObjectKnockback@>
-         <@35602 DoneCheckHitbox@> ; being knocked back => no hit
-         <@35604 ObjectHitbox@>
-         <@35607@>
-         <@35609 DoneCheckHitbox@> ; no hit (not spawned? exploding walls have zero)
-         <@3560b@>             ; collision plane
-         <@3560d ObjectHitbox@>
-         <@35610@>
-         <@35612@>
-         <@35613@>
-         <@35614@>
-         <@35616 ObjectLevel@>
-         <@35619@>
-         <@3561b@>
-         <@3561d@>
-         <@3561e@> ; sprite x-coordinate on screen
-         <@35621@>
-         <@35622 Hitboxes+2@>
-         <@35625@>
-         <@35627@>
-         <@35628 Hitboxes+3@>
-         <@3562b@>
-         <@3562d@> ; sprite y-coordinate on screen
-         <@35630@>
-         <@35631 Hitboxes@>
-         <@35634@>
-         <@35636@>
-         <@35637 Hitboxes+1@>
-         <@3563a@>
-        ;; For each object, check same conditions
-         <@3563c@> ; lower bound of range to check
--                <@3563e@>
-                 <@3563f@> ; upper bound of range
-                  <@35641 DoneCheckHitbox@>
-                 <@35643@>
-                <@35646 -@> ; $3563e
-                <@35648@>
-                <@3564b@> ; same collision plane?
-               <@3564d -@> ; $3563e
-               <@3564f@>
-              <@35652 -@> ; $3563e
-              <@35654@> ; don't check the object against itself
-             <@35656 -@> ; $3563e
-             ;; Both objs are eligible for collisions
-             <@35658@>
-             <@3565b@>
-             <@3565d@>
-             <@3565e@>
-             <@3565f@>
-             <@35661@>
-             <@35664@>
-             <@35666@>
-             <@35668@>
-             <@35669@>
-             <@3566c@>
-             <@3566d Hitboxes@>
-             <@35670@>
-            <@35672 -@>
+          <@355fa ObjectTerrain@>
+          <@355fd DoneCheckHitbox@> ; off screen => no hit
+          <@355ff ObjectKnockback@>
+          <@35602 DoneCheckHitbox@> ; being knocked back => no hit
+          <@35604 ObjectHitbox@>
+          <@35607@>
+          <@35609 DoneCheckHitbox@> ; no hit (not spawned? exploding walls have zero)
+          <@3560b@>             ; collision plane
+          <@3560d ObjectHitbox@>
+          <@35610@>
+          <@35612@>
+          <@35613@>
+          <@35614@>
+          <@35616 ObjectLevel@>
+          <@35619@>
+          <@3561b@>
+          <@3561d@>
+          <@3561e@> ; sprite x-coordinate on screen
+          <@35621@>
+          <@35622 Hitboxes+2@>
+          <@35625@>
+          <@35627@>
+          <@35628 Hitboxes+3@>
+          <@3562b@>
+          <@3562d@> ; sprite y-coordinate on screen
+          <@35630@>
+          <@35631 Hitboxes@>
+          <@35634@>
+          <@35636@>
+          <@35637 Hitboxes+1@>
+          <@3563a@>
+          ;; For each object, check same conditions
+          <@3563c@> ; lower bound of range to check
+@NextObject:
+            <@3563e@>
+            <@3563f@> ; upper bound of range
+              <@35641 DoneCheckHitbox@>
+            <@35643@>
+              <@35646 @NextObject@> ; $3563e
+            <@35648@>
+            <@3564b@> ; same collision plane?
+              <@3564d @NextObject@> ; $3563e
+            <@3564f@>
+              <@35652 @NextObject@> ; $3563e
+            <@35654@> ; don't check the object against itself
+              <@35656 @NextObject@> ; $3563e
+            ;; Both objs are eligible for collisions
+            <@35658@>
+            <@3565b@>
+            <@3565d@>
+            <@3565e@>
+            <@3565f@>
+            <@35661@>
+            <@35664@>
+            <@35666@>
+            <@35668@>
+            <@35669@>
+            <@3566c@>
+            <@3566d Hitboxes@>
+            <@35670@>
+              <@35672 @NextObject@>
             <@35674 Hitboxes+1@>
             <@35677@>
-           <@35679 -@>
-           <@3567b@>
-           <@3567e@>
-           <@3567f Hitboxes+2@>
-           <@35682@>
-          <@35684 -@>
-          <@35686 Hitboxes+3@>
-          <@35689@>
-         <@3568b -@>
+              <@35679 @NextObject@>
+            <@3567b@>
+            <@3567e@>
+            <@3567f Hitboxes+2@>
+            <@35682@>
+              <@35684 @NextObject@>
+            <@35686 Hitboxes+3@>
+            <@35689@>
+              <@3568b @NextObject@>
+          ;; fall through out of loop
         <@3568d@>
         <@3568f@>
         <@35690@>
@@ -51372,7 +51401,7 @@ DataTable_35907:
                 ;; U-R     U-L     D-L
         .byte [@3593f@],[@35940@],[@35941@],[@35942@],[@35943@],[@35944@],[@35945@],[@35946@] ; up-left
 ;;; --------------------------------
-;;; Possibly double-returns.
+;;; Possibly double-returns (in case movement actually happens)
 ;;; Reads object's coordinatesinto $34,..,$37.
 ;;; Removes upper 5 bits of $360,x, then mul *8 => $24
 ;;;   - this becomes the index of the $35907 table, which is pairs.
@@ -51415,8 +51444,8 @@ CheckDirectionAgainstTerrain:
            <@35984 DataTable_35907+1@>
            <@35987@>
            <@35989@>
-        ;; Stop looking and double-return if we get to a (0,0) pair in the row.
-        ;; At this point we're going with whatever was stored in $1c..$1f.
+            ;; Stop looking and double-return if we get to a (0,0) pair in the row.
+            ;; At this point we're going with whatever was stored in $1c..$1f.
             <@3598b @BailOut@> ; $359d4
            <@3598d@>
            <@3598e@>
@@ -51424,36 +51453,37 @@ CheckDirectionAgainstTerrain:
            <@35991 AddDisplacementVectorShort@>
            <@35994@>
            <@35996 ++@> ; $359bf
-        ;; special handling for player only here (x=0)
+            ;; special handling for player only here (x=0)
             <@35998 ApplyInvisibleWallAtScreenEdge@>
             <@3599b +@> ; $359be -> rts
-        ;; screen position okay, check terrain
+               ;; screen position okay, check terrain
                <@3599d@> ; force terrain lookup, no update $380,x
                <@3599f CheckTerrainUnderObject@>
                <@359a2@>
                <@359a4@> ; $25 always starts zero
                <@359a6@>
-        ;; Only proceed straight if $340,x == #$8 exactly (what does this mean?)
-        ;;   - not being knocked back, certain speed ??? why not just cmp?
+               ;; Only proceed straight if $340,x == #$8 exactly (what does this mean?)
+               ;;   - not being knocked back, certain speed ??? why not just cmp?
+               ;; (potentially this is looking for dolphin speed? but why?)
                <@359a8 ObjectKnockback@>
                <@359ab@>
                <@359ad +++@> ; $359c4
-        ;; Check if we're riding on a dolphin - jump away if *not*
+               ;; Check if we're riding on a dolphin - jump away if *not*
                <@359af PlayerStatus@>
                <@359b2 +++@> ; $359c4
-        ;; At this point we know we're on a dolphin - so water becomes passable.
+              ;; At this point we know we're on a dolphin - so water becomes passable.
               <@359b4 @DirLoop@> ; $3597d
-        ;; Carry clear - if no terrain blockers, return directly.
+             ;; Carry clear - if no terrain blockers, return directly.
              <@359b6@>
              <@359b8 +@> ; $359be -> rts
-        ;; Carry was clear, but the terrain was non-zero.  If the terrain is a
-        ;; waterfall or a solid wall (impassible even flying) then loop back,
-        ;; otherwise return with clear carry.
+              ;; Carry was clear, but the terrain was non-zero.  If the terrain is a
+              ;; waterfall or a solid wall (impassible even flying) then loop back,
+              ;; otherwise return with clear carry.
               <@359ba@>
             <@359bc @DirLoop@> ; $3597d
 +           <@359be@>
             ;; ----
-        ;; Non-player (x != 0), though non-dolphin player comes in in two lines
+          ;; Non-player (x != 0), though non-dolphin player comes in in two lines
 ++        <@359bf@> ; force terrain lookup, no update $380,x
           <@359c1 CheckTerrainUnderObject@>
 +++      <@359c4@> ; enemies avoid slides, pits, walls, water
@@ -52320,6 +52350,7 @@ _35fd2:
 .org $a00f
 DataTable_3600f:
         .byte [@3600f@],[@36010@],[@36011@],[@36012@],[@36013@],[@36014@],[@36015@],[@36016@]
+;;; Optional directions to maybe store in 360,x (if positive)
 DataTable_36017:
         .byte [@36017@],[@36018@],[@36019@],[@3601a@],[@3601b@],[@3601c@],[@3601d@],[@3601e@]
 ;;; --------------------------------
@@ -52748,7 +52779,7 @@ StomFight_CheckExitCondition:
         <@362f4@>
         <@362f7@>
         <@362f9@>
-StomFigiht_Exit:
+StomFight_Exit:
         <@362fc GAME_MODE_STATUS_MSG@>
         <@362fe GameMode@>
         <@36300@>

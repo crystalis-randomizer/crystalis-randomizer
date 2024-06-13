@@ -398,6 +398,10 @@ export class Messages {
   //       });
   }
 
+  get(id: MessageId): Message|undefined {
+    return this.parts[id.part]?.[id.index];
+  }
+
   // Flattens the messages.  NOTE: returns unused messages.
   * messages(used?: {has: (mid: string) => boolean}): Iterable<Message> {
     for (const part of this.parts) {

@@ -10,6 +10,7 @@ import * as patch from './patch';
 import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
+import {predetermined} from './appatch';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -117,13 +118,13 @@ const main = (...args: string[]) => {
     if (!force) fail('Run with --force to proceed anyway');
     console.error('Proceeding anyway');
   }
-
+  
   return Promise.all(new Array(count).fill(0).map(async () => {
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset);
+        await patch.shuffle(orig, s, flagset, undefined, predetermined);
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;

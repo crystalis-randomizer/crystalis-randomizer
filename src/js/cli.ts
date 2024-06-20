@@ -10,7 +10,7 @@ import * as patch from './patch';
 import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
-import {predetermined} from './appatch';
+import {readAPCrysFile} from './appatch';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -36,6 +36,9 @@ Options
                      a seed manually, nor with output patterns
                      that don't include %s or %c.
   --force            Don't fail due to wrong input file checksum.
+  --apPatch=PATH     Ignore other seed and flags input, and read
+                     settings and some randomization from an 
+                     .apcrys file located at PATH.
 
 Flags
   The randomizer supports a number of options, documented in detail
@@ -62,6 +65,7 @@ const main = (...args: string[]) => {
   let seed = '';
   let output = '%n_%c';
   let force = false;
+  let apPatchPath = '';
   while (args[0] && args[0].startsWith('--')) {
     let arg = args.shift()!.substring(2);
     let value = undefined;
@@ -97,6 +101,8 @@ const main = (...args: string[]) => {
         console.log(name.replace(/ /g, ''));
       }
       process.exit(0);
+    } else if (arg == 'apPatch' && value) {
+      apPatchPath = value;
     } else {
       console.error(`Bad argument: ${arg}`);
       usage(1);
@@ -106,12 +112,13 @@ const main = (...args: string[]) => {
   if (args.length != 1) usage(1);
   if (count > 1) {
     if (seed) fail('Cannot specify both --count and --seed');
+    if (apPatchPath) fail('Cannot specify both --count and --apPatch');
     if (!/%[sc]/.test(output)) {
       fail('--output must have a %c or %s placeholder when --count is given');
     }
   }
 
-  const flagset = new FlagSet(flags);
+  let flagset = new FlagSet(flags);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   if (crc32(rom) != EXPECTED_CRC32) {
     console.error(`WARNING: Bad CRC for input rom: ${crc32(rom).toString(16)}`);
@@ -120,6 +127,11 @@ const main = (...args: string[]) => {
   }
   
   return Promise.all(new Array(count).fill(0).map(async () => {
+    let predetermined = undefined;
+    if (apPatchPath) {
+      [seed, flagset, predetermined] = await readAPCrysFile(apPatchPath);
+    }
+    
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();

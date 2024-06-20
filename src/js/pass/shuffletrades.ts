@@ -70,13 +70,23 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random, predeter
               .map(([k, v]) => [map.get(k) ?? k, v]));
 
   // Also randomize Rage and Tornel
-  const rage = rom.items[random.nextInt(4)];
+  let rage: Item;
+  if (predetermined) {
+    rage = rom.items[predetermined.rageId];    
+  } else {
+    rage = rom.items[random.nextInt(4)];
+  }
   rom.npcs[0xc3].localDialogs.get(-1)![0].condition = 0x200 | rage.id;
   if (rom.spoiler) rom.spoiler.addTrade(rage.id, rage.messageName, 'Rage');
   // Portoa queen 38 takes the same sword as Rage
   rom.npcs.PortoaQueen.dialog(PortoaPalace_ThroneRoom)[1].condition = 0x200 | rage.id;
 
-  const tornel = rom.items[random.nextInt(4) * 2 + 6];
+  let tornel: Item; 
+  if (predetermined) {
+    tornel = rom.items[predetermined.tornelId];   
+  } else {
+    tornel = rom.items[random.nextInt(4) * 2 + 6];
+  }
   for (const ds of rom.npcs[0x5f].localDialogs.values()) {
     for (let i = 2; i < ds.length; i++) {
       if (ds[i].message.action === 3) {

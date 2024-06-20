@@ -7,7 +7,7 @@ import {Metalocation} from '../rom/metalocation';
 import {cloneArray} from '../rom/util';
 import {ShuffleData} from '../appatch';
 
-export type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
+type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
 
 interface EastCaveOptions {
   exit1?: EastCaveExit;

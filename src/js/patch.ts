@@ -541,9 +541,6 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: 
   // Read all the contents.
   for (const shop of rom.shops) {
     if (!shop.used || shop.location === 0xff) continue;
-    if (shop.type === ShopType.TOOL) {
-      console.log(`shop.location: ${shop.location}, shop.id: ${shop.id}`);
-    }
     if (predetermined && shop.type === ShopType.TOOL) {
       shop.contents = [];
       const inventory = predetermined.shopInventories.get(shop.location);

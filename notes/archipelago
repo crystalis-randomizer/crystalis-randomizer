@@ -60,3 +60,94 @@ potentially be very efficient about defragging early on?
 If there's only a single large chunk of free space in each
 block then we can dispense with the fancy linker and just
 write stupidly.
+
+
+======
+
+Notes from CodeGorilla:
+
+Decided to take an alternate approach to the above, with some pros and cons. The basic
+approach is as follows:
+
+1. Use a modified version of the randomizer code to get a list of all items and locations
+   with the exact names and in-memory IDs (Done)
+2. Make a list of Regions and Entrances between Regions (using the AP definition in both 
+   cases). Regions (AP) end up being smaller than Areas (this codebase), mainly to be able
+   to properly support randomized wild warp. (Done)
+3. Write out pseudologic for every Entrance and Location. (Tedious, but done)
+4. Write code to convert the above spreadsheets into JSON. (Done)
+5. Read the JSON in the AP codebase. (Done)
+6. Create all of the necessary logic rules by hand in AP (Done, though admittedly not 
+   heavily tested)
+7. Create a ShuffleData structure that keeps track of all the things AP needs to randomize
+   (i.e. randomizations that affect logic). (Done)
+8. Put that data in an .apcrys file as part of the AP generate_output step. (Done)
+9. Make a new entry point into this codebase that can read that output file and force 
+   matching choices instead of randomization in the ROM patching process. (Done)
+10.Write client code that can check the status of various locations. (Done-ish; mimics still
+   a problem.)
+--------------------------------------------
+11.Write ASM code that allows arbitrary item granting from the client (hopefully including
+   mimics).
+12.Make a new web interface that accepts a vanilla ROM and an .apcrys file and uses the new
+   entry point to patch accordingly.
+
+As mentioned, there are some pros and cons to this approach:
+Pros:
+  - Romless generation. AP core devs are generally pushing ROM games towards this approach 
+    where possible. This allows AP hosts more ability to generate games, which makes it much
+	easier for Crystalis to be played (and tested)
+  - Taking advantage of the full power of AP's Region system for the logic graph. More
+    generally, by building the Regions and Entrances (and associated logic) by hand, we can
+	optimize it's shape specifically for the AP fill algorithm.
+  - Genereralized Entrance Randomization. Archipelago has (or will have soon) a generalized
+    algorithm for randomizing entrances. This algorithm supports grouping of entrances, which
+	means we'll be able to use it for both house and area shuffle. (Goa shuffle may still
+	need special handling, due to invalid combinations of floors.)
+  - Easier to read and maintain. The approach which wrapped all of Crystalis Randomizer into 
+    a single file and then called into it from Python code resulted in a file over 100K lines 
+	long. Getting that reviewed in a code review when eventually PR'ing to AP core (should that 
+	happen) seems highly improbable.
+
+Cons:
+  - Error prone. While I'm reasonably confident in the implementation of the logic, it's
+    certainly more likely to fail than reading the logic directly from the randomizer itself.
+  - Potentially results in divergent codebases. Again, while I'm trying to maintain parity
+    with this codebase, any logic change in the base randomizer now necessitates a mirrored
+	change in the .apworld. This can be particularly problematic if this .apworld is accepted
+	by the AP Core devs, as that ties .apworld changes down to AP's release schedule.
+  - Extra website step is not ideal UX for the player. It adds an extra roadblock to playing,
+    and works differently to most other ROM games. (That said, there is precedent in the Final
+	Fantasy Mystic Quest implementation.
+  - Some features may be too complex to represent in the .apcrys file. In particular, I'm not
+    currently sure how to implement Wm - randomize maps - in a way that the logic can be read 
+	reasonably and a representation can be sent to this codebase to rearrange the map in the
+	way logic expects.
+
+In my opinion, the pros overall outweigh the cons, hence why I settled on this approach, but
+I could certainly see another developer taking a different approach.
+
+Feature To-Do list:
+  -Client
+  -Web interface
+  -User-facing documentation
+  -logic and implementation of flags not yet implemented:
+    -Wm (not a clue; implementation TBD, not in initial release)
+    -Wa, Wh (using GER)
+	-Wu (mostly need to put unidentified item names in the datapackage)
+	-Wg (probably bespoke randomization, for such a small list)
+	-Ww (pick ids, make Entrances from Menu Region, send ids in .apcrys file)
+	-Gr (force a flier in the Lime Valley enemy pool? not sure on this one)
+	-Mg (Add a sword requirement to every chest)
+	-Et (remove mimic locations from AP's location set)
+	-Eu (remove consumable locations from AP's location set)
+	-Es (lock a sword on Leaf Elder)
+	-Ec (in relation to Wu, specifically)
+	-Vw (create Entrances from Menu Region for vanilla wild warp)
+	-mimic restrictions (if local items are handled locally)
+  -Archipelago specific features:
+    -Deathlink >:)
+	-Gifting interface? (maybe take over pawn-shops?)
+	-Randomized wild warp count? (Easy to implement, could go into core randomizer if there was
+	  good UI for it)
+	

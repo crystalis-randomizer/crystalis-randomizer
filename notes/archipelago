@@ -86,9 +86,9 @@ approach is as follows:
    matching choices instead of randomization in the ROM patching process. (Done)
 10.Write client code that can check the status of various locations. (Done-ish; mimics still
    a problem.)
---------------------------------------------
 11.Write ASM code that allows arbitrary item granting from the client (hopefully including
    mimics).
+--------------------------------------------
 12.Make a new web interface that accepts a vanilla ROM and an .apcrys file and uses the new
    entry point to patch accordingly.
 
@@ -131,6 +131,7 @@ Feature To-Do list:
   -Client
   -Web interface
   -User-facing documentation
+  -better mimic spawning
   -logic and implementation of flags not yet implemented:
     -Wm (not a clue; implementation TBD, not in initial release)
     -Wa, Wh (using GER)
@@ -150,4 +151,5 @@ Feature To-Do list:
 	-Gifting interface? (maybe take over pawn-shops?)
 	-Randomized wild warp count? (Easy to implement, could go into core randomizer if there was
 	  good UI for it)
-	
+	-Option for local items being baked into the ROM?
+	-Collect support?

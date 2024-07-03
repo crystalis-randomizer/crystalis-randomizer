@@ -759,6 +759,12 @@ export class Messages {
     // for (let i = 0, len = table.length; i < len; i++) {
     //   trie.set(table[i].str, i < 0x80 ? [i + 0x80] : [5, i - 0x80]);
     // }
+    
+    // if (ARCHIPELAGO) {
+    a.assign('APItemMessagePart', 0x01);
+    a.assign('APItemMessageId', 0x02);
+    a.export('APItemMessagePart', 'APItemMessageId');
+    // }
 
     // First step: write the messages.
     const addresses: Expr[][] = seq(this.partCount, () => [])
@@ -895,4 +901,5 @@ export const HARDCODED_MESSAGES: Set<string> = new Set([
   '03:03', // (st) start stom fight, exec 36716
   '20:0e', // (st) insufficient magic for spell, exec 3cc23
   '20:13', // (st) nothing happens item use oerr, exec 3d52a
+  '01:02', // APItem Message. overwrites unused text from zebu's sleeping apprentice
 ]);

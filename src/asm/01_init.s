@@ -352,6 +352,36 @@ TS_COUNT       = $13
 
 .endif
 
+.ifdef _ARCHIPELAGO
+
+; Blatantly stol- er, lovingly borrowed and adapted from jrowe's CC2 code
+;
+; Short How-To-Use documentation:
+;
+; 0. Make sure that there isn't already anything waiting to be run by seeing if
+; ArchipelagoFlag is zero. This gets cleared after the item is granted.
+;
+; 1. Set the item ID to grant the player at ArchipelagoItemGet
+;
+; 2. Set ArchipelagoFlag to 1, and the game will run the update the next time the
+; player gets back to "normal" play state.
+;
+
+; If set, during the next main loop, branch to the Archipelago handling code
+ArchipelagoFlag                      = $6250
+
+; Item ID to grant the player
+ArchipelagoItemGet                   = $6251
+
+;Count of consumables received in Archipelago
+ArchipelagoConsumablesReceivedIdx    = $657e
+
+;Count of non-consumables received in Archipelago
+ArchipelagoNonConsumablesReceivedIdx = $657f
+
+.endif ;_ARCHIPELAGO
+
+
 ;;; Constants
 GAME_MODE_STATUS_MSG = $10
 ITEM_RABBIT_BOOTS    = $12
@@ -400,6 +430,7 @@ MainLoopItemGet            = $d3ff
 
 .segment "ff"                 ; 3e000
 RestoreBanksAndReturn         = $e756
+HandleStatusConditions        = $ef55
 
 ;;; Various free sections
 

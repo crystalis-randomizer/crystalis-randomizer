@@ -93,13 +93,15 @@ export function parseSeed(seed: string): number {
 const {} = {watchArray} as any;
 
 function defines(flags: FlagSet,
-                 pass: 'early' | 'late'): string {
+                 pass: 'early' | 'late',
+                 predetermined?: ShuffleData): string {
   const defines: Record<string, boolean> = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
                                  flags.shuffleBossElements(),
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUDIBLE_WALLS: flags.audibleWallCues(pass),
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(pass),
+    _ARCHIPELAGO: predetermined != undefined && predetermined.fromArchipelago,
     _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
@@ -289,7 +291,7 @@ async function shuffleInternal(rom: Uint8Array,
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
   const graph = new Graph([world.getLocationList()]);
-  if (!flags.noShuffle()) {
+  if (!flags.noShuffle() || (predetermined && predetermined.fromArchipelago)) {
     const fill = await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
     if (fill) {
       // const n = (i: number) => {
@@ -395,7 +397,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   async function asm(pass: 'early' | 'late') {
     // First synthesize the flags file
-    const flagFile = defines(flags, pass);
+    const flagFile = defines(flags, pass, predetermined);
     const asm = new Assembler(Cpu.P02, {overwriteMode: 'forbid'});
     const toks = new TokenStream();
     // Then read all the patch sources
@@ -515,6 +517,12 @@ function misc(rom: Rom, flags: FlagSet, random: Random) {
   // message texts to prevent line overflow, etc.  We should
   // also make some hooks to easily swap out items where it
   // makes sense.
+  const apItemMessage = rom.messages.parts[1][2];
+  apItemMessage.text = `
+      You've found
+       an APItem!
+`
+  
   rom.messages.parts[2][2].text = `
 {01:Akahana} is handed a statue.#
 Thanks for finding that.

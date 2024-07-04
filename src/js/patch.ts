@@ -746,11 +746,19 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
   }
   random.shuffle(locations);
   rom.wildWarp.locations = [];
-  for (const loc of [...locations.slice(0, 15).sort((a, b) => a.id - b.id)]) {
+  const min_warps = 4;
+  const count = random.nextInt(16 - min_warps) + min_warps;
+  for (const loc of [...locations.slice(0, count).sort((a, b) => a.id - b.id)]) {
     rom.wildWarp.locations.push(loc.id);
     if (rom.spoiler) rom.spoiler.addWildWarp(loc.id, loc.name);
   }
+  random.shuffle(rom.wildWarp.locations);
   rom.wildWarp.locations.push(0);
+  let index = 0;
+  while (rom.wildWarp.locations.length < 16) {
+    rom.wildWarp.locations.push(rom.wildWarp.locations[index]);
+    index++;
+  }
 }
 
 function buffDyna(rom: Rom, _flags: FlagSet): void {

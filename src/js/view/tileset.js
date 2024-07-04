@@ -34,7 +34,7 @@ const run = async () => {
   const canvas = new Canvas(rom, 32 * 18 - 2, 9 * 26 - 2);
 
   const totalUnused = document.createElement('div');
-  document.body.append(totalUnused);
+  document.body.appendChild(totalUnused);
 
   const keys = Object.keys(configs).sort();
   for (const key of keys) {

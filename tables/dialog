@@ -1,0 +1,3206 @@
+NPC $00
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+  DIALOG $50 Portoa:
+    IF 01e Queen Revealed:
+      | The fortune teller does
+      |  very well here, it's a
+      |  pity she's rarely open.
+    IF TRUE:
+      | A fortune teller in the 
+      |  town is very good, but 
+      |  she's not always there.
+  DIALOG $93 Sahara:
+    IF 02b Change Stom:
+      | How are you? How ya' been
+      |  doin'?
+    IF TRUE:
+      | Do you know someone called 
+      |  {11:Stom}? I assume he's in 
+      |  training right now.
+
+NPC $01
+  DIALOG $c6 Brynmaer - Tavern:
+    IF 028 Change Woman:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF 029 Change Akahana:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF TRUE:
+      | Welcome. Please have 
+      |  some refreshments.
+  DIALOG $93 Sahara:
+    IF 028 Change Woman:
+      | I heard a rumor that 
+      |  {17:Draygonia} is about to be 
+      |  destroyed_
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | Your rabbit is still on the 
+      |  plain. Have you seen it?
+    IF 029 Change Akahana:
+      | I heard a rumor that 
+      |  {17:Draygonia} is about to be 
+      |  destroyed_
+    IF TRUE:
+      | I heard a rumor that 
+      |  {17:Draygonia} is about to be 
+      |  destroyed_
+
+NPC $02
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+  DIALOG $c6 Brynmaer - Tavern:
+    IF TRUE:
+      | The wise man {12:Tornel} lives
+      |  with his pupils in the 
+      |  north.
+  DIALOG $50 Portoa:
+    IF TRUE:
+      | I heard {17:Draygonia} wants to 
+      |  invade this town because
+      |  they are afraid of the 
+      |  Queen's power.
+
+NPC $03
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+  DIALOG $50 Portoa:
+    IF TRUE:
+      | A girl from the southern
+      |  lake came here. I think
+      |  she went to rent a boat.
+  DIALOG $ef Swan - Tavern:
+    IF TRUE:
+      | Welcome. Please have 
+      |  some refreshments.
+  DIALOG $93 Sahara:
+    IF 02b Change Stom:
+      | Hi! Have you become a true
+      |  wise man yet?
+    IF TRUE:
+      | A strange couple came here 
+      |  a while back_ One was a man 
+      |  with a cape, the other was 
+      |  a girl.
+
+NPC $04
+  DIALOG $e0 Portoa Palace - Right:
+    IF 028 Change Woman:
+      | The Queen is very kind and 
+      |  intelligent.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | The Queen is very kind and 
+      |  intelligent.
+    IF 029 Change Akahana:
+      | The Queen is very kind and 
+      |  intelligent.
+    IF TRUE:
+      | The Queen is very kind and 
+      |  intelligent.
+  DIALOG $93 Sahara:
+    IF 02b Change Stom:
+      | Long time no see.
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | This is the desert town of 
+      |  {21:Sahara}. The weather is 
+      |  pretty nasty, but it keeps
+      |  {17:Draygonia} away.
+  DIALOG $1b Amazones:
+    IF NOT 028 Change Woman:
+      | Yow! A filthy man is here!
+      |  Leave!
+    IF TRUE:
+      | Please stay as long as you 
+      |  like.
+
+NPC $05
+  DIALOG $1b Amazones:
+    IF NOT 028 Change Woman:
+      | Stay away! I hate men!
+    IF TRUE:
+      | Our hunting skills are 
+      |  even better than a man's.
+  DIALOG $50 Portoa:
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | This is {1e:Portoa}, the capital
+      |  of water. Water from Mt.
+      |  Sabre makes this town 
+      |  prosper.
+
+NPC $06
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+  DIALOG $50 Portoa:
+    IF TRUE:
+      | Some people went up to the 
+      |  waterfall, but haven't 
+      |  returned yet. I heard a#
+      |  monster lives up there.
+      |  Also a greedy man called 
+      |  {01:Akahana} went there and 
+      |  hasn't returned either.
+  DIALOG $93 Sahara:
+    IF 02b Change Stom:
+      | Long time no see.
+    IF TRUE:
+      | When you go through a cave 
+      |  in the east, a great
+      |  Pyramid is there.
+
+NPC $07
+  DIALOG $de Portoa Palace - Left:
+    IF 028 Change Woman:
+      | The Queen is in the center 
+      |  chamber.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | The Queen is in the center 
+      |  chamber.
+    IF 029 Change Akahana:
+      | The Queen is in the center 
+      |  chamber.
+    IF TRUE:
+      | The Queen is in the center 
+      |  chamber.
+  DIALOG $61 Boat House:
+    IF 028 Change Woman:
+      | I'm on lookout to watch
+      |  for {17:Draygonia}'s attack.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | I'm on lookout to watch
+      |  for {17:Draygonia}'s attack.
+    IF 029 Change Akahana:
+      | I'm on lookout to watch
+      |  for {17:Draygonia}'s attack.
+    IF TRUE:
+      | I'm on lookout to watch
+      |  for {17:Draygonia}'s attack.
+
+NPC $08
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+  DIALOG $d5 Nadare:
+    IF TRUE:
+      | The food here is great! I 
+      |  wish I could eat like
+      |  this always.
+  DIALOG $18 Brynmaer:
+    IF TRUE:
+      | This town is mostly for 
+      |  travelers. Pretty noisy
+      |  isn't it.
+
+NPC $09
+  SPAWN $65 Zombie Town:
+    013 Flag 013
+  DIALOG:
+    IF 028 Change Woman:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 029 Change Akahana:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 08f Flag 08f:
+      | I know my house isn't much 
+      |  but it's all mine.
+    IF TRUE:
+      | Thank you for saving me.
+      |  An altar for the 
+      |  [3a:Statue of Gold] is close
+      |  to this island.
+
+NPC $0a
+  SPAWN $65 Zombie Town:
+    013 Flag 013
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF 08f Flag 08f:
+      | Sometimes people from 
+      |  {19:Joel} island come here to 
+      |  help us.
+    IF TRUE:
+      | I can hold my children with 
+      |  my own hands now_ Ooh_
+      |  I'm so happy_
+
+NPC $0b: Goa Soldier
+  SPAWN $bf Goa - Tavern:
+    NOT 024 Flag 024
+  SPAWN $8e Goa:
+    NOT 024 Flag 024
+  DIALOG $8e Goa:
+    IF 02a Change Soldier:
+      |  What are you doing away
+      |   from your post? Go back
+      |   immediately!
+    IF TRUE:
+      | Don't talk to me like that!
+  DIALOG $bf Goa - Tavern:
+    IF TRUE:
+      | Thanks.
+
+NPC $0c
+  SPAWN $ef Swan - Tavern:
+    NOT 024 Flag 024
+  SPAWN $72 Swan:
+    NOT 024 Flag 024
+  DIALOG $ef Swan - Tavern:
+    IF 02a Change Soldier:
+      |  What are you doing away
+      |   from your post? Go back
+      |   immediately!
+    IF TRUE:
+      |  You bug me! Go Away!
+  DIALOG $72 Swan:
+    IF 02a Change Soldier:
+      |  What are you doing away
+      |   from your post? Go back
+      |   immediately!
+    IF TRUE:
+      |  You bug me! Go Away!
+  DIALOG $f1 Swan - Dance Hall:
+    IF TRUE:
+      | Thanks.
+
+NPC $0d: Leaf Elder
+  SPAWN $c0 Leaf - Elder House:
+    NOT 085 Leaf Elder Currently Abducted
+  SPAWN $35 Mt Sabre North - Summit Cave:
+    085 Leaf Elder Currently Abducted
+  DIALOG:
+    IF 028 Change Woman:
+      | Welcome to {1a:Leaf} the 
+      |  village of wind.
+    IF 02a Change Soldier:
+      | Get out, slime!
+    IF 02b Change Stom:
+      | Welcome to {1a:Leaf} the 
+      |  village of wind.
+    IF 029 Change Akahana:
+      | Welcome to {1a:Leaf} the 
+      |  village of wind.
+  DIALOG $c0 Leaf - Elder House:
+    IF 047 Rescued Leaf Elder:
+      | Thank you for saving me!
+    IF 00a Used Windmill Key:
+      | Please be careful.  Our
+      |  destiny is in your hands.
+    IF NOT 00b Flag 00b:
+      => ACTION: $03
+      => SET: 00b Flag 00b
+      | I am the village elder. You 
+      |  awoke from inside the cave 
+      |  didn't you?#
+      | We were told you would
+      |  arrive.  You are our last 
+      |  hope to defeat evil.
+      |  #
+      | Receive this sword to 
+      |  protect you on your quest.
+      |  This and others like it 
+      |  will guide you_
+    IF TRUE:
+      | Please be careful.  Our
+      |  destiny is in your hands.
+  DIALOG $35 Mt Sabre North - Summit Cave:
+    IF NOT 083 Rescued Leaf elder:
+      => SET: 083 Rescued Leaf elder
+      | Oh {:HERO:}_ Are the rest of 
+      |  the villagers OK? I really
+      |  appreciate your efforts.#
+      |  {:HERO:}!
+      |  Proceed back into the 
+      |  cave_#
+      |  It'll lead you to {1e:Portoa}.
+      |  I heard the Queen there 
+      |  has strange powers.#
+      |  Surely she will aid you.
+    IF TRUE:
+      | Now please be careful.
+
+NPC $0e
+  SPAWN $02 Leaf:
+    NOT 084 Leaf Villagers Currently Abducted
+  SPAWN $32 Mt Sabre North - Right Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF 029 Change Akahana:
+      |  Have you rested from your 
+      |   journey?
+  DIALOG $02 Leaf:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF 00a Used Windmill Key:
+      | {13:Zebu} says he is having a
+      |  hard time with the 
+      |  windmill guard.
+      |  He is always sleeping.
+    IF NOT 00c Leaf villager:
+      => SET: 00c Leaf villager
+      | Oh, it's you. I'm sorry I 
+      |  ran from you when we first
+      |  met.
+      |  #
+      | {13:Zebu} says he is having a
+      |  hard time with the 
+      |  windmill guard.
+      |  He is always sleeping.
+    IF TRUE:
+      | {13:Zebu} says he is having a
+      |  hard time with the 
+      |  windmill guard.
+      |  He is always sleeping.
+  DIALOG $32 Mt Sabre North - Right Cell:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF TRUE:
+      | The people of {17:Draygonia} are 
+      |  making a special metal
+      |  from the minerals we dig
+      |  here.
+
+NPC $0f
+  SPAWN $02 Leaf:
+    NOT 084 Leaf Villagers Currently Abducted
+  SPAWN $32 Mt Sabre North - Right Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 028 Change Woman:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 029 Change Akahana:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+  DIALOG $02 Leaf:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF 097 Leaf villager:
+      => CLEAR: 097 Leaf villager
+      | If you go to the west, you 
+      |  will find {13:Zebu} in a cave.
+    IF TRUE:
+      => SET: 097 Leaf villager
+      | Did you visit the elder's
+      |  house yet?
+  DIALOG $32 Mt Sabre North - Right Cell:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF TRUE:
+      | The elder is held prisoner 
+      |  at the top of the mountain
+      |  and they will kill him if
+      |  we don't work!
+
+NPC $10
+  SPAWN $02 Leaf:
+    NOT 084 Leaf Villagers Currently Abducted
+  SPAWN $32 Mt Sabre North - Right Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+  DIALOG $02 Leaf:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF 00a Used Windmill Key:
+      | I'm sorry you have to 
+      |  leave, take care.
+    IF TRUE:
+      | The wind here is always
+      |  cold but we're used to it.
+  DIALOG $32 Mt Sabre North - Right Cell:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF TRUE:
+      | I heard that part of the 
+      |  prison wall is connected 
+      |  to the top_
+
+NPC $11: Leaf Elder Daughter
+  SPAWN $c0 Leaf - Elder House:
+    NOT 084 Leaf Villagers Currently Abducted
+  SPAWN $32 Mt Sabre North - Right Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello.
+    IF 029 Change Akahana:
+      |  Hello.
+  DIALOG $02 Leaf:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF 096 Leaf elder daughter:
+      => CLEAR: 096 Leaf elder daughter
+      | If you ever need to wake
+      |  anyone up, use the Alarm
+      |  Flute, it never fails.
+    IF TRUE:
+      => SET: 096 Leaf elder daughter
+      | There is an old windmill to 
+      |  the north, but I've never 
+      |  seen it working.
+  DIALOG $32 Mt Sabre North - Right Cell:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF TRUE:
+      | There are village people in 
+      |  the next prison as well!
+
+NPC $12
+  SPAWN $02 Leaf:
+    NOT 084 Leaf Villagers Currently Abducted
+  SPAWN $32 Mt Sabre North - Right Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 028 Change Woman:
+      | This is the village of 
+      |  {1a:Leaf}. There are great
+      |  dangers outside of town.
+      |  Please be careful.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | This is the village of 
+      |  {1a:Leaf}. There are great
+      |  dangers outside of town.
+      |  Please be careful.
+    IF 029 Change Akahana:
+      | This is the village of 
+      |  {1a:Leaf}. There are great
+      |  dangers outside of town.
+      |  Please be careful.
+  DIALOG $02 Leaf:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF TRUE:
+      | This is the village of 
+      |  {1a:Leaf}. There are great
+      |  dangers outside of town.
+      |  Please be careful.
+  DIALOG $32 Mt Sabre North - Right Cell:
+    IF 00d Leaf Villagers Rescued:
+      | Thank you for saving me!
+    IF TRUE:
+      | Thank you for saving me.
+
+NPC $13: Leaf Rabbit
+  DIALOG:
+    IF 028 Change Woman:
+      | Kyu.  Kyu.
+    IF 02a Change Soldier:
+      | Kyu.  Kyu.
+    IF 02b Change Stom:
+      | Kyu.  Kyu.
+    IF 029 Change Akahana:
+      | Kyu.  Kyu.
+    IF NOT 00e Flag 00e:
+      | Kyu.  Kyu.
+    IF NOT 038 Leaf Abduction:
+      | What are you?  It's strange
+      |  you can understand me.
+    IF 00d Leaf Villagers Rescued:
+      | Are you the one who saved 
+      |  everyone?  Good job!
+    IF TRUE:
+      => SET: 0a9 Talked To Leaf Rabbit
+      | Some evil people attacked 
+      |  and took everyone away.
+
+NPC $14: Windmill Guard
+  SPAWN $c5 Leaf - Student House:
+    NOT 03a Talked To Zebu In Cave
+  SPAWN $0e Windmill Cave:
+    00f Woke Windmill Guard
+      AND NOT 038 Leaf Abduction
+  DIALOG:
+    IF 028 Change Woman:
+      | Did you find that ball yet?
+    IF 02a Change Soldier:
+      | 01-05H
+    IF 02b Change Stom:
+      | Did you find that ball yet?
+    IF 029 Change Akahana:
+      | Did you find that ball yet?
+  DIALOG $c5 Leaf - Student House:
+    IF NOT 0a5 Flag 0a5:
+      => ACTION: $09
+      => SET: 0a5 Flag 0a5
+      | You have finally awoken.
+      |  This money is from the 
+      |  wise man {13:Zebu}. It's yours.
+    IF TRUE:
+      | I'm the first pupil of 
+      |  {13:Zebu}. You must bow down
+      |  before me!
+  DIALOG $0e Windmill Cave:
+    IF NOT 088 Flag 088:
+      => ACTION: $03
+      => SET: 088 Flag 088
+      | Huh? What was that?
+      |  Don't do that again!#
+      | It's you. Please don't 
+      |  tell {13:Zebu}. Take this to 
+      |  start the windmill.#
+      | {13:Zebu} says a strange ball is 
+      |  hidden in these caves. He
+      |  says it can break rock
+      |  walls.
+    IF TRUE:
+      | {13:Zebu} says a strange ball is 
+      |  hidden in these caves. He
+      |  says it can break rock
+      |  walls.
+
+NPC $15: Sleeping Windmill Guard
+  SPAWN $0e Windmill Cave:
+    03a Talked To Zebu In Cave
+      AND NOT 00f Woke Windmill Guard
+  DIALOG:
+    IF TRUE:
+      | zzz_
+
+NPC $16: Akahana
+  SPAWN $18 Brynmaer:
+    NOT 050 Given Statue To Akahana
+  SPAWN $57 Waterfall Cave 4:
+    NOT 051 Flag 051
+      AND 035 Cured Akahana
+      AND NOT 034 Akahana in waterfall cave
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 028 Change Woman:
+      | {01:Akahana}:"Hello,
+      |  how are you?"
+    IF 02a Change Soldier:
+      | {01:Akahana}:"Aaaah! Please 
+      |  spare my life!"
+    IF 02b Change Stom:
+      | {01:Akahana}:"Hello,
+      |  how are you?"
+    IF 029 Change Akahana:
+      | {01:Akahana}:"That's a mirror."
+  DIALOG $18 Brynmaer:
+    IF TRUE:
+      | I'm {01:Akahana}. I used to 
+      |  have an unusual statue
+      |  but I dropped it near the #
+      |  river. It was a great
+      |  find and will be difficult
+      |  to replace.
+      |  Have you seen it?
+  DIALOG $57 Waterfall Cave 4:
+    IF 035 Cured Akahana:
+      => ACTION: $19
+      => SET: 034 Akahana in waterfall cave
+      | {01:Akahana}:"Hey, you're the 
+      |  one who found my statue_
+      |  I'll give you this, but
+      |  now we're even."
+    IF TRUE:
+      | ___
+  DIALOG $8c Shyron:
+    IF 02d Shyron sages:
+      | {01:Akahana}:"Be careful."
+    IF NOT 036 Akahana Shyron:
+      => SET: 036 Akahana Shyron
+      | {01:Akahana}:"Hi, do you 
+      |  remember me? I live here 
+      |  because the people from #
+      |  my home town of {18:Goa} 
+      |  have changed_ I felt very
+      |  uncomfortable there."
+    IF TRUE:
+      => SET: 036 Akahana Shyron
+      | {01:Akahana}:"When I went home 
+      |  everyone had changed, I
+      |  felt no longer welcome."
+
+NPC $17
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | If you go east, you will 
+      |  find the forest.  It's a
+      |  grand maze where plants
+      |  will shoot poison.
+
+NPC $18
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | I've heard that there's a
+      |  village where only women
+      |  live. I wonder_
+
+NPC $19
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | The village of {1d:Oak} lies
+      |  deep in the forest.  The
+      |  people there don't 
+      |  understand our language.
+
+NPC $1a
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | There are two routes to 
+      |  {1b:Mt.Sabre}; one west and 
+      |  one north.  Both roads are 
+      |  very dangerous.
+
+NPC $1b: Ski Free
+  SPAWN $c6 Brynmaer - Tavern:
+    NOT 048 Treasure hunter embarked
+  DIALOG:
+    IF TRUE:
+      => ACTION: $0d
+      => SET: 048 Treasure hunter embarked
+      | I just found out how to get 
+      |  rich quick. Later!
+
+NPC $1c
+  DIALOG:
+    IF 028 Change Woman:
+      | Thanks.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | Thanks.
+    IF 029 Change Akahana:
+      | Thanks.
+    IF NOT 048 Treasure hunter embarked:
+      | I told him that I made
+      |  a lot of money from stones
+      |  I found on {1b:Mt.Sabre}.
+      |  After that he got excited_
+    IF 012 Treasure hunter dead:
+      | That man is dead isn't he_
+      |  He'd still be alive if I
+      |  hadn't told him_
+    IF TRUE:
+      | I told him that I made
+      |  a lot of money from stones
+      |  I found on {1b:Mt.Sabre}.
+      |  After that he got excited_
+
+NPC $1d: Oak Elder
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      |  Da_  Gon derin?
+    IF 02a Change Soldier:
+      |  Da_  Gon derin?
+    IF 02b Change Stom:
+      |  Da_  Gon derin?
+    IF 029 Change Akahana:
+      |  Da_  Gon derin?
+    IF 043:
+      | Our greatest hero, please
+      |  rest well!
+    IF 0a6 Oak elder 1:
+      => SET: 0a8 Oak elder 2
+      |  We will tell all of your 
+      |  feat. You will forever be 
+      |  a hero among the dwarves.
+      |  Again many thanks.
+    IF 044 Flag 044:
+      => SET: 0a6 Oak elder 1
+      | Hmm, you destroyed the 
+      |  monster. Good, we now can 
+      |  live without fear_#
+      | {:HERO:}! You are the one who
+      |  saved us. Our precious
+      |  object belongs to you.#
+      |  With this we express
+      |  appreciation. Please keep 
+      |  it with you.#
+      |  We will tell all of your 
+      |  feat. You will forever be 
+      |  a hero among the dwarves.
+      |  Again many thanks.
+    IF 049 Flag 049:
+      | Please do it!
+    IF 045 Rescued Child:
+      => ACTION: $03
+      => SET: 049 Flag 049
+      | You saved the child? 
+      |  I thank you. I now ask a
+      |  favor of you_#
+      |  There is a monster in the 
+      |  poison swamp. Many of our
+      |  dwarves were eaten by this #
+      |  creature_ The monster 
+      |  cannot attack the village
+      |  because of an object#
+      |  we possess, but we cannot 
+      |  use. I leave this object
+      |  in your care, to save the 
+      |  village_
+    IF TRUE:
+      | The air in my house smells
+      |  like humans. Get out!
+
+NPC $1e: Oak Mother
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 041 Flag 041:
+      | Thank you again for all
+      |  your help.
+    IF 0a0 Flag 0a0:
+      | Thank you again for all
+      |  your help.
+    IF 045 Rescued Child:
+      => ACTION: $03
+      => SET: 0a0 Flag 0a0
+      | I am forever indebted to 
+      |  you! Please take this 
+      |  as a reward.
+    IF TRUE:
+      => SET: 052 Talked To Dwarf Mother
+      | I haven't seen my boy since
+      |  he went into the forest.
+      |  Have you seen him?
+
+NPC $1f: Oak Child
+  SPAWN $ce Oak - Mother House:
+    045 Rescued Child
+  SPAWN $1a Swamp:
+    052 Talked To Dwarf Mother
+      AND NOT 053 Leading Child
+      AND NOT 045 Rescued Child
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 044 Flag 044:
+      | I'll be good from now on.
+      |  I swear!
+    IF NOT 045 Rescued Child:
+      => ACTION: $0c
+      => SET: 053 Leading Child
+      | Waah! Waah! I'm afraid!
+      |  I want to go home! Can you 
+      |  please take me home?
+    IF TRUE:
+      | I'll be good from now on.
+      |  I swear!
+
+NPC $20
+  SPAWN $1c Oak:
+    045 Rescued Child
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 041 Flag 041:
+      | I heard there are training 
+      |  grounds for wise men on 
+      |  the west side. Perhaps you 
+      |  should go there.
+    IF 045 Rescued Child:
+      | The [27:Insect Flute] is a
+      |  powerful item, but it's
+      |  dangerous because of the 
+      |  poisonous insects it calls.
+    IF TRUE:
+      | This is the village of {1d:Oak}.
+      |  We don't like humans here!
+
+NPC $21
+  SPAWN $1c Oak:
+    045 Rescued Child
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 041 Flag 041:
+      | We have reconsidered 
+      |  humans.
+    IF 045 Rescued Child:
+      | We shun most humans but I 
+      |  think you are different
+      |  than most.
+    IF TRUE:
+      | The village elder will not 
+      |  talk to humans.
+
+NPC $22
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 041 Flag 041:
+      | You're great! I think I'll 
+      |  believe in you.
+    IF 045 Rescued Child:
+      | Who are you?
+      |  You're quite strange.
+    IF TRUE:
+      | __
+
+NPC $23: Aryllis
+  DIALOG:
+    IF NOT 028 Change Woman:
+      => ACTION: $15
+      | You filthy beast! Don't 
+      |  come any closer!
+    IF 010 Turned In Kirisa Plant:
+      |  Your kindness and modesty
+      |  are much more beautiful
+      |  than the finest jewelry.
+      |  Go in peace.
+    IF NOT 011 Welcomed to Amazones:
+      => SET: 011 Welcomed to Amazones
+      | Welcome to {14:Amazones}. I'm 
+      |  their gorgeous leader 
+      |  {00:Aryllis}.#
+      | Make yourself at home and 
+      |  rest from your travels.
+    IF TRUE:
+      | Are the villagers kind to
+      |  you? Please stay a while.
+
+NPC $24
+  DIALOG:
+    IF NOT 028 Change Woman:
+      | Aack! I am insulted by
+      |  your presence, man!
+    IF TRUE:
+      | {00:Aryllis} is into fashion.
+      |  She is looking for the 
+      |  [3c:Kirisa Plant] to make some 
+      |  perfume.
+
+NPC $25: Amazones Guard
+  DIALOG:
+    IF NOT 028 Change Woman:
+      | This is the house of 
+      |  {00:Aryllis}, our leader. This 
+      |  is not a place for you.
+    IF TRUE:
+      | We take care of {00:Aryllis}.
+      |  She is good at hunting but 
+      |  fashion is more important.
+
+NPC $26: Aryllis Right Attendant
+  DIALOG:
+    IF NOT 028 Change Woman:
+      | This is a sacred place.
+      |  Go away, Now!
+    IF TRUE:
+      | The [3c:Kirisa Plant] blooms
+      |  in a cave near {1e:Portoa}.
+
+NPC $27: Aryllis Left Attendant
+  DIALOG:
+    IF NOT 028 Change Woman:
+      | This is a sacred place.
+      |  Go away, Now!
+    IF TRUE:
+      | The [3c:Kirisa Plant] blooms
+      |  in a cave near {1e:Portoa}.
+
+NPC $28: Nadare
+  DIALOG:
+    IF 02a Change Soldier:
+      | I have no food for you.
+    IF TRUE:
+      | Welcome my guest. I am
+      |  {0c:Nadare}.  Get rested and 
+      |  awake refreshed.
+
+NPC $29
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF 098 Nadare villager:
+      | Be careful.
+    IF 012 Treasure hunter dead:
+      => SET: 098 Nadare villager
+      | That man from {16:Brynmaer} 
+      |  hasn't returned yet.#
+      | What? He's dead?
+      |  I_ I'm sorry_
+    IF TRUE:
+      => SET: 098 Nadare villager
+      | Not long ago a guy from 
+      |  {16:Brynmaer} left to climb the 
+      |  mountain. I envy the 
+      |  youth with so much energy.
+
+NPC $2a
+  DIALOG:
+    IF 028 Change Woman:
+      | It seems some traveler made 
+      |  those weird people on the 
+      |  trail disappear. I wonder 
+      |  how he is.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | It seems some traveler made 
+      |  those weird people on the 
+      |  trail disappear. I wonder 
+      |  how he is.
+    IF 029 Change Akahana:
+      | It seems some traveler made 
+      |  those weird people on the 
+      |  trail disappear. I wonder 
+      |  how he is.
+    IF 00d Leaf Villagers Rescued:
+      | The trail is passable now 
+      |  and those weird people 
+      |  have disappeared.
+    IF TRUE:
+      | The trail is blocked off 
+      |  and strange people wander 
+      |  there. It's quite weird.
+
+NPC $2b
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF TRUE:
+      | I may be old now, but in my 
+      |  youth, I could climb many
+      |  mountains easily.#
+      |  My son {0c:Nadare} is still a
+      |  wimp compared to me.
+      |  Ha ha ha.
+
+NPC $2c: Dead Ski Free
+  SPAWN $28 Mt Sabre North - Main:
+    NOT 066
+      AND 048 Treasure hunter embarked
+      AND NOT 012 Treasure hunter dead
+  DIALOG:
+    IF NOT 012 Treasure hunter dead:
+      => ACTION: $04
+      => SET: 012 Treasure hunter dead
+      | _it's you_ I had a dream I
+      |  could strike it rich_
+      |  But alas_ I failed_#
+      |  I was captured_ by some 
+      |  strange people_ they put
+      |  me in a cave_#
+      |  I also saw people from 
+      |  {1a:Leaf}_ They were all being 
+      |  forced to work_#
+      |  But I escaped_ And they 
+      |  found me_ I cannot move_
+      |  {:HERO:}:"Hold on! Hold on!"#
+      | Oh, to have tasted {0c:Nadare}'s
+      |  food again_ I_ am_ eh_
+      |  aaah___
+    IF TRUE:
+      | 
+      |      He's already dead.
+
+NPC $2d: Soldier Guard
+  SPAWN $28 Mt Sabre North - Main:
+    NOT 05b Mt Sabre Guards Despawned
+  SPAWN $73 Swan Gate:
+    NOT 08c
+  DIALOG $28 Mt Sabre North - Main:
+    IF TRUE:
+      => ACTION: $01
+      | Who are you? You cannot 
+      |  pass here! Attack!
+  DIALOG $73 Swan Gate:
+    IF 02a Change Soldier:
+      => ACTION: $08
+      | Very well_ On your way.
+    IF TRUE:
+      => ACTION: $01
+      | How dare you come here!
+      |  Leave immediately!
+
+NPC $2e
+  SPAWN $30 Mt Sabre North - Left Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 02a Change Soldier:
+      | Thanks.
+    IF TRUE:
+      | So you saved us, big deal.
+
+NPC $2f
+  SPAWN $30 Mt Sabre North - Left Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 02a Change Soldier:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF TRUE:
+      | Thank you for saving me.
+
+NPC $30
+  SPAWN $30 Mt Sabre North - Left Cell:
+    084 Leaf Villagers Currently Abducted
+  DIALOG:
+    IF 02a Change Soldier:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF TRUE:
+      | So you saved us, big deal.
+
+NPC $32
+  DIALOG:
+    IF 028 Change Woman:
+      | We'll do anything for the 
+      |  Queen.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | We'll do anything for the 
+      |  Queen.
+    IF 029 Change Akahana:
+      | We'll do anything for the 
+      |  Queen.
+    IF TRUE:
+      | We'll do anything for the 
+      |  Queen.
+
+NPC $33: Portoa Throne Room Back Door Guard
+  SPAWN $df Portoa Palace - Throne Room:
+    NOT 020 Queen Not In Throne Room
+  SPAWN $de Portoa Palace - Left:
+    020 Queen Not In Throne Room
+  DIALOG:
+    IF 028 Change Woman:
+      | The Queen is our jewel! She
+      |  is our sun and moon!
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | The Queen is our jewel! She
+      |  is our sun and moon!
+    IF 029 Change Akahana:
+      | The Queen is our jewel! She
+      |  is our sun and moon!
+    IF NOT 020 Queen Not In Throne Room:
+      | Hey! Don't wander around
+      |  the Queen's room!
+    IF TRUE:
+      | The Queen is our jewel! She
+      |  is our sun and moon!
+
+NPC $34: Portoa Palace Front Guard
+  DIALOG:
+    IF 028 Change Woman:
+      | The Queen wishes to see no 
+      |  one today. Be gone!
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | The Queen wishes to see no 
+      |  one today. Be gone!
+    IF 029 Change Akahana:
+      | The Queen wishes to see no 
+      |  one today. Be gone!
+    IF 01e Queen Revealed:
+      | The Queen left to travel.
+      |  don't tell anyone.
+    IF 01f Flag 01f:
+      | I was instructed to show
+      |  you the underground channel
+      |  when you arrived.
+      |  Please enter.
+    IF NOT 020 Queen Not In Throne Room:
+      | Don't be rude to the Queen.
+    IF TRUE:
+      | The Queen wishes to see no 
+      |  one today. Be gone!
+
+NPC $35
+  DIALOG:
+    IF 028 Change Woman:
+      | I'm {06:Evans}. I teach
+      |  etiquette here.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | I'm {06:Evans}. I teach
+      |  etiquette here.
+    IF 029 Change Akahana:
+      | I'm {06:Evans}. I teach
+      |  etiquette here.
+    IF NOT 01b Mesia Recording:
+      | I'm {06:Evans}. I teach
+      |  etiquette here.
+    IF TRUE:
+      | I married {07:Geline} who was my 
+      |  pupil. I must thank the 
+      |  Queen for arranging our
+      |  meeting.
+
+NPC $36
+  DIALOG:
+    IF 028 Change Woman:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF 029 Change Akahana:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF 01e Queen Revealed:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF TRUE:
+      | The Queen sometimes
+      |  disappears from her room.
+      |  I wonder how she leaves
+      |  without anyone noticing?
+
+NPC $37
+  DIALOG:
+    IF 028 Change Woman:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF 029 Change Akahana:
+      | I haven't seen the Queen 
+      |  lately. I wonder how she's
+      |  doing.
+    IF 01b Mesia Recording:
+      | I'm sorry about our last 
+      |  meeting. {06:Evans} has taught
+      |  me better manners since
+      |  then. Ha ha.
+    IF TRUE:
+      | Hey, don't bother me! I've
+      |  got to worry about fixing 
+      |  the Queen's meal!
+
+NPC $38: Portoa Queen
+  SPAWN $df Portoa Palace - Throne Room:
+    NOT 020 Queen Not In Throne Room
+      AND NOT 01f Flag 01f
+  SPAWN $e1 Portoa - Asina Room:
+    01f Flag 01f
+      AND NOT 01e Queen Revealed
+  DIALOG:
+    IF 01e Queen Revealed:
+      | {02:Asina}:"I will always look 
+      |  out for you."
+    IF 01f Flag 01f:
+      => ACTION: $10
+      => SET: 01e Queen Revealed
+      | It's time I told you the 
+      |  truth_
+      |  The fortune teller is_#
+      |  really me. I entered town 
+      |  like this and heard
+      |  people's problems_#
+      |  But the real me is neither 
+      |  the fortune teller or the 
+      |  Queen_#
+      |  I am {02:Asina}, one of three
+      |  great wise men who will 
+      |  aid you.
+    IF 016 Portoa queen Rage hint:
+      => SET: 09c Portoa Queen Going Away
+      | Be careful.
+    IF 017 Flag 017:
+      => SET: 016 Portoa queen Rage hint
+      => SET: 09c Portoa Queen Going Away
+      | Ah, you finally found the 
+      |  [02:Sword of Water]. Go to the 
+      |  Lime Tree in south lake.#
+      |  When you are finished 
+      |  there, come back.
+    IF 092 Flag 092:
+      | Be careful.
+    IF 018 Entered Underground Channel:
+      => ACTION: $03
+      => SET: 092 Flag 092
+      => SET: 0a3 Portoa queen/fortune teller
+      => SET: 09c Portoa Queen Going Away
+      | Oh, {:HERO:}. Did you know 
+      |  there's a cave behind the 
+      |  northern waterfall?#
+      | Go there. I'll give you 
+      |  the [28:Flute of Lime].
+      |  Use it wisely.
+    IF 019 Portoa queen tired of talking:
+      => SET: 09c Portoa Queen Going Away
+      | It's gotten late. I had a
+      |  good time though. I must 
+      |  go now.
+    IF NOT 01a Initial talk with Portoa queen:
+      => ACTION: $0e
+      => SET: 09c Portoa Queen Going Away
+      => SET: 019 Portoa queen tired of talking
+      => SET: 01a Initial talk with Portoa queen
+      | I'm the Queen of {1e:Portoa}.
+      |  Are you the legendary man
+      |  who climbed through Sabre?#
+      |  It's too peaceful here.
+      |  I'm bored. May we talk
+      |  a while?#
+      |  How does the town look to 
+      |  you? We take pride in it's
+      |  beauty.
+    IF 0d7 Portoa queen 3:
+      => CLEAR: 0d7 Portoa queen 3
+      => CLEAR: 0d6 Portoa queen 2
+      => CLEAR: 0d5 Portoa queen 1
+      => SET: 09c Portoa Queen Going Away
+      => SET: 019 Portoa queen tired of talking
+      | {:HERO:}, I enjoy talking 
+      |  with you.#
+      | The food {07:Geline} cooks for 
+      |  me is very good, but alas
+      |  her manners are not_#
+      | I will ask {06:Evans} to teach
+      |  her some manners.
+    IF 0d6 Portoa queen 2:
+      => SET: 0d7 Portoa queen 3
+      => SET: 09c Portoa Queen Going Away
+      => SET: 019 Portoa queen tired of talking
+      | {:HERO:}, what's wrong? Don't 
+      |   be so shy.#
+      | The owner of the 
+      |  boat rental shop is kind 
+      |  only to his daughter.
+    IF 0d5 Portoa queen 1:
+      => SET: 0d6 Portoa queen 2
+      => SET: 09c Portoa Queen Going Away
+      => SET: 019 Portoa queen tired of talking
+      | {:HERO:}, come closer to me.
+      |  #
+      | I would like to be an 
+      |  adventurer like you, to 
+      |  see what lies beyond here.
+    IF TRUE:
+      => SET: 0d5 Portoa queen 1
+      => SET: 09c Portoa Queen Going Away
+      => SET: 019 Portoa queen tired of talking
+      | {:HERO:}, I was looking 
+      |  forward to seeing you.#
+      | Have you gotten used to 
+      |  life in the town?
+
+NPC $39: Fortune Teller
+  SPAWN $d8 Portoa - Fortune Teller:
+    020 Queen Not In Throne Room
+      AND NOT 01f Flag 01f
+  DIALOG:
+    IF 01b Mesia Recording:
+      => SET: 020 Queen Not In Throne Room
+      => SET: 01f Flag 01f
+      | Hmmmmmm_ Go to the palace,
+      |  your way will definitely
+      |  be opened.
+    IF 017 Flag 017:
+      => CLEAR: 020 Queen Not In Throne Room
+      | Hmmmmmm_ Some one will wait 
+      |  for you at the lake in the 
+      |  south.
+    IF 0a3 Portoa queen/fortune teller:
+      => CLEAR: 020 Queen Not In Throne Room
+      | Hmmmmmm_ Something in the 
+      |  darkness is calling you.
+      |  Carry on, but don't get 
+      |  lost.
+    IF 01d Talked To Fortune Teller:
+      => CLEAR: 020 Queen Not In Throne Room
+      | Hmmmmmm_ Go to the palace,
+      |  your way will definitely
+      |  be opened.
+    IF TRUE:
+      => CLEAR: 020 Queen Not In Throne Room
+      => SET: 01d Talked To Fortune Teller
+      | I'm the Fortune Teller. Let
+      |  me see your fortune.
+      |  Hmmmmmm_#
+      | See the Queen. Your way 
+      |  will be open.
+
+NPC $3a: Waterfall Cave Adventurers
+  SPAWN $55 Waterfall Cave 2:
+    06a Stoned People Cured
+      AND NOT 090 Stoned people gone
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF NOT 06a Stoned People Cured:
+      |  ___
+    IF 0d9 Stoned pair:
+      => CLEAR: 0d9 Stoned pair
+      | I heard that a [35:Fog Lamp] was 
+      |  here, but I couldn't find 
+      |  it. I'll look for it in a
+      |  cave across the river_
+    IF TRUE:
+      => SET: 0d9 Stoned pair
+      | I'm saved!
+
+NPC $3d: Joel Elder
+  DIALOG:
+    IF 028 Change Woman:
+      | Welcome to the glorious
+      |  island of {19:Joel}!
+    IF 02a Change Soldier:
+      | This is no place for you!
+      |  Leave here!
+    IF 02b Change Stom:
+      | Welcome to the glorious
+      |  island of {19:Joel}!
+    IF 029 Change Akahana:
+      | Welcome to the glorious
+      |  island of {19:Joel}!
+    IF NOT 013 Flag 013:
+      | __huh_  Oh, sorry, I zoned 
+      |  out for a minute_ I'm 
+      |  {0f:Ralph} the elder of {19:Joel}.#
+      |  Someone came from the next 
+      |  island and asked for a
+      |  girl sacrifice if we wish#
+      |  safety to our island. One
+      |  from {1e:Portoa} volunteered 
+      |  though_ She's monster prey
+      |  by now.
+    IF 08f Flag 08f:
+      | Oh, it's you. Thanks again.
+    IF TRUE:
+      | Thank you. Our village is 
+      |  saved.
+
+NPC $3e
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF NOT 013 Flag 013:
+      | I don't want to be a
+      |  sacrifice. Where's my 
+      |  Uncle {04:Clark}?
+    IF 08f Flag 08f:
+      | Oh, it's you. Thanks again.
+    IF TRUE:
+      | Now I don't have to be 
+      |  sacrificed! Yah!
+
+NPC $3f
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF NOT 013 Flag 013:
+      | The girl substitute from 
+      |  {1e:Portoa} is called {22:Mesia}.
+      |  I pray for her safety.
+    IF 08f Flag 08f:
+      |  Hello. Please rest well.
+    IF TRUE:
+      | I pray we see {22:Mesia} again.
+
+NPC $40
+  DIALOG:
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF 029 Change Akahana:
+      |  Have you rested from your 
+      |   journey?
+    IF NOT 013 Flag 013:
+      | This is {19:Joel} Island. The 
+      |  next one to the west is 
+      |  Evil Spirit Island.
+    IF 08f Flag 08f:
+      |  Have you rested from your 
+      |   journey?
+    IF TRUE:
+      | Good, good, good.
+
+NPC $41
+  DIALOG:
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF 029 Change Akahana:
+      |  Have you rested from your 
+      |   journey?
+    IF NOT 013 Flag 013:
+      | Since a woman sorcerer from 
+      |  {17:Draygonia} went to the next
+      |  island, it's been weird_#
+      |  People have disappeared 
+      |  and strange monsters now 
+      |  live there.
+    IF 08f Flag 08f:
+      | Lately the fishing has been
+      |  great. The fisherman next 
+      |  door has been loving it.
+    IF TRUE:
+      | At last, our life can 
+      |  return to normal. I can go 
+      |  back to fishing now.
+
+NPC $42
+  DIALOG:
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF 029 Change Akahana:
+      |  Have you rested from your 
+      |   journey?
+    IF NOT 013 Flag 013:
+      | {04:Clark}, who is the elder's
+      |  brother, has not returned 
+      |  from the next island yet.
+    IF 08f Flag 08f:
+      | Life was like a nightmare
+      |  before_
+    IF TRUE:
+      | {04:Clark} was safe? That's
+      |  great.
+
+NPC $43
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF NOT 013 Flag 013:
+      | Hey! You surprised me! I
+      |  thought you were a
+      |  monster.
+    IF 08f Flag 08f:
+      | Sometimes I help out at the 
+      |  next island.
+    IF TRUE:
+      | Now I can live safely.
+
+NPC $44: Clark
+  SPAWN $e9 Zombie Town - House Basement:
+    NOT 08f Flag 08f
+  SPAWN $e4 Joel - Shed:
+    08f Flag 08f
+  DIALOG:
+    IF 028 Change Woman:
+      | Who are you? Get away!
+    IF 02a Change Soldier:
+      | Who are you? Get away!
+    IF 02b Change Stom:
+      | Who are you? Get away!
+    IF 029 Change Akahana:
+      | Who are you? Get away!
+  DIALOG $e4 Joel - Shed:
+    IF TRUE:
+      | {04:Clark}:"Everybody has been
+      |  living peacefully since
+      |  {10:Sabera} is gone."
+  DIALOG $e9 Zombie Town - House Basement:
+    IF NOT 013 Flag 013:
+      | I'm {04:Clark}. I came from {19:Joel} 
+      |  to check this place out.
+      |  A woman sorcerer is here_#
+      |  She came from {17:Draygonia} 
+      |  and changed all the people 
+      |  here into zombies.#
+      | {10:Sabera} is very clever.
+      |  Be careful.
+    IF NOT 08d Flag 08d:
+      => ACTION: $03
+      => SET: 08d Flag 08d
+      => SET: 032 Flag 032
+      | {04:Clark}:"You did it! Awesome!
+      |  Please take this_ I'm 
+      |  sure it will help you."
+    IF TRUE:
+      | {04:Clark}:"Now I can go home.
+      |  Surely {0f:Ralph} and others
+      |  are waiting for me."
+
+NPC $45
+  SPAWN $65 Zombie Town:
+    013 Flag 013
+  DIALOG:
+    IF 028 Change Woman:
+      |  Tell me of your travels
+      |   someday.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Tell me of your travels
+      |   someday.
+    IF 029 Change Akahana:
+      |  Tell me of your travels
+      |   someday.
+    IF 08f Flag 08f:
+      |  Tell me of your travels
+      |   someday.
+    IF TRUE:
+      | Thank you. Because of your 
+      |  valliant effort, we are 
+      |  released from this curse.#
+      | I don't know how to thank
+      |  you_  We will rebuild now_
+
+NPC $46
+  SPAWN $65 Zombie Town:
+    013 Flag 013
+  DIALOG:
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF 029 Change Akahana:
+      |  Have you rested from your 
+      |   journey?
+    IF 08f Flag 08f:
+      | During the daytime, men go 
+      |  to fish.
+    IF NOT 031 Zombie town:
+      => SET: 031 Zombie town
+      | Today is the best day of my 
+      |  life. You're great even
+      |  though you're young!#
+      | {:HERO:}:"I need to cross the 
+      |  whirlpools, can you help?"#
+      | A legend says that if the 
+      |  [3a:Statue of Gold] is placed 
+      |  properly, we can return
+      |  safely from any storm.
+    IF TRUE:
+      | A legend says that if the 
+      |  [3a:Statue of Gold] is placed 
+      |  properly, we can return
+      |  safely from any storm.
+
+NPC $47
+  SPAWN $e8 Zombie Town - House:
+    013 Flag 013
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello.
+    IF 029 Change Akahana:
+      |  Hello.
+    IF 08f Flag 08f:
+      | I'm helping my mother.
+    IF TRUE:
+      | Ya know, a [39:Glowing Lamp] 
+      |  that's said to fix broken
+      |  stuff, is in the 
+      |  lighthouse.
+
+NPC $48
+  DIALOG:
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF 029 Change Akahana:
+      |  Have you rested from your 
+      |   journey?
+    IF 024 Flag 024:
+      | {17:Draygonia} will soon be 
+      |  destroyed!
+    IF TRUE:
+      | I hear the people against
+      |  {17:Draygonia} are killed_ or 
+      |  forced to leave_ There are 
+      |  many hiding with {03:Azteca}__
+
+NPC $49
+  DIALOG:
+    IF TRUE:
+      | Welcome. Please have 
+      |  some refreshments.
+
+NPC $4a
+  SPAWN $ef Swan - Tavern:
+    NOT 024 Flag 024
+  DIALOG:
+    IF 028 Change Woman:
+      | Don't talk to me like that!
+    IF 02a Change Soldier:
+      |  What are you doing away
+      |   from your post? Go back
+      |   immediately!
+    IF 02b Change Stom:
+      | Don't talk to me like that!
+    IF 029 Change Akahana:
+      | Don't talk to me like that!
+    IF TRUE:
+      | Don't talk to me like that!
+
+NPC $4b
+  DIALOG:
+    IF NOT 0a7 Swan dancer:
+      => SET: 0a7 Swan dancer
+      | Very nice!
+    IF TRUE:
+      => CLEAR: 0a7 Swan dancer
+      | Sing some more!
+
+NPC $4c
+  DIALOG:
+    IF TRUE:
+      | Yah man, let's boogie!
+
+NPC $4d
+  DIALOG:
+    IF TRUE:
+      | {17:Draygonia}_ Wise men_ who
+      |  cares. Let's party!
+
+NPC $4e: Shyron Guard
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 027 Shyron Massacre
+  SPAWN $f4 Shyron - Hospital:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 028 Change Woman:
+      | This is {23:Shyron} fort. I
+      |  can't let strange people 
+      |  in.
+    IF 02a Change Soldier:
+      | How dare you come here!
+      |  Leave immediately!
+    IF 02b Change Stom:
+      | Hello {11:Stom}. Please enter.
+    IF 029 Change Akahana:
+      | This is {23:Shyron} fort. I
+      |  can't let strange people 
+      |  in.
+    IF 026 Flag 026:
+      | Good luck.
+    IF TRUE:
+      | This is {23:Shyron} fort. I
+      |  can't let strange people 
+      |  in.
+
+NPC $4f
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 027 Shyron Massacre
+  SPAWN $f4 Shyron - Hospital:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 028 Change Woman:
+      | This is {23:Shyron}. People
+      |  come here to train to be 
+      |  wise men and hide out from #
+      |  {17:Draygonia} as well. But 
+      |  even this place isn't safe
+      |  anymore.
+    IF 02a Change Soldier:
+      | How dare you come here!
+      |  Leave immediately!
+    IF 02b Change Stom:
+      | This is {23:Shyron}. People
+      |  come here to train to be 
+      |  wise men and hide out from #
+      |  {17:Draygonia} as well. But 
+      |  even this place isn't safe
+      |  anymore.
+    IF 029 Change Akahana:
+      | This is {23:Shyron}. People
+      |  come here to train to be 
+      |  wise men and hide out from #
+      |  {17:Draygonia} as well. But 
+      |  even this place isn't safe
+      |  anymore.
+    IF 02d Shyron sages:
+      | Good luck.
+    IF TRUE:
+      | This is {23:Shyron}. People
+      |  come here to train to be 
+      |  wise men and hide out from #
+      |  {17:Draygonia} as well. But 
+      |  even this place isn't safe
+      |  anymore.
+
+NPC $50
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 027 Shyron Massacre
+  SPAWN $f4 Shyron - Hospital:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 028 Change Woman:
+      | On the way here, I lost my 
+      |  wife and children_
+    IF 02a Change Soldier:
+      | Hey! {17:Draygonia} is 
+      |  attacking!
+    IF 02b Change Stom:
+      | On the way here, I lost my 
+      |  wife and children_
+    IF 029 Change Akahana:
+      | On the way here, I lost my 
+      |  wife and children_
+    IF 02d Shyron sages:
+      | Good luck.
+    IF TRUE:
+      | On the way here, I lost my 
+      |  wife and children_
+
+NPC $51
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 027 Shyron Massacre
+  SPAWN $f4 Shyron - Hospital:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 04d Shyron training men 2:
+      => CLEAR: 04d Shyron training men 2
+      => CLEAR: 04c Shyron training men 1
+      | Eiyaaah!
+    IF 04c Shyron training men 1:
+      => SET: 04d Shyron training men 2
+      | Eyaah! Heey! Yoww!
+    IF TRUE:
+      => SET: 04c Shyron training men 1
+      | Eyaah! Heey! Yoww!
+
+NPC $52
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 027 Shyron Massacre
+  SPAWN $f4 Shyron - Hospital:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 028 Change Woman:
+      | Hello.
+    IF 02a Change Soldier:
+      | Aaah! {11:Stom} help me!
+    IF 02b Change Stom:
+      | Oh {11:Stom}! Don't stare at me.
+    IF 029 Change Akahana:
+      | Hello.
+    IF 02d Shyron sages:
+      | Be careful_
+    IF TRUE:
+      | {02:Asina} is helping the 
+      |  wounded around the clock.
+
+NPC $53
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    NOT 027 Shyron Massacre
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 027 Shyron Massacre
+  SPAWN $f4 Shyron - Hospital:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 04b Shyron sick men:
+      => CLEAR: 04b Shyron sick men
+      | Oooo_ Owww_
+    IF TRUE:
+      => SET: 04b Shyron sick men
+      | Oooo_ Give me water_ Oooo_
+
+NPC $54: Brokahana
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF 028 Change Woman:
+      |  Have you rested from your 
+      |   journey?
+    IF 02b Change Stom:
+      |  Have you rested from your 
+      |   journey?
+    IF NOT 024 Flag 024:
+      | I heard that {17:Draygonia}'s
+      |  best four warriors left 
+      |  for {23:Shyron}. The wise men 
+      |  will die for sure.
+    IF NOT 029 Change Akahana:
+      | Is that so? The great four
+      |  were killed? Ah, the 
+      |  Emperor is still left!
+    IF NOT 04f Flag 04f:
+      => ACTION: $03
+      => SET: 04f Flag 04f
+      | Yo! {01:Akahana}! You look good.
+      |  I'll return that item you 
+      |  loaned me.
+    IF TRUE:
+      | Let's have some refreshments
+      |  sometime.
+
+NPC $55
+  DIALOG:
+    IF 028 Change Woman:
+      |  Tell me of your travels
+      |   someday.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Tell me of your travels
+      |   someday.
+    IF 029 Change Akahana:
+      |  Tell me of your travels
+      |   someday.
+    IF 024 Flag 024:
+      | Don't look down on the 
+      |  Emperor's power.
+    IF TRUE:
+      | I hear there's a tower with 
+      |  enough power to destroy
+      |  the world.
+
+NPC $56
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF 024 Flag 024:
+      | The Emperor is the worst!
+      |  I won't forgive those who
+      |  defend him.
+    IF TRUE:
+      | The Emperor is the worst!
+      |  I won't forgive those who
+      |  speak ill of him.
+
+NPC $57
+  DIALOG:
+    IF 028 Change Woman:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF 029 Change Akahana:
+      | Welcome. Please have 
+      |  some refreshments.
+    IF 024 Flag 024:
+      | I don't care what happens
+      |  to {17:Draygonia} as long as I
+      |  can work. I'm busy.
+    IF TRUE:
+      | Our pride is working day
+      |  and night for {17:Draygonia}.
+
+NPC $58
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF 024 Flag 024:
+      | When I met the grand puba
+      |  {0b:Karmine}, I felt scared,
+      |  but one look in his eyes
+      |  made everything OK.
+    IF TRUE:
+      | I can't remember what life
+      |  was like before the castle
+      |  was built.
+
+NPC $59: Sahara Bunny
+  DIALOG:
+    IF 028 Change Woman:
+      | Kyu.  Kyu.
+    IF 02a Change Soldier:
+      | Kyu.  Kyu.
+    IF 02b Change Stom:
+      | Kyu.  Kyu.
+    IF 029 Change Akahana:
+      | Kyu.  Kyu.
+    IF TRUE:
+      | Let's play.
+
+NPC $5a: Deo
+  DIALOG:
+    IF 028 Change Woman:
+      | Kyu.  Kyu.
+    IF 02a Change Soldier:
+      | Kyu.  Kyu.
+    IF 029 Change Akahana:
+      | Kyu.  Kyu.
+    IF 02e Flag 02e:
+      | {05:Deo}:"Avenge his death for 
+      |  me!"
+    IF 02b Change Stom:
+      => ACTION: $03
+      => SET: 02e Flag 02e
+      | {05:Deo}:"Oh {11:Stom}! Let's play!"
+      |  {:HERO:}:"I'm sorry, I'm not
+      |  {11:Stom}_ He is gone_"#
+      | {05:Deo}:"That's a lie! He
+      |  couldn't be dead__ _  _"#
+      | "Please take this_ It
+      |  reminds me of him__ __
+      |  Avenge his death for me!"
+    IF TRUE:
+      | {05:Deo}:"A long time ago, I was 
+      |  one of {11:Stom}'s favorites. I
+      |  wish he would come back
+      |  soon."
+
+NPC $5b: Sahara Elder
+  DIALOG:
+    IF 028 Change Woman:
+      |  Tell me of your travels
+      |   someday.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | Your rabbit is still on the 
+      |  plain. Have you seen it?
+    IF 029 Change Akahana:
+      |  Tell me of your travels
+      |   someday.
+    IF NOT 022 Sahara elder:
+      => SET: 022 Sahara elder
+      | Oh, you are the 
+      |  legendary soldier_ I shall
+      |  tell you what I know_#
+      | A tower with tremendous
+      |  power is near, one that 
+      |  can destroy the world.#
+      | It is said, one true
+      |  warrior has the power to 
+      |  stop the tower_ That one_#
+      | _is {:HERO:}, and the one 
+      |  who will lead you is 
+      |  called {22:Mesia}.
+      |  That I know.
+    IF TRUE:
+      | {22:Mesia} is waiting. Go to the 
+      |  {1f:Pyramid} with utmost haste!
+
+NPC $5c: Sahara Elder Daughter
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello.
+    IF 029 Change Akahana:
+      |  Hello.
+    IF NOT 023 Sahara elder daughter:
+      => SET: 023 Sahara elder daughter
+      | It's sad. The Emperor
+      |  Draygon still hasn't given
+      |  up his desire to conquer
+      |  the world.
+    IF TRUE:
+      | {22:Mesia}'s power is more than 
+      |  just being able to call
+      |  the tower_
+
+NPC $5d
+  SPAWN $8c Shyron:
+    027 Shyron Massacre
+      AND NOT 0e8 Dead Shyron villager
+  DIALOG:
+    IF TRUE:
+      => SET: 0e8 Dead Shyron villager
+      | 
+      |      He's already dead.
+
+NPC $5e: Zebu
+  SPAWN $10 Zebu Cave:
+    0a5 Flag 0a5
+      AND 00b Flag 00b
+      AND NOT 051 Flag 051
+  SPAWN $f2 Shyron - Temple:
+    NOT 027 Shyron Massacre
+  SPAWN $aa Goa Fortress - Zebu:
+    NOT 055 Zebu rescued
+  SPAWN $a6 Crypt - Draygon 2:
+    05e Flag 05e
+  DIALOG:
+    IF 028 Change Woman:
+      | {13:Zebu}:"{:HERO:}. We didn't 
+      |  teach you that magic to 
+      |  play with!"
+    IF 02a Change Soldier:
+      | {13:Zebu}:"{:HERO:}. We didn't 
+      |  teach you that magic to 
+      |  play with!"
+    IF 02b Change Stom:
+      | {13:Zebu}:"{:HERO:}. We didn't 
+      |  teach you that magic to 
+      |  play with!"
+    IF 029 Change Akahana:
+      | {13:Zebu}:"{:HERO:}. We didn't 
+      |  teach you that magic to 
+      |  play with!"
+  DIALOG $10 Zebu Cave:
+    IF 00d Leaf Villagers Rescued:
+      | Use your power to open the 
+      |  way.
+    IF 038 Leaf Abduction:
+      | The wind is filled with 
+      |  sorrow. Return to {1a:Leaf} 
+      |  soon.
+    IF 039 Flag 039:
+      | Use your power to open the 
+      |  way.
+    IF 00a Used Windmill Key:
+      => ACTION: $03
+      => SET: 039 Flag 039
+      | You have done well. I will 
+      |  now teach you the magic of 
+      |  [41:Refresh].
+    IF NOT 03a Talked To Zebu In Cave:
+      => SET: 03a Talked To Zebu In Cave
+      | I'm called {13:Zebu}. {:HERO:},
+      |  you are the one we have 
+      |  been waiting for.#
+      | Try to make the windmill
+      |  work. If you can do this 
+      |  I will teach you some 
+      |  magic.
+    IF TRUE:
+      | Use your power to open the 
+      |  way.
+  DIALOG $f2 Shyron - Temple:
+    IF 02d Shyron sages:
+      | {13:Zebu}:"Be careful!"
+    IF NOT 03b Talked To Zebu In Shyron:
+      => ACTION: $11
+      => SET: 03b Talked To Zebu In Shyron
+      | {13:Zebu}:"Great! You made it 
+      |  this far. Besides the 
+      |  three swords you now_"#
+      | "_possess, the most 
+      |  powerful, the Sword of 
+      |  Thunder, is in the cave_"#
+      | "_of Styx. Evil spirits
+      |  keep us from invading 
+      |  there. Watch yourself."#
+      | "The gate to Styx is at the 
+      |  top of {1c:Mt.Hydra}. Take 
+      |  this key and go."
+    IF TRUE:
+      | {13:Zebu}:"Be careful!"
+  DIALOG $aa Goa Fortress - Zebu:
+    IF TRUE:
+      => ACTION: $17
+      => SET: 055 Zebu rescued
+      | {13:Zebu}:"Well done, but the 
+      |  other wise men are still
+      |  captive. I will recover 
+      |  your strength. Take care."
+
+NPC $5f: Tornel
+  SPAWN $1e Stom House:
+    2f7 Warp Oak
+      AND NOT 00e Flag 00e
+  SPAWN $21 Mt Sabre West - Upper:
+    NOT 051 Flag 051
+  SPAWN $f3 Shyron - Training Hall:
+    NOT 05f Flag 05f
+      AND NOT 027 Shyron Massacre
+  SPAWN $f2 Shyron - Temple:
+    05f Flag 05f
+      AND NOT 027 Shyron Massacre
+  SPAWN $ac Goa Fortress - Tornel:
+    NOT 056 Tornel rescued
+  SPAWN $a6 Crypt - Draygon 2:
+    05e Flag 05e
+  DIALOG:
+    IF 028 Change Woman:
+      | {12:Tornel}:"You are vain to 
+      |  change yourself in front
+      |  of me."
+    IF 02a Change Soldier:
+      | {12:Tornel}:"Your appearance is 
+      |  now quite whimsical."
+    IF 02b Change Stom:
+      | {12:Tornel}:"You are vain to 
+      |  change yourself in front
+      |  of me."
+    IF 029 Change Akahana:
+      | {12:Tornel}:"You are vain to 
+      |  change yourself in front
+      |  of me."
+  DIALOG $1e Stom House:
+    IF TRUE:
+      | You still lack the proper 
+      |  skill. Come back when you 
+      |  think you are able.
+  DIALOG $21 Mt Sabre West - Upper:
+    IF 03f Flag 03f:
+      | {12:Tornel}:
+      |  "Have a safe journey."
+    IF 04e Flag 04e:
+      => ACTION: $03
+      => SET: 03f Flag 03f
+      | {12:Tornel}:"{:HERO:}!
+      |  I'm surprised you made it 
+      |  back. I'll now teach you_"#
+      | "[44:Teleport]. This magic 
+      |  allows you to move from 
+      |  town to town instantly."#
+      | "Have a safe journey."
+    IF TRUE:
+      | {12:Tornel}:"You've found me,
+      |  but you have to find the 
+      |  [06:Tornado Bracelet] before
+      |  I teach you more magic."
+  DIALOG $f3 Shyron - Training Hall:
+    IF 02d Shyron sages:
+      | {12:Tornel}:"I wish for your 
+      |  safety."
+    IF 040 Tornel in Shyron temple:
+      | {12:Tornel}:"The enemy is so
+      |  close. Be careful!"
+    IF TRUE:
+      => SET: 040 Tornel in Shyron temple
+      | {12:Tornel}:"Good, you finally
+      |  made it. We're training 
+      |  these people here."#
+      | "We have a lack of men and 
+      |  are having troubles.
+      |  Because of that armor_#
+      | "_we are losing the battle.
+      |  Our medical staff can't 
+      |  keep up with the wounded."
+  DIALOG $f2 Shyron - Temple:
+    IF 02d Shyron sages:
+      | {12:Tornel}:"I wish for your 
+      |  safety."
+    IF 040 Tornel in Shyron temple:
+      | {12:Tornel}:"The enemy is so
+      |  close. Be careful!"
+    IF TRUE:
+      => SET: 040 Tornel in Shyron temple
+      | {12:Tornel}:"Good, you finally
+      |  made it. We're training 
+      |  these people here."#
+      | "We have a lack of men and 
+      |  are having troubles.
+      |  Because of that armor_#
+      | "_we are losing the battle.
+      |  Our medical staff can't 
+      |  keep up with the wounded."
+  DIALOG $ac Goa Fortress - Tornel:
+    IF TRUE:
+      => ACTION: $17
+      => SET: 056 Tornel rescued
+      | {12:Tornel}:"I'm saved! By the 
+      |  way, how is {11:Stom}!"
+      |  {:HERO:}:"___"#
+      | {12:Tornel}:"I see_ But he held
+      |  on to the last_ sigh. I
+      |  will restore your strength.
+      |  Avenge {11:Stom}!"
+
+NPC $60: Stom
+  SPAWN $1e Stom House:
+    NOT 051 Flag 051
+  SPAWN $ec Swan - Stom Hut:
+    NOT 061 Talked To Stom In Swan
+  SPAWN $8c Shyron:
+    NOT 027 Shyron Massacre
+  DIALOG:
+    IF 028 Change Woman:
+      | {11:Stom}:"You're {:HERO:}, aren't 
+      |  you? I know who you are."
+    IF 02a Change Soldier:
+      | {11:Stom}:"You're {:HERO:}, aren't 
+      |  you? I know who you are."
+    IF 02b Change Stom:
+      | {11:Stom}:"You do that very
+      |  well. It's as if I was 
+      |  looking in a mirror."
+    IF 029 Change Akahana:
+      | {11:Stom}:"You're {:HERO:}, aren't 
+      |  you? I know who you are."
+  DIALOG $1e Stom House:
+    IF 041 Flag 041:
+      | The [06:Tornado Bracelet] is 
+      |  somewhere in {1b:Mt.Sabre}.
+      |  It will maximize the power 
+      |  of the [00:Sword of Wind].
+    IF 2f7 Warp Oak:
+      | I'll, be waiting_
+    IF TRUE:
+      | A busy town, {16:Brynmaer}, is 
+      |  located south of the 
+      |  sealed cave.  You should
+      |  visit there.
+  DIALOG $ec Swan - Stom Hut:
+    IF TRUE:
+      => ACTION: $02
+      => SET: 061 Talked To Stom In Swan
+      | {11:Stom}:"I haven't seen you 
+      |  for a while. I came to 
+      |  give you a message_"#
+      | "Please find {0a:Kensu} and take 
+      |  him to Shyron. We need his 
+      |  power. I'm counting on 
+      |  you!"
+  DIALOG $8c Shyron:
+    IF 027 Shyron Massacre:
+      => ACTION: $04
+      | {11:Stom}:"Ooooh_ {17:Draygonia}'s
+      |  army came_ Everyone 
+      |  killed_ watch out for 
+      |  {0d:Mado}_"#
+      | "He is more treacherous 
+      |  than the other three_ Uh_"
+      |  {:HERO:}:"Don't speak. wait."#
+      | {11:Stom}:"Take care of_ {12:Tornel}_
+      |      Oooo__ __ _"
+      |  {:HERO:}:"{11:Stom}, hold on!
+      |      {11:Stom}!"
+    IF 02d Shyron sages:
+      | {11:Stom}:"After {17:Draygonia} is 
+      |  destroyed, we'll have a
+      |  rematch. This time I won't 
+      |  lose."
+    IF TRUE:
+      | {11:Stom}:"The people training 
+      |  here are all fools. I'm 
+      |  worried."
+
+NPC $61: Mesia Recording
+
+NPC $62: Asina
+  SPAWN $e1 Portoa - Asina Room:
+    01e Queen Revealed
+      AND NOT 08f Flag 08f
+  SPAWN $f4 Shyron - Hospital:
+    NOT 05f Flag 05f
+      AND NOT 027 Shyron Massacre
+  SPAWN $f2 Shyron - Temple:
+    05f Flag 05f
+      AND NOT 027 Shyron Massacre
+  SPAWN $b9 Goa Fortress - Asina:
+    NOT 057 Asina rescued
+  SPAWN $a6 Crypt - Draygon 2:
+    05e Flag 05e
+  DIALOG:
+    IF 028 Change Woman:
+      | {02:Asina}:"We can see through
+      |  your disguise."
+    IF 02a Change Soldier:
+      | {02:Asina}:"You shouldn't 
+      |  surprise people without 
+      |  reason."
+    IF 02b Change Stom:
+      | {02:Asina}:"We can see through
+      |  your disguise."
+    IF 029 Change Akahana:
+      | {02:Asina}:"We can see through
+      |  your disguise."
+  DIALOG $e1 Portoa - Asina Room:
+    IF 03c Flag 03c:
+      | {02:Asina}:"Oh, this is a gift
+      |  I gave to someone I'll 
+      |  never forget_ I wonder__"
+    IF NOT 01e Queen Revealed:
+      => ACTION: $10
+      => SET: 01e Queen Revealed
+      | It's time I told you the 
+      |  truth_
+      |  The fortune teller is_#
+      |  really me. I entered town 
+      |  like this and heard
+      |  people's problems_#
+      |  But the real me is neither 
+      |  the fortune teller or the 
+      |  Queen_#
+      |  I am {02:Asina}, one of three
+      |  great wise men who will 
+      |  aid you.
+    IF TRUE:
+      | {02:Asina}:"I will always look 
+      |  out for you."
+  DIALOG $f4 Shyron - Hospital:
+    IF 02d Shyron sages:
+      | {02:Asina}:"Now, the real battle 
+      |  begins."
+    IF 03b Talked To Zebu In Shyron:
+      | {02:Asina}:"You are my last 
+      |  hope."
+    IF NOT 03d Asina in Shyron temple:
+      => SET: 03d Asina in Shyron temple
+      | {02:Asina}:"{:HERO:}! {13:Zebu} is 
+      |  waiting for you in the 
+      |  back of the temple, see
+      |  him immediately."
+    IF TRUE:
+      | {02:Asina}:"{:HERO:}! {13:Zebu} is 
+      |  waiting for you in the 
+      |  back of the temple, see
+      |  him immediately."
+  DIALOG $f2 Shyron - Temple:
+    IF 02d Shyron sages:
+      | {02:Asina}:"Now, the real battle 
+      |  begins."
+    IF 03b Talked To Zebu In Shyron:
+      | {02:Asina}:"You are my last 
+      |  hope."
+    IF NOT 03d Asina in Shyron temple:
+      => SET: 03d Asina in Shyron temple
+      | {02:Asina}:"{:HERO:}! {13:Zebu} is 
+      |  waiting for you in the 
+      |  back of the temple, see
+      |  him immediately."
+    IF TRUE:
+      | {02:Asina}:"{:HERO:}! {13:Zebu} is 
+      |  waiting for you in the 
+      |  back of the temple, see
+      |  him immediately."
+  DIALOG $b9 Goa Fortress - Asina:
+    IF TRUE:
+      => ACTION: $17
+      => SET: 057 Asina rescued
+      | {02:Asina}:"Thank you {:HERO:}! I
+      |  will cure your wounds. The 
+      |  last sorcerer is {0b:Karmine}_"#
+      | "He uses magic to change
+      |  people into monsters, so
+      |  be careful!"
+
+NPC $63: Hurt Dolphin
+  SPAWN $64 Underground Channel:
+    NOT 025 Flag 025
+      AND 01e Queen Revealed
+  DIALOG:
+    IF TRUE:
+      | I'm in such pain! Do you 
+      |  have any herbs that would
+      |  help me?
+
+NPC $64: Fisherman
+  SPAWN $d6 Portoa - Fisherman House:
+    08b Flag 08b
+  DIALOG:
+    IF 028 Change Woman:
+      | We're not open right now.
+      |  Go away!
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | We're not open right now.
+      |  Go away!
+    IF 029 Change Akahana:
+      | We're not open right now.
+      |  Go away!
+    IF 021 Returned Fog Lamp:
+      | Don't hesitate. Use it 
+      |  freely.
+    IF NOT 04a Boat owner:
+      => SET: 04a Boat owner
+      | We're not open right now.
+      |  Go away!
+    IF TRUE:
+      | You don't give up easily.
+
+NPC $65: Startled Villager Outside Cave
+  SPAWN $01 Leaf - Outside Start:
+    NOT 073 Startled man in Leaf
+  DIALOG:
+    IF TRUE:
+      => SET: 073 Startled man in Leaf
+      | Hey!! There's a guy coming 
+      |  out of the cave!
+
+NPC $68: Kensu In Cabin
+  SPAWN $61 Boat House:
+    NOT 2fb Warp Joel
+  DIALOG:
+    IF TRUE:
+      => SET: 09b Able To Ride Dolphin
+      | {0a:Kensu}:"Be quiet,
+      |  I lost something and I'm 
+      |  all mixed up!
+
+NPC $69: Dolphin
+  DIALOG:
+    IF TRUE:
+      => ACTION: $18
+      | Please hop on my back. I'll 
+      |  take you wherever you like.
+
+NPC $6b: Sleeping Kensu
+  SPAWN $62 Joel Lighthouse:
+    NOT 0a4 Woke Kensu In Lighthouse
+  DIALOG:
+    IF TRUE:
+      |  zzz_
+
+NPC $6c: Kensu Disguised As Dancer
+  SPAWN $f1 Swan - Dance Hall:
+    072 Found Kensu In Tavern
+      AND NOT 03e Found Kensu In Dance Hall
+  DIALOG:
+    IF 03e Found Kensu In Dance Hall:
+      | {0a:Kensu}:"I hate people who
+      |  are pushy."
+    IF 071 Paralyzed Kensu In Dance Hall:
+      => ACTION: $16
+      => SET: 03e Found Kensu In Dance Hall
+      | {0a:Kensu}:"Shoot!
+    IF TRUE:
+      | Many thanks for your 
+      |  promise.
+
+NPC $6d: Kensu Disguised As Soldier
+  SPAWN $ef Swan - Tavern:
+    061 Talked To Stom In Swan
+      AND NOT 072 Found Kensu In Tavern
+  SPAWN $8e Goa:
+    NOT 027 Shyron Massacre
+  DIALOG $ef Swan - Tavern:
+    IF 070 Paralyzed Kensu In Tavern:
+      => ACTION: $13
+      => SET: 072 Found Kensu In Tavern
+      | {0a:Kensu}:"Shoot!
+    IF TRUE:
+      | Have you seen that 
+      |  great one {0a:Kensu} 
+      |  around here at all?
+  DIALOG $8e Goa:
+    IF NOT 026 Flag 026:
+      => SET: 076 Kensu in Goa
+      | {0a:Kensu}:"{:HERO:}, I told you 
+      |  to go to {1c:Mt.Hydra}! Go
+      |  south west from here. And
+      |  don't stray!
+    IF TRUE:
+      | {0a:Kensu}:"Sorry about my 
+      |  appearance, but I'm trying 
+      |  to get some info on the_"#
+      | "_tower in the sky. I'm 
+      |  sneaking into {17:Draygonia} 
+      |  castle to see what I_"#
+      | "_can find. {17:Draygonia} sees
+      |  this tower as a weapon
+      |  and has big plans for_"#
+      | "_it. I'll continue to see
+      |  what information I can dig
+      |  up. You be careful too."
+
+NPC $6e: Azteca In Shyron
+  SPAWN $f2 Shyron - Temple:
+    05f Flag 05f
+      AND NOT 02d Shyron sages
+  DIALOG:
+    IF TRUE:
+      | {03:Azteca}:"{:HERO:}! Hurry to 
+      |  {22:Mesia}!"
+
+NPC $6f
+  DIALOG:
+    IF 028 Change Woman:
+      |  Tell me of your travels
+      |   someday.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Tell me of your travels
+      |   someday.
+    IF 029 Change Akahana:
+      |  Tell me of your travels
+      |   someday.
+    IF 024 Flag 024:
+      | When I heard {23:Shyron} was 
+      |  destroyed, I thought for 
+      |  sure it was over_
+    IF TRUE:
+      | They say {17:Draygonia}'s new
+      |  metal armor can even
+      |  withstand earth's magma_#
+      |  That means they can easily
+      |  attack {23:Shyron} fort_ Not
+      |  good at all.
+
+NPC $70: Dead Akahana
+  SPAWN $8c Shyron:
+    027 Shyron Massacre
+      AND NOT 0e0 Dead Akahana
+  DIALOG:
+    IF NOT 0e0 Dead Akahana:
+      => SET: 0e0 Dead Akahana
+      | {01:Akahana}:"I_ I should have 
+      |  got_ uh_ an item_ I left 
+      |  with a friend in G_ {18:Goa}_
+      |  Uh, uuuh___"
+    IF TRUE:
+      | 
+      |      He's already dead.
+
+NPC $71: Dead Stoms Girlfriend
+  SPAWN $8c Shyron:
+    027 Shyron Massacre
+      AND NOT 089 Dead Stom's girlfriend
+  DIALOG:
+    IF 089 Dead Stom's girlfriend:
+      | 
+      |      He's already dead.
+    IF 02b Change Stom:
+      => SET: 089 Dead Stom's girlfriend
+      | {11:Stom}_ I'm glad_  You're
+      |  safe_ _
+    IF TRUE:
+      => SET: 089 Dead Stom's girlfriend
+      | {11:Stom}_  hurry  Escape_
+
+NPC $72: Dead Stom
+  SPAWN $8c Shyron:
+    027 Shyron Massacre
+      AND NOT 08a Dead Stom
+  DIALOG:
+    IF NOT 08a Dead Stom:
+      => SET: 08a Dead Stom
+      | {11:Stom}:"Ooooh_ {17:Draygonia}'s
+      |  army came_ Everyone 
+      |  killed_ watch out for 
+      |  {0d:Mado}_"#
+      | "He is more treacherous 
+      |  than the other three_ Uh_"
+      |  {:HERO:}:"Don't speak. wait."#
+      | {11:Stom}:"Take care of_ {12:Tornel}_
+      |      Oooo__ __ _"
+      |  {:HERO:}:"{11:Stom}, hold on!
+      |      {11:Stom}!"
+    IF TRUE:
+      | 
+      |      He's already dead.
+
+NPC $75: Slimed Kensu
+  SPAWN $ba Goa Fortress - Kensu:
+    NOT 065 Cured Kensu
+  DIALOG:
+    IF TRUE:
+      => ACTION: $05
+      | {0a:Kensu}:"Hey, it's me! I was 
+      |  stupid and was hit by
+      |  {0b:Karmine}_"#
+      | "In order to recover, I
+      |  need the [3d:Ivory Statue].
+      |  It's in a room downstairs.
+      |  Use the hole over there."
+
+NPC $76
+  SPAWN $8c Shyron:
+    027 Shyron Massacre
+  SPAWN $7e Mt Hydra - Outside Shyron:
+    027 Shyron Massacre
+      AND NOT 0e9 Dead Shyron guard
+  DIALOG:
+    IF TRUE:
+      => SET: 0e9 Dead Shyron guard
+      | 
+      |      He's already dead.
+
+NPC $77
+  DIALOG:
+    IF 028 Change Woman:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 029 Change Akahana:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 024 Flag 024:
+      | After people of {17:Draygonia} 
+      |  are gone, the utmost fear
+      |  of the people is released.
+    IF TRUE:
+      | This is {20:Swan}. {17:Draygonia} 
+      |  Castle and {18:Goa} are to the 
+      |  north.#
+      | I hear {18:Goa} is becoming 
+      |  stronger from some 
+      |  new type of metal_
+
+NPC $78
+  DIALOG:
+    IF 028 Change Woman:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 029 Change Akahana:
+      |  Well, you're a visitor.
+      |   Stay as long as you like.
+    IF 024 Flag 024:
+      | I feel like it was all a
+      |  nightmare.
+    IF TRUE:
+      | This is the fortress of 
+      |  {18:Goa}.
+
+NPC $79
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF 024 Flag 024:
+      | People saying bad things
+      |  against {17:Draygonia} were 
+      |  executed_ My husband__
+    IF TRUE:
+      | The people of {17:Draygonia} 
+      |  are wonderful. Ha ha ha.
+
+NPC $7a
+  DIALOG:
+    IF 028 Change Woman:
+      |  Hello. Please rest well.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      |  Hello. Please rest well.
+    IF 029 Change Akahana:
+      |  Hello. Please rest well.
+    IF 024 Flag 024:
+      | I feel like a tremendous 
+      |  weight has just been
+      |  lifted.
+    IF TRUE:
+      | The Emperor is looking for 
+      |  a tower which floats high
+      |  in the sky.
+
+NPC $7b: Fisherman Daughter
+  DIALOG:
+    IF 028 Change Woman:
+      | That [35:Fog Lamp] is very 
+      |  beautiful.
+    IF 02a Change Soldier:
+      |  ___
+    IF 02b Change Stom:
+      | That [35:Fog Lamp] is very 
+      |  beautiful.
+    IF 029 Change Akahana:
+      | That [35:Fog Lamp] is very 
+      |  beautiful.
+    IF NOT 08b Flag 08b:
+      | My father went out to look 
+      |  for his lamp. He won't be 
+      |  back for a while.
+    IF 021 Returned Fog Lamp:
+      | That [35:Fog Lamp] is very 
+      |  beautiful.
+    IF TRUE:
+      | My father lost his [35:Fog Lamp] 
+      |  and is rather upset. You 
+      |  should come back later.
+
+NPC $7c
+  SPAWN $1c Oak:
+    NOT 045 Rescued Child
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 041 Flag 041:
+      | I heard there are training 
+      |  grounds for wise men on 
+      |  the west side. Perhaps you 
+      |  should go there.
+    IF 045 Rescued Child:
+      | The [27:Insect Flute] is a
+      |  powerful item, but it's
+      |  dangerous because of the 
+      |  poisonous insects it calls.
+    IF TRUE:
+      | This is the village of {1d:Oak}.
+      |  We don't like humans here!
+
+NPC $7d
+  SPAWN $1c Oak:
+    NOT 045 Rescued Child
+  DIALOG:
+    IF NOT 00e Flag 00e:
+      | Go in peace.
+    IF 028 Change Woman:
+      | Go in peace.
+    IF 02a Change Soldier:
+      | Go in peace.
+    IF 02b Change Stom:
+      | Go in peace.
+    IF 029 Change Akahana:
+      | Go in peace.
+    IF 041 Flag 041:
+      | We have reconsidered 
+      |  humans.
+    IF 045 Rescued Child:
+      | We shun most humans but I 
+      |  think you are different
+      |  than most.
+    IF TRUE:
+      | The village elder will not 
+      |  talk to humans.
+
+NPC $7e: Kensu
+  SPAWN $62 Joel Lighthouse:
+    0a4 Woke Kensu In Lighthouse
+      AND NOT 075 Flag 075
+  SPAWN $ef Swan - Tavern:
+    072 Found Kensu In Tavern
+      AND NOT 0da Kensu gone from tavern
+  SPAWN $f1 Swan - Dance Hall:
+    03e Found Kensu In Dance Hall
+      AND NOT 063 Flag 063
+  SPAWN $ba Goa Fortress - Kensu:
+    065 Cured Kensu
+      AND NOT 0d8 Kensu rescued
+  DIALOG $ef Swan - Tavern:
+    IF TRUE:
+      => ACTION: $13
+      => SET: 261 Item 261
+      => SET: 140 Azteca In Pyramid
+      => CLEAR: 051 Flag 051
+      => CLEAR: 00a Used Windmill Key
+      | {0a:Kensu}:"Shoot!
+  DIALOG $f1 Swan - Dance Hall:
+    IF TRUE:
+      | {0a:Kensu}:"I hate people who
+      |  are pushy."
+  DIALOG $62 Joel Lighthouse:
+    IF 0a4 Woke Kensu In Lighthouse:
+      => ACTION: $0a
+      => SET: 075 Flag 075
+      | {0a:Kensu}:"Who are you? I was
+      |  happily sleeping."#
+      | "A person like you should
+      |  be eaten by zombies."
+    IF TRUE:
+      |  zzz_
+  DIALOG $ba Goa Fortress - Kensu:
+    IF TRUE:
+      => ACTION: $14
+      => SET: 0d8 Kensu rescued
+      |       [3d:Ivory Statue] 
+      |     is given to {0a:Kensu}.#
+      | {0a:Kensu}:"What a relief! Here,
+      |  I will cure your wounds.
+      |  The Emperor and {22:Mesia}_"#
+      | "_left for the pyramid.
+      |  {22:Mesia} has the power to 
+      |  call the tower, but don't_#
+      | "_give it to Draygon. I'll 
+      |  teach you [48:Flight] to aid
+      |  you. Now, take the short
+      |  cut through the back."
+
+NPC $7f
+  SPAWN $65 Zombie Town:
+    NOT 013 Flag 013
+  DIALOG:
+    IF TRUE:
+      | ------
+
+NPC $80
+  SPAWN $8e Goa:
+    NOT 026 Flag 026
+  DIALOG:
+    IF 026 Flag 026:
+      |  You bug me! Go Away!
+    IF TRUE:
+      | Don't talk to me like that!
+
+NPC $81
+  SPAWN $8e Goa:
+    026 Flag 026
+      AND NOT 024 Flag 024
+  DIALOG:
+    IF 026 Flag 026:
+      |  You bug me! Go Away!
+    IF TRUE:
+      | Don't talk to me like that!
+
+NPC $83: Azteca In Pyramid
+  SPAWN $9c Pyramid - Entrance:
+    06c Flag 06c
+      AND NOT 079 Flag 079
+  DIALOG:
+    IF NOT 082 Flag 082:
+      => ACTION: $03
+      => SET: 079 Flag 079
+      => SET: 082 Flag 082
+      | {03:Azteca}:"Ooo_ {:HERO:}_ I'm 
+      |  glad you could come_
+      |  {:HERO:}:"You're wounded!"#
+      | {03:Azteca}:"Worry not for me,
+      |  but for {22:Mesia}. She waits
+      |  for you on the highest_"#
+      | "_floor. You must use the 
+      |  basement entrance to get 
+      |  there. Here is the_"#
+      | _Bow of Truth_ Use it when 
+      |  you battle the Emperor_
+      |  Go! {22:Mesia} is waiting!"
+    IF TRUE:
+      | {03:Azteca}:"Go! Don't worry
+      |  about me! Now Go!"
+
+NPC $84: Sabera Disguised As Mesia
+  SPAWN $6e Sabera Palace 3:
+    NOT 013 Flag 013
+  DIALOG:
+    IF TRUE:
+      | Help! There is a sorcerer 
+      |  in the back of this 
+      |  chamber.
+
+NPC $85: Stoned Waterfall Cave Adventurers
+  SPAWN $55 Waterfall Cave 2:
+    NOT 06a Stoned People Cured
+  DIALOG:
+    IF 02a Change Soldier:
+      |  ___
+    IF NOT 06a Stoned People Cured:
+      |  ___
+    IF 0d9 Stoned pair:
+      => CLEAR: 0d9 Stoned pair
+      | I heard that a [35:Fog Lamp] was 
+      |  here, but I couldn't find 
+      |  it. I'll look for it in a
+      |  cave across the river_
+    IF TRUE:
+      => SET: 0d9 Stoned pair
+      | I'm saved!
+
+NPC $88: Stoned Akahana
+  SPAWN $57 Waterfall Cave 4:
+    NOT 035 Cured Akahana
+      AND NOT 051 Flag 051
+  DIALOG:
+    IF 028 Change Woman:
+      | {01:Akahana}:"Hello,
+      |  how are you?"
+    IF 02a Change Soldier:
+      | {01:Akahana}:"Aaaah! Please 
+      |  spare my life!"
+    IF 02b Change Stom:
+      | {01:Akahana}:"Hello,
+      |  how are you?"
+    IF 029 Change Akahana:
+      | {01:Akahana}:"That's a mirror."
+  DIALOG $18 Brynmaer:
+    IF TRUE:
+      | I'm {01:Akahana}. I used to 
+      |  have an unusual statue
+      |  but I dropped it near the #
+      |  river. It was a great
+      |  find and will be difficult
+      |  to replace.
+      |  Have you seen it?
+  DIALOG $57 Waterfall Cave 4:
+    IF 035 Cured Akahana:
+      => ACTION: $19
+      => SET: 034 Akahana in waterfall cave
+      | {01:Akahana}:"Hey, you're the 
+      |  one who found my statue_
+      |  I'll give you this, but
+      |  now we're even."
+    IF TRUE:
+      | ___
+  DIALOG $8c Shyron:
+    IF 02d Shyron sages:
+      | {01:Akahana}:"Be careful."
+    IF NOT 036 Akahana Shyron:
+      => SET: 036 Akahana Shyron
+      | {01:Akahana}:"Hi, do you 
+      |  remember me? I live here 
+      |  because the people from #
+      |  my home town of {18:Goa} 
+      |  have changed_ I felt very
+      |  uncomfortable there."
+    IF TRUE:
+      => SET: 036 Akahana Shyron
+      | {01:Akahana}:"When I went home 
+      |  everyone had changed, I
+      |  felt no longer welcome."
+
+NPC $8e: Mesia
+  SPAWN $6e Sabera Palace 3:
+    NOT 013 Flag 013
+  DIALOG:
+    IF NOT 0ed Mesia:
+      => SET: 0ed Mesia
+      | "You must destroy DYNA, the 
+      |  central computer. If you 
+      |  succeed, stick [04:Crystalis] 
+      |  into it's main reactor!"
+    IF TRUE:
+      | {22:Mesia}:"It's the only way!
+      |  We have so little time!
+      |  Now hurry!"
+
+NPC $c0: Vampire 1
+  SPAWN $0a Sealed Cave 7:
+    NOT 100 Flag 100
+
+NPC $c1: Insect
+  SPAWN $1a Swamp:
+    NOT 101 Flag 101
+
+NPC $c2: Kelbesque 1
+  SPAWN $28 Mt Sabre North - Main:
+    NOT 102 Flag 102
+
+NPC $c3: Rage
+  SPAWN $43 Lime Tree Lake:
+    NOT 103 Flag 103
+  DIALOG:
+    IF 017 Flag 017:
+      => ACTION: $1a
+      | That is the [02:Sword of Water]!
+      |  You're the legendary one 
+      |  I've waited for!#
+      |  I am {0e:Rage}, protector of 
+      |  the sacred Lime Tree_#
+      |  I've stood guard here for 
+      |  over 100yrs. I now give 
+      |  you the [09:Ball of Water].#
+      |  I may now sleep in peace
+      |  knowing the chamber is 
+      |  empty. Enter the tree and 
+      |  protect {22:Mesia}!
+    IF TRUE:
+      => ACTION: $1b
+      | You're invading our
+      |  territory, you arrogant
+      |  fool! Be gone!
+
+NPC $c5: Kelbesque 2
+  SPAWN $a9 Goa Fortress - Kelbesque:
+    NOT 105 Flag 105
+
+NPC $c6: Sabera 2
+  SPAWN $ac Goa Fortress - Tornel:
+    NOT 106 Flag 106
+
+NPC $c7: Mado 2
+  SPAWN $b9 Goa Fortress - Asina:
+    NOT 107 Flag 107
+
+NPC $c8: Karmine
+  SPAWN $b6 Goa Fortress - Karmine 7:
+    NOT 108 Flag 108
+
+NPC $c9: Statue of Moon
+  SPAWN $a0 Crypt - Entrance:
+    NOT 109 Used Bow of Moon
+
+NPC $ca: Statue of Sun
+  SPAWN $a0 Crypt - Entrance:
+    NOT 10a Used Bow of Sun
+
+NPC $cb: Draygon
+  SPAWN $9f Pyramid - Draygon:
+    NOT 10b Flag 10b
+
+NPC $cc: Vampire 2
+  SPAWN $6c Sabera Palace 1:
+    NOT 10c Flag 10c

@@ -20,7 +20,7 @@ esac
 # Does slightly different things based on what branch
 # was just tested.  Assumes a valid ssh-agent for pushing.
 
-pages="index.html check.html track.html help.html"
+pages="index.html check.html help.html"
 subdirs="js css images"
 
 # Clone the existing gh-pages repo

@@ -8,7 +8,6 @@ import {crc32} from './crc32.js';
 import * as fs from 'fs';
 import * as patch from './patch.js';
 import {UsageError} from './util.js';
-import {NodeReader} from './nodereader.js';
 import * as version from './version.js';
 import {disableAsserts} from './assert.js';
 
@@ -76,7 +75,7 @@ const main = async (...args: string[]) => {
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
-    await patch.shuffle(orig, s, flagset, new NodeReader());
+    await patch.shuffle(orig, s, flagset);
   }));
   for (const [item, hist] of sphereAnalysis) {
     console.log(`\n${item}`);

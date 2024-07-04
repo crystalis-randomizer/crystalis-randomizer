@@ -1,0 +1,49 @@
+# Website Cleanup
+
+Basic idea: delete old versions that don't matter. Also maybe reset git history.
+
+Keep numbered versions, active branches, recent rc's, and permalinks from
+the last few months.
+
+1.  Back up entire repo to a zip file, burn or upload to Google Drive.
+2.  Delete old branches
+    ```sh
+    rm -rf 1.*-rc* foo bar baz
+    ```
+3.  Collect all the sha we need to keep
+    ```sh
+    for a in */js/build_info.js; do
+      grep HASH sha/files |
+          sed "s/.*: '//" |
+          head -c 7
+      echo
+    done | sort -u > /tmp/keep1
+    ```
+    Also look at manifest (find a good cutoff)
+    ```sh
+    tail -33 sha/files/manifest | cut -f1 -d' ' > /tmp/keep2
+    # ...
+    cat /tmp/keep[12] | sort -u > /tmp/keep
+    egrep "$(paste -sd '|' /tmp/keep)" sha/files/manifest > /tmp/manifest
+    mv /tmp/manifest sha/files/manifest
+    ```
+4.  Prune the unnecessary sha
+    ```sh
+    for a in sha/???????; do
+      if ! grep -q files /tmp/keep; then
+        rm -rf $a
+      fi
+    done
+    ```
+5.  Garbage-collect the sha/files
+    ```sh
+    find sha/??????? -type l -exec readlink {} \; |
+        sed 's,.*/files/,,' | sort -u > /tmp/keep-files
+    for a in sha/files/*/*; do
+      if ! grep -q ${a#sha/files/} /tmp/keep-files; then
+        echo rm $a
+      else
+        echo "# keep $a"
+      fi
+    done
+    ```

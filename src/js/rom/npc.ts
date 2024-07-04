@@ -26,7 +26,9 @@ export class Npcs extends EntityArray<Npc> {
   WindmillGuard = new Npc(this, 0x14);
   SleepingWindmillGuard = new Npc(this, 0x15);
   Akahana = new Npc(this, 0x16);
-  // generic brynmaer 17..1c
+  // generic brynmaer 17..1a
+  SkiFree = new Npc(this, 0x1b);
+  // generic brynmaer 1c
   OakElder = new Npc(this, 0x1d);
   OakMother = new Npc(this, 0x1e);
   OakChild = new Npc(this, 0x1f);
@@ -37,7 +39,8 @@ export class Npcs extends EntityArray<Npc> {
   AryllisRightAttendant = new Npc(this, 0x26);
   AryllisLeftAttendant = new Npc(this, 0x27);
   Nadare = new Npc(this, 0x28);
-  // generic nadare 29..2c
+  // generic nadare 29..2b
+  DeadSkiFree = new Npc(this, 0x2c); // dying man at foot of sabre north
   SoldierGuard = new Npc(this, 0x2d); // swan, mt sabre
   // shopkeeper prisoners 2e..30
   // unused 31
@@ -410,6 +413,59 @@ export class Npc extends Entity {
       this.dialogPointer.loc(a, `Dialog_${id}_Pointer`);
       a.word(dialog);
     }
+  }
+
+  // dumps the dialog data into a string
+  dump(): string {
+    if (!this.used) return '';
+    let s = `NPC $${hex(this.id)}${this.name ? ': ' + this.name : ''}\n`;
+    // TODO - consider extra info, like data values, sprites, items, etc?
+    // TODO - spawn conditions
+    const cond = (c: number, plus = '', minus = 'NOT '): string => {
+      if (c === 0) return 'FALSE';
+      if (c === -1) return 'TRUE';
+      const not = c < 0 ? minus : plus;
+      if (c < 0) c = ~c;
+      const name = this.rom.flags[c]?.name;
+      return `${not}${c.toString(16).padStart(3, '0')}${name ? ' ' + name : ''}`;
+    }
+    function indent(message: string): string {
+      return '      | ' + message.replace(/\n/g, '\n      | ');
+    }
+    for (const [loc, fs] of this.spawnConditions) {
+      const name = this.rom.locations[loc]?.name || '';
+      s += `  SPAWN $${hex(loc)} ${name}:\n`;
+      let and = '';
+      for (const f of fs) {
+        s += `    ${and}${cond(f)}\n`;
+        and = '  AND ';
+      }
+    }
+    if (this.globalDialogs.length || this.localDialogs.get(-1)?.length) {
+      s += '  DIALOG:\n';
+    }
+    for (const d of this.globalDialogs) {
+      const msg = this.rom.messages.get(d.message)?.text || '(broken message)';
+      s += `    IF ${cond(d.condition)}:\n`;
+      if (d.message.action) s += `      => ACTION: $${hex(d.message.action)}\n`;
+      s += `${indent(msg)}\n`;
+    }
+    for (const [loc, ds] of this.localDialogs) {
+      if (loc >= 0) {
+        const name = this.rom.locations[loc]?.name || '';
+        s += `  DIALOG $${hex(loc)} ${name}:\n`;
+      }
+      for (const d of ds) {
+        const msg = this.rom.messages.get(d.message)?.text || '(broken message)';
+        s += `    IF ${cond(d.condition)}:\n`;
+        if (d.message.action) s += `      => ACTION: $${hex(d.message.action)}\n`;
+        for (const f of d.flags) {
+          s += `      => ${cond(f, 'SET: ', 'CLEAR: ')}\n`;
+        }
+        s += `${indent(msg)}\n`;
+      }
+    }
+    return s;
   }
 }
 

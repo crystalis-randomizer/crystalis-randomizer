@@ -25,7 +25,10 @@ const KEY_NAMES = [
   'Encryption Key',
   'Private Key',
   'Public Key',
+  'Secret Key',
+  'Cipher Key',
   'Key Card',
+  'Keyboard',
   'Any Key',
   'Ctrl Key',
   'Escape Key',
@@ -55,6 +58,12 @@ const KEY_NAMES = [
   'Key Lime Pie',
   'Keystone',
   'Answer Key',
+  'Sticks Key',
+  'Key to my Heart',
+  'Aqui',
+  'Map Key',
+  'Key Stone',
+  // 'Keytar', // NOTE: ensure not also a flute?
 ];
 const FLUTE_NAMES = [
   '!Random Flute',
@@ -65,6 +74,7 @@ const FLUTE_NAMES = [
   '!Ocarina',
   'Fairy Ocarina',
   'Ocarina of Time',
+  'Deku Pipes',
   '!Pan Pipes',
   '!Bugle',
   '!Bagpipes',
@@ -105,6 +115,13 @@ const FLUTE_NAMES = [
   'Tambourine',
   'Tornelsbane',
   'Flute of Power',
+  'Otamatone',
+  'Melodica',
+  'Vuvuzela',
+  'Didgeridoo',
+  'Dragonzord Flute',
+  'Whoopie Cushion',
+  // 'Keytar', // NOTE: ensure not also a key?
 ];
 const LAMP_NAMES = [
   '!Random Lamp',
@@ -123,22 +140,45 @@ const LAMP_NAMES = [
   'Overhead Lamp',
   'Pedestal Lamp',
   'Incubation Lamp',
+  'Halogen Bulb',
+  'Incandescent Bulb',
   'Fluorescent Lamp',
   'Ultraviolet Lamp',
   'Heat Lamp',
   'Recessed Lighting',
   'Laser Pointer',
   'Spotlight',
+  'Streetlight',
   'Flashlight',
   'Search Light',
+  'LED',
+  'Nightlight',
   'Batsignal',
   'Candelabra',
   'Chandelier',
   'Birthday Candle',
   'Tallow Candle',
   'Wax Candle',
+  'Candle',
+  'Red Candle',
+  'Blue Candle',
+  'Gas Stove',
+  'Fireplace',
+  'Campfire',
+  'Bonfire',
   'Tanning Bed',
+  'Bug Zapper',
   'CRT',
+  'Disco Ball',
+  'The Clapper',
+  'Merton',
+  'Gaddlight',
+  'Shroomlight',
+  'Froglight',
+  'Glowstone',
+  'Redstone Lamp',
+  'PrismarineLantern',
+  'Soul Campire',
 ];
 const STATUE_NAMES = [
   '!Random Statue',
@@ -164,30 +204,56 @@ const STATUE_NAMES = [
   'M. Toki Statue',
   'Statue of Liberty',
   'Colossus of Rhodes',
+  'Great Sphynx',
+  'Olmec Head',
+  'Shakoki Dogu',
+  'Moai',
+  'Venus de Milo',
+  'David',
+  'The Thinker',
+  'Winged Victory',
+  'Terracotta Statue',
+  'Gargoyle',
   'Mattrick Figurine',  // #2 speedrun 2017 (1h04m04s)
   'Dragondarch Statue', // #1 speedrun 2016 (58m14s)
   'Overswarm Statue',   // #1 speedrun 2019-2021 (52m53s)
   'Trueblue83 Statue',  // #3 speedrun 2019 (59m29s)
   'TheAxeMan Idol',     // #4 speedrun 2020 (59h59m), TAS
   'Acmlm Figurine',     // #2 speedrun 2021 (56m00s)
+  'Tornel Statue',      // 2022 Tournament Winner
   'CodeGorilla Trophy', // Full Stupid 2021/11/21
+  'SirArchibald Model', // Full Stupid 2022/11/11
+  // https://www.youtube.com/playlist?list=PLl7hXG2hSSbJdIi2GqQ12ksmvG7hmIyPQ
+  'ClaireDiviner Idol', // Full Stupid 2023/07/06
 ];
 // TODO - set up combinations that should appear together
 const BOW_NAMES = [
   '!Random Bow',
   'Unidentified Bow',
   'Crossbow',
+  'Arbalest',
   'Autocrossbow',
   'Long Bow',
   'Compound Bow',
+  'Recurve Bow',
+  'Golden Bow',
   'Silver Arrows',
+  'Ice Arrows',
+  'Fire Arrows',
   'Wooden Bow',
   'Violin Bow',
   'Tae Bo',
   'Botox',
+  'Bo Burnham',
+  'Bo Dallas',
   'Bo Derek',
   'Bo Diddley',
-  'Bo Dallas',
+  'Bo Jackson',
+  'Bo Schembechler',
+  'Beau Bridges',
+  'David Bowie',
+  'Bojangles',
+  'Bodacious',
   'Rainbow',
   'Hair Bow',
   'Bow Tie',
@@ -210,8 +276,37 @@ const BOW_NAMES = [
   'Buriza-Do Kyanon',
   'Windforce',
   'Eaglehorn',
+  'Cupid\'s Bow',
+  'Bow No!',
+  'Slingshot',
 ];
 
+// Keep these community ideas here for later
+const PLANT_NAMES = [
+  'Black Lotus',
+  'GympieGympie Leaf',
+  'The Beast\'s Rose',
+  'Dryad\'s Leaf',
+  'WALL-E\'s Plant',
+];
+const PENDANT_NAMES = [
+  'Spike Choker',
+  'Dog Collar',
+  'Pearl Necklace',
+  'Heart of the Ocean',
+  'Auryn',
+  'Melisandre\'s Ruby',
+  'Boleyn \'B\'',
+  'Satine\'s Necklace',
+];
+const GLASSES_NAMES = [
+  'Specs',
+  'Reading Glasses',
+  'Night Vision',
+  'Sunglasses',
+  'Swimming Goggles',
+];
+const [] = [PLANT_NAMES, PENDANT_NAMES, GLASSES_NAMES];
 
 export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
   if (!flags.unidentifiedItems()) return;

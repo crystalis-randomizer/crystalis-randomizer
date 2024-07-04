@@ -19,7 +19,7 @@ LOADERFLAGS = --loader:.br=binary
 # Hand-written list of entry points (relative to src/js)
 WEB_ENTRY_POINTS = main.js check.js $(addprefix view/,$(VIEW_ENTRY_POINTS))
 WEB_DBG_ENTRY_POINTS = patch.ts debug.js
-VIEW_ENTRY_POINTS = maps.js messages.js screens.js sprites.js tileset.js
+VIEW_ENTRY_POINTS = maps.js messages.js screens.js sprites.js tileset.js npcs.js
 
 # Output directories
 JS65_DBG = $(DBGDIR)/bin/js65

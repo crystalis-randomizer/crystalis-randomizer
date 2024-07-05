@@ -128,6 +128,9 @@ CheckStartShortcuts:
    beq +
     dec $0780
     dec $0780
+.ifdef _RANDOM_WILD_WARP
+    jsr LoopWildWarpIndex
+.endif ; _RANDOM_WILD_WARP
 .endif
 +  lda $48   ; activated, so zero out start/select from $48
    and #$cf
@@ -171,6 +174,48 @@ SoftReset:
 .assert * <= $cbd3
 .endif
 
+.ifdef _RANDOM_WILD_WARP
+.org $cbd3
+  jsr LoopWildWarpIndex
+  ldy $0780
+  lda WildWarpLocations,y
+  sta $6c ; CurrentLocation
+  lda #$00
+  sta $6d ; CurrentEntrance
+  inc $0780
+  lda #$01 ; GAME_MODE_CHANGE_LOCATION
+  sta GameMode
+  pla
+  pla
+  rts
+.assert * = $cbec
+  
+.import wildWarpCount
+  
+.reloc
+LoopWildWarpIndex:
+  ; happening before warping, so $0780 should contain index we want to go to
+  lda $0780
+  cmp #$ff ; indicates we looped from 1 -> count
+  bne +
+    lda #wildWarpCount
+    sta $0780
+    dec $0780
+    bne ++
++ cmp #$fe ; indicates we looped from 0 -> count - 1
+  bne +
+    lda #wildWarpCount
+    sta $0780
+    dec $0780
+    dec $0780
+    lda $0780
++ cmp #wildWarpCount
+  bcc ++
+    lda #$00
+    sta $0780
+++ rts
+.endif ; _RANDOM_WILD_WARP
+  
 ;;; TODO - quick select items
 ;; .org $7cb62
 ;;   jsr ReadControllersAndUpdateStart

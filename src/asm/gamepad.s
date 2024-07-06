@@ -128,9 +128,6 @@ CheckStartShortcuts:
    beq +
     dec $0780
     dec $0780
-.ifdef _RANDOM_WILD_WARP
-    jsr LoopWildWarpIndex
-.endif ; _RANDOM_WILD_WARP
 .endif
 +  lda $48   ; activated, so zero out start/select from $48
    and #$cf
@@ -174,10 +171,9 @@ SoftReset:
 .assert * <= $cbd3
 .endif
 
-.ifdef _RANDOM_WILD_WARP
+.ifdef _RANDOM_WILD_WARP_COUNT
 .org $cbd3
   jsr LoopWildWarpIndex
-  ldy $0780
   lda WildWarpLocations,y
   sta $6c ; CurrentLocation
   lda #$00
@@ -187,34 +183,30 @@ SoftReset:
   sta GameMode
   pla
   pla
+  nop
+  nop
+  nop
   rts
 .assert * = $cbec
-  
+
 .import wildWarpCount
   
 .reloc
 LoopWildWarpIndex:
   ; happening before warping, so $0780 should contain index we want to go to
+  clc
   lda $0780
-  cmp #$ff ; indicates we looped from 1 -> count
-  bne +
-    lda #wildWarpCount
-    sta $0780
-    dec $0780
-    bne ++
-+ cmp #$fe ; indicates we looped from 0 -> count - 1
-  bne +
-    lda #wildWarpCount
-    sta $0780
-    dec $0780
-    dec $0780
-    lda $0780
-+ cmp #wildWarpCount
-  bcc ++
-    lda #$00
-    sta $0780
-++ rts
-.endif ; _RANDOM_WILD_WARP
+  tay ; leave subroutine with index in y register
+  bpl +
+    ; negative index ($fe or $ff), add wildWarpCount to loop correctly
+    adc #wildWarpCount
+    bne ++ ; unconditional
++ sbc #(wildWarpCount-1) ; clc above makes this subtract wildWarpCount
+  bcc +++ ; branch if carry was needed
+++  sta $0780
+    tay ; leave subroutine with index in y register
++++ rts
+.endif ; _RANDOM_WILD_WARP_COUNT
   
 ;;; TODO - quick select items
 ;; .org $7cb62

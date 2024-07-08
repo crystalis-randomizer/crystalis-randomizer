@@ -10,7 +10,7 @@ import * as patch from './patch';
 import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
-import {readAPCrysFile} from './appatch';
+import {parseAPCrysJSON} from './appatch';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -129,7 +129,16 @@ const main = (...args: string[]) => {
   return Promise.all(new Array(count).fill(0).map(async () => {
     let predetermined = undefined;
     if (apPatchPath) {
-      [seed, flagset, predetermined] = await readAPCrysFile(apPatchPath);
+      const unzipper = require('unzipper');
+      const decoder: TextDecoder = new TextDecoder('utf-8');
+      const apcrysDir = await unzipper.Open.file(apPatchPath);
+      const apFile = apcrysDir.files.find(f => f.path === 'archipelago.json');
+      const apBytes: Uint8Array = await apFile.buffer() 
+      const apJson: string = decoder.decode(apBytes);
+      const patchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.json');
+      const patchDataBytes: Uint8Array = await patchDataFile.buffer();
+      const patchDataJson: string = decoder.decode(patchDataBytes);
+      [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
     }
     
     const s = patch.parseSeed(seed);

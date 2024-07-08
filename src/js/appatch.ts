@@ -35,14 +35,7 @@ export class ShuffleData {
   }
 }
 
-export async function readAPCrysFile(filepath: string): Promise<[string, FlagSet, ShuffleData]>  {
-  const unzipper = require('unzipper')
-  const apcrysDir = await unzipper.Open.file(filepath);
-  const apJson = apcrysDir.files.find(f => f.path === 'archipelago.json');
-  const patchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.json');
-  const patchDataBytes: Uint8Array = await patchDataFile.buffer();
-  const decoder: TextDecoder = new TextDecoder('utf-8');
-  const patchDataJson: string = decoder.decode(patchDataBytes);
+export function parseAPCrysJSON(patchDataJson: string, apJson?: string): [string, FlagSet, ShuffleData]  {
   const patchData = JSON.parse(patchDataJson);
   const shuffleData = patchData["shuffle_data"];
   // Need to clean up objects to turn them into maps

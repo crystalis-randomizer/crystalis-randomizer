@@ -167,6 +167,41 @@ setTimeout(function() {
       </div>
     </div>
   </section>
+  
+  <section class="if-rom-uploaded expandable">
+    <h1>Archipelago</h1>
+    <div>
+      <p>
+        Please select an .apcrys file, which can be found in the zipped output
+        produced by the Archipelago Generator. If you are not the person who
+        generated this multiworld, ask your host for your .apcrys file.
+      <p><label class="file-picker button">
+        Select Archipelago Patch File
+        <input type="file" accept=".apcrys" id="ap-patch-file" style="display: none;">
+      </label>
+      <h2></h2>
+      <p>Your currently cached patch file is <span id="ap-patch-name"></span>
+    </div>
+  </section>
+  
+  <section class="if-patch-uploaded">
+    <h1>Patch</h1>
+    <div>
+      <p>
+        Use this button to apply the provided .apcrys file to your Crystalis
+        ROM. Note that all previously selected flags will be ignored in favor
+        of the ones in the .apcrys file, but your sprite replacements will be
+        applied normally.
+      <h2></h2>
+      <div class="flex-row">
+        <a id="ap-patch" class="button">Patch</a>
+        <progress class="if-patching" id="patch-progress" max="1"></progress>
+      </div>
+      <p>Your flag string is <span id="ap-flagstring-out"></span>
+      <p>The seed for this patch is <span id="ap-seed">????????</span>
+      <p>The checksum for this seed is <span id="ap-checksum">????????</span>
+    </div>
+  </section>
 
   <section class="if-rom-uploaded">
     <h1>Generate</h1>

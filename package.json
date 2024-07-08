@@ -42,6 +42,7 @@
   },
   "description": "",
   "dependencies": {
+    "@shortercode/webzip": "^1.1.1-0",
     "@types/chai": "^4.3.4",
     "@types/mocha": "^10.0.0",
     "@types/node": "^18.11.9",

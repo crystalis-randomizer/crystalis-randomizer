@@ -134,6 +134,7 @@ function defines(flags: FlagSet,
     _PROGRESSIVE_BRACELET: true,
     _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
     _RANDOM_FLYER_SPAWNS: true,
+    _RANDOM_WILD_WARP_COUNT: flags.randomizeWildWarp(),
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
     _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
@@ -715,7 +716,9 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
   }
   random.shuffle(locations);
   rom.wildWarp.locations = [];
-  for (const loc of [...locations.slice(0, 15).sort((a, b) => a.id - b.id)]) {
+  const min_warps = 4;
+  const count = random.nextInt(16 - min_warps) + min_warps;
+  for (const loc of [...locations.slice(0, count)]) {
     rom.wildWarp.locations.push(loc.id);
     if (rom.spoiler) rom.spoiler.addWildWarp(loc.id, loc.name);
   }

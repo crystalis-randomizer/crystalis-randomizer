@@ -547,8 +547,18 @@ ReloadLocationGraphicsAfterChest:
   lda $057f
   and #$07
   tay
+.ifdef _ARCHIPELAGO
+  lda ArchipelagoFlag
+  cmp #02
+  beq +
+  lda SlotFlagsStart,x
+  jmp ++
++ lda ItemFlagsStart,x
+++ and PowersOfTwo,y
+.else
   lda SlotFlagsStart,x
   and PowersOfTwo,y
+.endif ; _ARCHIPELAGO
   beq +
    pla
    pla

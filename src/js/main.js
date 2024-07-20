@@ -529,12 +529,7 @@ const loadSpriteSelectionsFromStorage = () => {
     });
     reader.readAsText(file);
   });
-}  
-
-  /*const apcrysDir: ZipArchive = await ZipArchive.from_blob(file);
-  const apJson: ZipEntry = apcrysDir.get('archipelago.json');
-  const patchDataFile: ZipEntry = apcrysDir.get('patch_data.json');
-  const patchDataJson: string = patchDataFile.prototype.get_string();*/
+}
 
 const loadAPPatchFromStorage = () => {
   const name = window['localStorage'].getItem('ap-patch-name');

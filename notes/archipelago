@@ -88,7 +88,6 @@ approach is as follows:
    a problem.)
 11.Write ASM code that allows arbitrary item granting from the client (hopefully including
    mimics).
---------------------------------------------
 12.Make a new web interface that accepts a vanilla ROM and an .apcrys file and uses the new
    entry point to patch accordingly.
 
@@ -128,28 +127,24 @@ In my opinion, the pros overall outweigh the cons, hence why I settled on this a
 I could certainly see another developer taking a different approach.
 
 Feature To-Do list:
-  -Client
-  -Web interface
   -User-facing documentation
-  -better mimic spawning
   -logic and implementation of flags not yet implemented:
-    -Wm (not a clue; implementation TBD, not in initial release)
-    -Wa, Wh (using GER)
-	-Wu (mostly need to put unidentified item names in the datapackage)
-	-Wg (probably bespoke randomization, for such a small list)
+	-Vw (create Entrances from Menu Region for vanilla wild warp)
 	-Ww (pick ids, make Entrances from Menu Region, send ids in .apcrys file)
-	-Gr (force a flier in the Lime Valley enemy pool? not sure on this one)
-	-Mg (Add a sword requirement to every chest)
+	
+	-Wg (probably bespoke randomization, for such a small list)
+	
+	-Es (lock a sword on Leaf Elder)
 	-Et (remove mimic locations from AP's location set)
 	-Eu (remove consumable locations from AP's location set)
-	-Es (lock a sword on Leaf Elder)
-	-Ec (in relation to Wu, specifically)
-	-Vw (create Entrances from Menu Region for vanilla wild warp)
-	-mimic restrictions (if local items are handled locally)
+	
+	-Gr (force a flier in the Lime Valley enemy pool? not sure on this one - CR-side only) 
+	
+    -Wa, Wh (using GER)
+    -Wm (not a clue; implementation TBD, not in initial release)
   -Archipelago specific features:
     -Deathlink >:)
 	-Gifting interface? (maybe take over pawn-shops?)
-	-Randomized wild warp count? (Easy to implement, could go into core randomizer if there was
-	  good UI for it)
-	-Option for local items being baked into the ROM?
+	-Option for local items being baked into the ROM? (Probably not, given how item flags end up working, but you never know)
 	-Collect support?
+  -better mimic spawning?

@@ -1304,8 +1304,9 @@ Flags 000..2ff (see flags table)
 $64e0..$657f
 ------------
 Not read, but seems to maybe be copied?  This ends up in the save data.
-Archipelago uses $657e and $657f to store two counts of items received,
-one for consumables, one for non-consumables.
+Archipelago uses $657d and $657e to store two counts of items received,
+one for consumables, one for non-consumables. NOTE: $657f is used in the
+Stom Fight for ???. Don't make the same mistakes I did.
 
 
 $6580..$667f

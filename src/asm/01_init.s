@@ -374,10 +374,10 @@ ArchipelagoFlag                      = $6250
 ArchipelagoItemGet                   = $6251
 
 ;Count of consumables received in Archipelago
-ArchipelagoConsumablesReceivedIdx    = $657e
+ArchipelagoConsumablesReceivedIdx    = $657d
 
 ;Count of non-consumables received in Archipelago
-ArchipelagoNonConsumablesReceivedIdx = $657f
+ArchipelagoNonConsumablesReceivedIdx = $657e
 
 .endif ;_ARCHIPELAGO
 

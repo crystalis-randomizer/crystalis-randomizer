@@ -173,6 +173,8 @@ SoftReset:
 
 .ifdef _RANDOM_WILD_WARP_COUNT
 .org $cbd3
+  ; happening before warping, so $0780 should contain index we want to go to
+  lda $0780
   jsr LoopWildWarpIndex
   lda WildWarpLocations,y
   sta $6c ; CurrentLocation
@@ -183,9 +185,6 @@ SoftReset:
   sta GameMode
   pla
   pla
-  nop
-  nop
-  nop
   rts
 .assert * = $cbec
 
@@ -193,9 +192,7 @@ SoftReset:
   
 .reloc
 LoopWildWarpIndex:
-  ; happening before warping, so $0780 should contain index we want to go to
   clc
-  lda $0780
   tay ; leave subroutine with index in y register
   bpl +
     ; negative index ($fe or $ff), add wildWarpCount to loop correctly

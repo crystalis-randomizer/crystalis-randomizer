@@ -129,9 +129,6 @@ I could certainly see another developer taking a different approach.
 Feature To-Do list:
   -User-facing documentation
   -logic and implementation of flags not yet implemented:
-	-Vw (create Entrances from Menu Region for vanilla wild warp)
-	-Ww (pick ids, make Entrances from Menu Region, send ids in .apcrys file)
-	
 	-Wg (probably bespoke randomization, for such a small list)
 	
 	-Es (lock a sword on Leaf Elder)

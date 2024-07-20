@@ -268,9 +268,12 @@ async function shuffleInternal(rom: Uint8Array,
   updateWallSpawnFormat(parsed);
   randomizeWalls(parsed, flags, random, predetermined);
   crumblingPlatforms(parsed, random);
-
+  if (predetermined) {
+    parsed.wildWarp.locations = predetermined.wildwarps;
+  } else {
+    if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+  }
   if (flags.nerfWildWarp()) parsed.wildWarp.locations.fill(0);
-  if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
   if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random, predetermined);
   rescaleMonsters(parsed, flags, random, predetermined);
   unidentifiedItems(parsed, flags, random, predetermined);

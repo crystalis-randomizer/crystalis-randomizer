@@ -10,6 +10,7 @@ export class ShuffleData {
   readonly gbcCaveExits: Array<number>;
   readonly shopInventories: Map<number, Array<number>>;
   readonly thunderWarp: number;
+  readonly wildwarps: Array<number>;
   readonly fromArchipelago: boolean;
     
   constructor(wallMap: Map<string, number>, 
@@ -21,6 +22,7 @@ export class ShuffleData {
               gbcCaveExits: Array<number>,
               shopInventories: Map<number, Array<number>>,
               thunderWarp: number,
+              wildwarps: Array<number>,
               fromArchipelago: boolean) {
     this.wallMap = wallMap;
     this.keyItemNames = keyItemNames;
@@ -31,6 +33,7 @@ export class ShuffleData {
     this.gbcCaveExits = gbcCaveExits;
     this.shopInventories = shopInventories;
     this.thunderWarp = thunderWarp;
+    this.wildwarps = wildwarps;
     this.fromArchipelago = fromArchipelago;
   }
 }
@@ -54,7 +57,8 @@ export function parseAPCrysJSON(patchDataJson: string, apJson?: string): [string
   let seed = String(patchData['seed']);
   let predetermined = new ShuffleData(wallMap, keyItemNames, tradeInMap, 
                                       shuffleData['rage_trade'], shuffleData['tornel_trade'], bossWeaknesses, 
-                                      shuffleData['gbc_cave_exits'], shopInventories, shuffleData['thunder_warp'], apJson != undefined);
+                                      shuffleData['gbc_cave_exits'], shopInventories, shuffleData['thunder_warp'], 
+                                      shuffleData['wildwarps'], apJson != undefined);
   return [seed, flags, predetermined];
 }
 
@@ -131,4 +135,5 @@ const shopInventories = new Map<number, Array<number>>([
   [249, [0x21, 0x1d, 0x24, 0xff]]
 ]);
 const thunderWarp = 28;
-export const predetermined: ShuffleData = new ShuffleData(wallMap, keyItemNames, tradeInMap, rageId, tornelId, bossWeaknesses, gbcCaveExits, shopInventories, thunderWarp, true);
+const wildwarps = [0];
+export const predetermined: ShuffleData = new ShuffleData(wallMap, keyItemNames, tradeInMap, rageId, tornelId, bossWeaknesses, gbcCaveExits, shopInventories, thunderWarp, wildwarps, true);

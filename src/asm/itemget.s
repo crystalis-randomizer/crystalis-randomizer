@@ -154,13 +154,19 @@ PatchStartItemGet:
     sta $06e3
     lda #$10 ; GAME_MODE_STATUS_MSG
     sta GameMode
+    ldy $0623
+    lda $0300,y
+    cmp #$aa
+    bne +
+      lda #$00
+      sta $4a0,y
++   pla
     pla
     pla
     pla
     pla
     pla
-    pla
-    jmp $e144 
+    rts
 ++:
 .endif _ARCHIPELAGO
   lda $23
@@ -303,13 +309,24 @@ PatchStartItemGet:
     sta $06e3
     lda #$10 ; GAME_MODE_STATUS_MSG
     sta GameMode
+    ; Check to see if we are opening a chest or getting an item from a person.
+    ; A chest uses the metasprite $aa so check for that
+    ; A mimic also uses $aa, but when this will be called later to give the item
+    ; the mimic will already be dead, and the metasprite will be $90
+    ldy $0623
+    lda $0300,y
+    cmp #$aa
+    bne @NotAMimicOrChest
+      lda #$00
+      sta $4a0,y
+@NotAMimicOrChest:
     pla
     pla
     pla
     pla
     pla
     pla
-    jmp $e144 
+    rts
 ++:
 .endif _ARCHIPELAGO
   lda $23

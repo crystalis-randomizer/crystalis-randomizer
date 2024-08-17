@@ -11,6 +11,7 @@ export class ShuffleData {
   readonly shopInventories: Map<number, Array<number>>;
   readonly thunderWarp: number;
   readonly wildwarps: Array<number>;
+  readonly goa_floors: Array<[number, boolean]>;
   readonly fromArchipelago: boolean;
     
   constructor(wallMap: Map<string, number>, 
@@ -23,6 +24,7 @@ export class ShuffleData {
               shopInventories: Map<number, Array<number>>,
               thunderWarp: number,
               wildwarps: Array<number>,
+              goa_floors: Array<[number, boolean]>,
               fromArchipelago: boolean) {
     this.wallMap = wallMap;
     this.keyItemNames = keyItemNames;
@@ -34,6 +36,7 @@ export class ShuffleData {
     this.shopInventories = shopInventories;
     this.thunderWarp = thunderWarp;
     this.wildwarps = wildwarps;
+    this.goa_floors = goa_floors;
     this.fromArchipelago = fromArchipelago;
   }
 }
@@ -58,7 +61,7 @@ export function parseAPCrysJSON(patchDataJson: string, apJson?: string): [string
   let predetermined = new ShuffleData(wallMap, keyItemNames, tradeInMap, 
                                       shuffleData['rage_trade'], shuffleData['tornel_trade'], bossWeaknesses, 
                                       shuffleData['gbc_cave_exits'], shopInventories, shuffleData['thunder_warp'], 
-                                      shuffleData['wildwarps'], apJson != undefined);
+                                      shuffleData['wildwarps'], shuffleData['goa_floors'], apJson != undefined);
   return [seed, flags, predetermined];
 }
 
@@ -136,4 +139,10 @@ const shopInventories = new Map<number, Array<number>>([
 ]);
 const thunderWarp = 28;
 const wildwarps = [0];
-export const predetermined: ShuffleData = new ShuffleData(wallMap, keyItemNames, tradeInMap, rageId, tornelId, bossWeaknesses, gbcCaveExits, shopInventories, thunderWarp, wildwarps, true);
+const goa_floors: Array<[number, boolean]> = [
+    [1, false],
+    [0, true],
+    [2, true],
+    [3, false]
+];
+export const predetermined: ShuffleData = new ShuffleData(wallMap, keyItemNames, tradeInMap, rageId, tornelId, bossWeaknesses, gbcCaveExits, shopInventories, thunderWarp, wildwarps, goa_floors, true);

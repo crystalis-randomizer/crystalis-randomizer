@@ -264,7 +264,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   if (flags.shuffleShops()) shuffleShops(parsed, flags, random, predetermined);
 
-  if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
+  if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random, predetermined); // NOTE: must be before shuffleMazes!
   updateWallSpawnFormat(parsed);
   randomizeWalls(parsed, flags, random, predetermined);
   crumblingPlatforms(parsed, random);

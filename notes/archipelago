@@ -128,10 +128,7 @@ I could certainly see another developer taking a different approach.
 
 Feature To-Do list:
   -User-facing documentation
-  -better mimic spawning? (actually very important; things can glitch out spectacularly otherwise)
   -logic and implementation of flags not yet implemented:
-	-Wg (probably bespoke randomization, for such a small list)
-	
 	-Et (remove mimic locations from AP's location set)
 	-Eu (remove consumable locations from AP's location set)
 	

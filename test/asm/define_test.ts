@@ -1,5 +1,4 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
+import {describe, it, expect} from 'bun:test';
 import {Define} from '../../src/js/asm/define';
 import {Token} from '../../src/js/asm/token';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
@@ -12,7 +11,8 @@ describe('Define', function() {
   function testExpand(define: string, input: string, output: string,
                       extra?: string) {
     const defTok = tok(define);
-    const defName = defTok[1] || expect.fail('no name');
+    const defName = defTok[1];
+    expect(defName).toBeTruthy(); // no name
     const def = Define.from(defTok);
     const tokens = tok(input);
     // TODO - handle this better...
@@ -23,11 +23,11 @@ describe('Define', function() {
         break;
       }
     }
-    expect(found).to.not.equal(-1);
+    expect(found).not.toBe(-1);
     const overflow = def.expand(tokens, found);
-    expect(overflow).to.be.ok;
-    expect(tokens.map(strip)).to.eql(tok(output));
-    expect(overflow!.map(ts => ts.map(strip))).to.eql(extra ? toks(extra) : []);
+    expect(overflow).toBeTruthy();
+    expect(tokens.map(strip)).toEqual(tok(output));
+    expect(overflow!.map(ts => ts.map(strip))).toEqual(extra ? toks(extra) : []);
   }
 
   describe('with no parameters', function() {
@@ -145,7 +145,7 @@ describe('Define', function() {
 
     it('should fail on parenthesized calls with too many args', function() {
       const define = Define.from(tok('.define foo(a, b) [a:b]'));
-      expect(define.expand(tok('foo(1, 2, 3)'), 0)).to.not.be.ok;
+      expect(define.expand(tok('foo(1, 2, 3)'), 0)).toBeFalsy();
     });
 
     // TODO - is it possible to make an invalid call???
@@ -166,12 +166,12 @@ describe('Define', function() {
 
     it('should fail on empty undelimited argument', function() {
       const define = Define.from(tok('.define foo {a b} [a:b]'));
-      expect(define.expand(tok('foo bar'), 0)).to.not.be.ok;      
+      expect(define.expand(tok('foo bar'), 0)).toBeFalsy();      
     });
 
     it('should fail on missing delimiter', function() {
       const define = Define.from(tok('.define foo {a,b} [a:b]'));
-      expect(define.expand(tok('foo bar baz qux'), 0)).to.not.be.ok;      
+      expect(define.expand(tok('foo bar baz qux'), 0)).toBeFalsy();      
     });
 
     it('should capture entire group for undelimited arg', function() {
@@ -225,7 +225,7 @@ describe('Define', function() {
 
     it('should not expand .eol if not at end of line', function() {
       const define = Define.from(tok('.define foo {a b c} [a:b:c] .eol a:c'));
-      expect(define.expand(tok('foo bar baz qux not_eol'), 0)).to.not.be.ok;      
+      expect(define.expand(tok('foo bar baz qux not_eol'), 0)).toBeFalsy();      
     });
   });
 

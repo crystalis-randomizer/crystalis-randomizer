@@ -149,7 +149,7 @@ export class FileSystem {
    */
   save(name, data) {
     if (!(data instanceof ArrayBuffer)) {
-      if (!data.buffer instanceof ArrayBuffer) {
+      if (!(data.buffer instanceof ArrayBuffer)) {
         throw new Error(`Not an ArrayBuffer: ${data}`);
       }
       data = data.slice().buffer;

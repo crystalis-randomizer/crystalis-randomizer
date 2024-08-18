@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
+    "esModuleInterop": true,
     "rootDirs": ["src/js", "test"],
     "module": "commonjs",
     "baseUrl": ".",

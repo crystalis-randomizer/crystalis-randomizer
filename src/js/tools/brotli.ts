@@ -2,9 +2,11 @@
 
 // Usage: brotli [-x] <input >output
 
-const {compress, decompress} = require('brotli');
-const fs = require('fs');
-const argv = require('minimist')(process.argv.slice(2));
+import { compress, decompress } from 'brotli';
+import * as fs from 'node:fs';
+import minimist from 'minimist';
+
+const argv = minimist(process.argv.slice(2));
 
 const infile = argv._[0] || '/dev/stdin';
 const outfile = argv.o || '/dev/stdout';

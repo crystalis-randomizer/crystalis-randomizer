@@ -2,7 +2,8 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src/js",
-    "module": "es6",
+    "module": "es2022",
+    "target": "es2020",
   },
   "include": [
     "src/js/**/*.ts"

@@ -1,5 +1,4 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
+import {describe, it, expect} from 'bun:test';
 import {Preprocessor} from '../../src/js/asm/preprocessor';
 import {Token} from '../../src/js/asm/token';
 import {TokenStream} from '../../src/js/asm/tokenstream';
@@ -20,7 +19,7 @@ describe('Preprocessor', function() {
     for (let line = preprocessor.next(); line; line = preprocessor.next()) {
       out.push(line.map(Token.name).join(' '));
     }
-    expect(out).to.eql(want);
+    expect(out).toEqual(want);
   }
 
   function testError(lines: string[], msg: RegExp) {
@@ -30,7 +29,7 @@ describe('Preprocessor', function() {
     // TODO - figure out what's up with env
     const preprocessor = new Preprocessor(toks, {} as any);
     expect(() => { while (preprocessor.next()); })
-        .to.throw(Error, msg);
+        .toThrow(msg);
   }
 
   describe('pass-through', function() {

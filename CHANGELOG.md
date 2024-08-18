@@ -1,6 +1,12 @@
 # Changes
 
 ## Latest
+* Flags
+   * Mystery flags for Wham - less likely to be quite as random
+   * Wild warp - now picks a random number
+   * Story mode - no longer requires swords
+   
+
 
 ## 2.0.0
 * Revamped the flagset system:

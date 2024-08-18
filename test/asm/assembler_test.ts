@@ -1,5 +1,4 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
+import {describe, it, expect} from 'bun:test';
 import {Cpu} from '../../src/js/asm/cpu';
 import {Expr} from '../../src/js/asm/expr';
 import {Module} from '../../src/js/asm/module';
@@ -32,7 +31,7 @@ describe('Assembler', function() {
     it('should handle `lda #$03`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('lda'), IMMEDIATE, num(3)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -46,7 +45,7 @@ describe('Assembler', function() {
     it('should handle `sta $02`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('sta'), num(2)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -60,7 +59,7 @@ describe('Assembler', function() {
     it('should handle `ldy $032f`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('ldy'), num(0x32f)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -74,7 +73,7 @@ describe('Assembler', function() {
     it('should handle `rts`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('rts')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -88,7 +87,7 @@ describe('Assembler', function() {
     it('should handle `lda ($24),y`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('lda'), LP, num(0x24), RP, COMMA, ident('y')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -102,7 +101,7 @@ describe('Assembler', function() {
     it('should handle `sta ($0320,x)`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('sta'), LP, num(0x320), COMMA, ident('x'), RP]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -116,7 +115,7 @@ describe('Assembler', function() {
     it('should handle `lsr`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('lsr')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -130,7 +129,7 @@ describe('Assembler', function() {
     it('should handle `lsr a`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('lsr'), ident('A')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -144,7 +143,7 @@ describe('Assembler', function() {
     it('should handle `ora $480,x`', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('ora'), num(0x480), COMMA, ident('x')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         segments: [],
         chunks: [{
           overwrite: 'allow',
@@ -161,7 +160,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.assign('val', 0x23);
       a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -178,7 +177,7 @@ describe('Assembler', function() {
       a.label('foo');
       a.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('foo')]);
       a.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('foo')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -197,7 +196,7 @@ describe('Assembler', function() {
       a.instruction([ident('rts')]);
       a.org(0x5678);
       a.instruction([ident('ldy'), IMMEDIATE, num(0x12)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -220,7 +219,7 @@ describe('Assembler', function() {
       a.instruction([ident('rts')]);
       a.org(0x1235);
       a.instruction([ident('ldy'), IMMEDIATE, num(0x12)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -236,7 +235,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
       a.assign('val', 0x23);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -252,10 +251,10 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.directive([cs('.org'), num(0x8000)]);
       a.instruction([ident('jsr'), ident('foo')]);
-      expect(a.definedSymbol('foo')).to.eql(false);
+      expect(a.definedSymbol('foo')).toEqual(false);
       a.instruction([ident('lda'), IMMEDIATE, num(0)]);
       a.label('foo');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -277,7 +276,7 @@ describe('Assembler', function() {
       a.set('foo', 6);
       a.instruction([ident('lda'), IMMEDIATE, ident('foo')]);
 
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -290,16 +289,16 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.assign('foo', 5);
       expect(() => a.assign('foo', 5))
-          .to.throw(Error, /Redefining symbol foo/);
-      expect(() => a.label('foo')).to.throw(Error, /Redefining symbol foo/);
+          .toThrow(/Redefining symbol foo/);
+      expect(() => a.label('foo')).toThrow(/Redefining symbol foo/);
     });
 
     it('should not allow redefining labels', function() {
       const a = new Assembler(Cpu.P02);
       a.label('foo');
       expect(() => a.assign('foo', 5))
-          .to.throw(Error, /Redefining symbol foo/);
-      expect(() => a.label('foo')).to.throw(Error, /Redefining symbol foo/);
+          .toThrow(/Redefining symbol foo/);
+      expect(() => a.label('foo')).toThrow(/Redefining symbol foo/);
     });
 
     it('should substitute a formula', function() {
@@ -308,7 +307,7 @@ describe('Assembler', function() {
                                        {op: 'sym', sym: 'x'}]});
       a.instruction([ident('lda'), IMMEDIATE, ident('val')]);
       a.assign('x', 2);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -329,7 +328,7 @@ describe('Assembler', function() {
       a.word(a.symbol('foo'));
       a.byte(9);
       a.label('foo');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -348,7 +347,7 @@ describe('Assembler', function() {
       a.label('foo');
       a.byte(9);
       a.word(a.symbol('foo'));
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -368,7 +367,7 @@ describe('Assembler', function() {
       a.label('foo');
       a.byte(9);
       a.word(a.symbol('foo'));
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -387,7 +386,7 @@ describe('Assembler', function() {
       a.label('@foo');
       a.instruction([ident('ldx'), IMMEDIATE, op('<'), ident('@foo')]);
       a.instruction([ident('ldy'), IMMEDIATE, op('>'), ident('@foo')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -410,7 +409,7 @@ describe('Assembler', function() {
       a.instruction([ident('jsr'), ident('@foo')]);
       a.instruction([ident('lda'), IMMEDIATE, num(0)]);
       a.label('@foo');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -426,13 +425,13 @@ describe('Assembler', function() {
     it('should not allow using a cheap local name for non-labels', function() {
       const a = new Assembler(Cpu.P02);
       expect(() => a.assign('@foo', 5))
-          .to.throw(Error, /Cheap locals may only be labels: @foo/);
+          .toThrow(/Cheap locals may only be labels: @foo/);
     });
 
     it('should not allow reusing names in the same cheap scope', function() {
       const a = new Assembler(Cpu.P02);
       a.label('@foo');
-      expect(() => a.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
+      expect(() => a.label('@foo')).toThrow(/Redefining symbol @foo/);
     });
 
     it('should clear the scope on a non-cheap label', function() {
@@ -442,7 +441,7 @@ describe('Assembler', function() {
       a.label('bar');
       a.instruction([ident('jsr'), ident('@foo')]);
       a.label('@foo');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -461,16 +460,16 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.label('@foo');
       a.assign('bar', 2);
-      expect(() => a.label('@foo')).to.throw(Error, /Redefining symbol @foo/);
+      expect(() => a.label('@foo')).toThrow(/Redefining symbol @foo/);
     });
 
     it('should be an error if a cheap label is never defined', function() {
       const a = new Assembler(Cpu.P02);
       a.instruction([ident('jsr'), ident('@foo')]);
       expect(() => a.label('bar'))
-          .to.throw(Error, /Cheap local label never defined: @foo/);
+          .toThrow(/Cheap local label never defined: @foo/);
       expect(() => a.module())
-          .to.throw(Error, /Cheap local label never defined: @foo/);
+          .toThrow(/Cheap local label never defined: @foo/);
     });
   });
 
@@ -485,7 +484,7 @@ describe('Assembler', function() {
       a.label(':');
       a.instruction([ident('lsr')]);
       a.label(':'); // second target
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -511,7 +510,7 @@ describe('Assembler', function() {
       a.instruction([ident('bne'), op(':'), op('---')]);
       a.label(':');
       a.instruction([ident('bcc'), ident(':-2')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -525,7 +524,7 @@ describe('Assembler', function() {
       a.instruction([ident('bne'), op(':'), op('+')]);
       a.label(':');
       a.instruction([ident('bcc'), ident(':-')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -549,7 +548,7 @@ describe('Assembler', function() {
       a.instruction([ident('bne'), ident(':<<rts')]);
       a.instruction([ident('rts')]);
       a.instruction([ident('rts')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -587,7 +586,7 @@ describe('Assembler', function() {
       a.instruction([ident('lsr')]);
       a.instruction([ident('lsr')]);
       a.label('+++');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -611,7 +610,7 @@ describe('Assembler', function() {
       a.label('-'); // second target
       a.instruction([ident('bne'), op('--')]);
       a.instruction([ident('bcc'), ident('-')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -625,7 +624,7 @@ describe('Assembler', function() {
     it('should support numbers', function() {
       const a = new Assembler(Cpu.P02);
       a.byte(1, 2, 3);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -637,7 +636,7 @@ describe('Assembler', function() {
     it('should support strings', function() {
       const a = new Assembler(Cpu.P02);
       a.byte('ab', 'cd');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -649,7 +648,7 @@ describe('Assembler', function() {
     it('should support expressions', function() {
       const a = new Assembler(Cpu.P02);
       a.directive([cs('.byte'), num(1), op('+'), num(2)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -662,7 +661,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.assign('q', 5);
       a.directive([cs('.byte'), ident('q')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -675,7 +674,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.directive([cs('.byte'), ident('q'), op('+'), num(1)]);
       a.label('q');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -694,7 +693,7 @@ describe('Assembler', function() {
     it('should reserve space', function() {
       const a = new Assembler(Cpu.P02);
       a.res(10, 3);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -708,7 +707,7 @@ describe('Assembler', function() {
     it('should support numbers', function() {
       const a = new Assembler(Cpu.P02);
       a.word(1, 2, 0x403);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -720,7 +719,7 @@ describe('Assembler', function() {
     it('should support expressions', function() {
       const a = new Assembler(Cpu.P02);
       a.directive([cs('.word'), num(1), op('+'), num(2)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -733,7 +732,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.assign('q', 0x305);
       a.directive([cs('.word'), ident('q')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -746,7 +745,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.directive([cs('.word'), ident('q'), op('+'), num(1)]);
       a.label('q');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -766,7 +765,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.segment('01');
       a.byte(4);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['01'],
@@ -778,7 +777,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.segment('01', '02');
       a.byte(4);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['01', '02'],
@@ -792,7 +791,7 @@ describe('Assembler', function() {
       a.directive([cs('.segment'), str('03'),
                    COLON, ident('bank'), num(2), op('+'), num(1),
                    COLON, ident('size'), ident('size')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [], symbols: [], segments: [{
           name: '03',
           bank: 3,
@@ -804,7 +803,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.directive([cs('.segment'), str('02'), COLON, ident('bank'), num(2)]);
       a.directive([cs('.segment'), str('02'), COLON, ident('size'), num(200)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [], symbols: [], segments: [{
           name: '02',
           bank: 2,
@@ -819,7 +818,7 @@ describe('Assembler', function() {
       a.free(0x200);
       a.org(0x9000);
       a.free(0x400);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [], symbols: [], segments: [{
           name: '02',
           free: [[0x8000, 0x8200], [0x9000, 0x9400]],
@@ -831,7 +830,7 @@ describe('Assembler', function() {
       a.segmentPrefix('cr:');
       a.directive([cs('.segment'), str('02')]);
       a.instruction([ident('lsr')]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['cr:02'],
@@ -851,7 +850,7 @@ describe('Assembler', function() {
       a.byte(5);
       a.popSeg();
       a.byte(6);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['a', 'b'],
@@ -876,7 +875,7 @@ describe('Assembler', function() {
       a.byte(7);
       a.popSeg();
       a.byte(8);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['a', 'b'],
@@ -905,7 +904,7 @@ describe('Assembler', function() {
       a.byte(7);
       a.popSeg();
       a.byte(8);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['a', 'b'],
@@ -937,7 +936,7 @@ describe('Assembler', function() {
       a.popSeg();
       a.byte(6);
       a.byte(a.pc());
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['a', 'b'],
@@ -957,20 +956,20 @@ describe('Assembler', function() {
     it('should pass immediately when true', function() {
       const a = new Assembler(Cpu.P02);
       a.assert({op: 'num', num: 1});
-      expect(strip(a.module())).to.eql({chunks: [], symbols: [], segments: []});
+      expect(strip(a.module())).toEqual({chunks: [], symbols: [], segments: []});
     });
 
     it('should fail immediately when false', function() {
       const a = new Assembler(Cpu.P02);
       expect(() => a.assert({op: 'num', num: 0}))
-          .to.throw(Error, /Assertion failed/);
+          .toThrow(/Assertion failed/);
     });
 
     it('should defer indeterminate assertions to the linker', function() {
       const a = new Assembler(Cpu.P02);
       a.label('Foo');
       a.directive([cs('.assert'), ident('Foo'), op('>'), num(8)]);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -993,7 +992,7 @@ describe('Assembler', function() {
       a.endScope();
       a.byte({op: 'sym', sym: 'bar'});
 
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1015,7 +1014,7 @@ describe('Assembler', function() {
       a.endScope();
       a.assign('bar', 14);
       
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1039,7 +1038,7 @@ describe('Assembler', function() {
       a.byte({op: 'sym', sym: 'bar'});
       a.endScope();
       a.assign('foo::bar', 13);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1059,7 +1058,7 @@ describe('Assembler', function() {
       a.assign('bar', 5);
       a.endScope();
       a.byte({op: 'sym', sym: 'foo::bar'});
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1075,7 +1074,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.import('foo');
       a.byte({op: 'sym', sym: 'foo'});
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1091,7 +1090,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.byte({op: 'sym', sym: 'foo'});
       a.import('foo');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1109,7 +1108,7 @@ describe('Assembler', function() {
       a.byte({op: 'sym', sym: 'foo'});
       a.endScope();
       a.import('foo');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1125,7 +1124,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.import('foo');
       a.byte(2);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         chunks: [{
           overwrite: 'allow',
           segments: ['code'],
@@ -1141,7 +1140,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.export('qux');
       a.assign('qux', 12);
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         symbols: [{export: 'qux', expr: {op: 'num', num: 12}}],
         chunks: [], segments: [],
       });
@@ -1151,7 +1150,7 @@ describe('Assembler', function() {
       const a = new Assembler(Cpu.P02);
       a.assign('qux', 12);
       a.export('qux');
-      expect(strip(a.module())).to.eql({
+      expect(strip(a.module())).toEqual({
         symbols: [{export: 'qux', expr: {op: 'num', num: 12}}],
         chunks: [], segments: [],
       });

@@ -1,16 +1,18 @@
+# TODO - replace with npmjs.com/package/wireit
+
 # Basic directories and tools
-ESBUILD = npx esbuild
+ESBUILD = bun run esbuild
 TARGET = target
 RELDIR = $(TARGET)/release
 DBGDIR = $(TARGET)/debug
 BLDDIR = $(TARGET)/build
-BROTLI = $(BLDDIR)/brotli
+#BROTLI = $(BLDDIR)/brotli
 EXTRACT_REFS = $(BLDDIR)/extract-refs
 EXTRACT_SYMBOLS = $(BLDDIR)/extract-symbols
 DATADIR = $(BLDDIR)/data
 
 # Flags
-NODEFLAGS   = --bundle --platform=node
+NODEFLAGS   = --bundle --platform=node # --format=esm
 WEBFLAGS    = --bundle --splitting --format=esm
 DBGFLAGS    = --sourcemap=inline
 RELFLAGS    = --minify
@@ -76,16 +78,22 @@ web-release: $(REL_WEB_OUTS)
 clean:
 	rm -rf target
 
-$(BROTLI): src/js/tools/brotli.js
-	@mkdir -p $(@D)
-	install -m 755 $< $@
+# $(BROTLI): src/js/tools/brotli.ts
+# 	@mkdir -p $(@D)
+# 	install -m 755 $< $@
 
-$(EXTRACT_REFS): src/js/tools/extract-refs.ts $(ASM_JS_FILES)
-	@mkdir -p $(@D)
-	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
-$(EXTRACT_SYMBOLS): src/js/tools/extract-symbols.ts $(ASM_JS_FILES)
-	@mkdir -p $(@D)
-	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
+BROTLI_TS = src/js/tools/brotli.ts
+EXTRACT_REFS_TS = src/js/tools/extract-refs.ts
+EXTRACT_REFS_DEPS = $(EXTRACT_REFS_TS) $(ASM_JS_FILES)
+EXTRACT_SYMBOLS_TS = src/js/tools/extract-symbols.ts
+EXTRACT_SYMBOLS_DEPS = $(EXTRACT_SYMBOLS_TS) $(ASM_JS_FILES)
+
+# $(EXTRACT_REFS): src/js/tools/extract-refs.ts $(ASM_JS_FILES)
+# 	@mkdir -p $(@D)
+# 	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
+# $(EXTRACT_SYMBOLS): src/js/tools/extract-symbols.ts $(ASM_JS_FILES)
+# 	@mkdir -p $(@D)
+# 	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
 
 $(DBG_INFO):
 	touch $@
@@ -98,8 +106,8 @@ $(REL_INFO):
 $(DATA_TAR): $(TAR_COPIES)
 	(cd $(DATADIR); COPYFILE_DISABLE=1 tar cv $(^:$(DATADIR)/%=%)) > $@
 
-$(DATA_TBR): $(BROTLI) $(DATA_TAR)
-	$(BROTLI) < $(DATA_TAR) > $@
+$(DATA_TBR): $(BROTLI_TS) $(DATA_TAR)
+	bun $(BROTLI_TS) < $(DATA_TAR) > $@
 
 $(BUILD_INFO): scripts/build_info.sh
 	$<
@@ -118,11 +126,11 @@ $(NSS_COPIES): target/build/data/%: src/images/spritesheets/%
 	@mkdir -p $(@D)
 	cp $< $@
 
-$(REFS_JSON): vanilla/crystalis.s $(EXTRACT_REFS) $(SYMBOL_TABLE)
-	$(EXTRACT_REFS) -s $(SYMBOL_TABLE) -o $@ $<
+$(REFS_JSON): vanilla/crystalis.s $(EXTRACT_REFS_DEPS) $(SYMBOL_TABLE)
+	bun $(EXTRACT_REFS_TS) -s $(SYMBOL_TABLE) -o $@ $<
 
-$(SYMBOL_TABLE): $(ASM_FILES) $(EXTRACT_SYMBOLS)
-	$(EXTRACT_SYMBOLS) -o $@ $(ASM_FILES)
+$(SYMBOL_TABLE): $(ASM_FILES) $(EXTRACT_SYMBOLS_DEPS)
+	bun $(EXTRACT_SYMBOLS_TS) -o $@ $(ASM_FILES)
 
 $(WEB_JS_DBG): $(JS_FILES) $(DATA_TBR)
 	rm -f $(DBGDIR)/js/*-????????.js

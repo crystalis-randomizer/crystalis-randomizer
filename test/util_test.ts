@@ -1,6 +1,4 @@
-require('source-map-support').install();
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
+import {describe, it, expect} from 'bun:test';
 import {Random} from '../src/js/random';
 import {Deque} from '../src/js/util';
 import * as util from 'util';
@@ -21,9 +19,9 @@ describe('Deque', function() {
       const elems = [];
       while (elems.length < elemCount) elems.push(i++);
       expect(deq.splice(start, count, ...elems))
-          .to.eql(arr.splice(start, count, ...elems));
-      expect([...deq]).to.eql(arr);
-      expect(deq).to.have.length(arr.length);
+          .toEqual(arr.splice(start, count, ...elems));
+      expect([...deq]).toEqual(arr);
+      expect(deq).toHaveLength(arr.length);
     }
   });
 
@@ -31,7 +29,7 @@ describe('Deque', function() {
     const arr = [];
     for (let i = 0; i < 100; i++) {
       const deq = new Deque(arr);
-      expect([...deq]).to.eql(arr);
+      expect([...deq]).toEqual(arr);
       arr.push(i);
     }
   });

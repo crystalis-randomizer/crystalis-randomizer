@@ -1,5 +1,4 @@
-import {describe, it} from 'mocha';
-import {expect} from 'chai';
+import {describe, it, expect} from 'bun:test';
 import {Macro} from '../../src/js/asm/macro';
 import {Token} from '../../src/js/asm/token';
 import {Tokenizer} from '../../src/js/asm/tokenizer';
@@ -15,7 +14,7 @@ describe('Macro', function() {
     const mac = Macro.from(...source(tok(macro)));
     const code = tok(input)[0];
     expect(mac.expand(code, nullId).map(ts => ts.map(strip)))
-        .to.eql(tok(output));
+        .toEqual(tok(output));
   }
 
   describe('with no parameters', function() {
@@ -27,7 +26,7 @@ describe('Macro', function() {
     it('should fail if parameters given', function() {
       expect(() => testExpand('.macro foo\n  .bar baz\n.endmacro',
                               'foo bar', ''))
-          .to.throw(Error, /Too many macro parameters: bar/);
+          .toThrow(/Too many macro parameters: bar/);
     });
   });
   describe('with one parameter', function() {
@@ -44,7 +43,7 @@ describe('Macro', function() {
     it('should fail if two parameters given', function() {
       expect(() => testExpand('.macro foo a\n  .bar a\n.endmacro',
                               'foo bar, baz', ''))
-          .to.throw(Error, /Too many macro parameters: baz/);
+          .toThrow(/Too many macro parameters: baz/);
     });
   });
 });

@@ -6,9 +6,9 @@ TARGET = target
 RELDIR = $(TARGET)/release
 DBGDIR = $(TARGET)/debug
 BLDDIR = $(TARGET)/build
-#BROTLI = $(BLDDIR)/brotli
 EXTRACT_REFS = $(BLDDIR)/extract-refs
 EXTRACT_SYMBOLS = $(BLDDIR)/extract-symbols
+PROTOC = $(BLDDIR)/protoc.mjs
 DATADIR = $(BLDDIR)/data
 
 # Flags
@@ -38,7 +38,8 @@ WEB_JS_DBG = $(addprefix $(DBGDIR)/js/,$(WEB_ENTRY_OUTS)) \
 WEB_JS_REL = $(addprefix $(RELDIR)/js/,$(WEB_ENTRY_OUTS))
 STATIC_PATTERNS = %.html %.png %.nss %.css %.ico src/ga.tag
 STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
-JS_FILES = $(shell find src/js -type f -name '*.[tj]s')
+CONFIG_PROTO_TS = $(BLDDIR)/config_proto.ts
+JS_FILES = $(shell find src/js -type f -name '*.[tj]s') $(CONFIG_PROTO_TS)
 ASM_JS_FILES = $(shell find src/js/asm -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
 DEFINES_ASM = $(DATADIR)/00_defines.s
@@ -79,22 +80,13 @@ web-release: $(REL_WEB_OUTS)
 clean:
 	rm -rf target
 
-# $(BROTLI): src/js/tools/brotli.ts
-# 	@mkdir -p $(@D)
-# 	install -m 755 $< $@
-
 BROTLI_TS = src/js/tools/brotli.ts
 EXTRACT_REFS_TS = src/js/tools/extract-refs.ts
 EXTRACT_REFS_DEPS = $(EXTRACT_REFS_TS) $(ASM_JS_FILES)
 EXTRACT_SYMBOLS_TS = src/js/tools/extract-symbols.ts
 EXTRACT_SYMBOLS_DEPS = $(EXTRACT_SYMBOLS_TS) $(ASM_JS_FILES)
-
-# $(EXTRACT_REFS): src/js/tools/extract-refs.ts $(ASM_JS_FILES)
-# 	@mkdir -p $(@D)
-# 	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
-# $(EXTRACT_SYMBOLS): src/js/tools/extract-symbols.ts $(ASM_JS_FILES)
-# 	@mkdir -p $(@D)
-# 	$(ESBUILD) $(NODEFLAGS) --outfile=$@ $<
+PROTOC_TS = src/js/tools/protoc.ts
+PROTOC_DEPS = $(PROTOC_TS) src/js/config/options.ts
 
 $(DBG_INFO):
 	touch $@
@@ -162,3 +154,7 @@ $(RELDIR)/bin/cryr: $(JS_FILES) $(DATA_TBR) $(BUILD_INFO)
 # are words, and we'd need to somehow keep better track of which are just bytes.
 $(DEFINES_ASM): vanilla/crystalis.s
 	grep ^.define $< > $@
+
+$(CONFIG_PROTO_TS): src/js/config/config.proto $(PROTOC_DEPS)
+	mkdir -p "`dirname $@`"
+	bun $(PROTOC_TS) < $< > $@ || { rm -f $@; false; }

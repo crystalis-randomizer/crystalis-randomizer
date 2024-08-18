@@ -1,0 +1,1705 @@
+syntax = "proto3";
+
+// Options Schema
+//
+// Message Options:
+//
+// Field Options:
+//   - default: any             - default value for the field
+//   - preset: map<string, any> - field value under given preset
+//   - min: number              - minimum value for numeric fields
+//   - max: number              - maximum value for numeric fields
+//   - unscriptable: bool       - disable scriptability for field
+//   - generator_only: bool     - remove from immutable message
+//   - alias: string            - alternative name for field
+
+/**
+ * Config message type.  Note that we will actually instantiate _two_
+ * different Config objects: one for flags (called "config") and the
+ * other for options (called "options").  The options contains _only_
+ * optional fields and is not included in the seed or checksum, and it
+ * gets its own namespace for scripts so that optional choices don't
+ * allow observing any relevant variables.  The flags object may
+ * contain optional fields, in which case they take precedence over
+ * the options fields, but it may not include optional fields marked
+ * as "must allow".
+ *
+ * TODO - what about options presets??  probably want to remove...
+ */
+message Config {
+
+  // NOTE: must be exactly 1 for the filled message
+  optional uint32 version = 1
+    [(generator_only) = true,
+     (unscriptable) = true];
+  // If this is set then the randomizer will not display the exact options.
+  // The only way to unset it is to reset the entire config to empty.  We
+  // will ask for confirmation before proceeding.
+  optional bool hide_config = 2
+    [(default) = false,
+     (generator_only) = true,
+     (unscriptable) = true];
+  // Indicates that this is a "race rom": prevents pulling the spoiler log.
+  optional bool race = 3
+    [(default) = false,
+     (unscriptable) = true];
+
+  // Force a seed??? Allows deterministically specifying the output
+  // with just a single file
+  optional uint32 seed = 4
+    [(unscriptable) = true];
+
+  optional bool crowd_control = 7
+    [(default) = false,
+     (unscriptable) = true];
+  optional bool coop = 8
+    [(default) = false,
+     (unscriptable) = true];
+
+  Placement placement = 9;
+  Items items = 10;
+  Quality quality = 11;
+  Triggers triggers = 12;
+  Maps maps = 13;
+  Enemies enemies = 14;
+  Towns towns = 15;
+  Glitches glitches = 16;
+  Fun fun = 17;
+  Debug debug = 18;
+
+  // NOTE: This message is removed before impacting the seed.
+  Options options = 19;
+
+  // This is mostly repeats from the top-level Config object.  These fields
+  // act as a fall-back when the top-level one is not specified.  Any Scripts
+  // in this message are evaluated with a _different_ random number generator
+  // so as not to impact the main config.  Fields nested in this message are
+  // mutually exclusive with fields nested under the main Config.  The choice
+  // of which field to set should be controlled by a "lock" icon in the UI.
+  message Options {
+    Accessibility accessibility = 1;
+    Quality quality = 11;
+    Fun fun = 17;
+  }
+  
+  // UI: Any given checkbox can be (1) definite (off/on), (2) random, (3) complex
+  //  - we can identify if there's an orthogonal pick that touches only the single
+  //    term, in which case we expose the values/probabilities as a separate thing?
+  //  - if it's any more complex than that, then we expose it as "complex" - writing
+  //    to it will be irreversible, and we can maybe display the affected terms?
+  //  - what about more complex configurations, like charge shots only?
+  //     - won't show up as a single-term pick...?
+  //     - we could identify known config terms by hash?
+  //     - maybe ALL toggles are just hard-coded single-term configs???
+  //     - but how to decompose? could check every option against given?
+
+  // what if we had a handful more named presets, which could be used with
+  // pick options?  and maybe allow defining custom ones as well?
+  //  - maybe every pick in the UI requires using a named preset?
+  //     - pick { empty | charge-shots-only }
+  //  - every option is a named config?  but for simpler ones we have simple
+  //    diagnostics?
+
+  // test(mainConfig, subConfig)
+  //   - for picks, don't do it recursively...?
+  //   - except maybe in sub-ui?
+
+  // TODO - test this without any fancy graphics
+
+  // presets may be either builtin (specified via field options) or else
+  // user-defined.  We allow preset scripts, so that builtins may refer
+  // to script variables.  If a preset element is empty, it is skipped,
+  // allowing `preset: =(random()<0.5 ? "vanilla" : "")` to work.
+  // Preset scripts are evaluated in their own independent environment,
+  // so that they can refer to script vars but not affect the outer env.
+  // Presets are evaluated in order, before any other fields, and set an
+  // initial value for a handful of fields, which may be overridden by
+  // an explicit value or else by a later preset.  User-supplies presets
+  // must be of the form `name#1234ef` where the hash is computed from the
+  // contents of the preset, which is uploaded as a full config and saved
+  // in the preset manager.  Users can set up a preset and then export a
+  // URL (or a file) to share for others to import it.  Preset configs
+  // may be hidden so that they cannot be inspected.
+  repeated string presets = 31
+    [(alias) = 'preset',
+     (generator_only) = true];
+
+  // UI: Given the list of presets, we change the defaults for non-configured
+  // options, so it's easy to see what's what.  When presets are scripted, we
+  // need to distinguish between unset and set because we don't know the default.
+  // Treat similar to a pick/script, with a special UI for the control.
+  enum Preset {
+    // Minimal modifications to the game, particularly around item and enemy
+    // placement logic.  This makes all randomizations "opt-in", but preserves
+    // a handful of quality-of-life improvements.  To remove these remaining
+    // improvements, use the "full vanilla" preset as well.
+    VANILLA = 1;
+
+    // TODO - populate the rest
+
+    // NOTE: we moved "charge shots only" to a separate "group" field,
+    // so we don't need presets for that anymore.  The only requirement is that
+    // the group definition field MUST be evaluated BEFORE the group members.
+
+    // Basic flags for a relatively easy playthrough. This is a good place to start.
+    // Ds Ecdrstux Rt Vds!mw
+    CASUAL = 2;
+
+    // Provides a relatively quick playthough with a reasonable amount of
+    // challenge. Similar to older versions of the randomizer.
+    // Ds Ecs Gs R!t V!m
+    CLASSIC = 3;
+
+    // A balanced randomization with quite a bit more difficulty.
+    // Ds Gfns!c Ht Met Nbgw Ros Waehmtu
+    ADVANCED = 4;
+
+    // Even the options are random.
+    MYSTERY = 5;
+
+    // Not for the faint of heart.  Good luck.
+    HARDCORE = 47;
+
+    // Only a few noble fools have ever completed this. Be sure to record this
+    // because pics or it didn't happen.
+    // Hhtxz Met Nbw Ros Waeghmtu
+    FULL_STUPID = 48;
+
+    // Extended version of vanilla preset, which removes as many quality-of-life
+    FULL_VANILLA = 49;
+
+    // This year's tournament flags debuts some interesting new flags for a
+    // unique challenge.
+    // Gfns Ht?c Met?g Nbw Rot?s Wegtu
+    TOURNAMENT_2023 = 124;
+
+    // Lots of potential complexity, but within reason. Requires all
+    // swords and bosses, as well as a few glitches, but guarantees a
+    // starting sword.
+    // Es Ggs M?e Ros?dt W?egstu
+    TOURNAMENT_2022_EARLY = 125;
+
+    // Some additional challenges compared to the early rounds: some
+    // additional mystery flags and glitches, as well as max
+    // difficulty scaling in the tower.
+    // E?s G?fgns Ht?m M?et N?bw Rs?dot W?egstu
+    TOURNAMENT_2022_MID = 126;
+
+    // Many of the more difficult mystery flags from the mid rounds
+    // are now always on, plus entrance shuffle.
+    // E?s Gfgns Hmt M?et Nbw Rs?dot Wh?egstu
+    TOURNAMENT_2022_FINALS = 127;
+  }
+
+  // assignment expressions to simple identifiers, which may be referenced
+  // in script-generator fields via `=x`-type string values. We provide a
+  // tiny subset of ECMAScript for this, with a small handful of builtin
+  // functions, such as
+  //   - rand() - returns a uniform random number between 0 and 1
+  //   - randn() - returns a standard normal random number
+  //   - preset(name) - returns the value of this field in the named preset ????
+  //                  - needs context... only evaluate once... maybe skip
+
+  // (maybe-conditional) assignment expressions, e.g.
+  //   x = rand()
+  //   x < 0.5 && this.initialInventory += fluteOfLime
+  // we parse the expression and iterate through to find which actually
+  // affect what, and whether the relevant fields are affected for the
+  // UI's sake.  In particular, 
+  repeated string scripts = 30
+    [(alias) = 'script',
+     (generator_only) = true,
+     (unscriptable) = true];
+
+
+  enum Randomization {
+    VANILLA = 0 [(alias) = "false"];
+    SHUFFLE = 1 [(alias) = "true"];
+    RANDOM = 2;
+  }
+
+  message Placement {
+    // Which algorithm to use.
+    optional Algorithm algorithm = 1
+      [(default) = ASSUMED_FILL,
+       (preset.vanilla) = VANILLA];
+
+    // Options for which algorithm to use to place items.
+    enum Algorithm {
+      // Vanilla - don't actually rearrange the items at all.
+      VANILLA = 0;
+      // Assumed fill, with optional temperature-based sorting.
+      // This is the default algorithm.
+      ASSUMED_FILL = 1;
+    }
+
+    // The "inverse temperature" to use when pre-sorting the list of
+    // checks.  If this is zero, then the checks won't be sorted at all.
+    // The larger this number is, the more likely "deeper" checks are
+    // to be filled earlier.  If this is negative, then "shallower"
+    // checks will be filled first.  This is multiplied by the delta in
+    // average progression item count, which tends to range from 1..40.
+    optional float check_beta = 2
+      [(type) = "f8:1.3.1.4", // ?? or 1.4.3? or i8/32?
+       (min) = -10, (max) = 10,
+       (default) = 0.25];
+
+    // The "inverse temperature" to use when pre-sorting the list of
+    // progression items.  If this is zero, then the items won't be
+    // sorted at all.  The larger this number is, the more likely
+    // "powerful" items are to be placed first, where "power" is
+    // measured in terms of how many checks the item tends to unlock,
+    // on average.  Can be negative, in which case powerful items will
+    // tend to be placed later.  This is multiplied by the delta in
+    // average number of checks unlocked, which tends to range from
+    // 1..10 or so.
+    optional float item_beta = 3
+      [(type) = "f8:1.3.1.4",
+       (min) = -10, (max) = 10,
+       (default) = 0.25];
+
+    // If nonzero, then multiple checks in the same area will be
+    // separated during the check sort.  The checks will be shuffled
+    // and successive checks after the first in each area will be
+    // penalized by this amount, in units of progression item count.
+    optional float check_distribution_weight = 4
+      [(type) = "f8:0.3.1.1",  // 0.2.3.-1 ?
+       (min) = -10, (max) = 10,
+       (default) = 2];
+
+    // How to deal with mimics.  If VANILLA, then mimics will be left where
+    // they are.  If SHUFFLE, then they'll be swapped with other chests, but
+    // the total number of mimics will stay the same.  If RANDOM, then the
+    // number of mimics may change, in which case some consumables may be
+    // swapped in/out (even if the `consumables` field is not RANDOM as well).
+    optional Randomization mimics = 5
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA,
+       (preset.casual) = VANILLA,
+       (preset.mystery) = "=?"];
+
+    // Number of mimics to shuffle into the chest pool.  This only has
+    // any effect if mimics are not vanilla.  If mimics are randomized
+    // (rather than shuffled) then this biases the mimic probability, rather
+    // than directly setting the number of mimics.
+    optional uint32 mimic_count = 6
+      [(default) = 13,
+       (min) = 0, (max) = 15,
+       (preset.mystery) = "=?"];
+
+    // Whether mimics are shuffled in with key items.  If false, then mimics
+    // will only be eligible to go into consumable chests.  This has no effect
+    // if mimics are vanilla.
+    optional bool shuffle_mimics_with_key_items = 7
+      [(default) = true,
+       (preset.mystery) = "=?"];
+
+    // How to deal with consumables.  If VANILLA, then consumables will not
+    // be shuffled at all.  If SHUFFLE, then the distribution of consumables
+    // will be retained as much as possible.  If RANDOM, then consumables
+    // will be picked with the same proportion as the vanilla, but will not
+    // be constrained to exactly the same numbers (so there could be more or
+    // fewer of each, including opel statues).
+    optional Randomization consumables = 8
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA,
+       (preset.mystery) = "=?"];
+
+    // Whether consumables and key items are shuffled together into the same
+    // pool.  If this is false, then key item will only be found from key
+    // item checks (including all boss rewards). 
+    optional bool shuffle_consumables_with_key_items = 9
+      [(default) = true,
+       (preset.casual) = false,
+       (preset.mystery) = "=rand()<0.8"];
+
+    // // Whether to randomize which armors are found in checks.  Note that if
+    // // armors that are _not_ found in any shops are guaranteed to be included.
+    // optional bool random_armors = 10 // TODO
+    //   [(default) = false];
+
+    // // Whether to protect opel statues from being lost.  Some checks (mainly
+    // // trade-ins) can be lost if they contain a consumable and there's no
+    // // inventory room when they're given.  This flag controls whether we allow
+    // // opels in those checks.
+    // optional bool allow_lost_opel = 11 // TODO
+    //   [(default) = false];
+
+    // // Whether we force all items in the game to be reachable.  If this is
+    // // false then it's possible some items/areas may be impossible to reach
+    // // (within logic) in some seeds (i.e. Oak Mother has Telepathy).  In
+    // // that case, the seed should always still be winnable (unless other
+    // // options force an unwinnable seed).
+    // optional bool all_reachable = 12 // TODO
+    //   [(default) = true];
+
+    // Positive indicates minimum requires sphere, negative is upper bound
+    // e.g. -1 means must be in zero-sphere
+    // TODO - how to implement beside just checking and retrying??
+    //   - remove from assumed-fill pool and place later?
+    // NOTE: map<enum, prim> should just be a single bitset...?
+    //       - we could try two encodings to compare, depending on size
+    //       - single element -> build into owning bitset as u8.u8
+    //       - repeated primitive (or pair of primitives) -> nested bitset
+
+    // Map of items to attempt to bury, in terms of minimum sphere to look
+    // for the item in.
+    // map<uint32, int32> bury = 48 // TODO
+    //   [(key) = ItemName];
+
+    // Map of items to attempt to place early, in terms of maximum sphere
+    // to place them in.  TODO - not quite sure exactly what this means in
+    // practice?
+    // map<uint32, int32> early = 49 // TODO
+    //   [(key) = ItemName];
+
+    // Set of items to just give immediately at the start of the game.
+    // These items will be in the inventory at the start, and will be
+    // excluded from the shuffle.  Any relevant "item get" flags will be
+    // set at the start as well.  (TODO - allow multiple copies of
+    // consumables? - this would ruin the bitset... or we could add them
+    // on after the bitset)
+    // repeated ItemName initial_inventory = 50; // TODO
+      //[(type) = "bitset"]; // TODO - define this type!!!
+
+    // Whether to guarantee a sword in the earliest possible check.
+    optional bool early_sword = 13
+      [(default) = false,
+       (preset.casual) = true,
+       (preset.classic) = true,
+       (preset.tournament_2022_early) = true,
+       (preset.tournament_2022_mid) = true];
+
+    // // Map of check-item pairings to ensure are used.  These checks and
+    // // items are _removed_ from the shuffle.  Note that this can cause
+    // // unwinnable seeds if items are placed poorly.  TODO - figure out
+    // // whether we allow it, or it's an error - maybe a config to opt out
+    // // of safety checks???
+    // map<uint32, ItemName> force = 51 // TODO
+    //   [(key) = CheckName,
+    //    (hidden) = true];
+
+    // TODO - consider the herb healing amount (x8) against the length
+    // of the path from the entrance to Oak.  If herbs don't heal enough
+    // (and/or if magic ring and fruit of power don't restore enough MP)
+    // then maybe exclude them from logic.  We could also look at the
+    // healing/restore rate of psycho armor or deo's pendant and whether
+    // they allow healing while moving, which could make them viable
+    // alternatives as well.
+
+    // Ensures the logic provides the gas mask (or hazmat suit, as
+    // appropriate) before requiring going into the swamp.  If this is
+    // false, then any source of healing is considered sufficient.
+    optional bool ensure_gas_mask_before_swamp = 14
+      [(default) = true,
+       (preset.advanced) = false,
+       (preset.mystery) = "=?"];
+
+    // Ensures the logic provides the gas mask (or hazmat suit, as
+    // appropriate) before requiring to fight the insect.  If this is
+    // false, then any source of healing is considered sufficient.
+    // Note that this is significantly more challenging than
+    // `ensure_gas_mask_before_swamp` since it may require an entire
+    // boss fight while draining health.  It is not included by default
+    // in any standard presets.
+    optional bool ensure_gas_mask_before_insect = 15
+      [(default) = true];
+
+    // Ensures the logic provides barrier before requiring to walk
+    // through the shooting statue guantlets.  If this is false, then
+    // any source of healing is considered sufficient.
+    optional bool ensure_barrier_before_statues = 16
+      [(default) = true,
+       (preset.advanced) = false,
+       (preset.hardcore) = false,
+       (preset.full_stupid) = false,
+       (preset.tournament_2023) = false,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = false,
+       (preset.mystery) = "=?"];
+
+    // Ensures the logic provides refresh before requiring to fight
+    // any bosses.
+    optional bool ensure_refresh_before_bosses = 17
+      [(default) = false,
+       (preset.casual) = true];
+
+    // Ensures the logic provides a minimum sword level before requiring
+    // boss fights with the tetrarchs.  Note that Karmine and Draygon
+    // max out at requiring level 2, even if this is set to 3.
+    optional uint32 ensure_minimum_sword_level_before_tetrarchs = 18
+      [(min) = 1, (max) = 3,
+       (default) = 2,
+       (preset.casual) = 3,
+       // NOTE: This gives a 50% chance for 1, 33% chance for 2, and 17% chance for 3
+       (preset.mystery) = "3*rand()",
+       (preset.advanced) = 1,
+       (preset.hardcore) = 1,
+       (preset.full_stupid) = 1,
+       (preset.tournament_2023) = 1,
+       (preset.tournament_2022_mid) = "3*rand()",
+       (preset.tournament_2022_finals) = 1];
+
+    // Ensures the logic provides any sort of offensive upgrade before
+    // requiring a boss fight with a tetrarch.  This is satisfied by
+    // any of {power ring, warrior ring, matching bracelet}.
+    optional bool ensure_offensive_upgrade_before_tetrarchs = 19
+      [(default) = true,
+       (preset.mystery) = "=?",
+       (preset.advanced) = false,
+       (preset.hardcore) = false,
+       (preset.full_stupid) = false,
+       (preset.tournament_2023) = false,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = false];
+
+    // Disables logical safety checks.  This allows the seed to roll
+    // even if the logic doesnt think it's possible.  Unfortunately,
+    // there's not really an in-between where it tries to at least
+    // minimize the breakage.  This is mostly useful for testing and
+    // should probably not be enabled if you like completing seeds.
+    optional bool disable_safety_checks = 20
+      [(default) = false];
+  }
+  
+  message Items {
+    // TODO - should this go somewhere else?
+    optional bool unidentified_items = 1
+      [(default) = false,
+       (preset.advanced) = true,
+       (preset.hardcore) = true,
+       (preset.full_stupid) = true,
+       (preset.tournament_2023) = true,
+       (preset.tournament_2022_early) = true,
+       (preset.tournament_2022_mid) = true,
+       (preset.tournament_2022_finals) = true,
+       (preset.mystery) = "=?"];
+
+    // optional bool add_aquatic_herb = 50
+    //   [(default) = false]; // TODO
+
+    // Sword shot level required to break walls.
+    optional uint32 sword_level_for_walls = 2
+      [(min) = 1, (max) = 3,
+       (default) = 1,
+       (preset.vanilla) = 2,
+       (preset.casual) = 2,
+       (preset.classic) = 2,
+       // NOTE: This gives a 50% chance for 1, 33% chance for 2, and 17% chance for 3
+       (preset.mystery) = "3*rand()"];
+
+    // A collection of options that work well together: nerfs stabs to not work,
+    // charges while walking (faster with rabbit boots), and changes warrior
+    // ring to "turret mode" when standing still.
+    optional bool charge_shot_only_mode = 64
+      [(default) = false,
+       (preset.tournament_2023) = true];
+
+    // Nerf sword so that stabbing doesn't hit enemies.  This should
+    // be turned on with other modifications, like charge while walking.
+    optional bool no_stabs = 4
+      [(default) = false,
+       (group.charge_shot_only_mode) = true];
+    // 0: disabled, 1: 8 sec/tick, 2: 4 sec/tick, 3: 2 sec/tick, 4: 1 sec/tick
+    // 5: 2 tick/sec, 6: 4 tick/sec, 7: 8 tick/sec, 8: 15 tick/sec, 9: 30 tick/sec
+    // The normal charge speed, on a logarithmic scale:
+    optional uint32 charge_speed = 5
+      [(min) = 1, (max) = 9,
+       (default) = 7];
+    // Enable sword charging while walking without any items equipped.
+    // This is recommended when charge_shots_only is enabled.
+    optional uint32 charge_while_walking_speed = 6
+      [(min) = 0, (max) = 9,
+       (default) = 0,
+       (group.charge_shot_only_mode) = 7];
+    // Charge speed while equipped item (rabbit boots and/or charge ring) and
+    // standing still.
+    optional uint32 charge_with_item_speed = 7
+      [(min) = 1, (max) = 9,
+       (default) = 7,
+       (group.charge_shot_only_mode) = 8];
+    // Charge speed while walking w/ charge boost item.
+    optional uint32 charge_while_walking_with_item_speed = 8
+      [(min) = 0, (max) = 9,
+       (default) = 7,
+       (group.charge_shot_only_mode) = 8];
+
+    // Turns warrior ring into "turret mode".  TODO - parameters???
+    optional bool warrior_ring_turret = 9
+      [(default) = false,
+       (group.charge_shot_only_mode) = true];
+    // Frame delay before entering turret mode.
+    optional uint32 warrior_ring_turret_delay = 10
+      [(min) = 0, (max) = 255,
+       (default) = 30];
+    // Frequency of "free" shots during turret delay.
+    // For value N, every Nth stab will be a shot.
+    optional uint32 warrior_ring_turret_delay_shot_frequency = 11
+      [(min) = 1, (max) = 255,
+       (default) = 3];
+
+    // Specifies the medical herb heal amount.
+    optional uint32 medical_herb_heal = 12
+      [(min) = 0, (max) = 255,
+       (default) = 80,
+       (preset.vanilla) = 32,
+       (preset.tournament_2022_mid) = 32,
+       (preset.tournament_2022_finals) = 32];
+    // Specifies the fruit of power MP recover amount.
+    optional uint32 fruit_of_power_mp = 13
+      [(min) = 0, (max) = 255,
+       (default) = 56,
+       (preset.vanilla) = 32,
+       (preset.tournament_2022_mid) = 32,
+       (preset.tournament_2022_finals) = 32];
+    // Specifies the magic ring MP recover amount.
+    optional uint32 magic_ring_mp = 14
+      [(min) = 0, (max) = 255,
+       (default) = 255];
+
+    // MP restore rate for Deo's Pendant
+    // 0: none, 1: 8 sec/MP, 2: 4 sec/MP, 3: 2 sec/MP, 4: 1 sec/MP,
+    // 5: 2 MP/sec, 6: 4 MP/sec, 7: 8 MP/sec, 8: 15 MP/sec, 9: 30 MP/sec
+    optional uint32 deos_pendant_mp_restore_speed = 15
+      [(min) = 0, (max) = 9,
+       (default) = 3];
+    // Buffs Deo's Pendant to restore MP while walking, at this speed.
+    optional uint32 deos_pendant_mp_restore_while_walking_speed = 16
+      [(min) = 0, (max) = 9,
+       (default) = 3,
+       (preset.vanilla) = 0];
+    // Combines Leather Boots and Gas Mas into a new Hazmat Suit item,
+    // which protects from both swamp and desert/spike terrain.
+    // This marks Leather Boots as the preferred item to replace.
+    optional bool hazmat_suit = 17
+      [(default) = true,
+       (group.vanilla_bonus_items) = false,
+       (preset.vanilla) = false];
+    // Adds Speed Boots, replacing the most preferred item.  If there is
+    // no preferred replacement item, then replaces a random item?
+    optional bool add_speed_boots = 18
+      [(default) = true,
+       (group.vanilla_bonus_items) = false,
+       (preset.vanilla) = false];
+    // Speed delta from speed boots...?  TODO - details
+    // TODO - other adjustments???
+    // optional int32 speed_boots_speed = 19
+    //   [(default) = 1]; // TODO
+
+    // Buffs Rabbit Boots to also charge sword while walking.
+    // TODO - we can maybe make this a separate item instead?
+    optional bool rabbit_boots_charge_while_walking = 20
+      [(default) = true,
+       (group.vanilla_bonus_items) = false,
+       (preset.vanilla) = false];
+    // Adds a Charge Ring item that allows charging while walking.
+    // Replaces the preferred replacement item, if available.  Otherwise
+    // replaces a random item.
+    // optional bool add_charge_ring = 21
+    //   [(default) = false];
+
+    // Adjusts the Tornado Bracelet magic speed from the default.
+    optional int32 adjust_tornado_speed = 22
+      [(min) = -3, (max) = 2,
+       (default) = -1,
+       (preset.vanilla) = 0];
+
+    // Nerf sword to not hit enemies while flying (since the player
+    // is invincible, it makes flight even more OP).
+    optional bool nerf_flight_stab = 23
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    // Whether ceramic shield should be buffed to prevent paralysis.
+    optional bool ceramic_shield_prevents_paralysis = 24
+      [(default) = true,
+       (group.vanilla_bonus_items) = false,
+       (preset.vanilla) = false];
+    // Whether sacred shield should be buffed to prevent nuper.
+    optional bool sacred_shield_prevents_curse = 25
+      [(default) = true,
+       (group.vanilla_bonus_items) = false,
+       (preset.vanilla) = false];
+
+    // HP restore rate for Deo's Pendant
+    // 0: none, 1: 8 sec/HP, 2: 4 sec/HP, 3: 2 sec/HP, 4: 1 sec/HP,
+    // 5: 2 HP/sec, 6: 4 HP/sec, 7: 8 HP/sec, 8: 15 HP/sec, 9: 30 HP/sec
+    optional uint32 psycho_armor_heal_speed = 26
+      [(min) = 0, (max) = 9,
+       (default) = 5];
+    // Buffs Psycho Armor to restore HP while walking, at the given rate.
+    optional uint32 psycho_armor_heal_while_walking_speed = 27
+      [(min) = 0, (max) = 9,
+       (default) = 0];
+
+    // Whether the armor/shield defense values should be a balanced
+    // progression with ceramic suit and battle shield (the last ones
+    // with no special powers) having the max defense.  If this is true
+    // then we adjust all the armor tiers to have a smooth progression
+    // for the first 5 (3, 6, 9, 13, 18), max out at tier 6 (32), and
+    // then drop down to 18..20 for the top two tiers since they have
+    // other special abilities.  If this is false then we leave the
+    // defense values as their vanilla amounts.
+    optional bool balanced_armor_defense = 28
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    // If nonzero, cap the maximum armor defense at this multiplier
+    // times the player level.
+    optional uint32 cap_armor_defense_by_level = 29
+      [(min) = 0, (max) = 5,
+       (default) = 3,
+       (preset.vanilla) = 0];
+
+    // Specify specific defense values for each armor/shield.
+    map<uint32, uint32> armor_defense = 48
+      [(key) = "ItemName"];
+
+    // is this an item property (i.e. teleport/warp boots) or a map property?
+    // - move to "rules"?  next to pity mp, etc?
+    optional bool warp_from_anywhere = 30
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    optional bool zombie_warp = 31
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    // This is mainly transitional for migration from FlagSet.
+    optional bool vanilla_bonus_items = 32
+      [(default) = false];
+  }
+
+
+  message Quality {
+    optional bool auto_equip_bracelet = 1
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    optional bool quick_swap_sword = 2
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    optional bool quick_wild_warp = 3
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    optional bool color_sword_by_element = 4
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    optional bool update_hud = 5
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    optional bool enemy_hp_in_hud = 6
+      [(default) = true,
+       (preset.full_vanilla) = false];
+
+    // Fixes the screen-shake effect from missed IRQ timing
+    optional bool fix_screen_shake = 7
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // Despawns blizzard shots before trying to shoot new ones
+    optional bool fix_blizzard_despawn = 8
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // Fix opel statues to work even if not equipped
+    optional bool fix_opel_statue = 9
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // Allow using sword magic even if it would drop MP to exactly zero
+    optional bool fix_sword_magic_mp = 10
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // Fix Vampire 2's teleport speed to not blow up at very low HP
+    optional bool fix_vampire_speed = 11
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // // Simplify invisible chest logic to be more generalizable (required for
+    // // most randomization).
+    // optional bool simplify_invisible_chests = 7
+    //   [(default) = true,
+    //    (preset.full_vanilla) = false];
+  }
+
+
+  message Triggers {
+    optional bool whirlpool_item_requires_calm_sea = 1
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool zebu_student_gives_item = 2
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    optional bool beach_kensu_triggers_dolphin = 3
+      [(default) = false,
+       (group.vanilla_dolphin) = true];
+    optional bool beach_kensu_gives_item = 4
+      [(default) = true,
+       (group.vanilla_dolphin) = false];
+    optional bool heal_dolphin_to_ride = 5
+      [(default) = false,
+       (group.vanilla_dolphin) = true];
+    optional bool vanilla_dolphin = 6
+      [(default) = false,
+       (preset.vanilla) = true,
+       (preset.mystery) = "=?",
+       (preset.tournament_2022_early) = "=?",
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = "=?"];
+
+    optional bool deo_requires_telepathy = 7
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    // If this is set, Draygon 2 will _not_ spawn unless the player has
+    // found all four swords.  This was previously part of "story mode",
+    // but has been split out into a separate option.
+    optional bool draygon2_requires_all_swords = 8
+      [(default) = false,
+       (preset.mystery) = "=?"];
+    // If this is set, Draygon 2 will _not_ spawn unless the player has
+    // defeated all other major bosses first (specifically, both forms of
+    // Kelbesque, Sabera, and Mado, plus Karmine and Draygon 1).  This was
+    // previously bundled together with "draygon2 requires all swords" and
+    // called "story mode", but has been split into a separate option.
+    optional bool draygon2_requires_all_bosses = 9
+      [(default) = true,
+       (preset.vanilla) = false,
+       (preset.casual) = false,
+       (preset.classic) = false,
+       (preset.tournament_2023) = "=?",
+       (preset.mystery) = "=?"];
+
+    // If this is set, Draygon 2 will spawn in his final form immediately
+    // upon entering his screen.  The Bow of Truth becomes a no-use item.
+    optional bool draygon2_spawns_without_bow_of_truth = 10
+      [(default) = false,
+       (preset.mystery) = "=rand()<.2",
+       (group.no_bow_mode) = true];
+    // If this is set, the Mezame cryotube becomes a doorway directly to
+    // Draygon 2.  The door is two-way, meaning that it does not provide
+    // access to the two chests buried in the crypt (they still require
+    // the Bows of Sun and Moon to access the normal way).
+    optional bool draygon2_portal_at_start = 11
+      [(default) = false,
+       (preset.mystery) = "=rand()<.2",
+       (group.no_bow_mode) = true];
+
+    optional bool no_bow_mode = 16
+      [(default) = false,
+       (preset.mystery) = "=?"];
+
+    // What happens when the player picks up the Sword of Thunder.
+    optional ThunderSwordWarp thunder_sword_warp = 12
+      [(default) = RANDOM_TOWN,
+       (preset.vanilla) = FIXED,
+       (preset.casual) = NONE,
+       (preset.classic) = FIXED,
+       (preset.mystery) = "=?",
+       (preset.tournament_2023) = NONE,
+       (preset.tournament_2022_early) = "=?",
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = "=?"];
+    enum ThunderSwordWarp {
+      NONE = 0;
+      FIXED = 1;
+      RANDOM_TOWN = 2;
+      // RANDOM_ANY = 3;
+    }
+    // The fixed location to warp to when the player gets the Sword of Thunder.
+    // This has no effect unless `thunder_sword_warp` is set to `FIXED`.
+    optional LocationName thunder_sword_warp_location = 13
+      [(default) = SHYRON,
+       // NOTE: This adds a softlock risk in the logic if the warp point
+       // isn't granted correctly. We could potentially add some other way
+       // to warp back to this location in that case?
+       (preset.vanilla) = SHYRON__TEMPLE];
+    optional ItemName thunder_sword_warp_item = 14
+      [(default) = SWORD_OF_THUNDER];
+    optional ThunderSwordWarpItemTrigger thunder_sword_item_trigger = 15
+      [(default) = VANILLA];
+    enum ThunderSwordWarpItemTrigger {
+      VANILLA = 0;
+      SWORD = 1;
+      UNIQUE = 2;
+      RANDOM = 3;
+    }
+
+    // TODO - random sabre N entrance requirement?
+    // TODO - move to random transition????
+
+  }
+
+
+  message Maps {
+    optional uint32 mezame_chests = 1
+      [(min) = 0, (max) = 2,
+       (default) = 0,
+       (preset.mystery) = "=?"];
+ 
+    optional bool add_east_cave = 3
+      [(default) = true,
+       (preset.vanilla) = false,
+       (preset.casual) = false,
+       (preset.classic) = false,
+       (preset.mystery) = "=rand()<.8"];
+    optional bool add_east_cave_northeast_exit = 4
+      [(default) = true,
+       (preset.vanilla) = false,
+       (preset.mystery) = "=rand()<.7"];
+    optional bool add_east_cave_southwest_exit = 5
+      [(default) = true,
+       (preset.vanilla) = false,
+       (preset.mystery) = "=rand()<.7"];
+
+    optional bool add_wind_lime_passage = 6
+      [(default) = false,
+       (preset.casual) = true,
+       (preset.classic) = true,
+       (preset.mystery) = "=rand()<.3"];
+
+    optional bool reversible_swan_gate = 7
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional bool blackout = 8
+      [(default) = false,
+       (preset.full_stupid) = true];
+    // optional bool mirror = 9 // mirror everything?
+    //   [(default) = false];
+
+    // optional bool remove_sahara_whirlpool = 10
+    //   [(default) = false];
+    // optional bool remove_pyramid_whirlpool = 11
+    //   [(default) = false];
+    // optional bool remove_crypt_whirlpool = 12
+    //   [(default) = false];
+
+    optional bool wild_warp_in_logic = 32
+      [(default) = true,
+       (preset.casual) = false];
+
+    optional WildWarp wild_warp = 13
+      [(default) = MEZAME,
+       (preset.vanilla) = VANILLA,
+       (preset.mystery) = "=rand(3)"]; // NOTE: No "fixed" option
+    enum WildWarp {
+      // Wild warp goes to Mezame only
+      MEZAME = 0;
+      // Wild warp locations are the same as vanilla
+      VANILLA = 1;
+      // Wild warp locations are randomized
+      RANDOM = 2;
+      // Wild warp locations given by the list, fixed in sibling field
+      FIXED = 3;
+    }
+    // NOTE: Only used if wild warp is RANDOM
+    optional uint32 wild_warp_count = 14
+      [(min) = 2, (max) = 16,
+       (default) = 16,
+       (preset.vanilla) = 16,
+       (preset.mystery) = "=?"];
+    // NOTE: Only used if wild warp is FIXED
+    repeated LocationName wild_warp_locations = 15;
+
+    // How to randomize wall elements.
+    optional Randomization wall_elements = 16
+      [(default) = RANDOM,
+       (preset.vanilla) = VANILLA,
+       (preset.advanced) = RANDOM,
+       (preset.hardcore) = RANDOM,
+       (preset.full_stupid) = RANDOM,
+       (preset.mystery) = "=?"];
+
+    // How to randomize dungeon maps.
+    optional bool dungeon_maps = 17
+      [(default) = false,
+       (preset.advanced) = true,
+       (preset.hardcore) = true,
+       (preset.full_stupid) = true,
+       (preset.mystery) = "=rand()<.3"];
+
+      // optional float shuffle_town_entrances = 3
+      //   [(type) = "u8/128",
+      //    (default) = 0];
+      // optional float shuffle_cave_entrances = 4
+      //   [(type) = "u8/128",
+      //    (default) = 0];
+      // optional float shuffle_fortress_entrances = 5
+      //   [(type) = "u8/128",
+      //    (default) = 0];
+
+    // Likelihood of randomizing any given house entrance.
+    // A value of 0 means no entrances are shuffled, while a value
+    // of 1 will shuffle all entrances.  In-between values will
+    // retain a fraction of the original entrances.
+    optional float shuffle_house_entrances = 18
+      [(type) = "u8/128",
+       (min) = 0, (max) = 1,
+       (default) = 0,
+       (preset.advanced) = "=rand() * 2",
+       (preset.hardcore) = "=rand() * 2",
+       (preset.full_stupid) = 1,
+       (preset.mystery) = "=rand() * 3 - 1.5"];
+
+    // Likelihood of randomizing any given connection between areas.
+    // A value of 0 means no connections are shuffled, while a value
+    // of 1 will shuffle all connections.  In-between values will
+    // retain a fraction of the original connections.
+    optional float shuffle_area_connections = 19
+      [(type) = "u8/128",
+       (min) = 0, (max) = 1,
+       (default) = 0,
+       // NOTE: These presets play around with different distributions.
+       // The advanced and hardcode presets have a 50% chance to cap out
+       // at full shuffle, while the mystery preset is a 50% chance to
+       // not shuffle at all, and a uniformly random proportion otherwise.
+       (preset.advanced) = "=rand() * 2",
+       (preset.hardcore) = "=rand() * 2",
+       (preset.full_stupid) = 1,
+       (preset.mystery) = "=rand() * 3 - 1.5"];
+
+    // Whether to shuffle the connections between floors in Draygonia
+    // Fortress.
+    optional bool shuffle_goa_floor_connections = 20
+      [(default) = false,
+       (preset.hardcore) = true,
+       (preset.full_stupid) = true,
+       (preset.mystery) = "=?"];
+
+    // Whether the direction of Draygonia Fortress floors may be reversed.
+    // Only applies when "shuffle_goa_floor_connections" is enabled.
+    optional bool reverse_goa_floor_directions = 21
+      [(default) = true,
+       (preset.mystery) = "=?"];
+
+      // optional float mirror_caves = 10
+      //   [(type) = "u8/128",
+      //    (default) = 0];
+      // optional bool shuffle_basement_entrances = 11
+      //   [(default) = false];
+      // optional float remove_desert_whirlpools = 12
+      //   [(type) = "u8/128",
+      //    (default) = 0];
+
+    // // Plando support to force certain maps.
+    // map<uint32, LocationData> force = 21
+    //   [(key) = LocationName,
+    //    (hidden) = true];
+
+    // message LocationData {
+    //   // TODO - screens, connections, tileset, spawns, etc
+    // }
+
+    // map<uint32, MetascreenData> screens = 9; // this key is 16-bit maybe?
+    // // or else we need an enum of metascreen names...?!?
+    // //  - how to keep everything in sync???
+    // //  - can we use the early parsed `Rom` itself for the rewriting, rather than enum?
+
+    // message MetascreenData {
+    //   // is this even something we can do?
+    // }
+  }
+  
+
+  message Enemies {
+    // Proportion of items that need to be won by defeating a mimic.
+    optional float items_from_mimics = 2
+      [(type) = "u8/128",
+       (min) = 0, (max) = 1,
+       (default) = 0,
+       (preset.tournament_2023) = 1,
+       (preset.mystery) = "=rand() * 3 - 1.5"];
+    // Whether to remove the level minimums required to damage enemies.
+    optional bool remove_level_minimums = 3
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // Whether to use the scaling level when spawning enemies.  Without
+    // this, late-game enemies will be challenging or (with level minimums)
+    // impossible to defeat in the early game, and early-game enemies will
+    // be trivial and pointless in the late game.
+    optional bool rescale_enemies = 4
+      [(default) = true,
+       (preset.full_vanilla) = false];
+    // Whether to randomize enemy spawns.
+    optional Randomization randomize_enemies = 5
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA];
+    // Whether to randomize enemy weaknesses.  In SHUFFLE mode, enemies will
+    // retain the same number of weaknesses, whereas in RANDOM mode, each
+    // will get a completely random combination.  This option does not affect
+    // tetrarchs, which always have only a single weakness.
+    optional Randomization enemy_weaknesses = 6
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA,
+       (preset.casual) = VANILLA,
+       (preset.classic) = VANILLA,
+       (preset.mystery) = "=?",
+       (preset.tournament_2022_early) = "=?",
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = "=?"];
+    // Whether to randomize tetrarch weaknesses.  In SHUFFLE mode, weaknesses
+    // will be swapped between the 7 bosses, keeping two wind, two fire, two
+    // water, and one thunder; in RANDOM mode, each tetrarch will get a random
+    // weakness independent of all the other selections.
+    optional Randomization tetrarch_weaknesses = 7
+      [(default) = RANDOM,
+       (preset.vanilla) = VANILLA];
+    // Whether to palette swap enemies.  Note that this cannot be made optional
+    // because palette swapping affects which enemies can be spawned together
+    // on the same map (without palette swapping, only same-colored enemies can
+    // be together, whereas with swapping, the selection is much greater).
+    optional bool palette_swap = 8
+      [(default) = false,
+       (preset.mystery) = "=?",
+       (preset.tournament_2022_early) = "=?",
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = "=?"];
+    // How often tower robots can be found outside the tower.  A value of 0 means
+    // no robots can appear, while a value of 1 means that all enemies will be
+    // robots ("oops all robots").  In-between values indicate the probability of
+    // any location spawning a robot.
+    optional float robots_outside_tower = 9
+      [(type) = "u8/128",
+       (min) = 0, (max) = 1,
+       (default) = 0.05,
+       (preset.casual) = 0,
+       (preset.classic) = 0,
+       (preset.mystery) = "=randn()/15"]; // 50% for _any_ robots, usually ~10% or less
+    // Whether to use max scaling for all damage calculations while in the tower
+    // rather than whatever the current scaling level happens to be.
+    optional bool max_scaling_in_tower = 10
+      [(default) = false,
+       (preset.advanced) = true,
+       (preset.hardcore) = true,
+       (preset.full_stupid) = true,
+       (preset.mystery) = "=?",
+       (preset.tournament_2023) = true,
+       (preset.tournament_2022_mid) = true,
+       (preset.tournament_2022_finals) = true];
+    // Whether to buff the dyna enemies.  This is a separate option from max-scaling.
+    optional bool buff_dyna = 11
+      [(default) = true,
+       (preset.vanilla) = false,
+       (preset.casual) = false,
+       (preset.mystery) = "=rand()<.7"];
+    optional GlitchMode tink_mode = 12
+      [(default) = FORBID];
+    optional float exp_scaling_factor = 13
+      [(type) = "f8:0.3.5",
+       (min) = 0.25, (max) = 4,
+       (default) = 1,
+       (preset.casual) = 2.5,
+       (preset.hardcore) = 0.25,
+       (preset.full_stupid) = 0.25];
+    // Scaling factor to apply to enemy damage at the start of the game.
+    // Note that at full scaling, this is _not_ the relevant factor.  We
+    // adjust the scaling rate to catch up with the unmodified values by
+    // the endgame.
+    optional float initial_enemy_damage_scaling_factor = 15
+      [(default) = 1,
+       (min) = 0.25, (max) = 4,
+       (preset.casual) = 0.33];
+    // // Whether to nerf Mado 2 by decreasing his speed a bit.
+    // optional bool nerf_mado2 = 16 // ???? TODO
+    //   [(default) = false];
+
+    // Whether to randomize where flyers spawn on the map.  This is important
+    // for the Rage Skip glitch, which requires damage-boosting off of a flyer
+    // from the right angle.  If this is disabled and Rage Skip is in-logic,
+    // then it might be very difficult to pull off the skip.
+    optional bool randomize_flyer_spawns = 17
+      [(default) = true,
+       (preset.vanilla) = false];
+
+    // Death is permanent. Save/load/continue are all disabled.
+    optional bool permadeath = 18
+      [(default) = false,
+       (preset.hardcore) = true,
+       (preset.full_stupid) = true];
+
+    // TODO - make this enum, and then we only spawn the given enemies anywhere
+    // (i.e. "oops all robots", "oops all flail guys", etc)
+    // repeated EnemyName only_spawn = 16;
+
+    // Replace all coin sprites with the same one (TODO: different per page?)
+    // NOTE: Disabling this with enemies shuffled will lead to glitched graphics,
+    // and may also prevent other changes if the freed-up metasprite slot is
+    // needed for something else.
+    optional bool fix_coin_sprites = 32
+      [(default) = true,
+       (preset.full_vanilla) = false];
+  }
+
+  // Options corresponding to towns.
+  message Towns {
+    // What items show up in shops (both armor and tool).  If SHUFFLE, then the
+    // same set of items will be available in shops, but they will be exchanged
+    // randomly between the shops.  If RANDOM, then the items will be randomized
+    // independently from each other.  This may mean that some armors are not
+    // available in shops at all.
+    optional Randomization shop_contents = 1
+      [(default) = SHUFFLE,
+       (preset.vanilla) = VANILLA,
+       (preset.casual) = VANILLA];
+    optional bool rescale_prices = 2
+      [(default) = true,
+       (preset.vanilla) = false];
+    optional float price_variation = 3
+      [(type) = "f8:0.4.4",
+       (min) = 0, (max) = 1,
+       (default) = 0.5, // TODO - check what we're currently doing
+       (preset.vanilla) = 0];
+    // Whether trade-in requirements should be shuffled around.
+    optional bool shuffle_trades = 4
+      [(default) = false,
+       (preset.advanced) = true,
+       (preset.hardcore) = true,
+       (preset.full_stupid) = true,
+       (preset.mystery) = "=?",
+       (preset.tournament_2023) = true,
+       (preset.tournament_2022_early) = "=?",
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = "=?"];
+
+    // optional bool chaotic_trades = 5 // all items eligible...?
+    //   [(default) = false];
+    // optional bool heal_stom = 6
+    //   [(default) = false];
+    // TODO - force trade-ins, force shops, etc
+
+    // TODO - 3 options for (psycho armor|psycho shield|battle armor) in shops
+    //      - and maybe an option to just totally randomize armors?
+    //      - if other armors dropped, still make them (optionally?) sellable?
+  }
+
+  message Glitches {
+    // Whether to allow players to "steal" items from shops by buffering a
+    // purchase immediately after a left/right input, which allows to buy
+    // an item for the price of its neighbor (which may be free if there is
+    // no neighbor).  Requiring this glitch in-logic doesn't have a large
+    // effect, but could lead to logic that expects the player to steal healing
+    // items in order to make a "hell-run" through the swamp.
+    optional GlitchMode shop_glitch = 1
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.mystery) = "=rand()<.2?'ALLOW':'FORBID'"];
+    optional GlitchMode statue_glitch = 2
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.classic) = REQUIRE,
+       (preset.advanced) = REQUIRE,
+       (preset.tournament_2023) = REQUIRE,
+       (preset.tournament_2022_early) = REQUIRE,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = REQUIRE,
+       (preset.mystery) = "=?"];
+    optional GlitchMode sword_charge_glitch = 3
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.advanced) = ALLOW,
+       (preset.mystery) = "=?"];
+    optional GlitchMode teleport_skip = 4
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.advanced) = REQUIRE,
+       (preset.tournament_2023) = REQUIRE,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = REQUIRE,
+       (preset.mystery) = "=?"];
+    optional GlitchMode rabbit_skip = 5
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.advanced) = REQUIRE,
+       (preset.tournament_2023) = REQUIRE,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = REQUIRE,
+       (preset.mystery) = "=?"];
+    optional GlitchMode rage_skip = 6
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.mystery) = "=?"];
+    optional GlitchMode trigger_skip = 7
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.mystery) = "=?"];
+    optional GlitchMode flight_statue_skip = 8
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.tournament_2022_early) = REQUIRE,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = REQUIRE,
+       (preset.mystery) = "=?"];
+    optional GlitchMode ghetto_flight = 9
+      [(default) = FORBID,
+       (preset.vanilla) = ALLOW,
+       (preset.advanced) = REQUIRE,
+       (preset.tournament_2023) = REQUIRE,
+       (preset.tournament_2022_mid) = "=?",
+       (preset.tournament_2022_finals) = REQUIRE,
+       (preset.mystery) = "=?"];
+    optional bool require_long_trigger_skip = 10
+      [(default) = false];
+  }
+
+  enum GlitchMode { 
+    // Glitch is not possible
+    FORBID = 0;
+    // Glitch is allowed and required in logic
+    REQUIRE = 1;
+    // Glitch is allowed but hidden from logic
+    ALLOW = 2;
+  }
+
+  message Fun {
+    // modes: none, full, shuffle???
+    //  - version that just swaps existing palettes?
+    optional bool palette_swap_backgrounds = 1
+      [(default) = false];
+    optional bool randomize_music = 2
+      [(default) = false];
+    optional bool community_jokes = 3
+      [(default) = true,
+       (preset.vanilla) = false,
+       (preset.casual) = false,
+       (preset.classic) = false];
+  }
+
+  message Accessibility {
+    // NOTE: these are always optional and can never be marked as required.
+    // todo - quick soft reset?
+    optional bool audible_wall_cues = 1
+      [(default) = false,
+       (unscriptable) = true];
+    optional bool disable_music = 2
+      [(default) = false,
+       (unscriptable) = true];
+  }
+
+  message Debug {
+    optional bool trainer = 1
+      [(default) = false];
+    optional bool never_die = 2
+      [(default) = false];
+    optional bool check_flag0 = 3
+      [(default) = true];
+  }
+
+}
+
+enum ItemName {
+  SWORD_OF_WIND = 0x00;
+  SWORD_OF_FIRE = 0x01;
+  SWORD_OF_WATER = 0x02;
+  SWORD_OF_THUNDER = 0x03;
+  CRYSTALIS = 0x04;
+  BALL_OF_WIND = 0x05
+    [(alias) = 'ORB_OF_WIND'];
+  TORNADO_BRACELET = 0x06;
+  BALL_OF_FIRE = 0x07
+    [(alias) = 'ORB_OF_FIRE'];
+  FLAME_BRACELET = 0x08;
+  BALL_OF_WATER = 0x09
+    [(alias) = 'ORB_OF_WATER'];
+  BLIZZARD_BRACELET = 0x0a;
+  BALL_OF_THUNDER = 0x0b
+    [(alias) = 'ORB_OF_THUNDER'];
+  STORM_BRACELET = 0x0c;
+  CARAPACE_SHIELD = 0x0d;
+  BRONZE_SHIELD = 0x0e;
+  PLATINUM_SHIELD = 0x0f;
+  MIRRORED_SHIELD = 0x10;
+  CERAMIC_SHIELD = 0x11;
+  SACRED_SHIELD = 0x12;
+  BATTLE_SHIELD = 0x13;
+  PSYCHO_SHIELD = 0x14;
+  TANNED_HIDE = 0x15;
+  LEATHER_ARMOR = 0x16;
+  BRONZE_ARMOR = 0x17;
+  PLATINUM_ARMOR = 0x18;
+  SOLDIER_SUIT = 0x19;
+  CERAMIC_SUIT = 0x1a;
+  BATTLE_ARMOR = 0x1b;
+  PSYCHO_ARMOR = 0x1c;
+  MEDICAL_HERB = 0x1d;
+  ANTIDOTE = 0x1e;
+  LYSIS_PLANT = 0x1f;
+  FRUIT_OF_LIME = 0x20;
+  FRUIT_OF_POWER = 0x21;
+  MAGIC_RING = 0x22;
+  FRUIT_OF_REPUN = 0x23;
+  WARP_BOOTS = 0x24;
+  STATUE_OF_ONYX = 0x25;
+  OPEL_STATUE = 0x26;
+  INSECT_FLUTE = 0x27;
+  FLUTE_OF_LIME = 0x28;
+  GAS_MASK = 0x29
+    [(alias) = 'HAZMAT_SUIT'];
+  POWER_RING = 0x2a;
+  WARRIOR_RING = 0x2b;
+  IRON_NECKLACE = 0x2c;
+  DEOS_PENDANT = 0x2d;
+  RABBIT_BOOTS = 0x2e;
+  LEATHER_BOOTS = 0x2f;
+  SHIELD_RING = 0x30;
+  ALARM_FLUTE = 0x31;
+  WINDMILL_KEY = 0x32;
+  KEY_TO_PRISON = 0x33;
+  KEY_TO_STYX = 0x34;
+  FOG_LAMP = 0x35;
+  SHELL_FLUTE = 0x36;
+  EYE_GLASSES = 0x37;
+  BROKEN_STATUE = 0x38;
+  GLOWING_LAMP = 0x39;
+  STATUE_OF_GOLD = 0x3a;
+  LOVE_PENDANT = 0x3b;
+  KIRISA_PLANT = 0x3c;
+  IVORY_STATUE = 0x3d;
+  BOW_OF_MOON = 0x3e;
+  BOW_OF_SUN = 0x3f;
+  BOW_OF_TRUTH = 0x40;
+  REFRESH = 0x41;
+  PARALYSIS = 0x42;
+  TELEPATHY = 0x43;
+  TELEPORT = 0x44;
+  RECOVER = 0x45;
+  BARRIER = 0x46;
+  CHANGE = 0x47;
+  FLIGHT = 0x48;
+}
+
+// Name of locations
+enum LocationName {
+  // TODO - matching against these is tricky
+  //   - "__" means some sort of extra punctuation?
+  MEZAME_SHRINE = 0x00;
+  /** outside the cave */
+  LEAF__OUTSIDE_START = 0x01;
+  LEAF = 0x02;
+  VALLEY_OF_WIND = 0x03;
+  SEALED_CAVE_1 = 0x04;
+  SEALED_CAVE_2 = 0x05;
+  SEALED_CAVE_3 = 0x06;
+  SEALED_CAVE_4 = 0x07;
+  SEALED_CAVE_5 = 0x08;
+  SEALED_CAVE_6 = 0x09;
+  SEALED_CAVE_7 = 0x0a;
+  SEALED_CAVE_8 = 0x0c;
+  WINDMILL_CAVE = 0x0e;
+  WINDMILL = 0x0f;
+  ZEBU_CAVE = 0x10;
+  MT_SABRE_WEST__CAVE_1 = 0x11;
+  CORDEL_PLAINS_WEST = 0x14;
+  CORDEL_PLAINS_EAST = 0x15;
+  BRYNMAER = 0x18;
+  OUTSIDE_STOM_HOUSE = 0x19;
+  SWAMP = 0x1a;
+  AMAZONES = 0x1b;
+  OAK = 0x1c;
+  STOM_HOUSE = 0x1e;
+  MT_SABRE_WEST__LOWER = 0x20;
+  MT_SABRE_WEST__UPPER = 0x21;
+  MT_SABRE_WEST__CAVE_2 = 0x22;
+  MT_SABRE_WEST__CAVE_3 = 0x23;
+  MT_SABRE_WEST__CAVE_4 = 0x24;
+  MT_SABRE_WEST__CAVE_5 = 0x25;
+  MT_SABRE_WEST__CAVE_6 = 0x26;
+  MT_SABRE_WEST__CAVE_7 = 0x27;
+  MT_SABRE_NORTH__MAIN = 0x28;
+  MT_SABRE_NORTH__MIDDLE = 0x29;
+  MT_SABRE_NORTH__CAVE_1 = 0x2a;
+  MT_SABRE_NORTH__CAVE_2 = 0x2b;
+  MT_SABRE_NORTH__CAVE_3 = 0x2c;
+  MT_SABRE_NORTH__CAVE_4 = 0x2d;
+  MT_SABRE_NORTH__CAVE_5 = 0x2e;
+  MT_SABRE_NORTH__CAVE_6 = 0x2f;
+  MT_SABRE_NORTH__LEFT_CELL = 0x30;
+  MT_SABRE_NORTH__PRISON_KEY_HALL = 0x31;
+  MT_SABRE_NORTH__RIGHT_CELL = 0x32;
+  MT_SABRE_NORTH__CAVE_7 = 0x33;
+  MT_SABRE_NORTH__CAVE_8 = 0x34;
+  MT_SABRE_NORTH__SUMMIT_CAVE = 0x35;
+  MT_SABRE_NORTH__ENTRANCE_CAVE = 0x38;
+  MT_SABRE_NORTH__CAVE_5A = 0x39;
+  NADARE__INN = 0x3c;
+  NADARE__TOOL_SHOP = 0x3d;
+  NADARE__BACK_ROOM = 0x3e;
+  WATERFALL_VALLEY_NORTH = 0x40;
+  WATERFALL_VALLEY_SOUTH = 0x41;
+  LIME_TREE_VALLEY = 0x42;
+  LIME_TREE_LAKE = 0x43;
+  KIRISA_PLANT_CAVE_1 = 0x44;
+  KIRISA_PLANT_CAVE_2 = 0x45;
+  KIRISA_PLANT_CAVE_3 = 0x46;
+  KIRISA_MEADOW = 0x47;
+  FOG_LAMP_CAVE_1 = 0x48;
+  FOG_LAMP_CAVE_2 = 0x49;
+  FOG_LAMP_CAVE_3 = 0x4a;
+  FOG_LAMP_CAVE_DEAD_END = 0x4b;
+  FOG_LAMP_CAVE_4 = 0x4c;
+  FOG_LAMP_CAVE_5 = 0x4d;
+  FOG_LAMP_CAVE_6 = 0x4e;
+  FOG_LAMP_CAVE_7 = 0x4f;
+  PORTOA = 0x50;
+  PORTOA__FISHERMAN_ISLAND = 0x51;
+  MESIA_SHRINE = 0x52;
+  WATERFALL_CAVE_1 = 0x54;
+  WATERFALL_CAVE_2 = 0x55;
+  WATERFALL_CAVE_3 = 0x56;
+  WATERFALL_CAVE_4 = 0x57;
+  TOWER__ENTRANCE = 0x58;
+  TOWER_1 = 0x59;
+  TOWER_2 = 0x5a;
+  TOWER_3 = 0x5b;
+  TOWER__OUTSIDE_MESIA = 0x5c;
+  TOWER__OUTSIDE_DYNA = 0x5d;
+  TOWER__MESIA = 0x5e;
+  TOWER__DYNA = 0x5f;
+  ANGRY_SEA = 0x60;
+  CABIN = 0x61;
+  JOEL__LIGHTHOUSE = 0x62;
+  UNDERGROUND_CHANNEL = 0x64;
+  ZOMBIE_TOWN = 0x65;
+  EVIL_SPIRIT_ISLAND_1 = 0x68;
+  EVIL_SPIRIT_ISLAND_2 = 0x69;
+  EVIL_SPIRIT_ISLAND_3 = 0x6a;
+  EVIL_SPIRIT_ISLAND_4 = 0x6b;
+  SABERA_PALACE_1 = 0x6c;
+  SABERA_PALACE_2 = 0x6d;
+  SABERA_PALACE_3 = 0x6e;
+  JOEL__SECRET_PASSAGE = 0x70;
+  JOEL = 0x71;
+  SWAN = 0x72;
+  SWAN__GATE = 0x73;
+  GOA_VALLEY = 0x78;
+  MT_HYDRA = 0x7c;
+  MT_HYDRA__CAVE_1 = 0x7d;
+  MT_HYDRA__OUTSIDE_SHYRON = 0x7e;
+  MT_HYDRA__CAVE_2 = 0x7f;
+  MT_HYDRA__CAVE_3 = 0x80;
+  MT_HYDRA__CAVE_4 = 0x81;
+  MT_HYDRA__CAVE_5 = 0x82;
+  MT_HYDRA__CAVE_6 = 0x83;
+  MT_HYDRA__CAVE_7 = 0x84;
+  MT_HYDRA__CAVE_8 = 0x85;
+  MT_HYDRA__CAVE_9 = 0x86;
+  MT_HYDRA__CAVE_10 = 0x87;
+  STYX_1 = 0x88;
+  STYX_2 = 0x89;
+  STYX_3 = 0x8a;
+  SHYRON = 0x8c;
+  GOA = 0x8e;
+  GOA_FORTRESS__OASIS_ENTRANCE = 0x8f;
+  DESERT_1 = 0x90;
+  OASIS_CAVE__MAIN = 0x91;
+  DESERT_CAVE_1 = 0x92;
+  SAHARA = 0x93;
+  SAHARA__OUTSIDE_CAVE = 0x94;
+  DESERT_CAVE_2 = 0x95;
+  SAHARA_MEADOW = 0x96;
+  DESERT_2 = 0x98;
+  PYRAMID__ENTRANCE = 0x9c;
+  PYRAMID__BRANCH = 0x9d;
+  PYRAMID__MAIN = 0x9e;
+  PYRAMID__DRAYGON = 0x9f;
+  CRYPT__ENTRANCE = 0xa0;
+  CRYPT__HALL_1 = 0xa1;
+  CRYPT__BRANCH = 0xa2;
+  CRYPT__DEAD_END_LEFT = 0xa3;
+  CRYPT__DEAD_END_RIGHT = 0xa4;
+  CRYPT__HALL_2 = 0xa5;
+  CRYPT__DRAYGON_REVISITED = 0xa6;
+  CRYPT__TELEPORTER = 0xa7;
+  GOA_FORTRESS__ENTRANCE = 0xa8;
+  GOA_FORTRESS__KELBESQUE = 0xa9;
+  GOA_FORTRESS__ZEBU = 0xaa;
+  GOA_FORTRESS__SABERA = 0xab;
+  GOA_FORTRESS__TORNEL = 0xac;
+  GOA_FORTRESS__MADO_1 = 0xad;
+  GOA_FORTRESS__MADO_2 = 0xae;
+  GOA_FORTRESS__MADO_3 = 0xaf;
+  GOA_FORTRESS__KARMINE_1 = 0xb0;
+  GOA_FORTRESS__KARMINE_2 = 0xb1;
+  GOA_FORTRESS__KARMINE_3 = 0xb2;
+  GOA_FORTRESS__KARMINE_4 = 0xb3;
+  GOA_FORTRESS__KARMINE_5 = 0xb4;
+  GOA_FORTRESS__KARMINE_6 = 0xb5;
+  GOA_FORTRESS__KARMINE_7 = 0xb6;
+  GOA_FORTRESS__EXIT = 0xb7;
+  OASIS_CAVE__ENTRANCE = 0xb8;
+  GOA_FORTRESS__ASINA = 0xb9;
+  GOA_FORTRESS__KENSU = 0xba;
+  GOA__HOUSE = 0xbb;
+  GOA__INN = 0xbc;
+  GOA__TOOL_SHOP = 0xbe;
+  GOA__TAVERN = 0xbf;
+  LEAF__ELDER_HOUSE = 0xc0;
+  LEAF__RABBIT_HUT = 0xc1;
+  LEAF__INN = 0xc2;
+  LEAF__TOOL_SHOP = 0xc3;
+  LEAF__ITEM_SHOP = 0xc4;
+  LEAF__STUDENT_HOUSE = 0xc5;
+  BRYNMAER__TAVERN = 0xc6;
+  BRYNMAER__PAWN_SHOP = 0xc7;
+  BRYNMAER__INN = 0xc8;
+  BRYNMAER__ARMOR_SHOP = 0xc9;
+  BRYNMAER__ITEM_SHOP = 0xcb;
+  OAK__ELDER_HOUSE = 0xcd;
+  OAK__MOTHER_HOUSE = 0xce;
+  OAK__TOOL_SHOP = 0xcf;
+  OAK__INN = 0xd0;
+  AMAZONES__INN = 0xd1;
+  AMAZONES__ITEM_SHOP = 0xd2;
+  AMAZONES__ARMOR_SHOP = 0xd3;
+  AMAZONES__ELDER = 0xd4;
+  NADARE = 0xd5;
+  PORTOA__FISHERMAN_HOUSE = 0xd6;
+  PORTOA__PALACE_ENTRANCE = 0xd7;
+  PORTOA__FORTUNE_TELLER = 0xd8;
+  PORTOA__PAWN_SHOP = 0xd9;
+  PORTOA__ARMOR_SHOP = 0xda;
+  PORTOA__INN = 0xdc;
+  PORTOA__TOOL_SHOP = 0xdd;
+  PORTOA__PALACE_LEFT = 0xde;
+  PORTOA__PALACE_THRONE_ROOM = 0xdf;
+  PORTOA__PALACE_RIGHT = 0xe0;
+  PORTOA__ASINA_ROOM = 0xe1;
+  AMAZONES__ELDER_DOWNSTAIRS = 0xe2;
+  JOEL__ELDER_HOUSE = 0xe3;
+  JOEL__SHED = 0xe4;
+  JOEL__TOOL_SHOP = 0xe5;
+  JOEL__INN = 0xe7;
+  ZOMBIE_TOWN__HOUSE = 0xe8;
+  ZOMBIE_TOWN__HOUSE_BASEMENT = 0xe9;
+  SWAN__TOOL_SHOP = 0xeb;
+  SWAN__STOM_HUT = 0xec;
+  SWAN__INN = 0xed;
+  SWAN__ARMOR_SHOP = 0xee;
+  SWAN__TAVERN = 0xef;
+  SWAN__PAWN_SHOP = 0xf0;
+  SWAN__DANCE_HALL = 0xf1;
+  SHYRON__TEMPLE = 0xf2;
+  SHYRON__TRAINING_HALL = 0xf3;
+  SHYRON__HOSPITAL = 0xf4;
+  SHYRON__ARMOR_SHOP = 0xf5;
+  SHYRON__TOOL_SHOP = 0xf6;
+  SHYRON__INN = 0xf7;
+  SAHARA__INN = 0xf8;
+  SAHARA__TOOL_SHOP = 0xf9;
+  SAHARA__ELDER_HOUSE = 0xfa;
+  SAHARA__PAWN_SHOP = 0xfb;
+}
+
+enum CheckName {
+  LEAF_ELDER = 0x00;
+  OAK_ELDER = 0x01;
+  WATERFALL_CAVE_SWORD_OF_WATER_CHEST = 0x02;
+  STXY_LEFT_UPPER_SWORD_OF_THUNDER_CHEST = 0x03
+    [(alias) = 'STYX_LEFT_UPPER_SWORD_OF_THUNDER_CHEST'];
+  MESIA_IN_TOWER = 0x04;
+  SEALED_CAVE_BALL_OF_WIND_CHEST = 0x05;
+  MT_SABRE_WEST_TORNADO_BRACELET_CHEST = 0x06;
+  GIANT_INSECT = 0x07;
+  KELBESQUE1 = 0x08;
+  RAGE = 0x09;
+  ARYLLIS_BASEMENT_CHEST = 0x0a;
+  MADO1 = 0x0b;
+  STORM_BRACELET_CHEST = 0x0c;
+  WATERFALL_CAVE_RIVER_LEFT_CHEST = 0x10;
+  MADO2 = 0x12;
+  STXY_RIGHT_MIDDLE_CHEST = 0x14
+    [(alias) = 'STYX_RIGHT_MIDDLE_CHEST'];
+  BATTLE_ARMOR_CHEST = 0x1b;
+  DRAYGON1 = 0x1c;
+  SEALED_CAVE_SMALL_ROOM_BACK_CHEST = 0x1d;
+  SEALED_CAVE_BIG_ROOM_NORTHEAST_CHEST = 0x1e;
+  FOG_LAMP_CAVE_FRONT_CHEST = 0x1f;
+  MT_HYDRA_RIGHT_CHEST = 0x20;
+  SABERA_UPSTAIRS_LEFT_CHEST = 0x21;
+  EVIL_SPIRIT_ISLAND_LOWER_CHEST = 0x22;
+  SABERA2 = 0x23;
+  SEALED_CAVE_SMALL_ROOM_FRONT_CHEST = 0x24;
+  CORDEL_GRASS = 0x25;
+  KELBESQUE2 = 0x26;
+  OAK_MOTHER = 0x27;
+  PORTOA_QUEEN = 0x28;
+  AKAHANA_STATUE_OF_ONYX_TRADEIN = 0x29;
+  OASIS_CAVE_FORTRESS_BASEMENT_CHEST = 0x2a;
+  BROKAHANA = 0x2b;
+  EVIL_SPIRIT_ISLAND_RIVER_LEFT_CHEST = 0x2c;
+  DEO = 0x2d;
+  VAMPIRE1 = 0x2e;
+  OASIS_CAVE_NORTHWEST_CHEST = 0x2f;
+  AKAHANA_FLUTE_OF_LIME_TRADEIN = 0x30;
+  ZEBU_STUDENT = 0x31 [(alias) = "MEZAME_SHRINE_RIGHT_CHEST"];
+  WINDMILL_GUARD_ALARM_FLUTE_TRADEIN = 0x32;
+  MT_SABRE_NORTH_BACK_OF_PRISON_CHEST = 0x33;
+  ZEBU_IN_SHYRON = 0x34;
+  FOG_LAMP_CAVE_BACK_CHEST = 0x35;
+  INJURED_DOLPHIN = 0x36;
+  CLARK = 0x37;
+  SABERA1 = 0x38;
+  KENSU_IN_LIGHTHOUSE = 0x39;
+  REPAIRED_STATUE = 0x3a;
+  UNDERGROUND_CHANNEL_UNDERWATER_CHEST = 0x3b;
+  KIRISA_MEADOW = 0x3c;
+  KARMINE = 0x3d;
+  ARYLLIS = 0x3e;
+  MT_HYDRA_SUMMIT_CHEST = 0x3f;
+  AZTECA_IN_PYRAMID = 0x40;
+  ZEBU_AT_WINDMILL = 0x41;
+  MT_SABRE_NORTH_SUMMIT = 0x42;
+  STOM_FIGHT_REWARD = 0x43;
+  MT_SABRE_WEST_TORNEL = 0x44;
+  ASINA_IN_BACK_ROOM = 0x45;
+  BEHIND_WHIRLPOOL = 0x46;
+  KENSU_IN_SWAN = 0x47;
+  SLIMED_KENSU = 0x48;
+  MEZAME_SHRINE_LEFT_CHEST = 0x49;
+  SEALED_CAVE_BIG_ROOM_SOUTHWEST_CHEST = 0x50;
+  MT_SABRE_WEST_RIGHT_CHEST = 0x52;
+  MT_SABRE_NORTH_MIDDLE_CHEST = 0x53;
+  FORTRESS_MADO_HELLWAY_CHEST = 0x54;
+  SABERA_UPSTAIRS_RIGHT_CHEST = 0x55;
+  MT_HYDRA_FAR_LEFT_CHEST = 0x56;
+  STXY_LEFT_LOWER_CHEST = 0x57
+    [(alias) = 'STYX_LEFT_LOWER_CHEST'];
+  KARMINE_BASEMENT_LOWER_MIDDLE_CHEST = 0x58;
+  EAST_CAVE_NORTHEAST_CHEST = 0x59;
+  OASIS_CAVE_ENTRANCE_ACROSS_RIVER_CHEST = 0x5a;
+  EVIL_SPIRIT_ISLAND_EXIT_CHEST = 0x5c;
+  FORTRESS_SABERA_MIDDLE_CHEST = 0x5d;
+  MT_SABRE_NORTH_UNDER_BRIDGE_CHEST = 0x5e;
+  KIRISA_PLANT_CAVE_CHEST = 0x5f;
+  FORTRESS_MADO_UPPER_NORTH_CHEST = 0x60;
+  VAMPIRE2 = 0x61;
+  FORTRESS_SABERA_NORTHWEST_CHEST = 0x62;
+  FORTRESS_MADO_LOWER_CENTER_NORTH_CHEST = 0x63;
+  OASIS_CAVE_NEAR_ENTRANCE_CHEST = 0x64;
+  MT_HYDRA_LEFT_RIGHT_CHEST = 0x65;
+  FORTRESS_SABERA_SOUTHEAST_CHEST = 0x66;
+  KENSU_IN_CABIN = 0x67;
+  MT_SABRE_WEST_NEAR_TORNEL_CHEST = 0x69;
+  MT_SABRE_WEST_LEFT_CHEST = 0x6a;
+  FORTRESS_MADO_UPPER_BEHIND_WALL_CHEST = 0x6b;
+  PYRAMID_CHEST = 0x6c;
+  CRYPT_RIGHT_CHEST = 0x6d;
+  KARMINE_BASEMENT_LOWER_LEFT_CHEST = 0x6e;
+  FORTRESS_MADO_LOWER_SOUTHEAST_CHEST = 0x6f;
+  FOG_LAMP_CAVE_MIDDLE_NORTH_MIMIC = 0x70;
+  FOG_LAMP_CAVE_MIDDLE_SOUTHWEST_MIMIC = 0x71;
+  WATERFALL_CAVE_FRONT_MIMIC = 0x72;
+  EVIL_SPIRIT_ISLAND_RIVER_RIGHT_MIMIC = 0x73;
+  MT_HYDRA_FINAL_CAVE_MIMIC = 0x74;
+  STXY_LEFT_NORTH_MIMIC = 0x75
+    [(alias) = 'STYX_LEFT_NORTH_MIMIC'];
+  STXY_RIGHT_NORTH_MIMIC = 0x76
+    [(alias) = 'STYX_RIGHT_NORTH_MIMIC'];
+  STXY_RIGHT_SOUTH_MIMIC = 0x77
+    [(alias) = 'STYX_RIGHT_SOUTH_MIMIC'];
+  CRYPT_LEFT_PIT_MIMIC = 0x78;
+  KARMINE_BASEMENT_UPPER_MIDDLE_MIMIC = 0x79;
+  KARMINE_BASEMENT_UPPER_RIGHT_MIMIC = 0x7a;
+  KARMINE_BASEMENT_LOWER_RIGHT_MIMIC = 0x7b;
+  EAST_CAVE_NORTHWEST_MIMIC = 0x7c;
+}

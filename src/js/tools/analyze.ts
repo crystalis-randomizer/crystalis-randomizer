@@ -1,15 +1,15 @@
 #!/usr/bin/env -S node -r esm --inspect 
 
-import './build_info.js'; // side effect global set (affects version module)
+import '../../../target/build/build_info'; // side effect global set (affects version module)
 
-import {EXPECTED_CRC32S} from './rom.js';
-import {FlagSet, Preset} from './flagset.js';
-import {crc32} from './crc32.js';
-import * as fs from 'fs';
-import * as patch from './patch.js';
-import {UsageError} from './util.js';
-import * as version from './version.js';
-import {disableAsserts} from './assert.js';
+import {EXPECTED_CRC32S} from '../rom.js';
+import {FlagSet, Preset} from '../flagset.js';
+import {crc32} from '../crc32.js';
+import * as fs from 'node:fs';
+import * as patch from '../patch.js';
+import {UsageError} from '../util.js';
+import * as version from '../version.js';
+import {disableAsserts} from '../assert.js';
 
 // Usage: node analyze.js [--flags=<FLAGS>] rom.nes
 

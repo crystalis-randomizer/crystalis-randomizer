@@ -294,7 +294,7 @@ async function shuffleInternal(rom: Uint8Array,
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
   const graph = new Graph([world.getLocationList()]);
-  if (!flags.noShuffle() || (predetermined && predetermined.fromArchipelago)) {
+  if (!flags.noShuffle() && !(predetermined && predetermined.fromArchipelago)) {
     const fill = await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
     if (fill) {
       // const n = (i: number) => {
@@ -352,7 +352,7 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.blackoutMode()) blackoutMode(parsed);
 
   misc(parsed, flags, random);
-  fixDialog(parsed);
+  fixDialog(parsed, predetermined);
   fixMovementScripts(parsed);
   checkTriggers(parsed);
 

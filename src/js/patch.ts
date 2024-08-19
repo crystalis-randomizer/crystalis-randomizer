@@ -288,7 +288,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps, but before logic.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
-  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
+  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined !== undefined && predetermined.fromArchipelago));
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.

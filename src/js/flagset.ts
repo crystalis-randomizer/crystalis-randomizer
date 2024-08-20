@@ -1,5 +1,8 @@
-import {UsageError, DefaultMap} from './util';
-import {Random} from './random';
+import { UsageError, DefaultMap } from './util';
+import { Random } from './random';
+import { Config, ConfigGenerator } from './config';
+import { Script } from './config/runtime';
+import { ScriptEvaluator } from './config/script';
 
 interface FlagOpts {
   name: string;
@@ -967,6 +970,7 @@ class DebugMode extends FlagSection {
 
 export class FlagSet {
   private flags: Map<Flag, Mode>;
+  private _config?: Config = undefined;
 
   constructor(str: string|Map<Flag, Mode> = '@Casual') {
     if (typeof str !== 'string') {
@@ -998,6 +1002,319 @@ export class FlagSet {
         }
       }
     }
+  }
+
+  get config(): Config {
+    if (this._config) return this._config;
+    const gen = new ConfigGenerator();
+    // TODO - set gen fields from flags.
+    const placement = () => gen.placement || (gen.placement = new Config.PlacementGenerator());
+    const items = () => gen.items || (gen.items = new Config.ItemsGenerator());
+    const quality = (base: ConfigGenerator|Config.OptionsGenerator): Config.QualityGenerator =>
+      base.quality || (base.quality = new Config.QualityGenerator());
+    const options = () => gen.options || (gen.options = new Config.OptionsGenerator());
+    const triggers = () => gen.triggers || (gen.triggers = new Config.TriggersGenerator());
+    const maps = () => gen.maps || (gen.maps = new Config.MapsGenerator());
+    const enemies = () => gen.enemies || (gen.enemies = new Config.EnemiesGenerator());
+    const towns = () => gen.towns || (gen.towns = new Config.TownsGenerator());
+    const glitches = () => gen.glitches || (gen.glitches = new Config.GlitchesGenerator());
+    const fun = (base: ConfigGenerator|Config.OptionsGenerator): Config.FunGenerator =>
+      base.fun || (base.fun = new Config.FunGenerator());
+    const accessibility =
+      () => options().accessibility || (options().accessibility = new Config.AccessibilityGenerator());
+    const debug = () => gen.debug || (gen.debug = new Config.DebugGenerator());
+    const scripts = () => gen.scripts || (gen.scripts = []);
+    const {Randomization} = Config;
+
+    const set = <T>(flag: Flag, setter: (x: T) => void, modes: {[key: string]: T}) => {
+      const mode = this.flags.get(flag) ?? false;
+      if (modes[String(mode)] == null) return;
+      setter(modes[String(mode)]);
+    };
+    const any = new Script('?');
+
+    // WORLD
+    set(World.RandomizeMaps, x => maps().dungeonMaps = x, {
+      '?': Config.Maps.dungeonMaps.preset.mystery,
+      true: true,
+    });
+    set(World.ShuffleAreas, x => maps().shuffleAreaConnections = x, {
+      '?': Config.Maps.shuffleAreaConnections.preset.mystery,
+      true: 1,
+    });
+    set(World.ShuffleHouses, x => maps().shuffleHouseEntrances = x, {
+      '?': Config.Maps.shuffleHouseEntrances.preset.mystery,
+      true: 1,
+    });
+    set(World.RandomizeTrades, x => towns().shuffleTrades = x, {
+      '?': Config.Towns.shuffleTrades.preset.mystery,
+      true: true,
+    });
+    set(World.UnidentifiedKeyItems, x => items().unidentifiedItems = x, {
+      '?': Config.Items.unidentifiedItems.preset.mystery,
+      true: true,
+    });
+    set(World.RandomizeWallElements, x => maps().wallElements = x, {
+      '?': Config.Maps.wallElements.preset.mystery,
+      true: Randomization.RANDOM,
+    });
+    set(World.ShuffleGoaFloors, x => maps().shuffleGoaFloorConnections = x, {
+      '?': Config.Maps.shuffleGoaFloorConnections.preset.mystery,
+      true: true,
+    });
+    set(World.RandomizeSpriteColors, x => enemies().paletteSwap = x, {
+      '?': Config.Enemies.paletteSwap.preset.mystery,
+      true: true,
+    });
+    set(World.RandomizeWildWarp, x => maps().wildWarp = x, {
+      '?': Config.Maps.wildWarp.preset.mystery,
+      true: Config.Maps.WildWarp.RANDOM,
+    });
+
+    // ROUTING
+    set(Routing.StoryMode, x => triggers().draygon2RequiresAllBosses = x, {
+      '?': Config.Triggers.draygon2RequiresAllBosses.preset.mystery,
+      false: false,
+    });
+    set(Routing.NoBowMode, x => triggers().noBowMode = x, {
+      '?': Config.Triggers.noBowMode.preset.mystery,
+      true: true,
+    });
+    set(Routing.OrbsNotRequired, x => items().swordLevelForWalls = x, {
+      '?': new Script('rand(1,2)'),
+      false: 2,
+    });
+    set(Routing.NoThunderSwordWarp, x => triggers().thunderSwordWarp = x, {
+      '?': Config.Triggers.thunderSwordWarp.preset.mystery,
+      '!': Config.Triggers.ThunderSwordWarp.FIXED,
+      true: Config.Triggers.ThunderSwordWarp.NONE,
+    });
+    set(Routing.VanillaDolphin, x => triggers().vanillaDolphin = x, {
+      '?': Config.Triggers.vanillaDolphin.preset.mystery,
+      true: true,
+    });
+
+    // GLITCHES
+    set(Glitches.GhettoFlight, x => glitches().ghettoFlight = x, {
+      '?': new Script('rand(1,2)'), // allow or require.
+      true: Config.GlitchMode.REQUIRE,
+    });
+    set(Glitches.StatueGlitch, x => glitches().statueGlitch = x, {
+      '?': Config.Glitches.statueGlitch.preset.mystery,
+      '!': Config.GlitchMode.ALLOW,
+      true: Config.GlitchMode.REQUIRE,
+    });
+    switch (this.flags.get(Glitches.MtSabreRequirementSkip)) {
+      case true:
+        glitches().rabbitSkip = glitches().teleportSkip = Config.GlitchMode.REQUIRE;
+        break;
+      case '?':
+        scripts().push('mtSabreSkip=rand(0,2)');
+        glitches().rabbitSkip = glitches().teleportSkip = new Script('mtSabreSkip');
+        break;
+      case '!':
+        glitches().rabbitSkip = glitches().teleportSkip = Config.GlitchMode.ALLOW;
+        break;
+    }
+    set(Glitches.StatueGauntletSkip, x => glitches().flightStatueSkip = x, {
+      '?': Config.Glitches.flightStatueSkip.preset.mystery,
+      '!': Config.GlitchMode.ALLOW,
+      true: Config.GlitchMode.REQUIRE,
+    });
+    set(Glitches.SwordChargeGlitch, x => glitches().swordChargeGlitch = x, {
+      '?': Config.Glitches.swordChargeGlitch.preset.mystery,
+      '!': Config.GlitchMode.ALLOW,
+      true: Config.GlitchMode.REQUIRE,
+    });
+    set(Glitches.TriggerSkip, x => glitches().triggerSkip = x, {
+      '?': Config.Glitches.triggerSkip.preset.mystery,
+      '!': Config.GlitchMode.ALLOW,
+      true: Config.GlitchMode.REQUIRE,
+    });
+    set(Glitches.RageSkip, x => glitches().rageSkip = x, {
+      '?': Config.Glitches.rageSkip.preset.mystery,
+      '!': Config.GlitchMode.ALLOW,
+      true: Config.GlitchMode.REQUIRE,
+    });
+
+    // AESTHETICS
+    set(Aesthetics.RandomizeMusic, ([p, x]) => fun(p()).randomizeMusic = x, {
+      '?': [options, any] as const,
+      '!': [() => gen, true] as const,
+      true: [options, true] as const,
+    });
+    set(Aesthetics.NoMusic, x => accessibility().disableMusic = x, {
+      true: true,
+    });
+    set(Aesthetics.RandomizeMapColors, ([p, x]) => fun(p()).paletteSwapBackgrounds = x, {
+      '?': [options, any] as const,
+      '!': [() => gen, true] as const,
+      true: [options, true] as const,
+    });
+
+    // MONSTERS
+    set(Monsters.RandomizeWeaknesses, x => enemies().enemyWeaknesses = x, {
+      '?': Config.Enemies.enemyWeaknesses.preset.mystery,
+      true: Randomization.SHUFFLE,
+    });
+    set(Monsters.OopsAllMimics, x => enemies().itemsFromMimics = x, {
+      '?': new Script('rand(2)'), // 0 or 1, mirroring original version.
+      true: 1,
+    });
+    set(Monsters.TowerRobots, x => enemies().robotsOutsideTower = x, {
+      '?': Config.Enemies.robotsOutsideTower.preset.mystery,
+      true: 0.08,
+    });
+
+    // EASY MODE
+    set(EasyMode.NoShuffleMimics, x => placement().mimics = x, {
+      '?': new Script('rand(2)'), // vanilla or shuffle
+      false: Randomization.VANILLA,
+    });
+    set(EasyMode.PreserveUniqueChecks, x => placement().shuffleMimicsWithKeyItems = x, {
+      '?': any,
+      true: false,
+    });
+    set(EasyMode.DecreaseEnemyDamage, x => enemies().initialEnemyDamageScalingFactor = x, {
+      '?': new Script('(rand(2)*2)/3'),
+      true: 0.33,
+    });
+    set(EasyMode.GuaranteeStartingSword, x => placement().earlySword = x, {
+      '?': any,
+      true: true,
+    });
+    set(EasyMode.GuaranteeRefresh, x => placement().ensureRefreshBeforeBosses = x, {
+      '?': any,
+      true: true,
+    });
+    set(EasyMode.ExperienceScalesFaster, x => enemies().expScalingFactor = x, {
+      '?': new Script('1+rand(2)*1.5'),
+      true: 2.5,
+    });
+    set(EasyMode.NoCommunityJokes, x => fun(options()).communityJokes = x, {
+      '?': any,
+      false: 0,
+      true: Config.Fun.communityJokes.default,
+    });
+
+    // NO GUARANTEES
+    set(NoGuarantees.BattleMagic, x => placement().ensureMinimumSwordLevelBeforeTetrarchs = x, {
+      '?': new Script('1+2*rand(1)'),
+      true: 3,
+      false: 1,
+    });
+    set(NoGuarantees.MatchingSword, x => enemies().tinkMode = x, {
+      '?': new Script('rand()*2'), // FORBID or ALLOW, don't require.
+      true: Config.GlitchMode.ALLOW,
+    });
+    set(NoGuarantees.Barrier, x => placement().ensureBarrierBeforeStatues = x, {
+      '?': Config.Placement.ensureBarrierBeforeStatues.preset.mystery,
+      true: true,
+    });
+    set(NoGuarantees.GasMask, x => placement().ensureGasMaskBeforeSwamp = x, {
+      '?': Config.Placement.ensureGasMaskBeforeSwamp.preset.mystery,
+      true: true,
+    });
+
+    // HARD MODE
+    set(HardMode.NoBuffMedicalHerb, ([x,y]) => {
+      items().medicalHerbHeal = x;
+      items().fruitOfPowerMp = y;
+    }, {
+      '?': [new Script('rand(2)*48+32'), new Script('rand(2)*24+32')],
+      true: [32, 32],
+    });
+    set(HardMode.MaxScalingInTower, x => enemies().maxScalingInTower = x, {
+      '?': Config.Enemies.maxScalingInTower.preset.mystery,
+      true: true,
+    });
+    set(HardMode.ExperienceScalesSlower, x => enemies().expScalingFactor = x, {
+      '?': new Script('(rand(2)*3+1)/4'),
+      true: 1.5,
+    });
+    set(HardMode.ChargeShotsOnly, x => items().chargeShotOnlyMode = x, {
+      '?': any,
+      true: true,
+    });
+    set(HardMode.Blackout, x => maps().blackout = x, {
+      '?': any,
+      true: true,
+    });
+    set(HardMode.Permadeath, x => enemies().permadeath = x, {
+      '?': any,
+      true: true,
+    });
+
+    // VANILLA
+    set(Vanilla.Dyna, x => enemies().buffDyna = x, {
+      '?': Config.Enemies.buffDyna.preset.mystery,
+      false: false,
+    });
+    set(Vanilla.BonusItems, x => items().vanillaBonusItems = x, {
+      // TODO - add_speed_boots, hazmat_suit, adjust_tornado_speed, rabbit_boots_charge_while_walking
+      '?': any,
+      true: true,
+    });
+    set(Vanilla.Maps, x => [maps().addEastCave, maps().addWindLimePassage] = x, {
+      '?': [Config.Maps.addEastCave.preset.mystery, Config.Maps.addEastCave.preset.mystery],
+      '!': [false, true],
+      true: [false, false],
+    });
+    switch (this.get(Vanilla.Shops)) {
+      case '?':
+        scripts().push('vanillaShops=rand(2)');
+        glitches().shopGlitch = new Script('vanillaShops*2'); // forbid=0, allow=2
+        towns().shopContents = new Script('1-vanillaShops'); // vanilla=0, shuffle=1
+        towns().rescalePrices = new Script('!vanillaShops');
+        towns().priceVariation = new Script('.5-vanillaShops/2'); // vanilla=0, shuffled=0.5
+        break;
+      case true:
+        glitches().shopGlitch = Config.GlitchMode.ALLOW;
+        towns().shopContents = Config.Randomization.VANILLA;
+        towns().rescalePrices = false;
+        towns().priceVariation = 0;
+        break;
+    }
+    set(Vanilla.WildWarp, x => [maps().wildWarp!, maps().wildWarpInLogic] = x, {
+      '?': [new Script('rand(2)'), any] as const, // mezame or vanilla, may or may not be in logic
+      '!': [Config.Maps.WildWarp.VANILLA, false] as const,
+      true: [Config.Maps.WildWarp.VANILLA, true] as const,
+    });
+    set(Vanilla.Hud, ([p, x]) => quality(p()).updateHud = x, {
+      '?': [options, any] as const,
+      '!': [() => gen, false] as const,
+      true: [options, false] as const,
+    });
+
+    // QUALITY
+    set(Quality.NoAutoEquip, x => quality(options()).autoEquipBracelet = x, {
+      '?': any,
+      true: false,
+    });
+    set(Quality.NoControllerShortcuts, x => quality(options()).quickSwapSword = quality(options()).quickWildWarp = x, {
+      '?': any,
+      true: false,
+    });
+    set(Quality.AudibleWallCues, x => accessibility().audibleWallCues = x, {
+      true: true,
+    });
+
+    // DEBUG MODE
+    if (this.check(DebugMode.SpoilerLog, false)) gen.race = true;
+    if (this.check(DebugMode.TrainerMode, true)) debug().trainer = true;
+    if (this.check(DebugMode.NeverDie, true)) debug().neverDie = true;
+    if (this.check(DebugMode.NoShuffle, true)) placement().algorithm = Config.Placement.Algorithm.VANILLA;
+
+    // TODO - is it a problem to just return 0 for all randoms for now?
+    const rand: Random = {
+      next: () => 0,
+      nextInt: () => 0,
+      nextNormal: () => 0,
+      child: () => rand,
+    };
+      
+    const evaluator = new ScriptEvaluator(rand);
+    return this._config = gen.generate(evaluator);
   }
 
   filterOptional(): FlagSet {
@@ -1052,6 +1369,7 @@ export class FlagSet {
     if (index < 0) throw new Error(`Bad current mode ${mode}`);
     const next = modes[index + 1];
     this.flags.set(flag, next);
+    this._config = undefined;
     return next;
   }
 
@@ -1062,6 +1380,7 @@ export class FlagSet {
       console.error(`Bad flag: ${name}`);
       return;
     }
+    this._config = undefined;
     if (!mode) {
       this.flags.delete(flag);
     } else if (mode === true || mode === '?' || flag.opts.modes?.includes(mode)) {

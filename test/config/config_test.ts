@@ -40,7 +40,7 @@ describe('ConfigGenerator#generate', () => {
     expect(algorithms.size).toBe(Config.Placement.Algorithm.descriptor.values.length);
   });
 
-  it.only('options should not affect seed', () => {
+  it('options should not affect seed', () => {
     const json1 = {
       glitches: {
         statueGlitch: '=?',

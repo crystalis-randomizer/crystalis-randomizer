@@ -81,6 +81,12 @@ export class Random {
     }
   }
 
+  child(): Random {
+    const a = this.nextInt(0x1_0000_0000);
+    const b = this.nextInt(0x1_0000_0000);
+    return new Random(a ^ b);
+  }
+
   shuffle<T extends MutableArrayLike<unknown>>(array: T): T {
     for (let i = array.length; i;) {
       const j = this.nextInt(i--);

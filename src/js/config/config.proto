@@ -919,6 +919,8 @@ message Config {
        (preset.full_stupid) = RANDOM,
        (preset.mystery) = "=?"];
 
+    // TODO - float???  algorithm enum???
+
     // How to randomize dungeon maps.
     optional bool dungeon_maps = 17
       [(default) = false,

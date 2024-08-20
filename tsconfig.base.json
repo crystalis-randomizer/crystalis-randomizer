@@ -5,7 +5,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     // "module": "bundler",
-    // "moduleResolution": "nodenext",
+    "moduleResolution": "nodenext",
     "noEmit": true,
     "noImplicitAny": true,
     "noImplicitThis": true,

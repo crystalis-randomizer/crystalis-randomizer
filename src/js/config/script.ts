@@ -9,8 +9,9 @@ jsep.addBinaryOp('**', 11, true); // exponentiation
 
 interface Random {
   next(): number;
-  nextInt(a: number, b: number): number;
+  nextInt(n: number): number;
   nextNormal(): number;
+  child(): Random;
 }
 
 export class ScriptEvaluator extends SimplePresetEvaluator {
@@ -19,6 +20,10 @@ export class ScriptEvaluator extends SimplePresetEvaluator {
 
   constructor(readonly random: Random) {
     super(Config.Preset.descriptor);
+  }
+
+  newEvaluator(): Evaluator {
+    return new ScriptEvaluator(this.random.child());
   }
 
   // NOTE: may throw an Error

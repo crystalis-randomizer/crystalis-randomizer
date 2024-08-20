@@ -67,7 +67,9 @@ message Config {
   Fun fun = 17;
   Debug debug = 18;
 
-  // NOTE: This message is removed before impacting the seed.
+  // NOTE: This message is removed before impacting the seed.  We will
+  // generally persist this message via local storage, so that it's applied
+  // consistently regardless of clicking links.
   Options options = 19;
 
   // This is mostly repeats from the top-level Config object.  These fields
@@ -80,6 +82,12 @@ message Config {
     Accessibility accessibility = 1;
     Quality quality = 11;
     Fun fun = 17;
+    // NOTE: Options has its own namespace to prevent observing any top-level
+    // config variables.
+    repeated string scripts = 30
+      [(alias) = 'script',
+       (generator_only) = true,
+       (unscriptable) = true];
   }
   
   // UI: Any given checkbox can be (1) definite (off/on), (2) random, (3) complex
@@ -1258,11 +1266,11 @@ message Config {
       [(default) = false];
     optional bool randomize_music = 2
       [(default) = false];
-    optional bool community_jokes = 3
-      [(default) = true,
-       (preset.vanilla) = false,
-       (preset.casual) = false,
-       (preset.classic) = false];
+    optional float community_jokes = 3
+      [(default) = 0.1,
+       (preset.vanilla) = 0,
+       (preset.casual) = 0,
+       (preset.classic) = 0];
   }
 
   message Accessibility {

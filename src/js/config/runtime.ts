@@ -251,7 +251,7 @@ export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M,
     const byName = new Map<string, FieldInfo<any, any>>();
     const groups = new Map<number, Array<FieldInfo<any, any>>>();
     for (const [name, val] of Object.entries(obj.fields || {})) {
-      const field = FieldInfo.of(name, val as FieldJson, this, presets);
+      const field = FieldInfo.of(name, val as FieldJson, this);
       byId.set(field.id, field);
       byName.set(canonicalize(name), field);
       for (const alias of field.options.alias || []) {
@@ -350,7 +350,7 @@ export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M,
   // is given, then scripts must not be present (or else we'll throw an error).
   // NOTE: the evaluator may be mutated, so it is recommended to run with a new
   // evaluator.
-  generate(generator: G, evaluator: Evaluator): M {
+  generate(generator: G, evaluator: Evaluator, defaultOption?: M): M {
     const gen = (generator || {}) as Record<string, unknown>;
     // TODO - {} or this.empty()?  - if former then we need to init() fields.
     const msg = new this.messageCtor() as Record<string, unknown>;
@@ -385,10 +385,23 @@ export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M,
         msg[field.name] = value;
       }
     }
+    // Evaluation an "options" field early if it's found.
+    // This allows using it as a default for same-named other children.
+    const optsField = this.fieldsByCanonicalizedName.get('options');
+    if  (optsField && !defaultOption) {
+      // set defaultOption.
+      if (!(optsField.type instanceof MessageType)) throw new Error('bad options field');
+      if (optsField.isRepeated() || optsField.isMap()) throw new Error('bad options field');
+      const value = gen[optsField.name];
+      defaultOption = msg[optsField.name] = optsField.type.generate(value, evaluator.newEvaluator());
+    }
+
     // Next, iterate over ordinary fields and evaluate as needed.
     // If not present, fall back on default/preset.
     for (const field of this.fieldsById.values()) {
       if (grouped.has(field.name)) continue; // groups already handled.
+      if (field.name === 'options') continue; // already handled options.
+      const defaultChild = defaultOption?.[field.name as keyof M];
       msg[field.name] = evaluator.getPreset(field) ?? field.init();
       // Skip scripts and presets since we already handled them
       if (field.name === 'scripts' || field.name === 'presets') continue;
@@ -420,8 +433,8 @@ export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M,
           (msg[field.name] as Map<unknown, unknown>).set(key, value);
         }
       } else { // singular
-        let value = gen[field.name];
-        if (field.type instanceof MessageType) value = field.type.generate(value, evaluator);
+        let value: unknown = gen[field.name] ?? defaultChild;
+        if (field.type instanceof MessageType) value = field.type.generate(value, evaluator, defaultChild);
         if (value instanceof Script) value = evaluator.evaluate(value.script, field);
         if (value != null) msg[field.name] = value;
       }
@@ -919,6 +932,11 @@ export interface Evaluator {
   /** Adds a preset to the evaluator, or does nothing if null. */
   addPreset(name: number|null): void;
   getPreset(field: FieldInfo<any, any>): unknown;
+  /**
+   * Makes a new evaluator, with a separate/unrelated script environment,
+   * and a decoupled random seed.
+   */
+  newEvaluator(): Evaluator;
 }
 
 export class SimplePresetEvaluator implements Evaluator {
@@ -954,8 +972,11 @@ export class SimplePresetEvaluator implements Evaluator {
   protected getValueForPreset(field: FieldInfo<any, any>, preset: string|number): unknown {
     // NOTE: this should be overridden (but may call super.getValueForPreset)
     if (typeof preset !== 'number') return undefined;
-    let v = field.presets[preset];
+    let v = field.preset[preset];
     if (v instanceof Script) v = this.evaluate(v.script, field);
     return v;
+  }
+  newEvaluator() {
+    return new SimplePresetEvaluator(this.presetDescriptor);
   }
 }

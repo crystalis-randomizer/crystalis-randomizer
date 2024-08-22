@@ -156,11 +156,19 @@ PatchStartItemGet:
     sta GameMode
     ldy $0623
     lda $0300,y
+    ; need this check again because this could actually be a dead mimic
     cmp #$aa
-    bne +
-      lda #$00
-      sta $4a0,y
-+   pla
+    beq +
+      lda $23
+      cmp #$25 ;Cordel Grass
+      beq +
+        cmp #$3c ;Kirisa Meadow
+        beq +
+          cmp #$3b ; Underwater channel
+          bne +a
++   lda #$00
+    sta $4a0,y
++a  pla
     pla
     pla
     pla
@@ -316,9 +324,16 @@ PatchStartItemGet:
     ldy $0623
     lda $0300,y
     cmp #$aa
-    bne @NotAMimicOrChest
-      lda #$00
-      sta $4a0,y
+    beq +
+      lda $23
+      cmp #$25 ;Cordel Grass
+      beq +
+        cmp #$3c ;Kirisa Meadow
+        beq +
+          cmp #$3b ; Underwater channel
+          bne @NotAMimicOrChest
++   lda #$00
+    sta $4a0,y
 @NotAMimicOrChest:
     pla
     pla

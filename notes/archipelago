@@ -128,11 +128,7 @@ I could certainly see another developer taking a different approach.
 
 Feature To-Do list:
   -User-facing documentation
-  -logic and implementation of flags not yet implemented:
-	-Eu (remove consumable locations from AP's location set)
-	
-	-Gr (force a flier in the Lime Valley enemy pool? not sure on this one - CR-side only) 
-	
+  -logic and implementation of flags not yet implemented:	
     -Wa, Wh (using GER, not in initial release)
     -Wm (not a clue; implementation TBD, not in initial release)
   -Archipelago specific features:

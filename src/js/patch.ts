@@ -482,7 +482,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   const hasGraphics = spriteReplacements?.some((spr) => Sprite.isCustom(spr)) || false;
 
-  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics);
+  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics, predetermined);
 
   // Do optional randomization now...
   if (flags.randomizeMusic('late')) {
@@ -822,7 +822,8 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
                                         seed: number,
                                         flagString: string,
                                         early: Uint8Array,
-                                        hasGraphics: boolean): number {
+                                        hasGraphics: boolean,
+                                        predetermined?: ShuffleData): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
@@ -889,7 +890,11 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
   embed(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
-  embed(0x25716, 'RANDOMIZER');
+  if (predetermined && predetermined.fromArchipelago) {
+    embed(0x25715, 'ARCHIPELAGO');
+  } else {
+    embed(0x25716, 'RANDOMIZER');
+  }
   if (version.STATUS === 'unstable') embed(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
   // page as well, but we'd need to replace the unused letters in bank

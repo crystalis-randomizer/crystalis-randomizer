@@ -1,6 +1,6 @@
 import {Module} from '../asm/module';
 import {Rom} from '../rom';
-import {Address, Segment, tuple} from './util';
+import {Address, Segment, exportValue, tuple} from './util';
 
 // List of wild warp locations.
 export class WildWarp {
@@ -16,6 +16,7 @@ export class WildWarp {
     ADDRESS.loc(a);
     // a.label('WildWarpLocations');
     a.byte(...this.locations);
+    exportValue(a, 'wildWarpCount', this.locations.length);
     // Why did we write this?  It isn't actually a change...?
     // a.org(0xcbd9);
     // a.instruction('lda', 'WildWarpLocations,y');

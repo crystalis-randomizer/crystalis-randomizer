@@ -7,6 +7,17 @@
 
 .segment "fe", "ff"
 
+.org $f374
+  jsr ClearArchipelagoFlagsOnColdBoot
+
+.reloc
+ClearArchipelagoFlagsOnColdBoot:
+  lda #0
+  sta ArchipelagoFlag
+  sta ArchipelagoItemGet
+  jmp UnconditionallyResetCheckpointFile
+  ; implicit rts
+
 ;;; Hook into the main loop right after the other hooks
 ;;; so it shouldn't affect anything else (this is only after input is read)
 .org $cb68

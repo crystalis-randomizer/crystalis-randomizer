@@ -567,6 +567,7 @@
 .define STATUS_STONE      $02
 .define STATUS_POISON     $03
 .define STATUS_CURSED     $04
+.define STATUS_MASK       $0f  ; just the status bits (no dolphin/change)
 .define STATUS_DOLPHIN    $40
 .define STATUS_CHANGED    $80
 .define STATUS_STOM       $00
@@ -51383,22 +51384,22 @@ MoveObjectWithSpeedAndDirection:
 ;;; putting the object on an adjacent tile if there's an obstacle?  But I don't
 ;;; see where it's checking for obstacles?
 .org $9907
-DataTable_35907:
-                ;; U-L     U-R
+FallbackDirectionsTable:  ; 35907
+        ;;    U-L     U-R
         .byte [@35907@],[@35908@],[@35909@],[@3590a@],[@3590b@],[@3590c@],[@3590d@],[@3590e@] ; up
-                ;; U-L     U-R     D-R 
+        ;;    U-L     U-R     D-R 
         .byte [@3590f@],[@35910@],[@35911@],[@35912@],[@35913@],[@35914@],[@35915@],[@35916@] ; up-right
-                ;; U-R     D-R
+        ;;    U-R     D-R
         .byte [@35917@],[@35918@],[@35919@],[@3591a@],[@3591b@],[@3591c@],[@3591d@],[@3591e@] ; right
-                ;; U-R     D-R     D-L
+        ;;    U-R     D-R     D-L
         .byte [@3591f@],[@35920@],[@35921@],[@35922@],[@35923@],[@35924@],[@35925@],[@35926@] ; down-right
-                ;; D-L     D-R
+        ;;    D-L     D-R
         .byte [@35927@],[@35928@],[@35929@],[@3592a@],[@3592b@],[@3592c@],[@3592d@],[@3592e@] ; down
-                ;; D-R     D-L     U-L
+        ;;    D-R     D-L     U-L
         .byte [@3592f@],[@35930@],[@35931@],[@35932@],[@35933@],[@35934@],[@35935@],[@35936@] ; down-left
-                ;; U-L     D-L
+        ;;    U-L     D-L
         .byte [@35937@],[@35938@],[@35939@],[@3593a@],[@3593b@],[@3593c@],[@3593d@],[@3593e@] ; left
-                ;; U-R     U-L     D-L
+        ;;    U-R     U-L     D-L
         .byte [@3593f@],[@35940@],[@35941@],[@35942@],[@35943@],[@35944@],[@35945@],[@35946@] ; up-left
 ;;; --------------------------------
 ;;; Possibly double-returns (in case movement actually happens)
@@ -51439,9 +51440,9 @@ CheckDirectionAgainstTerrain:
         <@3597b@>
 @DirLoop:
            <@3597d@>
-           <@3597f DataTable_35907@>
+           <@3597f FallbackDirectionsTable@>  ; 35907
            <@35982@>
-           <@35984 DataTable_35907+1@>
+           <@35984 FallbackDirectionsTable+1@>  ; 35908
            <@35987@>
            <@35989@>
             ;; Stop looking and double-return if we get to a (0,0) pair in the row.
@@ -52098,7 +52099,7 @@ ObjectActionJump_03:
 +       <@35dd1@>
         <@35dd4@>
         <@35dd6 ++@> ; $35de1
-        <@35dd8@>
+        <@35dd8 Ctrl1CurrentDirection@>
         <@35dda ++@> ; $35de1
         <@35ddc@>
         <@35ddf ++@> ; $35de1
@@ -52108,8 +52109,8 @@ ObjectActionJump_03:
         <@35de9@>
         <@35deb@>
         <@35ded ++@> ; $35e39
-        <@35def@>
-        <@35df1@>
+        <@35def Ctrl1CurrentlyPressed@>
+        <@35df1 BUTTON_B@>
         <@35df3 ++@> ; $35e39
         ;; holding down B
         <@35df5@>
@@ -52119,11 +52120,12 @@ ObjectActionJump_03:
         <@35dfe +@> ; $35e03
         <@35e00 ++@> ; $35e39
         ;; ----
+        ;; $0600,x was < #$c or == #$11 - will reset to #$12
 +       <@35e03 EquippedSword@>
         <@35e06 ++@> ; $35e39
         <@35e08@>
         <@35e0a@>
-        <@35e0d@>
+        <@35e0d GlobalCounter@>
         <@35e0f@>
         <@35e11 ++@> ; $35e39
          <@35e13 PlayerSwordChargeAmount@>
@@ -52153,7 +52155,7 @@ ObjectActionJump_03:
         <@35e4d +@> ; $35e57
         <@35e4f@>
         <@35e51@>
-        <@35e54 ++@> ; $35e62
+        <@35e54 ++@> ; $35e62 ; TODO - unconditional beq to save a byte
         ;; ----
 +       <@35e57@>
         <@35e5a@>
@@ -64115,7 +64117,7 @@ MainGameModeJumpBank:
 MainGameModeJump_08_Normal:
         <@3cb62 ReadControllersWithDirections@>
         <@3cb65 CheckForPlayerDeath@>
-        <@3cb68 _3ef55@>
+        <@3cb68 CheckPassiveFrameEffects@> ; 3ef55
         <@3cb6b _3cccc@>
         <@3cb6e _3e8f6@>
         <@3cb71@>
@@ -69446,37 +69448,52 @@ PrepareScreenMapRead:
         <@3ef54@>
 ;;; --------------------------------
 .org $ef55
-_3ef55:
+CheckPassiveFrameEffects:
+;;; First check for poison/swamp/pain damage.  This is a little
+;;; complicated because the checks are all mixed together.
+@CheckPoisonStatus:
         <@3ef55 GlobalCounter@>
         <@3ef57@>
-        <@3ef58 +@> ; $3ef63
+        <@3ef58 @CheckPainTile@> ; $3ef63
+          ;; Check poison status every 128 frames
           <@3ef5a PlayerStatus@>
-          <@3ef5d@>
+          <@3ef5d STATUS_MASK@>
           <@3ef5f STATUS_POISON@>
-          <@3ef61 ++@> ; $3ef8c
-+        <@3ef63 EquippedPassiveItem@>
+          <@3ef61 @InflictPoisonDamage@> ; $3ef8c
+@CheckPainTile:  ; 3ef63
+         <@3ef63 EquippedPassiveItem@>
          <@3ef66 ITEM_LEATHER_BOOTS@>
-         <@3ef68 +@> ; $3ef77
+         <@3ef68 @CheckSwampDamage@> ; $3ef77
+          ;; Not wearing leather boots: check if on ground
           <@3ef6a PlayerJumpDisplacement@>
-          <@3ef6d +@> ; $3ef77
+          <@3ef6d @CheckSwampDamage@> ; $3ef77
+           ;; On ground: check if standing on a pain square
            <@3ef6f@> ; ?? susceptibility ?? currrent terrain ??
            <@3ef72@>
-           <@3ef75 ++@> ; $3ef8c
-+        <@3ef77 CurrentLocation@>
+           <@3ef75 @InflictPoisonDamage@> ; $3ef8c
+@CheckSwampDamage:  ; 3ef77
+         <@3ef77 CurrentLocation@>
          <@3ef79 LOC_SWAMP@>
-          <@3ef7b _3efbc@>
+          <@3ef7b @CheckParalysis@> ; 3efbc
          <@3ef7d EquippedPassiveItem@>
          <@3ef80 ITEM_GAS_MASK@>
-          <@3ef82 _3efbc@>
+          <@3ef82 @CheckParalysis@> ; 3efbc
+         ;; Inflict damage every 8 frames
          <@3ef84 GlobalCounter@>
          <@3ef86@>
-          <@3ef88 _3efbc@>
-         <@3ef8a _3ef92@>
+          <@3ef88 @CheckParalysis@> ; 3efbc
+         <@3ef8a @InflictSwampDamage@> ; 3ef92
          ;; ----
-++      <@3ef8c GlobalCounter@>
+;;; NOTE: Pain and poison have different frequencies. We already checked
+;;; the poison frequency above _before_ checking the status bit, but the
+;;; pain tile check was independent of the timer, so we check that timer
+;;; here instead.  This falls through to @InflictSwampDamage since they
+;;; do basically the same thing, just at different speeds.
+@InflictPainOrPoisonDamage:  ; 3ef8c
+        <@3ef8c GlobalCounter@>
         <@3ef8e@>
-        <@3ef90 _3efbc@>
-_3ef92:
+        <@3ef90 @CheckParalysis@> ; 3efbc
+@InflictSwampDamage:  ; 3ef92
         ;; Every 32 frames, poison takes 4 HP
         <@3ef92 PlayerHP@>
         <@3ef95@>
@@ -69484,6 +69501,7 @@ _3ef92:
         <@3ef98 +@> ; $3ef9c
          <@3ef9a@> ; don't wrap past zero
 +       <@3ef9c PlayerHP@>
+        ;; Update audio-visual for the poison damage
         <@3ef9f SFX_POISON@>
         <@3efa1 StartAudioTrack@>
         <@3efa4@>
@@ -69493,103 +69511,108 @@ _3ef92:
         <@3efac -@> ; $3efa6
         <@3efae WaitForOAMDMA@>
         <@3efb1@>
-        <@3efb3 BankSwitch8k_8000@>
+        <@3efb3 BankSwitch8k_8000@>        ; NOTE: mv to top and rm dupe below to save 5 bytes
         <@3efb6 UpdateHPDisplayInternal@>
         <@3efb9 LoadPalettesForLocation@>
-_3efbc:
+@CheckParalysis:  ; 3efbc
         <@3efbc@>
         <@3efbe BankSwitch8k_8000@>
         <@3efc1 PlayerStatus@>
-        <@3efc4@>
-        <@3efc6@>
-        <@3efc8 +@> ; $3efdb
-         <@3efca@>
-         <@3efcd@>
-         <@3efcf +@> ; $3efdb
-          <@3efd1@>
-          <@3efd3@>
-          <@3efd6 SFX_LANDING@>
-          <@3efd8 StartAudioTrack@>
-+       <@3efdb PlayerStatus@>
-        <@3efde@>
-        <@3efe0@>
-        <@3efe2 CheckPassiveEffects@>
-         <@3efe4@> ; only nonzero if stoned?
-         <@3efe7 CheckRecoverMagic@>
+        <@3efc4 STATUS_MASK@>
+        <@3efc6 STATUS_PARALYZED@>
+          <@3efc8 @CheckStone@> ; $3efdb
+        <@3efca@>
+        <@3efcd@>
+          <@3efcf @CheckStone@> ; $3efdb
+        <@3efd1@>
+        <@3efd3@>
+        <@3efd6 SFX_LANDING@>
+        <@3efd8 StartAudioTrack@>
+@CheckStone:  ; $3efdb
+        <@3efdb PlayerStatus@>
+        <@3efde STATUS_MASK@>
+        <@3efe0 STATUS_STONE@>
+          <@3efe2 @CheckDeosPendant@> ; Not stoned: skip these checks
+        <@3efe4@> ; only nonzero if stoned?
+          <@3efe7 @CheckStoneRecoverMagic@>   ; NOTE: swap then-else (i.e. beq) to save 3 bytes
+        ;; Clear stone status after timer runs down
         <@3efe9 PlayerStatus@>
         <@3efec@>
         <@3efee PlayerStatus@>
         <@3eff1@>
         <@3eff3@>
         <@3eff6 LoadPalettesForLocation@>
-        <@3eff9 CheckPassiveEffects@>
+        <@3eff9 @CheckDeosPendant@>
         ;; ----
-CheckRecoverMagic:
+@CheckStoneRecoverMagic:  ; 3effc
         ;; This is a special case to allow casting recover when stoned.
         <@3effc EquippedMagic@>
         <@3efff MAGIC_RECOVER@>
-        <@3f001 CheckPassiveEffects@>
+          <@3f001 @CheckDeosPendant@>
         ;; If 'recover' is equipped ...
-         <@3f003 Ctrl1NewlyPressed@>
-         <@3f005 BUTTON_A@>
-         <@3f007 CheckPassiveEffects@>
+        <@3f003 Ctrl1NewlyPressed@>
+        <@3f005 BUTTON_A@>
+          <@3f007 @CheckDeosPendant@>
         ;; ... and button A was just pressed ...
-          <@3f009 GameMode@>
-          <@3f00b GAME_MODE_NORMAL@>
-          <@3f00d CheckPassiveEffects@>
+        <@3f009 GameMode@>
+        <@3f00b GAME_MODE_NORMAL@>
+          <@3f00d @CheckDeosPendant@>
         ;;  ... and we're in normal game mode, then try to cast 'recover'
-           <@3f00f@> ; 8000 -> 34000
-           <@3f011 BankSwitch8k_8000@>
-           <@3f014@>
-           <@3f016 SpendMPOrDoubleReturn@>
-           <@3f019 GAME_MODE_RECOVER_MAGIC@>
-           <@3f01b GameMode@>
-CheckPassiveEffects:
+        <@3f00f@> ; 8000 -> 34000
+        <@3f011 BankSwitch8k_8000@>
+        <@3f014@>
+        <@3f016 SpendMPOrDoubleReturn@>
+        <@3f019 GAME_MODE_RECOVER_MAGIC@>
+        <@3f01b GameMode@>
+@CheckDeosPendant:  ; 3f01d
         ;; If wearing Deo's Pendant: +1 MP on 64th frame unless moving
         <@3f01d EquippedPassiveItem@>
         <@3f020 ITEM_DEOS_PENDANT@>
-        <@3f022 +@> ; $3f03e
-         <@3f024 Ctrl1CurrentDirection@> ; $ff if still
-         <@3f026 +@> ; $3f03e
-          <@3f028 GlobalCounter@>
-          <@3f02a@>
-          <@3f02c +@> ; $3f03e
-           <@3f02e PlayerMP@>
-           <@3f031 PlayerMaxMP@>
-           <@3f034 +@> ; $3f03e
-            <@3f036 PlayerMP@>
-            <@3f039@> ; MP
-            <@3f03b DisplayNumberInternal@>
+          <@3f022 @CheckPsychoArmor@> ; $3f03e
+        <@3f024 Ctrl1CurrentDirection@> ; $ff if still
+          <@3f026 @CheckPsychoArmor@> ; $3f03e
+        <@3f028 GlobalCounter@>
+        <@3f02a@>
+          <@3f02c @CheckPsychoArmor@> ; $3f03e
+        <@3f02e PlayerMP@>
+        <@3f031 PlayerMaxMP@>
+          <@3f034 @CheckPsychoArmor@> ; $3f03e
+        <@3f036 PlayerMP@>
+        <@3f039@> ; MP
+        <@3f03b DisplayNumberInternal@>
+@CheckPsychoArmor:  ; 3f03e
         ;; If wearing Psycho Armor: +1 HP on 16th frame unless moving
-+       <@3f03e EquippedArmor@>
+        <@3f03e EquippedArmor@>
         <@3f041@> ; Psycho Armor
-        <@3f043 +@> ; $3f05f
-         <@3f045 Ctrl1CurrentDirection@> ; $ff if still
-         <@3f047 +@> ; $3f05f
-          <@3f049 PlayerMaxHP@>
-          <@3f04c PlayerHP@>
-          <@3f04f +@> ; $3f05f
-           <@3f051 GlobalCounter@>
-           <@3f053@>
-           <@3f055 +@> ; $3f05f
-            <@3f057 PlayerHP@>
-            <@3f05a@> ; ignored - stale from an earlier version?
-            <@3f05c UpdateHPDisplayInternal@>
-+       <@3f05f CurrentLocation@>
+          <@3f043 @CheckMesiaMessage@> ; $3f05f
+        <@3f045 Ctrl1CurrentDirection@> ; $ff if still
+          <@3f047 @CheckMesiaMessage@> ; $3f05f
+        <@3f049 PlayerMaxHP@>
+        <@3f04c PlayerHP@>
+          <@3f04f @CheckMesiaMessage@> ; $3f05f
+        <@3f051 GlobalCounter@>
+        <@3f053@>
+          <@3f055 @CheckMesiaMessage@> ; $3f05f
+        <@3f057 PlayerHP@>
+        <@3f05a@> ; ignored - stale from an earlier version?
+        <@3f05c UpdateHPDisplayInternal@>
+@CheckMesiaMessage:  ; 3f05f
+        ;; If we're in Mesia's shrine, dec $4fe - why?!?
+        ;; This is read at 382be 7 frames later...?
+        ;; But this doesn't seem to matter - it's possible
+        ;; Mesia somehow spawns in $1e, even though there's
+        ;; no NpcData entry there.
+        <@3f05f CurrentLocation@>
         <@3f061 LOC_MESIA_SHRINE@>
-        <@3f063 +@> ; $3f068
-         ;; If we're in Mesia's shrine, dec $4fe - why?!?
-         ;; This is read at 382be 7 frames later...?
-         ;; But this doesn't seem to matter - it's possible
-         ;; Mesia somehow spawns in $1e, even though there's
-         ;; no NpcData entry there.
-         <@3f065@>
+          <@3f063 @CheckPitTile@> ; $3f068
+        <@3f065@>
+@CheckPitTile:  ; 3f068
         ;; Check pits???
-+       <@3f068@>
-        <@3f06b +@> ; $3f089
+        <@3f068@>
+         <@3f06b +@> ; $3f089
         <@3f06d@>
         <@3f070@>
-        <@3f071 +@> ; $3f089
+         <@3f071 +@> ; $3f089
         <@3f073@>
         <@3f076 +@> ; $3f089
         ;; Fall down a pit: set $6f:60 bit.

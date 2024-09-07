@@ -1,0 +1,113 @@
+FarCall
+-------
+
+This routine might let us free up a lot of space in crowded banks by moving
+routines over to alternative pages wholesale, at the expense of out-of-page
+calls being an extra 3 bytes:
+
+  jsr SomeCallThatDidntMove
+
+becomes
+
+  jsr FarCall
+  .byte ^SomeCallThatDidntMove
+  .word (SomeCallThatDidntMove)
+
+which we can wrap into a macro
+
+  FAR_CALL(SomeCallThatDidntMove)
+
+The call and the macro will look something like
+
+  FarCall:
+    php
+    sta $61
+    stx $62
+    lda $65
+    pha
+    txa
+    pha
+    tsx
+    ;; Stack: 
+
+    php
+    pha
+    txa
+    pha
+    tya
+    pha
+    
+...
+
+This seems hard.  What about just a more seamless way to indirect a _specific_ call?
+e.g. given Foo on page 1a, if we want to call it from page 2a, how do we write Foo_2a?
+
+  Call_1a_Table:
+    .word (Foo)
+
+  Foo_2a:
+    php
+    stx $61
+    ldx #0
+    jmp Call_1a
+
+  Call_1a:
+    sta $62
+    pla
+    sta $63
+    jsr @inner
+
+
+  @inner:
+    lda (Call_1a_Table,x)
+    pha
+    lda (Call_1a_Table+1,x)
+    pha
+    ldx $61
+    lda $63
+    pha
+    lda $62
+    plp
+    rts
+
+    sta $61  ; if we need to restore it before the call
+    lda 
+    lda #$1a
+    
+
+Maybe a short trampoline on fixed page?
+
+===
+
+;; Assume we don't need to preserve A or F inputs.
+Foo_2a:
+  jsr @inner
+  lda $61
+  pha
+  plp
+  rts
+
+@inner:
+  lda #$2a
+  pha
+  lda #<RestoreBankFromStack
+  pha
+  lda #>RestoreBankFromStack
+  pha
+  lda #<Foo
+  pha
+  lda #>Foo
+  pha
+  lda #$1a
+  jmp BankSwap
+
+
+.segment "fe","ff"
+
+;; restores F output.
+RestoreBankFromStack:
+  php
+  pla
+  sta $61
+  pla
+  jmp BankSwap

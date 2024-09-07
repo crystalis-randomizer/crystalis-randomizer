@@ -201,3 +201,24 @@ How to do speed updates???
  - 8 is biggest
  - to do N+x where 0<=x<1, put N every frame, then add 1 on the frames where
    FractionTable[x] has a nonzero bit
+
+======================
+
+
+2024/09/05
+----------
+
+Math is too slow, we need to just use the 8 or 16 directions, and fill in the
+extra speeds, but keep the same routines.  Would be nice to split the vector
+math into a separate page - this would allow expanding the speeds a bit, and
+also leave space for expanding the passive routines a bit.
+
+We'll need to do a bit more page swapping, but if we're careful to track the
+flow, we might be able to carve it out so that the entire update loop is all
+in the same page?  Or else just do a really quick swap in ComputeDisplacementVector
+(don't need to push the current page because it's always 1a - we can go straight
+back after).  If this is still too slow, we could batch it a bit by copying a few
+routines and switching over as needed?  Or maybe only move the 16-dir speeds to
+a separate page and copy the entire page so that it doesn't matter which we're on
+and we don't need to restore anything afterwards (i.e. it's just a single write
+since 1a and (say) 2a are otherwise identical).

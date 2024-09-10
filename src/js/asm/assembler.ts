@@ -312,6 +312,7 @@ export class Assembler {
       const orig = this.exprMap.get(expr) || expr;
       this.exprMap.set(out, orig);
     }
+    if (expr.source && !out.source) out.source = expr.source;
     return out;
   }
 
@@ -761,6 +762,7 @@ export class Assembler {
     this.markWritten(1 + arglen);
     chunk.data.push(op);
     if (arglen) {
+      (expr as any).X = 'OP';
       this.append(expr, arglen);
     }
     if (!chunk.name) chunk.name = `Code`;
@@ -769,7 +771,9 @@ export class Assembler {
   }
 
   private markWritten(size: number) {
-    if (this._chunk?.org == null) return;
+    if (this._chunk && this._chunk.org == null) return;
+    const org = this._chunk ? this._chunk.org! : this._org!;
+    const rel = this._chunk ? this._chunk.data.length : 0;
     // NOTE: it's possible the chunk has spilled over into the next segment.
     // We just ignore this by asking for the offset of the _start_ of the
     // chunk, rather than the current position.  This is consistent with how
@@ -777,10 +781,9 @@ export class Assembler {
     // Fortunately, the risk is relatively small because it's only relevant
     // for statically-placed chunks, and (one would hope) we know what we're
     // doing there.
-    const offset = this.orgToOffset(this._chunk.org);
+    const offset = this.orgToOffset(org);
     if (offset != null) {
-      this.written.add(offset + this._chunk.data.length,
-                       offset + this._chunk.data.length + size);
+      this.written.add(offset + rel, offset + rel + size);
     }
   }
 
@@ -797,6 +800,7 @@ export class Assembler {
     }
     // Append the number or placeholder
     expr = this.resolve(expr);
+    //if (!expr.source) expr.source = {file: new Error().stack!, line: 0, column: 0};
     let val = expr.num!;
     if (expr.op !== 'num' || expr.meta?.rel) {
       // use a placeholder and add a substitution
@@ -871,6 +875,7 @@ export class Assembler {
       } else if (typeof arg === 'string') {
         writeString(chunk.data, arg);
       } else {
+        (arg as any).X = 'BYTE';
         this.append(arg, 1);
       }
     }

@@ -272,6 +272,10 @@ export class Preprocessor extends TokenSource.Abstract {
     return [{token: 'num', num: this.macros.has(ident) ? 1 : 0}];
   }
 
+  isDefined(name: string): boolean {
+    return this.macros.has(name);
+  }
+
   private definedSymbol(cs: Token, arg: Token[]) {
     const ident = Token.expectIdentifier(arg[0], cs);
     Token.expectEol(arg[1], 'a single identifier');

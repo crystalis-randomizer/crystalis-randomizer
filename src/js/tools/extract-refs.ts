@@ -98,13 +98,22 @@ async function main() {
       },
       ref(expr: Expr, bytes: number, org: number,
           segments: readonly string[]) {
+        // NOTE: would be nice to remove refs from whole chunks that we don't
+        // need to update - but we also use them via rom/util:readValue to
+        // encode addresses we want to read from - this is wasteful, so we
+        // should find some other way to do it.
+        // if (pre.isDefined('NO_REFS')) return;
         const offset = asm.orgToOffset(org);
         if (offset == null) return;
         const used = Expr.symbols(expr);
         if (!used.some(isRelevant)) return;
-        expr = Expr.strip(expr);
+        // NOTE: Comment out the strip() for easier debugging.
+        // TODO - can we use different versions for debug and release???
+        // expr = Expr.strip(expr);
         refs.push({expr, bytes, org, segments, offset});
       },
+      // NOTE: assign doesn't quite work right now because it doesn't
+      // store important information about size (i.e. 1 vs 2 bytes).
     },
   });
   const toks = new TokenStream();
@@ -124,7 +133,7 @@ async function main() {
 }
 
 function usage(code = 1, message = '') {
-  if (message) console.error(`js65: ${message}`);
+  if (message) console.error(`extract-refs: ${message}`);
   console.error(`Usage: extract-refs [-o FILE] [FILE...]`);
   process.exit(code);
 }

@@ -135,6 +135,7 @@ function defines(flags: FlagSet,
     _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
     _RANDOM_FLYER_SPAWNS: true,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
+    _RESCALE_DAMAGE: true,
     _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
     _SIMPLIFY_INVISIBLE_CHESTS: true,
@@ -145,6 +146,7 @@ function defines(flags: FlagSet,
     _TRAINER: flags.trainer(),
     _TWELFTH_WARP_POINT: true, // zombie town warp
     _UNIDENTIFIED_ITEMS: flags.unidentifiedItems(),
+    _UPDATE_SHIELD_EFFECTS: true,
     _ENEMY_HP: flags.shouldUpdateHud(),
     _UPDATE_HUD: flags.shouldUpdateHud(),
     _WARP_FLAGS_TABLE: true,
@@ -427,20 +429,20 @@ async function shuffleInternal(rom: Uint8Array,
 
       // NOTE: Handle PRG expansion here.
       const offset = ref.offset + (ref.offset >= 0x3c000 ? 0x40000 : 0);
-      if (!asm.isWritten(offset)) {
-        //console.error(`REF ${offset.toString(16)} in ${ref.segments.join(',')}`, ref.expr);
-        if (segments.length !== ref.segments.length ||
-            segments.some((s, i) => s !== ref.segments[i])) {
-          asm.segment(...(segments = ref.segments));
-        }
-        asm.org(ref.org);
-        if (ref.bytes === 1) {
-          asm.byte(ref.expr);
-        } else if (ref.bytes === 2) {
-          asm.word(ref.expr);
-        } else {
-          throw new Error(`bad bytes: ${ref.bytes}`);
-        }
+      if (asm.isWritten(offset)) continue;
+
+      //console.error(`REF ${offset.toString(16)} in ${ref.segments.join(',')}`, ref.expr);
+      if (segments.length !== ref.segments.length ||
+          segments.some((s, i) => s !== ref.segments[i])) {
+        asm.segment(...(segments = ref.segments));
+      }
+      asm.org(ref.org);
+      if (ref.bytes === 1) {
+        asm.byte(ref.expr);
+      } else if (ref.bytes === 2) {
+        asm.word(ref.expr);
+      } else {
+        throw new Error(`bad bytes: ${ref.bytes}`);
       }
     }
     // Done

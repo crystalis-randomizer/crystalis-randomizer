@@ -41,6 +41,7 @@ STATIC_FILES = $(filter $(STATIC_PATTERNS),$(shell find src -type f))
 JS_FILES = $(shell find src/js -type f -name '*.[tj]s')
 ASM_JS_FILES = $(shell find src/js/asm -type f -name '*.[tj]s')
 ASM_FILES = $(shell find src/asm -type f -name '*.s')
+DEFINES_ASM = $(DATADIR)/00_defines.s
 ASM_COPIES = $(ASM_FILES:src/asm/%=$(DATADIR)/%)
 NSS_FILES = $(shell find src/images/spritesheets -type f -name '*.nss')
 NSS_COPIES = $(NSS_FILES:src/images/spritesheets/%=$(DATADIR)/%)
@@ -57,7 +58,7 @@ DBG_WEB_OUTS = $(WEB_JS_DBG) $(DBG_STATIC) $(DBG_INFO)
 REL_WEB_OUTS = $(WEB_JS_REL) $(REL_STATIC) $(REL_INFO)
 DBG_OUTS = $(JS65_DBG) $(CLI_DBG) $(DBG_WEB_OUTS)
 REL_OUTS = $(JS65_REL) $(CLI_REL) $(REL_WEB_OUTS)
-TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON)
+TAR_COPIES = $(ASM_COPIES) $(NSS_COPIES) $(REFS_JSON) $(DEFINES_ASM)
 
 .PHONY: all debug release clean web-debug web-release x
 
@@ -154,3 +155,10 @@ $(RELDIR)/bin/js65: $(JS_FILES)
 $(RELDIR)/bin/cryr: $(JS_FILES) $(DATA_TBR) $(BUILD_INFO)
 	$(ESBUILD) $(NODEFLAGS) $(RELFLAGS) $(LOADERFLAGS) --outfile=$@ \
 		src/js/cli.ts
+
+# NOTE: This is a bit of a hack to get the defines from vanilla into the build.
+# The main reason we need this is because we can't store the assignments into
+# refs.json without losing track of their size.  We currently assume all symbols
+# are words, and we'd need to somehow keep better track of which are just bytes.
+$(DEFINES_ASM): vanilla/crystalis.s
+	grep ^.define $< > $@

@@ -152,11 +152,6 @@ FREE "3d" [$a000, $c000)
 ;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
 ;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 
-; Workaround compiler issue that forces values set using `=`
-; to use absolute addressing instead of zp by using .define
-.define PpuCtrlShadow $00
-.define PpuMaskShadow $01
-
 ;;; NOTE: These were used by the cleanup.s code to try to fix NMI.
 ;; .define NmiDisable $06 ; Set to 1 to disable NMI processing
 ;; .define NmiSkipped $07 ; Set to $06 if NMI was skipped
@@ -166,44 +161,16 @@ FREE "3d" [$a000, $c000)
 .define NmtBufWriteOffset $0b
 .define NmtBufTempValue   $0c
 
-;;; Various global definitions.
-.define GameMode   $41
-.define BankSelectShadow $50
-.define ScreenMode $51
-
 ObjectRecoil = $340
-ObjectHP = $3c0
-PlayerHP = $3c1
-PlayerMaxHP = $3c0
 ObjectAtk = $3e0
 PlayerAtk = $3e1
 ObjectDef = $400
-PlayerLevel = $421
-ObjectActionScript = $4a0
 ObjectGold = $500
-ObjectElementalDefense = $500
 ObjectExp = $520
 ; PlayerExp - 16bit number (includes $705). This value was changed so that instead of
 ; starting at zero and counting up to ExpToNextLevel, it will start at ExpToNextLevel
 ; and count down.
-PlayerExp = $704
 PlayerMaxExp = $706 ; unused
-PlayerMP = $708
-PlayerMaxMP = $709
-EquippedConsumableItem = $715
-EquippedPassiveItem    = $716
-
-; Screen values are written in the main game loop, and are copied to the scroll values
-; during NMI. So the IRQ will read from the scroll values and the game will write to Screen
-.define ScreenXLo   $02
-.define ScreenXHi   $03
-.define ScreenYLo   $04
-.define ScreenYHi   $05
-
-ScrollXLo = $07d8
-ScrollXHi = $07d9
-ScrollYLo = $07da
-ScrollYHi = $07db
 
 WarriorRingStabCounter = $61fb  ; added in rando
 PlayerStandingTimer = $61fc     ; added in rando
@@ -351,39 +318,6 @@ TsComplete     = $0d ; replaces DYNA
 TS_COUNT       = $13
 
 .endif
-
-;;; Constants
-GAME_MODE_STATUS_MSG = $10
-ITEM_RABBIT_BOOTS    = $12
-ITEM_OPEL_STATUE     = $26
-SFX_MONSTER_HIT      = $21
-SFX_ATTACK_IMMUNE    = $3a
-
-SpriteRam           = $0200
-SpriteRamY          = $0200
-SpriteRamPattern    = $0201
-SpriteRamAttributes = $0202
-SpriteRamX          = $0203
-
-PPUCTRL   = $2000
-PPUMASK   = $2001
-PPUSTATUS = $2002
-OAMADDR   = $2003
-OAMDATA   = $2004
-PPUSCROLL = $2005
-PPUADDR   = $2006
-PPUDATA   = $2007
-
-VromPalettes = $3f00
-
-OAMDMA    = $4014
-
-BANKSELECT = $8000
-BANKDATA   = $8001
-IRQLATCH   = $c000
-IRQRELOAD  = $c001
-IRQDISABLE = $e000
-IRQENABLE  = $e001
 
 ;;; see http://www.6502.org/tutorials/6502opcodes.html#BIT
 ;;; note: this is dangerous if it would result in a register read
@@ -682,6 +616,7 @@ FREE_UNTIL $c000
 .segment "3d"
 .org $a000
   .res $200
+;;; Also contains moved collision routines (collision.s)
 
 .segment "fe"
 ;;; Wild warp table

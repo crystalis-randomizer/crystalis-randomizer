@@ -2,12 +2,14 @@
 .define PpuCtrlShadow        $00
 .define PpuMaskShadow        $01
 
+; Screen values are written in the main game loop, and are copied to the scroll values
+; during NMI. So the IRQ will read from the scroll values and the game will write to Screen
 .define ScreenXLo            $02     ; also stored in $34,$36 during map scroll
 .define ScreenXHi            $03
 .define ScreenYLo            $04
 .define ScreenYHi            $05
 
-.define GlobalCounter        $08
+.define GlobalCounter  $08
 
 .define NametableBufferReadOffset   $0a
 .define NametableBufferWriteOffset  $0b
@@ -32,7 +34,8 @@
 .define Ctrl1NewlyPressedAB   $4d ; in normal mode, may add A or B repeats
 .define Ctrl2NewlyPressedAB   $4e ; in normal mode, may add A or B repeats
 
-.define ScreenMode  $51
+.define BankSelectShadow  $50
+.define ScreenMode        $51
 
 .define CurrentLocation   $6c
 .define CurrentEntrance   $6d
@@ -117,6 +120,11 @@
 .define PlayerMP                $0708
 .define PlayerMaxMP             $0709
 .define PlayerStatus            $0710
+
+.define ScrollXLo               $07d8
+.define ScrollXHi               $07d9
+.define ScrollYLo               $07da
+.define ScrollYHi               $07db
 
 .define CurrentlyInPawnShop     $07dd ; ff if in pawn shop, 00 otherwise
 
@@ -367,11 +375,15 @@
 .define ITEM_BOW_OF_SUN       $23
 .define ITEM_BOW_OF_TRUTH     $24
 
+.define ARMOR_SOLDIER     $05
+.define ARMOR_CERAMIC     $06
 .define ARMOR_BATTLE      $07
 .define ARMOR_PSYCHO      $08
 
 .define SHIELD_MIRRORED   $04
+.define SHIELD_CERAMIC    $05
 .define SHIELD_SACRED     $06
+.define SHIELD_BATTLE     $07
 .define SHIELD_PSYCHO     $08
 
 .define BGM_PLAINS        $01
@@ -50055,11 +50067,11 @@ CollisionJump_03_ParalysisBeam:
           ;; ----
 +        <@3500e@>
         <@3500f -@> ; $34fff
-SetOrClearParalysisFlag::
+SetOrClearParalysisFlag:
         ;; Input: $12 = FF to set, 00 to clear
         ;;        $13 = NPC ID to handle
         <@35011@>
--        <@35013 DataTable_35045@>
+-        <@35013 ParalysisFlagTableKeys@> ; $35045
           beq :>rts ; $35044
          <@35018@>
           <@3501a +@> ; $35020
@@ -50068,7 +50080,7 @@ SetOrClearParalysisFlag::
          ;; ----
         ;; NPC was entry Y in the 35045 table
         ;;   -> set (or clear) the parallel flag in 3504f.
-+       <@35020 DataTable_3504f@>
++       <@35020 ParalysisFlagTableValues@>   ; $3504f
         <@35023@>
          <@35024@>
          <@35026@>
@@ -50093,12 +50105,12 @@ SetOrClearParalysisFlag::
 ;;; But most of these are never read - it could be compressed down to
 ;;; just two entries: 6d => 70 and 6e => 71.
 .org $9045
-DataTable_35045: 
+ParalysisFlagTableKeys: 
         ;; 10 bytes (terminated by 00)
         ;; This is the key to a map => person ID of paralysis target
         .byte [@35045@],[@35046@],[@35047@],[@35048@],[@35049@],[@3504a@],[@3504b@],[@3504c@],[@3504d@],[@3504e@]
 .org $904f
-DataTable_3504f: 
+ParalysisFlagTableValues: 
         ;; This next line (9 bytes) appears to reference flags?
         .byte [@3504f@],[@35050@],[@35051@],[@35052@],[@35053@],[@35054@],[@35055@],[@35056@],[@35057@]
 .org $9058
@@ -50413,7 +50425,7 @@ AwardExperiencePoints:
         ;; exp >= $80: subtract $80, multiply by $10.
 ++      <@3525d@>
         <@3525f@>
-        <@35261 ObjectExperiencePoints@>
+        <@35261 ObjectExperiencePoints@> ; 35261
         <@35264@>
         <@35265@>
         <@35266@>
@@ -50421,7 +50433,7 @@ AwardExperiencePoints:
         <@35269@>
         <@3526b@>
         <@3526c@>
-        <@3526e@>
+        <@3526e@>                     ; 3526e
         <@3526f PlayerExp@>
         <@35272 PlayerExp@>
         <@35275@>
@@ -69459,7 +69471,7 @@ CheckPassiveFrameEffects:
           <@3ef5a PlayerStatus@>
           <@3ef5d STATUS_MASK@>
           <@3ef5f STATUS_POISON@>
-          <@3ef61 @InflictPoisonDamage@> ; $3ef8c
+          <@3ef61 @InflictPainOrPoisonDamage@> ; $3ef8c
 @CheckPainTile:  ; 3ef63
          <@3ef63 EquippedPassiveItem@>
          <@3ef66 ITEM_LEATHER_BOOTS@>
@@ -69470,7 +69482,7 @@ CheckPassiveFrameEffects:
            ;; On ground: check if standing on a pain square
            <@3ef6f@> ; ?? susceptibility ?? currrent terrain ??
            <@3ef72@>
-           <@3ef75 @InflictPoisonDamage@> ; $3ef8c
+           <@3ef75 @InflictPainOrPoisonDamage@> ; $3ef8c
 @CheckSwampDamage:  ; 3ef77
          <@3ef77 CurrentLocation@>
          <@3ef79 LOC_SWAMP@>

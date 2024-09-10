@@ -4,7 +4,7 @@
 ;;; Patches to walls.  Includes
 ;;;  1. Crystalis has all elements
 ;;;  2. Refactor how walls are stored in the spawn tables:
-;;;     - Invert wall susceptibility bits
+;;;     - Invert wall susceptibility bits [->collision.s]
 ;;;     - Shooting walls are based on a spawn table bit
 ;;;     - Decouple element from spawned object
 ;;;  3. Optionally add an audible element-based 'tink' sound to walls
@@ -18,16 +18,6 @@
 ;;; it working outside the tower, that is).
 .org $9c6b
   .byte $0f
-
-.ifndef _AUDIBLE_WALLS
-;;; Invert how walls work: their elemental defense byte stores
-;;; a single bit, and the sword must have that bit as well: this
-;;; makes Crystalis able to break all walls.
-.org $9097
-  eor #$0f
-  and ObjectElementalDefense,x
-  .byte $f0  ; change 'bne' to 'beq'.
-.endif
 
 
 .ifdef _CUSTOM_SHOOTING_WALLS
@@ -89,50 +79,3 @@ SpawnWall:
 .reloc
 WallElements:
   .byte $0e,$0d,$0b,$07
-
-
-.segment "1a","fe","ff"
-
-.ifdef _AUDIBLE_WALLS
-;;; Reorder the checks: if it's too low, then bail.
-;;; Otherwise, check for element match and maybe play
-;;; a sound if it's not an iron wall.  This is basically
-;;; copied from the original.
-.org $9094 ; 35094
-  lda $0420,x ; ObjectLevel,x
-  cmp #$01
-  beq @rts ; Level is too low -> bail out
-  lda $0500,y ; ObjectElementalDefense,y
-  eor #$0f
-  and $0500,x ; ObjectElementalDefense,x
-  jsr @AudibleWalls ; Will do a double-return if mismatched
-  jmp KillObject
-@rts:
-  rts
-.reloc
-@AudibleWalls:
-  bne +
-   ;; Element mismatched.
-   ;; See if we should play a sound, double-return either way.
-   ;; When we spawned the wall, we stored the original element
-   ;; in the upper nibble of the ID byte, so check that that's
-   ;; not 3 before playing the sound. (We should also avoid 2?)
-   pla
-   pla
-   lda $06c0,y
-   and #$02
-   bne + ; bail out if it's iron/bridge
-    ;; Figure out what the element is by shifting
-    txa
-    pha
-     lda $0500,y
-     ldx #$3f ; 40 is wind, 41 is fire, etc
--     inx
-      lsr
-     bcs -
-     txa
-     jsr $c125
-    pla
-    tax
-+ rts
-.endif

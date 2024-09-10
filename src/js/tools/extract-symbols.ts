@@ -77,7 +77,7 @@ async function main() {
 }
 
 function usage(code = 1, message = '') {
-  if (message) console.error(`js65: ${message}`);
+  if (message) console.error(`extact-symbols: ${message}`);
   console.error(`Usage: extract-symbols [-o FILE] [FILE...]`);
   process.exit(code);
 }

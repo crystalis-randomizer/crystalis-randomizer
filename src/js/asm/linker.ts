@@ -324,7 +324,12 @@ class LinkChunk {
     // See if we can do it immediately.
     let del = false;
     if (sub.expr.op === 'num' && !sub.expr.meta?.rel) {
-      this.writeValue(sub.offset, sub.expr.num!, sub.size);
+      try{
+        this.writeValue(sub.offset, sub.expr.num!, sub.size);
+      } catch (err) {
+        if (!sub.expr.source) throw err;
+        throw new Error(err.message + Token.at(sub.expr));
+      }
       del = true;
     } else if (sub.expr.op === '.move') {
       if (sub.expr.args!.length !== 1) throw new Error(`bad .move`);

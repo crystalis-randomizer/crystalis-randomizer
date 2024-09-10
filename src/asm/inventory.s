@@ -328,7 +328,7 @@ OpelStatueReturn = $db0d
     ldy SelectedConsumableIndex
     bmi +
     lda InvConsumables,y
-    cmp #ITEM_OPEL_STATUE
+    cmp #(ITEM_OPEL_STATUE+$1c)
     bne ++
 +   ldy SelectedQuestItemIndex
     bmi OpelStatueReturn

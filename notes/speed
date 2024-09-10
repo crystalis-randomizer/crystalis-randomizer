@@ -222,3 +222,35 @@ routines and switching over as needed?  Or maybe only move the 16-dir speeds to
 a separate page and copy the entire page so that it doesn't matter which we're on
 and we don't need to restore anything afterwards (i.e. it's just a single write
 since 1a and (say) 2a are otherwise identical).
+
+----
+
+New approach might be to just expand the 8-dir speeds to 16-dir tables,
+and to expand the direction field from 4 bits to 5 bits, using the upper bit to
+store whether the direction is out of 8 or 16.  Alternatively, we could just
+fix all direction math throughout everywhere to always be 16-dir and not have to
+add the extra bit (which would intrude on knockback).
+
+Current speeds:
+  0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 5, 6.5, 8 / 7, 1.75, 2.5, 3, 2
+Proposal:
+  0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 3.5, 4, 5, 6, 6.5, 7, 8
+
+Mado is 16-dir, goes at speeds 3 and 7 -> could slow made 2 down to 5 or 6 if we wanted...
+
+32-speed 16-dir would require 5.2k on a dedicated page (vs current 1.7k = 3.5k extra),
+which is a lot of swapping or a lot of stuff to move off the page.  Main thing that
+needs to be on the same page is the projectile actions, since that's where we see lag
+(i.e. popcorn, sabera 2, etc).
+
+It's possible we could eliminate the 6.5 speed, which is only used by footballs,
+crystalis, and thunder 3.  We can look into what changing it would do.
+ - footballs (fd) is fine at 7 or 8
+ - thunder 3 (1f) seems to not really matter at all
+ - crystalis (32, 33) is noticable, but could also be sped up to 7 without much problem...
+What's at speed 8?
+ - wind 1,2
+ - water 1,2
+ - fire 1,2,3
+This could give us a 4.5 instead of a 6.5, but what would care to use it???
+We could also stick the 6.5 at the end so that it doesn't mess up the smooth function

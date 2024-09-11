@@ -1,6 +1,9 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
 
+FREE "1a" [$8f6e,$8fc3)
+FREE "1a" [$96f1,$972d)
+
 ;;; Imports the original collision routines:
 ;;;  - hitboxes
 ;;;  - projectiles, status effects
@@ -8,7 +11,7 @@
 ;;;  - knockback
 ;;; Most of this code originally lived in segment "1a" alongside the
 ;;; vector/movement routines and the object actions, but we're moving
-;;; it out into segment "3d" instead.
+;;; it out into segment "3c" instead.
 
 ;;; Jumps to the given address on a different page.  When the
 ;;; jumped-to routine returns, it will continue with restoring the
@@ -21,7 +24,7 @@
 ;;;   - Double-returns are not allowed in the routine
 ;;; 
 ;;; Usage:
-;;;   Label_3d:
+;;;   Label_3c:
 ;;;     FAR_JUMP Label
 .macro FAR_JUMP_LO addr
         .assert addr < $a000
@@ -35,33 +38,132 @@
         pha
         lda $6f
         pha
-        lda #>RestoreBanks
+        lda #>(RestoreBanks-1)
         pha
-        lda #<RestoreBanks
+        lda #<(RestoreBanks-1)
         pha
-        lda #>addr
+        lda #>(addr-1)
         pha
-        lda #<addr
+        lda #<(addr-1)
         pha
         lda #^addr
         jmp BankSwitch8k_8000
 .endmacro
 
 
-.segment "3d"
+.segment "3c"
 
 .reloc
-LoadPalettesForLocation_3d:
+LoadPalettesForLocation_3c:
         FAR_JUMP_LO LoadPalettesForLocation
 
+.reloc
+CheckHitbox_3c:
+        FAR_JUMP_LO CheckHitbox
 
-;; .pushseg "fe", "ff"
-;; LoadPalettesForLocation_3d:
-;;         lda $6e
-;;         pha
-;;           lda #$1a
-;;           jsr BankSwitch8k_8000
-;;           jsr LoadPalettesForLocation
-;;         pla
-;;         jmp BankSwitch8k_8000
-;; .popseg
+.pushseg "fe"
+.org $cb79
+        ;; Replace the 16k bank swap to 0d (i.e. 1a/1b) with a single
+        ;; 8k swap to 3c (the second swap to 1b will happen later).
+        ;; This precedes the call to CheckAllObjectCollisions so that
+        ;; we can call into segmentd 3c.
+        lda #$3c
+        jsr BankSwitch8k_8000
+        jsr CheckAllObjectCollisions
+.popseg
+
+.reloc
+OVERRIDE
+CheckAllObjectCollisions:
+        ;; Start by ensuring page 1b is loaded into the second bank
+        ;; (this was done automatically in MainGameModeJump_08_Normal
+        ;; in the fixed bank, but now the pages aren't contiguous, so
+        ;; we can't do it with a single call).
+        lda #$1b                ; smudge off
+        jsr BankSwitch8k_a000
+
+        <@34f6e@>                ; smudge from $34f6e to $34fbb
+        <@34f70@>
+        <@34f73@>
+        ;; Even frames: $2f = 7, $2e = 8
+        <@34f76@>
+        <@34f78@>
+        <@34f7a GlobalCounter@>
+        <@34f7c@>
+        <@34f7d +@>
+         ;; Odd frames: $2f = #$e, $2e = 7
+          <@34f7f@>
+          <@34f81@>
++       <@34f83@>
+        <@34f85@>
+-         <@34f87@>
+          <@34f89@>
+          <@34f8a@>
+          <@34f8b@>
+          <@34f8c CollisionTable@>
+          <@34f8f@>
+          <@34f90 CollisionTable+1@>
+          <@34f93@>
+          <@34f95 CollisionTable+2@>
+          <@34f98@>
+          <@34f9a CollisionTable+3@>
+          <@34f9d@>
+          <@34f9e OP_JMP_ABS@>
+          <@34fa0@>
+          <@34fa2 CollisionJump@>
+          <@34fa5@>
+          <@34fa7 CollisionJump+1@>
+          <@34faa@>
+          <@34fac CheckHitbox_3c@> ; set carry if hit
+          <@34faf +@>
+            <@34fb1@>
++         <@34fb4@>
+          <@34fb6@>
+        <@34fb8 -@>
+        <@34fba@>
+
+.reloc   ; smudge from $356f1
+;;; These are hitbox check conditions.  Quads represent a range of
+;;; checks between object A (first element) and a range of objects
+;;; B (From second element to third element, which is always spawn
+;;; slots $c through $1f).  The final element is an index into the
+;;; jump table for which collision routine to call when the hitboxes
+;;; overlap.  This is used by CheckAllObjectCollisions.
+OVERRIDE
+CollisionTable: 
+        .byte [@356f1@],[@356f2@],[@356f3@],[@356f4@] ; 00 sword blast hits enemy
+        .byte [@356f5@],[@356f6@],[@356f7@],[@356f8@] ; 01 " "
+        .byte [@356f9@],[@356fa@],[@356fb@],[@356fc@] ; 02 " "
+        .byte [@356fd@],[@356fe@],[@356ff@],[@35700@] ; 03 " "
+        .byte [@35701@],[@35702@],[@35703@],[@35704@] ; 04 " "
+        .byte [@35705@],[@35706@],[@35707@],[@35708@] ; 05 paralysis beam hits npc/enemy
+        .byte [@35709@],[@3570a@],[@3570b@],[@3570c@] ; 06 enemy hits player
+        .byte [@3570d@],[@3570e@],[@3570f@],[@35710@] ; 07 front of player hits npc/trigger
+        .byte [@35711@],[@35712@],[@35713@],[@35714@] ; 08 sword blast hits enemy
+        .byte [@35715@],[@35716@],[@35717@],[@35718@] ; 09 " "
+        .byte [@35719@],[@3571a@],[@3571b@],[@3571c@] ; 0a " "
+        .byte [@3571d@],[@3571e@],[@3571f@],[@35720@] ; 0b paralysis beam hits npc/enemy
+        .byte [@35721@],[@35722@],[@35723@],[@35724@] ; 0c sword hits enemy
+        .byte [@35725@],[@35726@],[@35727@],[@35728@] ; 0d enemy hits player
+        .byte [@35729@],[@3572a@],[@3572b@],[@3572c@] ; 0e front of player hits npc/trigger
+
+.reloc                          ; NOTE: smudge irrelevant because no numbers
+OVERRIDE
+CollisionJump:
+        .word (CollisionJump_00_SwordHitsEnemy_)
+        .word (CollisionJump_01_EnemyHitsPlayer_)
+        .word (CollisionJump_02_PlayerInFrontOfNpcOrTrigger_)
+        .word (CollisionJump_03_ParalysisBeam_)
+
+.reloc
+CollisionJump_00_SwordHitsEnemy_:
+        FAR_JUMP_LO CollisionJump_00_SwordHitsEnemy
+
+CollisionJump_01_EnemyHitsPlayer_:
+        FAR_JUMP_LO CollisionJump_01_EnemyHitsPlayer
+
+CollisionJump_02_PlayerInFrontOfNpcOrTrigger_:  
+        FAR_JUMP_LO CollisionJump_02_PlayerInFrontOfNpcOrTrigger
+
+CollisionJump_03_ParalysisBeam_:        
+        FAR_JUMP_LO CollisionJump_03_ParalysisBeam

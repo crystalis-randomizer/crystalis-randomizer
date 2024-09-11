@@ -311,3 +311,25 @@ const getItem = (nes, item) => {
     break;
   }
 };
+
+window.strictCpu = () => {
+  // TODO - teach linker to stash mapping from addr to routine, display in trace
+  for (let i = 0; i < 0x80000; i++) {
+    if (nes.rom.rom[i] === 0) nes.debug.breakAt(i, 'prg', 'x');
+  }
+  nes.debug.breakAt([0x80, 0x7fff], 'ram', 'x');
+};
+
+window.installChunks = () => {
+  // look for globalThis.linkChunks
+  for (const c of window.linkChunks || []) {
+    if (c.overlaps) continue;
+    for (let i = 0; i < c.size; i++) {
+      nes.debug.chunkMap.mapping[c.offset + i] = {name: c.name, offset: i};
+    }
+  }
+};
+
+// TODO - comment out if needed...
+strictCpu();
+installChunks();

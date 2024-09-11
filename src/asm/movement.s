@@ -9,12 +9,6 @@
 
 .segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
 
-.ifdef _DISABLE_STATUE_GLITCH
-.org $959a
-  ;; Just always push down.
-  lda #$04
-.endif
-
 .org $9b96 ; clear dolphin bit => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 

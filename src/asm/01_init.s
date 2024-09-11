@@ -612,6 +612,10 @@ FREE_UNTIL $c000
 .org $a000
   .res $2000
 
+;;; Moved collision routines (collision.s)
+.segment "3c"
+        ;; Nothing to reserve
+
 ;;; Enemy names index table (for HUD)
 .segment "3d"
 .org $a000

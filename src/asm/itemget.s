@@ -219,31 +219,6 @@ MimicOrChest:
   pla
   rts
 
-.pushseg "1a", "fe", "ff"
-.org $9167 ; ReplaceObject
-  jsr ReplaceObjectAndPatchChest
-.reloc
-ReplaceObjectAndPatchChest:
-  ; a - ObjectReplacement; y - object index
-  cmp #$0d ; ObjectChest - if we are about to drop a chest
-  bne @Exit
-    ; AND we have the sentinel data to signify its from a dead mimic
-    lda $06c0, y
-    cmp #DEAD_MIMIC
-    bne @Exit
-      ; after loading the replacement we want to copy over the item
-      lda $06a0, y
-      pha
-        jsr $ff80 ; LoadOneObjectData
-      pla
-      sta $0560, y
-      lda #DEAD_MIMIC
-      sta $06c0, y
-      rts
-@Exit:
-  jmp $ff80 ; LoadOneObjectData
-.popseg
-
 .else
 .reloc
 PatchStartItemGet:

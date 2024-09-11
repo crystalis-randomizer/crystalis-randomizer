@@ -414,7 +414,7 @@ export class Rom {
     if (data !== this.prg) return; // TODO - clean this up
     //linker.report();
     const exports = linker.exports();
-
+    (globalThis as any)['linkChunks'] = linker.getChunks();
     
     this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
     this.shopCount = 11;

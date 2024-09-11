@@ -63,6 +63,10 @@ export class Linker {
     console.log(this._link.report(verbose));
   }
 
+  getChunks(): LinkChunk[] {
+    return this._link.chunks;
+  }
+
   exports(): Map<string, Export> {
     if (this._exports) return this._exports;
     return this._exports = this._link.buildExports();

@@ -9,7 +9,7 @@
 .define ScreenYLo            $04
 .define ScreenYHi            $05
 
-.define GlobalCounter  $08
+.define GlobalCounter        $08
 
 .define NametableBufferReadOffset   $0a
 .define NametableBufferWriteOffset  $0b
@@ -50425,7 +50425,7 @@ AwardExperiencePoints:
         ;; exp >= $80: subtract $80, multiply by $10.
 ++      <@3525d@>
         <@3525f@>
-        <@35261 ObjectExperiencePoints@> ; 35261
+        <@35261 ObjectExperiencePoints@>      ; * = $35261
         <@35264@>
         <@35265@>
         <@35266@>
@@ -50433,7 +50433,7 @@ AwardExperiencePoints:
         <@35269@>
         <@3526b@>
         <@3526c@>
-        <@3526e@>                     ; 3526e
+        <@3526e@>                               ; * = $3526e
         <@3526f PlayerExp@>
         <@35272 PlayerExp@>
         <@35275@>

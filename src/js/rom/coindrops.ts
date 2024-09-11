@@ -18,7 +18,7 @@ export class CoinDrops {
 
   write(): Module[] {
     const a = this.rom.assembler();
-    relocExportLabel(a, 'CoinAmounts', ['3d', 'fe', 'ff']);
+    relocExportLabel(a, 'CoinAmounts', ['1a', 'fe', 'ff']);
     a.word(...this.values);
     a.export("CoinAmounts");
     return [a.module()];

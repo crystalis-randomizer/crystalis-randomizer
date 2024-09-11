@@ -616,7 +616,6 @@ FREE_UNTIL $c000
 .segment "3d"
 .org $a000
   .res $200
-;;; Also contains moved collision routines (collision.s)
 
 .segment "fe"
 ;;; Wild warp table

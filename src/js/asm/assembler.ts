@@ -762,7 +762,6 @@ export class Assembler {
     this.markWritten(1 + arglen);
     chunk.data.push(op);
     if (arglen) {
-      (expr as any).X = 'OP';
       this.append(expr, arglen);
     }
     if (!chunk.name) chunk.name = `Code`;
@@ -875,7 +874,6 @@ export class Assembler {
       } else if (typeof arg === 'string') {
         writeString(chunk.data, arg);
       } else {
-        (arg as any).X = 'BYTE';
         this.append(arg, 1);
       }
     }

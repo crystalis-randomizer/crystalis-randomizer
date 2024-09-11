@@ -1,5 +1,3 @@
-//import {Rom} from './rom'
-
 export default (nes) => {
   window.onspawn = () => {};
   window.onspawned = () => {};

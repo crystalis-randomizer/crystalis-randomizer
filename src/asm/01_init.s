@@ -53,6 +53,43 @@ UPDATE_REFS target @ refs
   .free end - *
 .endmacro
 
+;;; Jumps to the given address on a different page.  When the
+;;; jumped-to routine returns, it will continue with restoring the
+;;; banks to their current contents, and then return back out to the
+;;; caller.  Note that this costs 23 bytes.
+;;;
+;;; Restrictions:
+;;;   - A and F will be wrecked before the jump completes
+;;;   - A and F will be wrecked after the routine returns
+;;;   - Double-returns are not allowed in the routine
+;;; 
+;;; Usage:
+;;;   Label_3c:
+;;;     FAR_JUMP Label
+.macro FAR_JUMP_LO addr
+        .assert addr < $a000
+        ;; Set up the stack for multiple uses of the "rts trick".
+        ;; The top of the stack will be the 1a address we want,
+        ;; so that the call to BankSwich8k_8000 returns to there.
+        ;; When that routine returns, it will jump into RestoreBanks,
+        ;; which expects two banks to be at the top of the stack
+        ;; (pulled from 6e and 6f).  Once that's done, 
+        lda $6e
+        pha
+        lda $6f
+        pha
+        lda #>(RestoreBanks-1)
+        pha
+        lda #<(RestoreBanks-1)
+        pha
+        lda #>(addr-1)
+        pha
+        lda #<(addr-1)
+        pha
+        lda #^addr
+        jmp BankSwitch8k_8000
+.endmacro
+
 
 ;;; TODO - this macro is currently broken!
 ;; .macro MOVE bytes, segment, source
@@ -557,6 +594,7 @@ RESERVE_MAPS
   .res 24 * 4 ; hitboxes
 .org $97e4
   .res 64 ; RNG table
+FREE "1a" [$8f6e, $972d) ; Moved to 3c in collision.s and others
 
 ;;; Metasprite rendering code + data
 .segment "1c","1d"

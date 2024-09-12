@@ -6,6 +6,7 @@
 ;;;  2. Set up a flag for "currently riding dolphin"
 ;;;  3. Make rabbit boots charge while walking
 ;;;  4. Switch pain land check from leather boots to hazmat
+;;;  5. Move NPC/trigger collision handling routines from 1a to 3c
 
 .segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
 
@@ -237,3 +238,207 @@ UpdatePlayerStatusAndDolphinFlag:
   ;; Check for gas mask instead of leather boots for pain terrain
   cmp #$0d
 .endif
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; The following code is moved from 1a to 3c.  It also includes an optional
+;;; patch for the statue glitch.
+;;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; --------------------------------
+.reloc                          ; smudge from $354a2 to $354b0
+OVERRIDE
+PlayerHitTrigger_SetGameMode:
+        <@354a2@>
+        <@354a4@>
+         bne :>rts
+        <@354a8@>
+        <@354ab GAME_MODE_TRIGGER_TILE@>
+        <@354ad GameMode@>
+        <@354af@>
+;;; NOTE: not .reloc because we reverse-branch into the above
+OVERRIDE
+CollisionJump_02_PlayerInFrontOfNpcOrTrigger: ; smudge from $354b0 to $35535
+        <@354b0@>
+        <@354b3@>
+        <@354b6@>
+        <@354b8@>
+        <@354ba +@> ; $354cb
+         <@354bc@>
+         <@354be +@> ; $354cb
+          <@354c0@>
+          <@354c1@>
+          <@354c2@>
+          <@354c5@>
+          <@354c6@>
+          <@354c8 ++@> ; $354ce
+           <@354ca@>
+           ;; ----
++       <@354d7 PlayerHitTrigger_SetGameMode@> ; unconditional
+        ;; ----
+++      <@35da5@>
+         bmi :<rts ; $35534
+        <@35f19@>
+        <@36ce5@>
+        <@36ce7 +@> ; $354df
+        ;; Statue
+         <@36d0e HandleStatueCollision@>
+         <@36d5d ++@> ; $35508
+         ;; ----
++       <@3ef6a@>
+        bne :<rts ; $35534
+        <@354e4@>
+        <@354e7 +@> ; $354ee
+         <@354e9@>
+         beq :<rts ; $35534
++       <@354ee@>
+        <@354f1@>
+         <@354f2@>
+         <@354f4@>
+         <@354f7@>
+         <@354f9@>
+         <@354fb@>
+         <@354fd@>
+         <@354ff CheckHitbox@>
+        <@35502@>
+        <@35503@>
+        bcs :>rts ; $35534
+++      <@35508@>
+        <@3550a@>
+        <@3550d@>
+        <@35510 GAME_MODE_DIALOG@>
+        <@35512 GameMode@>
+        <@35514@>
+        bne :>rts ; $35534
+        <@35519@>
+        <@3551c@>
+        beq :>rts ; $35534
+        <@35520@>
+        <@35523@>
+        <@35524@>
+        <@35526@>
+        <@35528@>
+        <@3552a@>
+        <@3552d@>
+        <@3552f@>
+        <@35531@>
+        <@35534@>
+;;; --------------------------------
+.reloc                          ; smudge from $35535 to $355b7
+HandleStatueCollision:
+        <@35535@>
+        <@35537@>
+@loop:
+         <@35539@>
+         <@3553c@>
+          <@3553d@>
+          <@3553f@>
+          <@35542@>
+          <@35543@>
+           <@35544@>
+           <@35545@>
+           <@35547@>
+           <@35548@>
+           <@35549@>
+           <@3554b@>
+           <@3554d CheckHitbox@>
+          <@35550@>
+          <@35551@>
+         <@35552@>
+         <@35553@>
+         <@35556 +@> ; $35568
+          <@35558@>
+          <@3555a@>
+          <@3555d@>
+          beq :>rts
+          <@35562@>
+          <@35564@>
+          <@35567@>
+          ;; ----
+        ;; Move the player back in response to touching a statue.
++        <@35568@>
+         <@3556b@>
+         <@3556d +@> ; $35585
+         <@3556f@>
+         <@35572@>
+         <@35574 +@> ; $35585
+         <@35576@>
+         <@35579@>
+         <@3557b +@> ; $35585
+         <@3557d@>
+         <@35580@>
+         <@35582@>
++        <@35585@>
+         <@35586@>
+          <@35587@>
+-         <@35589 ObjectKnockback@>
+          <@3558c@>
+           <@3558d ObjectDirection@>
+           <@35590@>
+    .ifdef _DISABLE_STATUE_GLITCH ; smudge off
+            lda #$04              ; just always push down
+    .else                         ; smudge on
+            <@35591@>
+            <@35594@>
+            <@35596@>
+            <@35597@>
+            <@35598@>
+            <@3559a@>            ; TODO - can we disable statue glitch by making this #7?
+    .endif
+            <@3559c ObjectDirection@>
+            <@3559f MoveObjectWithSpeedAndDirection_3c@>
+           <@355a2@>
+           <@355a3 ObjectDirection@>
+          <@355a6@>
+          <@355a7 ObjectKnockback@>
+          <@355aa@>
+          <@355ab -@> ; $35589
+          <@355ad DrawAllObjectSprites@>
+         <@355b0@>
+         <@355b1@>
+         <@355b2@>
+        <@355b4 @loop@> ; $35539
+        <@355b6@>
+
+;;; --------------------------------
+;;; Knocks back the object indexed $11 in the direction of object indexed $10?
+;;; Not entirely sure about this - since it looks like direction,x is not used?
+;;; (It's converted to an 8-dir and then stored shifted into the upper nibble).
+;;; The use of $10/$11 as inputs is just because knocking back the player requires
+;;; flipping x and y.  We could simplify a bit by using carry to indicate a flip:
+;;;     plp; jsr SwapXYIfCarry; ... ; php; jsr SwapXYIfCarry; rts
+;;;     SwapXYIfCarry:
+;;;       bcc :>rts; stx $10; tya; tax; ldy $10; rts
+;;; This saves 4 bytes in KnockbackObject and 3*3 bytes at each callsite,
+;;; and costs 9 for the swap routine, which may be usable elsewhere as well?
+.reloc                          ; smuge from $355c0
+OVERRIDE
+KnockbackObject:
+        <@355c0@>
+        <@355c2@>
+        <@355c4@>
+        <@355c6@>
+        <@355c8 ObjectKnockback@>
+        <@355cb +@> ; $355d4
+         <@355cd@>
+         <@355cf@>
+         <@355d1 ObjectKnockback@>
++       <@355d4 ObjectKnockback@>
+        <@355d7@>
+        <@355d9 ObjectDirection@>
+        <@355dc +@> ; $355df
+         <@355de@>
++       <@355df@>
+        <@355e0@>
+        <@355e1@>
+        <@355e2@>
+        <@355e3@>
+        <@355e5 ObjectDirection@>
+        <@355e8@>
+        <@355ea@>
+        <@355ec ObjectDirection@>
+        <@355ef@>
+        <@355f1@>
+        <@355f3@>

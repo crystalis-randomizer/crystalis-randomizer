@@ -62929,6 +62929,7 @@ LoadOneObjectDataInternal:
           <@3c2ab@>
           <@3c2ad +@> ; $3c2b4
         ;; Bail out after zeroing if ID is $ff
+LoadOneObjectData_BailOut:
          <@3c2af@>
          <@3c2b0@>
         <@3c2b1@>
@@ -64321,7 +64322,7 @@ MainGameModeJump_1f_DynaAppears:
         <@3ccc9 GameMode@>
         <@3cccb@>
 ;;; --------------------------------
-.org $cccc
+.org $cccc                      ; TODO - name this and move it to 3c
 _3cccc:
         <@3cccc@>
         <@3ccce@>
@@ -64348,6 +64349,7 @@ _3ccdd:
             <@3ccf2@>
             <@3ccf5@>
             <@3ccf7 SetOrClearParalysisFlag@>
+        ;; Run each object's action script
 +         <@3ccfa@>
           <@3ccfd@>
           <@3ccff@> ; ObjectUpdate_1A does not run???

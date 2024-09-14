@@ -239,7 +239,12 @@ export class Assembler {
       // }
       this._chunk = {segments: this.segments, data: []};
       if (this._org != null) this._chunk.org = this._org;
-      if (this._name) this._chunk.name = this._name;
+      if (this._name) {
+        this._chunk.name = this._name;
+      } else if (this._source) {
+        const s = this._source;
+        this._chunk.name = `${s.file}:${s.line}:${s.column}`;
+      }
       this.chunks.push(this._chunk);
       this._chunk.overwrite = this.overwriteMode;
     }
@@ -556,8 +561,11 @@ export class Assembler {
     }
 
     if (!ident.startsWith('@')) {
+      this._name = ident;
       this.cheapLocals.clear();
-      if (!this.chunk.name && !this.chunk.data.length) this.chunk.name = ident;
+      if (!this.chunk.data.length) this.chunk.name = ident;
+      // TODO - consider storing extra chunk names for later offsets,
+      // maybe a chunk ToC?
       if (this.opts.refExtractor?.label && this.chunk.org != null) {
         this.opts.refExtractor.label(
             ident, this.chunk.org + this.chunk.data.length, this.chunk.segments);
@@ -765,6 +773,7 @@ export class Assembler {
       this.append(expr, arglen);
     }
     if (!chunk.name) chunk.name = `Code`;
+    this._name = undefined;
     // TODO - for relative, if we're in the same chunk, just compare
     // the offset...
   }

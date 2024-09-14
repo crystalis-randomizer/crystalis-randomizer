@@ -1,20 +1,17 @@
-import {Module} from '../asm/module';
-import {Rom} from '../rom';
-import {Entity} from './entity';
-import {signed, tuple, unsigned} from './util';
+import { Assembler } from '../asm/assembler';
+import { Module } from '../asm/module';
+import { Rom } from '../rom';
+import { Entity, EntityArray } from './entity';
+import { Segment, readValue, relocExportLabel, signed, tuple, unsigned } from './util';
 
-// A pattern page sequence for animating background tiles.  ID in 0..3
+// Describes a single unit's hitbox.
 export class Hitbox extends Entity {
 
   coordinates: [number, number, number, number];
 
-  constructor(rom: Rom, id: number) {
+  constructor(rom: Rom, id: number, address: number) {
     super(rom, id);
-    this.coordinates = tuple(rom.prg, this.base, 4);
-  }
-
-  get base(): number {
-    return 0x35691 + (this.id << 2);
+    this.coordinates = tuple(rom.prg, address, 4);
   }
 
   get w(): number { return this.coordinates[1]; }
@@ -33,11 +30,26 @@ export class Hitbox extends Entity {
 
   get y1(): number { return this.y0 + this.h; }
 
+  assemble(a: Assembler): void {
+    a.byte(...this.coordinates);
+  }
+}
+
+export class Hitboxes extends EntityArray<Hitbox> {
+  constructor(readonly rom: Rom) {
+    super();
+    const address = readValue('Hitboxes', rom.prg, Segment.$1a);
+    for (let i = 0; i < 24; i++) {
+      this[i] = new Hitbox(rom, i, address + 4 * i);
+    }
+  }
+
   write(): Module[] {
     const a = this.rom.assembler();
-    a.segment('1a');
-    a.org(0x9691 + (this.id << 2));
-    a.byte(...this.coordinates);
+    relocExportLabel(a, 'Hitboxes', ['3c']);
+    for (const hitbox of this) {
+      hitbox.assemble(a);
+    }
     return [a.module()];
   }
 }

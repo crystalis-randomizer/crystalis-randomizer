@@ -13,7 +13,14 @@ LoadPalettesForLocation_3c:
         FAR_JUMP_LO LoadPalettesForLocation
 
 .reloc
+;;; NOTE: The FAR_JUMP_LO destroys A, so we need to re-read the
+;;; random number from $7 (and mask out the upper bits).
 GenerateRandomNumber_3c:
+        jsr @jmp
+        lda $0e
+        and #$07
+        rts
+@jmp:
         FAR_JUMP_LO GenerateRandomNumber
 
 .reloc ; smudge from $3527e to $352bf
@@ -31,25 +38,25 @@ PlayerHit_ApplyStatus:
           bpl :>rts
         <@35291@>
         <@35293 GenerateRandomNumber_3c@>
-        <@35296@>
         <@35298@>
+        <@352bc@>                 ; NOTE: does not affect C register
           bcs :>rts ; 50% chance of doing nothing
         ;; add poison status   
-        <@3529c PlayerStatus@>
-        <@3529f@>
-        <@352a1@>
-        <@352a3 PlayerStatus@>
-        <@352a6 GAME_MODE_STATUS_MSG@>
-        <@352a8 GameMode@>
-        <@352aa@>
-        <@352ac@>
-        <@352af@>
-        <@352b1@>
-        <@352b4 SetTemporaryInvincibility@>
-        <@352b7 SFX_POISON@>
-        <@352b9 StartAudioTrack@>
-        <@352bc@>
-        <@352be@>
+        <@352cb PlayerStatus@>
+        <@352ec@>
+        <@3984d@>
+        <@3990c PlayerStatus@>
+        <@39a3a GAME_MODE_STATUS_MSG@>
+        <@39a88 GameMode@>
+        <@3f86b@>
+        <@1e9a1@>
+        <@1eb9f@>
+        <@1ece8@>
+        <@1ed05 SetTemporaryInvincibility@>
+        <@1ed53 SFX_POISON@>
+        <@1ed56 StartAudioTrack@>
+        <@1ef1a@>
+        <@1ef1f@>
 
 ;;; --------------------------------
 ;;; Projectiles have 540,y set to $ff to indicate that shield def is used.

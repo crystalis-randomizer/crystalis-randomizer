@@ -354,7 +354,7 @@ FREE_UNTIL $ba2c
       pla
       tax
       pla
-+   jmp $972d ; AdHocSpawnObject
++   jmp AdHocSpawnObject
 .endif
 
 .segment "1a"

@@ -196,7 +196,7 @@ ComputeEnemyStats:
 .endif ; _ENEMY_HP
 + lda ObjectRecoil,x
   bmi +
-   jmp $c2af ; exit point
+   jmp LoadOneObjectData_BailOut ; $c2af - exit point
 + and #$7f
   sta ObjectRecoil,x
   ;; We're gonna do the rescaling - figure out the actual difficulty
@@ -427,3 +427,121 @@ ComputeEnemyStats:
 
 ; .assert * <= $c000
 ;.assert < $1bff0
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; 
+;;; Reassemble code from page 1a.  We're not moving it to a different page, but
+;;; we do want to reassemble it so that it can be defrag'd and hacked more
+;;; easily.
+;;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; --------------------------------
+;;; Input: A - the index of the ad-hoc spawn in $29c00 (up to $5e or so)
+;;;        X - index of the originating object
+;;;        Y - direction of spawned object (0..7 or 0..f)
+;;; The spawn table holds quads, which end up in $21,$22,$11,$20.
+;;; The $11 is passed to LoadOneObjectData as the objid to load.
+;;; $23 is temporarily init to 0.
+;;; Output: C   - set if successful
+;;;         $10 - object index, if successful
+
+.segment "1a"
+
+FREE "1a" [$972d,$97d7)
+
+.reloc                          ; smudge from $3572d to $357d7
+OVERRIDE
+AdHocSpawnObject:
+        <@3572d@>
+        <@3572f@>
+        <@35730@>
+        <@35731@>
+        <@35732@>
+        <@35734@>
+         <@35735@> ; A000 -> 28000
+         <@35737 BankSwitch8k_a000@>
+         <@3573a@>
+         <@3573c@>
+         <@3573e AdHocSpawns@>
+         <@35741@>
+         <@35743 AdHocSpawns+1@>
+         <@35746@>
+         <@35748 AdHocSpawns+2@>
+         <@3574b@>
+         <@3574d AdHocSpawns+3@>
+         <@35750@>
+         <@35752 +@> ; $35768
+          <@35754 AdHocSpawnsPart2@>
+          <@35757@>
+          <@35759 AdHocSpawnsPart2+1@>
+          <@3575c@>
+          <@3575e AdHocSpawnsPart2+2@>
+          <@35761@>
+          <@35763 AdHocSpawnsPart2+3@>
+          <@35766@>
++        <@35768@>
+         <@3576a@>
+        ;; a few entries in 29c00 have #$ff for $21 -> return right away
+         <@3576b @loop@>
+        <@3576d@>
+        <@3576e BankSwitch8k_a000@>
+        <@35771@>
+        <@35772@>
+        ;; ----
+        ;; Actually spawn something.  Check slots [$21,$22) for empty.
+@loop:   <@35773@>
+         <@35775@>
+         <@35777@>
+         <@35779 FindEmptySpawnSlot@>
+         <@3577c @quit@> ; restore bank, return
+         <@3577e@>   ; load into the empty slot
+         <@35780 LoadOneObjectData@>
+        ;; Save X on stack - will soon point to new object
+         <@35783@>
+         <@35784@>
+          <@35785 ReadObjectCoordinatesInto_34_37@>
+          <@35788 ObjectTerrain@>
+          <@3578b@> ; $12 <- parent's terrain
+          <@3578d@>
+          <@3578f@>
+        ;; Now X points to the new object, rather than the old one.
+          <@35791 ObjectTerrain@>
+          <@35794 ObjectTerrain@>
+          <@35797@>
+          <@35799@>
+          <@3579b +@>
+           <@3579d@>
++         <@3579f@> ; $31 <- 2 if origin slow else 0
+          <@357a1@> ; direction
+          <@357a3 ObjectDirection@>
+          <@357a6@>
+          <@357a7@>
+          <@357a9@>
+          <@357ab@>
+          <@357ae@>
+          <@357af@>
+          <@357b0@>
+          <@357b1@>
+          <@357b2@>
+          <@357b4@>
+        ;; Y looks like %aaaa_ddd0 where aaaa is the low nibble of
+        ;; the spawned object's $6e0, and xddd is the direction (ignoring
+        ;; any upper bit)
+          <@357b5 AdHocSpawnDisplacements@>
+          <@357b8@>
+          <@357ba AdHocSpawnDisplacements+1@>
+          <@357bd@>
+          <@357be@>
+          <@357c0@>
+          <@357c2 AddDisplacementVectorLong@>
+          <@357c5 WriteObjectCoordinatesFrom_34_37@>
+          <@357c8@> ; $23 will have sign bit -> asl sets carry
+         <@357ca@>
+         <@357cb@>
+         <@357cc@>
+         <@357ce @loop@>
+@quit:  <@357d0@>
+        <@357d1 BankSwitch8k_a000@>
+        <@357d4@>
+        <@357d6@>

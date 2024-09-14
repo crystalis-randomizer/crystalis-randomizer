@@ -214,37 +214,4 @@ CheckHitbox:                    ; smudge from $355f8
         <@3568f@>
         <@35690@>
 
-;;; --------------------------------
-;;; Quads representing the different hitbox shapes.
-;;; The hitbox of an object is stored as a 5-bit number,
-;;; with the lower bits in the lower nibble of $3a0,x
-;;; and the upper bit in the :40 bit of $420,x.
-;;; The elements of the quad are (x0,w,y0,h) of the hitbox
-;;; bounds relative to the object's screen position.
-.reloc                          ; smudge from $35691
-OVERRIDE
-Hitboxes:
-        .byte [@35691@],[@35692@],[@35693@],[@35694@] ; 00 player
-        .byte [@35695@],[@35696@],[@35697@],[@35698@] ; 01
-        .byte [@35699@],[@3569a@],[@3569b@],[@3569c@] ; 02
-        .byte [@3569d@],[@3569e@],[@3569f@],[@356a0@] ; 03
-        .byte [@356a1@],[@356a2@],[@356a3@],[@356a4@] ; 04
-        .byte [@356a5@],[@356a6@],[@356a7@],[@356a8@] ; 05
-        .byte [@356a9@],[@356aa@],[@356ab@],[@356ac@] ; 06 UNUSED
-        .byte [@356ad@],[@356ae@],[@356af@],[@356b0@] ; 07 UNUSED
-        .byte [@356b1@],[@356b2@],[@356b3@],[@356b4@] ; 08
-        .byte [@356b5@],[@356b6@],[@356b7@],[@356b8@] ; 09
-        .byte [@356b9@],[@356ba@],[@356bb@],[@356bc@] ; 0a trigger
-        .byte [@356bd@],[@356be@],[@356bf@],[@356c0@] ; 0b
-        .byte [@356c1@],[@356c2@],[@356c3@],[@356c4@] ; 0c sword
-        .byte [@356c5@],[@356c6@],[@356c7@],[@356c8@] ; 0d
-        .byte [@356c9@],[@356ca@],[@356cb@],[@356cc@] ; 0e
-        .byte [@356cd@],[@356ce@],[@356cf@],[@356d0@] ; 0f
-        .byte [@356d1@],[@356d2@],[@356d3@],[@356d4@] ; 10
-        .byte [@356d5@],[@356d6@],[@356d7@],[@356d8@] ; 11
-        .byte [@356d9@],[@356da@],[@356db@],[@356dc@] ; 12
-        .byte [@356dd@],[@356de@],[@356df@],[@356e0@] ; 13
-        .byte [@356e1@],[@356e2@],[@356e3@],[@356e4@] ; 14
-        .byte [@356e5@],[@356e6@],[@356e7@],[@356e8@] ; 15 UNUSED?
-        .byte [@356e9@],[@356ea@],[@356eb@],[@356ec@] ; 16
-        .byte [@356ed@],[@356ee@],[@356ef@],[@356f0@] ; 17
+.import Hitboxes

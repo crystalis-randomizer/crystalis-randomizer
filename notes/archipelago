@@ -69,27 +69,22 @@ Notes from CodeGorilla:
 Decided to take an alternate approach to the above, with some pros and cons. The basic
 approach is as follows:
 
-1. Use a modified version of the randomizer code to get a list of all items and locations
-   with the exact names and in-memory IDs (Done)
-2. Make a list of Regions and Entrances between Regions (using the AP definition in both 
-   cases). Regions (AP) end up being smaller than Areas (this codebase), mainly to be able
-   to properly support randomized wild warp. (Done)
-3. Write out pseudologic for every Entrance and Location. (Tedious, but done)
-4. Write code to convert the above spreadsheets into JSON. (Done)
-5. Read the JSON in the AP codebase. (Done)
-6. Create all of the necessary logic rules by hand in AP (Done, though admittedly not 
-   heavily tested)
-7. Create a ShuffleData structure that keeps track of all the things AP needs to randomize
-   (i.e. randomizations that affect logic). (Done)
-8. Put that data in an .apcrys file as part of the AP generate_output step. (Done)
-9. Make a new entry point into this codebase that can read that output file and force 
-   matching choices instead of randomization in the ROM patching process. (Done)
-10.Write client code that can check the status of various locations. (Done-ish; mimics still
-   a problem.)
-11.Write ASM code that allows arbitrary item granting from the client (hopefully including
-   mimics).
-12.Make a new web interface that accepts a vanilla ROM and an .apcrys file and uses the new
-   entry point to patch accordingly.
+1. The Crystalis APWorld knows about all the flags and logic, including being able to make
+   any random decisions that impact the logic directly. It only decides as much as it needs
+   to in order to give proper logic to the Archipelago Generator process.
+2. After fill is complete, the APWorld uses the generate_output step to write all of the
+   relevant information into a .json file (including flagstring, seed, and any random 
+   decisions made by the generator for logic), which then gets compressed and stored as an
+   .apcrys file (secretly a .zip file with a bespoke file extension.
+3. Once the multiworld is generated, the host will give the .apcrys file to the player, and
+   the player will take the .apcrys file and their vanilla ROM to our website to apply the 
+   specific data from the patch file instead of making random decisions. Any flags that
+   cause randomness and don't affect logic get decided here.
+4. In addition, using an .apcrys file in this way will add a bunch of custom ASM, mainly
+   focused in a) separating item flags from location flags, and b) communicating with the
+   Archipelago client as appropriate.
+5. The user can now use this patched ROM in BizHawk, along with Archipelago's BizHawkClient
+   to connect to their multiworld and start playing.
 
 As mentioned, there are some pros and cons to this approach:
 Pros:
@@ -127,11 +122,24 @@ In my opinion, the pros overall outweigh the cons, hence why I settled on this a
 I could certainly see another developer taking a different approach.
 
 Feature To-Do list:
-  -User-facing documentation
   -logic and implementation of flags not yet implemented:	
     -Wa, Wh (using GER, not in initial release)
     -Wm (not a clue; implementation TBD, not in initial release)
   -Archipelago specific features:
+    -Unit tests
     -Deathlink >:)
-	-Gifting interface? (maybe take over pawn-shops?)
+	-Gifting interface? (maybe take over pawn-shops? not convinced this makes sense, but I'm willing to consider it)
 	-Option for local items being baked into the ROM? (Probably not, given how item flags end up working, but you never know)
+	
+Other notes:
+  Currently we don't bake any information into the ROM about what items are. However, this information
+  is available from the Archipelago generation. I am resistant to putting it into the patch data, as it
+  would result in the patch data doubling as a personal spoiler log for anyone with a little technical 
+  savvy. The might be a world where only local items get baked into the ROM, in which case I can just use
+  item IDs, which would do a sufficient amount of obfuscation, hopefully. I've also toyed around with the
+  idea of making the Crystalis Randomizer code connect to the Archipelago server as a client; then all the
+  data could be stored in slot_data and be available at patch time while still not being apparent to the
+  player. This might be more work than it's worth, however - it depends on how much players complain about
+  every location having an APItem. The ASM would need to change significantly to allow some items to be
+  baked into the ROM and some be generic APItems. This is all lower priority, IMO, than getting Wham! 
+  functional in AP.

@@ -545,3 +545,40 @@ AdHocSpawnObject:
         <@357d1 BankSwitch8k_a000@>
         <@357d4@>
         <@357d6@>
+
+FREE "1a" [$98b9, $98d7)
+
+;;; --------------------------------
+;;; Increment 'y' until either finding an empty spawn slot, or
+;;; else reaching $10, exclusive (e.g. $1f).  Returns carry set
+;;; and 'y' pointing to an empty slot if it was successful.
+.reloc                          ; smudge from $358b9 to $358c7
+OVERRIDE
+FindEmptySpawnSlot:
+-        <@358b9 ObjectActionScript@>
+         <@358bc +@> ; > sec, then rts
+         <@358be@>
+         <@358bf@>
+        <@358c1 -@> ; $358b9
+        <@358c3@>
+        <@358c4@>
+        ;; ----
++       <@358c5@>
+        <@358c6@>
+
+;;; --------------------------------
+.reloc                          ; smudge from $358c7 to $358cd
+OVERRIDE
+ClearSpawnSlot:
+        <@358c7@>
+        <@358c9@>
+        <@358cc@>
+
+;;; --------------------------------
+.reloc                          ; smudge from $358cd to $358d7
+OVERRIDE
+SpawnDeathReplacement:
+        <@358cd@>
+        <@358d0@>
+        <@358d2@>
+        <@358d4 LoadOneObjectData@>         ; ... and restore banks afterward

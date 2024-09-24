@@ -14,6 +14,10 @@ FREE "0a" [$80c0, $8100)
 FREE "0a" [$81c0, $8200)
 
 .ifdef _EXTRA_EXTENDED_SCREENS
+
+
+  .if 0 ; MOVED TO movement.s
+
 ;;; Normally the check for tile effects just looks at the
 ;;; current map screen and clamps the page switch to the
 ;;; first 8 pages, but if we're reading screen data from
@@ -69,6 +73,11 @@ QuickSwapPageA:
 .popseg
 
 .endif ; 1
+
+  .endif ; 0 (moved to movement.s)
+
+
+
 
 .pushseg "0a", "fe", "ff"
 ;;; In this setup, we compress the map data by two bytes:

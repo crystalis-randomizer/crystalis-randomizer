@@ -401,10 +401,18 @@ async function shuffleInternal(rom: Uint8Array,
     toks.enter(TokenSource.concat(
         new Tokenizer(flagFile, 'flags.s'),
         ...sources()
-            .map(({filename, contents}) => new Tokenizer(
+            .map(({filename, contents}) => {
+              if (pass === 'late') {
+                // if this is the late pass, save the source contents for debugging.
+                ((globalThis as any).sourcesContents ||
+                  ((globalThis as any).sourcesContents = new Map()))
+                  .set(filename, contents);
+              }
+              return new Tokenizer(
                 smudge(contents, Cpu.P02, origPrg),
                 filename,
-                {lineContinuations: true}))));
+                {lineContinuations: true});
+            })));
     const pre = new Preprocessor(toks, asm);
     asm.tokens(pre);
     // Last apply all the fallbacks

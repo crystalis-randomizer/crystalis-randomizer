@@ -3,7 +3,7 @@ import { Cpu } from './cpu';
 import { Expr } from './expr';
 import { Chunk, Module, OverwriteMode, Segment, Substitution, Symbol } from './module';
 import { Preprocessor } from './preprocessor';
-import { Token } from './token';
+import { SourceInfo, Token } from './token';
 import { Tokenizer } from './tokenizer';
 import { TokenStream } from './tokenstream';
 import { IntervalSet, SparseByteArray, binaryInsert } from './util';
@@ -144,6 +144,11 @@ class LinkChunk {
    */
   overlaps = false;
 
+  /** Table of contents for labels in the chunk, for debugging. */
+  readonly labelIndex: Map<string, number>|undefined;
+  /** Table of contents for source info in the chunk, for debugging. */
+  readonly sourceMap: Map<number, SourceInfo>|undefined;
+
   private _data?: Uint8Array;
 
   private _org?: number;
@@ -160,6 +165,8 @@ class LinkChunk {
     this.name = chunk.name;
     this.size = chunk.data.length;
     this.segments = chunk.segments;
+    this.labelIndex = chunk.labelIndex && new Map(chunk.labelIndex);
+    this.sourceMap = chunk.sourceMap && new Map(chunk.sourceMap);
     this._data = chunk.data;
     for (const sub of chunk.subs || []) {
       this.subs.add(translateSub(sub, chunkOffset, symbolOffset));
@@ -168,6 +175,9 @@ class LinkChunk {
         .map(e => translateExpr(e, chunkOffset, symbolOffset));
     if (chunk.org) this._org = chunk.org;
     this._overwrite = chunk.overwrite || 'allow';
+
+    // TODO - copy data from chunk.sources and/or chunk.labels
+
   }
 
   get org() { return this._org; }

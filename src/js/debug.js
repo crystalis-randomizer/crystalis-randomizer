@@ -321,15 +321,41 @@ window.strictCpu = () => {
 };
 
 window.installChunks = () => {
+  if (!nes.debug.chunkMap) return;
+  // TODO - does this run before patch()?
   // look for globalThis.linkChunks
+  const sources = new Map([...sourcesContents].map(([k, v]) => [k, v.split('\n')]));
   for (const c of window.linkChunks || []) {
     if (c.overlaps) continue;
-    for (let i = 0; i < c.size; i++) {
-      nes.debug.chunkMap.mapping[c.offset + i] = {name: c.name, offset: i};
+    const rev = new Map();
+    for (const [k, v] of (c.labelIndex || [])) {
+      rev.set(v, k);
+    }
+    let name = c.name;
+    for (let offset = 0; offset < c.size; offset++) {
+      name = rev.get(offset) || name;
+      const e = c.sourceMap?.get(offset);
+      if (!e) continue;
+      let {file, line} = e;
+      line--;
+      let code = '';
+      const s = sources.get(file);
+      if (s) {
+        let firstLine = line;
+        do { firstLine--; } while (firstLine >= 0 && /^(\s*;|\W:)/.test(s[firstLine]));
+        code = s.slice(firstLine + 1, line + 1).join('\n');
+      }
+      nes.debug.chunkMap.mapping[c.offset + offset] = {name, offset, file, line, code};
     }
   }
 };
 
 // TODO - comment out if needed...
-strictCpu();
-installChunks();
+setTimeout(function f() {
+  // if (!window.linkChunks) {
+  //   setTimeout(f, 1000);
+  //   return;
+  // }
+  strictCpu();
+  installChunks();
+}, 1000);

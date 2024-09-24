@@ -1,4 +1,5 @@
 import {Expr} from './expr';
+import type {SourceInfo} from './token';
 
 export interface Module {
   /** All chunks, in a determinstic (indexable) order. */
@@ -28,6 +29,13 @@ export interface Chunk<T extends number[]|Uint8Array|string> {
   asserts?: Expr[];
   /** How overwriting previously-written fixed-position data is handled. */
   overwrite?: OverwriteMode; // NOTE: only set programmatically?
+  /**
+   * Source infos for each byte in the chunk.  Should only exist for
+   * the first byte of each instruction, and not for data.
+   */
+  sourceMap?: Map<number, SourceInfo>;
+  /** Labels within the chunk, mapped to byte offset. */
+  labelIndex?: Map<string, number>;
 }
 
 // Default is "allow"

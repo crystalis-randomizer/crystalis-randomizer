@@ -121,7 +121,7 @@ DecomposeScreenYX:
 FREE_UNTIL $e652
 
 .org $ebe8
-  ;; note: the AND should no longer be necessary since it's zero already
+  ;; note: the AND should no longer be necessary since it's zero already?
   and #$3f    ; note: we only need the 20 bit if we expand the rom
   beq $ebef
    jsr BankSwitch8k_8000  ; BankSwitch8k_8000

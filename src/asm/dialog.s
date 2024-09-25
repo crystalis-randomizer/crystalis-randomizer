@@ -82,42 +82,48 @@ FREE_UNTIL $d280
   jmp $e144
 
 
-;;; Allow more dynamically changing dolphin spawn routines
-.pushseg "1b"
-.import MovementScriptTable
-.org $ae52
-  lda MovementScriptTable,y
-.org $ae57
-  lda MovementScriptTable+1,y
-.popseg
+;;; NOTE: Many of the below patches are no longer necessary since we auto-update exported labels
 
+OVERRIDE                        ; Provided by npc.ts
+.import MovementScriptTable
+
+;;; Allow more dynamically changing dolphin spawn routines
+;; .pushseg "1b"
+;; .org $ae52
+;;   lda MovementScriptTable,y
+;; .org $ae57
+;;   lda MovementScriptTable+1,y
+;; .popseg
+
+OVERRIDE                        ; Provided by npc.ts
 .import DolphinSpawnTable
+
 .import dolphinSpawnIndexESI, dolphinSpawnIndexChannel
 .org $d663
   ldy #(5 * dolphinSpawnIndexChannel)
 .org $d66b
   ldy #(5 * dolphinSpawnIndexESI)
-.org $d679
-  lda DolphinSpawnTable,y
-.org $d68d
-  lda DolphinSpawnTable+1,y
-.org $d692
-  lda DolphinSpawnTable+2,y
-.org $d697
-  lda DolphinSpawnTable+3,y
-.org $d69c
-  lda DolphinSpawnTable+4,y
+;; .org $d679
+;;   lda DolphinSpawnTable,y
+;; .org $d68d
+;;   lda DolphinSpawnTable+1,y
+;; .org $d692
+;;   lda DolphinSpawnTable+2,y
+;; .org $d697
+;;   lda DolphinSpawnTable+3,y
+;; .org $d69c
+;;   lda DolphinSpawnTable+4,y
 
 ;;; Allow dynamically changing Medical Herb and Fruit of Power values
-.segment "0e"
-.import itemValueMedicalHerb, itemValueFruitOfPower
-.org $84e9
-; for some reason the vanilla code is lda medical herb value
-; add the current hp, but for fruid of power its
-  lda #itemValueMedicalHerb
-.org $850b
-; load current mp, then add fruit of power value.
-  adc #itemValueFruitOfPower
+;; .segment "0e"
+;; .import itemValueMedicalHerb, itemValueFruitOfPower
+;; .org $84e9
+;; ; for some reason the vanilla code is lda medical herb value
+;; ; add the current hp, but for fruid of power its
+;;   lda #itemValueMedicalHerb
+;; .org $850b
+;; ; load current mp, then add fruit of power value.
+;;   adc #itemValueFruitOfPower
 
 ;;; Allow dynamically changing dialog pointers
 .import CommonWords, UncommonWords, PersonNames, ItemNames

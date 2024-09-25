@@ -21725,7 +21725,8 @@ ItemUseJump_MedicalHerb:
          ;; ----
 +       <@1c4e6@>
         <@1c4e8@>
-        <@1c4e9@>
+        <@1c4e9 itemValueMedicalHerb@>
+             itemValueMedicalHerb = [@1c4ea@]
         <@1c4eb PlayerHP@>
         <@1c4ee +@> ; $1c4f2
          <@1c4f0@> ; don't overflow -> clamp to #$ff
@@ -21743,7 +21744,8 @@ ItemUseJump_MedicalHerb:
 ItemUseJump_FruitOfPower:
         <@1c507@>
         <@1c508 PlayerMP@>
-        <@1c50b@>
+        <@1c50b itemValueFruitOfPower@>
+             itemValueFruitOfPower = [@1c50c@]
         <@1c50d +@> ; $1c511
          <@1c50f@>
 +       <@1c511 PlayerMaxMP@>
@@ -26226,7 +26228,7 @@ ObjectActionJump_60_Vampire:
 .org $a48b
 BossPatternJump_00:              ; Vampire 0
         ;; Start
-        <@1e48b ObjectOnScreen@>
+        <@1e48b ObjectOnScreen@>          ; NOTE: patched by bosses.s ($a48b)
          bmi :>rts
         <@1e490 _1fb29@>
         ;; Vampire appears: set up patterns and palettes.
@@ -26376,7 +26378,7 @@ BossPatternJump_06:              ; Vampire 6
         ;; Use the current HP to determine length of time in a spot.
         <@1e572 ObjectHP@>
         <@1e575@>
-        <@1e576@>
+        <@1e576@>                      ; NOTE: patched by bosses.s ($a576) _FIX_VAMPIRE
         <@1e577@>
         <@1e578@>
         <@1e57a ObjectAnimationCounter@>
@@ -26817,7 +26819,7 @@ ObjectActionJump_63_GeneralKelbesque:
 ;;; --------------------------------
 .org $a971
 BossPatternJump_0a:              ; Kelbesque 0
-        <@1e971@>
+        <@1e971@>              ; NOTE: patched by bosses.s ($a971)
          bmi :>rts ; $1e9c5
         <@1e976@>
         <@1e978@>
@@ -27251,7 +27253,7 @@ ObjectActionJump_66_Sabera:
 ;;; --------------------------------
 .org $ac8f
 BossPatternJump_17:              ; Sabera 0
-        <@1ec8f@>
+        <@1ec8f@>              ; NOTE: patched by bosses.s ($ac8f)
         ;; If the boss is not on screen, bail out
          bmi :>rts ; $1ecf4
         <@1ec94@>
@@ -27421,7 +27423,7 @@ ObjectActionJump_67_Mado:
 ;;; --------------------------------
 .org $ade8
 BossPatternJump_1b:              ; Mado 0
-        <@1ede8@>
+        <@1ede8@>              ; NOTE: patched by bosses.s ($ade8)
          bmi :>rts ; $1ee34
         <@1eded _1fb29@>
         <@1edf0@>
@@ -27472,7 +27474,7 @@ BossPatternJump_1d:              ; Mado 2
         <@1ee4b@>
         <@1ee4d@>
         <@1ee50@>
-        <@1ee53@>
+        <@1ee53@>                     ; NOTE: patched by bosses.s ($ae53)
         <@1ee54@>
         <@1ee56@>
         <@1ee59@>
@@ -27891,7 +27893,7 @@ BossPatternJump_27:              ; Draygon 0
         <@1f19a@>
         <@1f19d GAME_MODE_STATUS_MSG@>
         <@1f19f GameMode@>
-        <@1f1a1@>
+        <@1f1a1@>              ; NOTE: patched by bosses.s ($b1a1)
         <@1f1a4@>
 ;;; --------------------------------
 .org $b1a5
@@ -28782,7 +28784,7 @@ ObjectActionJump_6f:
         <@1f825@>
         <@1f828@>
         <@1f829@>
-        <@1f82a BossKillDataTable@>
+        <@1f82a BossKillDataTable@>       ; NOTE: patched by bosses.s ($b82a)
         <@1f82d@>
         <@1f82f@>
          <@1f830 BossKillDataTable+1@>
@@ -29356,7 +29358,7 @@ MainGameModeJump_0c_DisplayStartMenu:
         <@1fd20 -@> ; $1fd19
         <@1fd22@>
         <@1fd24 BankSwitch8k_8000@>
-        <@1fd27@> ; LV (menu)
+        <@1fd27@> ; LV (menu)          ; NOTE: patched by bosses.s ($bd27)
         <@1fd29 DisplayNumberInternal@>
         <@1fd2c@> ; HP
         <@1fd2e DisplayNumberInternal@>
@@ -39468,6 +39470,7 @@ InitializeStatusBarNametable:
         <@27ac1 BankSwitch8k_8000@>
         <@27ac4 UpdateHPDisplayInternal@>
         <@27ac7 ChargeIndicatorDisplay@>
+        ;; NOTE: patched by hud.s ($baca)
         <@27aca@> ; LV, Money, EXP, EXP left, MP, and Max MP
 -        <@27acc@>
          <@27acd@>
@@ -39479,7 +39482,7 @@ InitializeStatusBarNametable:
         <@27ad6 WaitForNametableFlush@>
 ;;; --------------------------------
 .org $bad9
-StatusBarDataTable:
+StatusBarDataTable:              ; NOTE: patched by hud.s ($badb, etc)
         ;; These values are based on the VRAM location that it is paged into, and not
         ;; based on the location in the original CHR ROM page. So pretty much just
         ;; offset everything by $#80. (The references to the border/spaces/numbers are always
@@ -39531,7 +39534,7 @@ MainGameModeJump_18_RecoverMagicAnimation:
         <@27b46@>
         <@27b49@>
         <@27b4b@>
-        <@27b4e@>
+        <@27b4e@>   ; NOTE: patched by animation.s ($bb4e)
         <@27b50@>
         <@27b53@>
         <@27b56@>
@@ -39609,7 +39612,7 @@ MainGameModeJump_19_ChangeMagicRevertAnimation:
 ;;; --------------------------------
 .org $bc04
 MainGameModeJump_1a_SwordInAir:
-        <@27c04 _3c867@>
+        <@27c04 _3c867@>              ; NOTE: patched by animation.s ($bc04)
         <@27c07 WaitForOAMDMA@>
         <@27c0a@>
         <@27c0c@>
@@ -45791,6 +45794,7 @@ InitialPrg_6400:
         .byte [@2fe50@],[@2fe51@],[@2fe52@],[@2fe53@],[@2fe54@],[@2fe55@],[@2fe56@],[@2fe57@],[@2fe58@],[@2fe59@],[@2fe5a@],[@2fe5b@],[@2fe5c@],[@2fe5d@],[@2fe5e@],[@2fe5f@]
         .byte [@2fe60@],[@2fe61@],[@2fe62@],[@2fe63@],[@2fe64@],[@2fe65@],[@2fe66@],[@2fe67@],[@2fe68@],[@2fe69@],[@2fe6a@],[@2fe6b@],[@2fe6c@],[@2fe6d@],[@2fe6e@],[@2fe6f@]
         .byte [@2fe70@],[@2fe71@],[@2fe72@],[@2fe73@],[@2fe74@],[@2fe75@],[@2fe76@],[@2fe77@],[@2fe78@],[@2fe79@],[@2fe7a@],[@2fe7b@],[@2fe7c@],[@2fe7d@],[@2fe7e@],[@2fe7f@]
+        ;; NOTE: $be82 and $be84 patched by attack.s (swap $00 and $1e)
         .byte [@2fe80@],[@2fe81@],[@2fe82@],[@2fe83@],[@2fe84@],[@2fe85@],[@2fe86@],[@2fe87@],[@2fe88@],[@2fe89@],[@2fe8a@],[@2fe8b@],[@2fe8c@],[@2fe8d@],[@2fe8e@],[@2fe8f@]
         .byte [@2fe90@],[@2fe91@],[@2fe92@],[@2fe93@],[@2fe94@],[@2fe95@],[@2fe96@],[@2fe97@],[@2fe98@],[@2fe99@],[@2fe9a@],[@2fe9b@],[@2fe9c@],[@2fe9d@],[@2fe9e@],[@2fe9f@]
         .byte [@2fea0@],[@2fea1@],[@2fea2@],[@2fea3@],[@2fea4@],[@2fea5@],[@2fea6@],[@2fea7@],[@2fea8@],[@2fea9@],[@2feaa@],[@2feab@],[@2feac@],[@2fead@],[@2feae@],[@2feaf@]
@@ -49709,7 +49713,7 @@ UpdateHPDisplayInternal:
         ;; write the update header information to the nametable buffer
         ;; see the comments in WriteNametableDataToPpu for more information
          <@34d1d NametableBufferWriteOffset@>
-         <@34d1f@>
+         <@34d1f@>        ; NOTE: patched by hud.s ($8d1f)
          <@34d21@>
          <@34d24@>
          <@34d26@>
@@ -49791,7 +49795,7 @@ ChargeIndicatorDisplay:
          <@34dab -@> ; $34da1
          <@34dad DisableNMI@>
          <@34db0@>
-         <@34db2@>
+         <@34db2@>        ; NOTE: patched by hud.s ($8db2)
          <@34db4@>
          <@34db7@>
          <@34db9@>
@@ -49903,6 +49907,7 @@ DisplayNumberInternal:
 ;;; The last column is nonzero for 16-bit values.
 .org $8ec5
 NumericDisplays: 
+        ;; NOTE: patched by hud.s ($8ec7, $8ecd, ... $8f1f)
         .byte [@34ec5@],[@34ec6@],[@34ec7@],[@34ec8@],[@34ec9@],[@34eca@] ; 0 Level    -> nt2r25c25
         .byte [@34ecb@],[@34ecc@],[@34ecd@],[@34ece@],[@34ecf@],[@34ed0@] ; 1 Money    -> nt2r26c25
         .byte [@34ed1@],[@34ed2@],[@34ed3@],[@34ed4@],[@34ed5@],[@34ed6@] ; 2 Exp      -> nt2r27c08
@@ -50386,7 +50391,7 @@ StartMonsterDeathAnimation:
 .org $9229
 CheckThunderSwordReaction:
         <@35229 EquippedSword@>
-        <@3522c SWORD_THUNDER@>
+        <@3522c SWORD_THUNDER@>      ; NOTE: patched by attack.s ($922c)
         bne :>rts
         <@35230@>
         bne :>rts
@@ -51625,7 +51630,7 @@ CheckTerrainUnderObject:
         <@35a52@> ; xh
         <@35a54@>
         <@35a55@>
-        <@35a58@>
+        <@35a58@>                    ; NOTE: patched by extendedmap.s ($9a58)
         <@35a5a@>
         <@35a5c@> ; $11 is offset within the page
         <@35a5e@>
@@ -51927,7 +51932,7 @@ _35c03:
          <@35c56 EquippedSword@>
          <@35c59 DataTable_35c66@>
          <@35c5c@> ; Sword's Element
-         <@35c5f SwordStabDamage@>
+         <@35c5f SwordStabDamage@> ; NOTE: patched by attack.s ($9c5f)
          <@35c62@>
          <@35c65@>
          ;; ----
@@ -51962,7 +51967,7 @@ CheckWarriorRing:
         <@35c95 +@> ; $35ca7
         ;; Firing a level 3 shot: spend the MP or decrease the level
          <@35c97 EquippedSword@>
-         <@35c9a SwordMagicCost@>
+         <@35c9a SwordMagicCost@>   ; NOTE: patched by attack.s ($9c9a) _FIX_SWORD_MANA_CHECK
          <@35c9d PlayerMP@>
          <@35ca0 +@> ; $35ca7
           <@35ca2@>
@@ -51982,7 +51987,7 @@ CheckWarriorRing:
         ;; Y <- direction << 1
         <@35cb9@>
         ;; Spawn the sword charge
-        <@35cba AdHocSpawnObject@>
+        <@35cba AdHocSpawnObject@>    ; NOTE: patched by attack.s ($9cba) _FIX_BLIZZARD_SPAWN
         <@35cbd SwordSwingEnd@>
         <@35cbf PlayerSwordChargeAmount@>
         <@35cc2@>
@@ -52941,7 +52946,7 @@ ObjectActionJumpTable:
         .word (ObjectActionJump_7b) ; 7b
         .word (ObjectActionJump_08) ; 7c
         .word (ObjectActionJump_7d) ; 7d - shaking for 16 frames or so btw death and coin
-        .word [@36410:w@]  ; 7e --> custom insect waiting
+        .word [@36410:w@]  ; 7e --> custom insect waiting  ; NOTE: patched by bosses.s ($a410)
         .word (ObjectActionJump_7f) ; 7f
 ;;; --------------------------------
 .org $a414
@@ -55930,7 +55935,7 @@ ObjectActionJump_7d:
 +       <@37a14@>
         <@37a16@>
         <@37a19@>
-        <@37a1c@>
+        <@37a1c@>                     ; NOTE: patched by attack.s ($ba1c) _FIX_COIN_SPRITES
         <@37a1d@>
         <@37a1e@>
         <@37a1f@>
@@ -56267,7 +56272,7 @@ ObjectActionJump_70_06:          ; dyna eye
         <@37c94 _37cd7@>
         <@37c97@>
         <@37c9a@>
-        <@37c9c +@> ; $37cc1
+        <@37c9c +@>                    ; NOTE: patched by enemy.s ($bc9c)
          <@37c9e@>
          <@37ca0@>
         <@37ca2 +@> ; $37cc1
@@ -56350,7 +56355,7 @@ ObjectActionJump_70_08:          ; dyna pod
          <@37d30 +@> ; $37d35
         ;; Once every 8 seconds, if eye wasn't hit, increment 640,x
           <@37d32@>
-+       <@37d35@>
++       <@37d35@>                      ; NOTE: patched by enemy.s ($bd35)
         <@37d36@>
         <@37d37@>
         <@37d38@>
@@ -56372,14 +56377,14 @@ ObjectActionJump_70_08:          ; dyna pod
          bmi :<rts ; $37d40
         <@37d52@>
         <@37d53@> ; Dyna Bubble
-        <@37d55 AdHocSpawnObject@>
+        <@37d55 AdHocSpawnObject@>         ; NOTE: patched by enemy.s ($bd55)
         ;; ----
 DataTable_37d58: 
         .byte [@37d58@],[@37d59@],[@37d5a@],[@37d5b@],[@37d5c@],[@37d5d@],[@37d5e@],[@37d5f@],[@37d60@],[@37d61@],[@37d62@],[@37d63@],[@37d64@],[@37d65@],[@37d66@],[@37d67@]
         ;; ----
 ++      <@37d68@>
         <@37d6a@>
-        bne :<rts ; $37d40
+        bne :<rts                    ; NOTE: patched by enemy.s ($bd6c)
         <@37d6e@>
         <@37d70@>
         <@37d71@>
@@ -56397,7 +56402,7 @@ DataTable_37d58:
         <@37d80 DataTable_37d89@>
         <@37d83@>
         <@37d84@> ; Dyna counter attack
-        <@37d86 AdHocSpawnObject@>
+        <@37d86 AdHocSpawnObject@>             ; NOTE: patched by enemy.s ($bd86)
 ;;; --------------------------------
 .org $bd89
 DataTable_37d89: 
@@ -63362,6 +63367,8 @@ NametablePrecomputedHeaderTable:
         .byte [@3c5a9@],[@3c5aa@],[@3c5ab@],[@3c5ac@],[@3c5ad@] ; 1d
         .byte [@3c5ae@],[@3c5af@],[@3c5b0@],[@3c5b1@],[@3c5b2@] ; 1e
         .byte [@3c5b3@],[@3c5b4@],[@3c5b5@],[@3c5b6@],[@3c5b7@] ; 1f
+        ;; NOTE: $c5b8..$c5c2 patched by attack.s
+        ;; (these warp point locations are cleared for 12th warp anyway)
         .byte [@3c5b8@],[@3c5b9@],[@3c5ba@],[@3c5bb@],[@3c5bc@] ; 20 Leaf warp
         .byte [@3c5bd@],[@3c5be@],[@3c5bf@],[@3c5c0@],[@3c5c1@] ; 21 Brynmaer warp
         .byte [@3c5c2@],[@3c5c3@],[@3c5c4@],[@3c5c5@],[@3c5c6@] ; 22 Oak warp
@@ -64128,15 +64135,15 @@ MainGameModeJumpBank:
 ;;; Normal mode: player is moving on the main map.  This runs nearly every frame.
 .org $cb62
 MainGameModeJump_08_Normal:
-        <@3cb62 ReadControllersWithDirections@>
-        <@3cb65 CheckForPlayerDeath@>
+        <@3cb62 ReadControllersWithDirections@>    ; NOTE: patched by flags.s OR gamepad.s ($cb62)
+        <@3cb65 CheckForPlayerDeath@>              ; NOTE: patched by hud.s ($cb65)
         <@3cb68 CheckPassiveFrameEffects@> ; 3ef55
         <@3cb6b _3cccc@>
         <@3cb6e _3e8f6@>
         <@3cb71@>
         <@3cb73 BankSwitch16k@>
         <@3cb76 DrawAllObjectSpritesInternal@>
-        <@3cb79@>
+        <@3cb79@>                             ; NOTE: patched by collision.s ($cb79)
         <@3cb7b BankSwitch16k@>
         <@3cb7e CheckAllObjectCollisions@>
         <@3cb81 AnimateBackgroundAndRespawn@>
@@ -64152,7 +64159,7 @@ CheckForPlayerDeath:
         <@3cb8f@>
         ;; ----
 CheckForStartMenu:
-        <@3cb90 Ctrl1NewlyPressedAB@>
+        <@3cb90 Ctrl1NewlyPressedAB@>              ; NOTE: patched by gamepad.s ($cb90)
         <@3cb92 BUTTON_START@>
          <@3cb94 CheckForSelectMenu@>
         ;; Trigger the start menu
@@ -64171,7 +64178,7 @@ CheckForStartMenu:
         <@3cbb1 MainGameModeJump_1f_DynaAppears@> ; special code for dyna's room
         ;; ----
 CheckForSelectMenu:
-        <@3cbb4 Ctrl1NewlyPressed@>
+        <@3cbb4 Ctrl1NewlyPressed@>              ; NOTE: patched by gamepad.s ($cbb4)
         <@3cbb6 BUTTON_SELECT@>
          <@3cbb8 CheckForController2Buttons@>
         <@3cbba GAME_MODE_SELECT_MENU@>
@@ -64181,7 +64188,7 @@ CheckForSelectMenu:
         <@3cbc0@>
         ;; ----
 CheckForController2Buttons:
-        <@3cbc1 Ctrl2NewlyPressed@>
+        <@3cbc1 Ctrl2NewlyPressed@>              ; NOTE: patched by gamepad.s ($cbc1)
         <@3cbc3 BUTTON_B@>
         <@3cbc5 MainGameModeJump_04@>
         <@3cbc7 Ctrl1CurrentlyPressed@>
@@ -65001,14 +65008,14 @@ _3d1ff:
         <@3d212 LoadOneObjectDataInternal@>
         <@3d215@>
         <@3d217@>
-        <@3d21a LoadNpcDataForCurrentLocation@>
+        <@3d21a LoadNpcDataForCurrentLocation@>   ; NOTE: patched by dialog.s ($d21a)
 ;;; --------------------------------
 .org $d21d
 DialogFollowupActionJump_11:
         ;; Give an item (from $6a0,y), which is the 2nd byte
         <@3d21d LookingAt@>
         <@3d220@>
-        <@3d223 GrantItemInRegisterA@>
+        <@3d223 GrantItemInRegisterA@>   ; NOTE: patched by dialog.s ($d223)
 DialogFollowupActionJump_03:
         ;; Give an item (from $680,y)
          <@3d225 LookingAt@>
@@ -65050,18 +65057,18 @@ DialogFollowupActionJump_0c:
 .org $d263
 DialogFollowupActionJump_09:
         ;; Talk to Zebu student
-        <@3d263 SFX_TREASURE@>
+        <@3d263 SFX_TREASURE@>   ; NOTE: patched by dialog.s ($d263)
         <@3d265 StartAudioTrack@>
         <@3d268@> ; give 100 gold
         <@3d26a@>
         <@3d26b@>
         <@3d26e@>
         <@3d271 +@> ; $3d276
-         <@3d273@>
+         <@3d273@>   ; NOTE: patched by dialog.s ($d273)
 +       <@3d276@> ; 8000 -> 34000
         <@3d278 BankSwitch8k_8000@>
         <@3d27b@> ; Money
-        <@3d27d DisplayNumberInternal@>
+        <@3d27d DisplayNumberInternal@>   ; NOTE: patched by dialog.s ($d27d)
 ;;; --------------------------------
 .org $d280
 DialogFollowupActionJump_18:
@@ -65125,7 +65132,7 @@ DialogFollowupActionJump_15:
 DialogFollowupActionJump_0a:
         <@3d2f4@>
         <@3d2f6 BankSwitch8k_8000@>
-        <@3d2f9@>
+        <@3d2f9@>   ; NOTE: patched by dialog.s ($d2f9)
         <@3d2fc ReadObjectCoordinatesInto_34_37@>
         <@3d2ff@>
         <@3d301@>
@@ -65605,11 +65612,11 @@ ItemOrTriggerActionJump_09:  ; Spawn Dolphin
          bvs :>rts ; $3d6a7
         <@3d65e@>
          bne :>rts ; $3d6a7
-        <@3d663@>
+        <@3d663@>             ; NOTE: patched by dialog.s ($d663)
         <@3d665 CurrentLocation@>
         <@3d667 LOC_UNDERGROUND_CHANNEL@>
         <@3d669 +@> ; $3d679
-         <@3d66b@>
+         <@3d66b@>             ; NOTE: patched by dialog.s ($d66b)
          <@3d66d LOC_EVIL_SPIRIT_ISLAND_1@>
          <@3d66f +@> ; $3d679
           <@3d671@>
@@ -67651,7 +67658,7 @@ DoLocationSpecificChecks:
         <@3e44a CheckForRidingDolphin@>
         <@3e44d CheckForDwarfChild@>
         <@3e450 CheckForShyronMassacre@>
-        <@3e453@>
+        <@3e453@>                ; NOTE: patched by attack.s ($e453)
         <@3e455@>
         <@3e457@>
         <@3e459@>
@@ -67675,7 +67682,7 @@ DoLocationSpecificChecks:
         <@3e47f@>
         <@3e481 BankSwitch16k@>
         <@3e484@>
-        <@3e486 UpdatePlayerFalling@>
+        <@3e486 UpdatePlayerFalling@>         ; NOTE: patched by hud.s ($e486)
         ;; Clear out the nametable write buffer (note that any
         ;; unfinished writes will be lost).
 +       <@3e489@>
@@ -67918,7 +67925,7 @@ ChangeLocation:
         <@3e632@> ; y is 0 here (set at end of LMD_A)
         <@3e634 StartAudioTrack@> ; destroys y
         <@3e637@>
-        <@3e639@> ; y=1
+        <@3e639@> ; y=1                ; NOTE: patched by extendedmap.s ($e639)
         <@3e63b@>   ; width
         <@3e63e@>
         <@3e63f@> ; y=2
@@ -68176,6 +68183,7 @@ CheckForDwarfChild:
         <@3e7c6 LOC_OAK_MOTHER_HOUSE@>
          beq :>rts ; $3e822
         <@3e7ca LOC_OAK@>
+         ;; NOTE: patched by flags.s ($e7cc) to `bne :<rts`
          <@3e7cc RemoveChildFollowingFlag@> ; if anywhere other than oak
         ;; Check flag 045 rescued child - if set then remove flag
         <@3e7ce@>
@@ -68224,7 +68232,7 @@ RemoveChildFollowingFlag:
 ;;; --------------------------------
 .org $e823
 CheckForShyronMassacre:
-        <@3e823 CurrentLocation@>
+        <@3e823 CurrentLocation@>               ; NOTE: patched by flags.s ($e823)
         <@3e825 LOC_SHYRON@>
          bne :>rts ; $3e844
         ;; Check flag 027 shyron massacre
@@ -68688,7 +68696,7 @@ FindExit:
          <@3eb3b@>
          <@3eb3c@>
          <@3eb3e@>
-         <@3eb40@> ; no exit found
+         <@3eb40@> ; no exit found       ; NOTE: patched by extendedmap.s ($eb40)
           beq :>rts ; $3eb54
          <@3eb44@>
          <@3eb46@>
@@ -68804,7 +68812,7 @@ PrepareNametableStageForVerticalScrollInternal:
         <@3ebe0@> ; $13 <- #$10 or #$11 (see above)
         <@3ebe2 LoadMetatileFlagAlternativesMap@>
         <@3ebe5@> ; need to switch to 2nd map layout page?
-        <@3ebe8 +@> ; $3ebef
+        <@3ebe8 +@> ; $3ebef                    ; NOTE: patched by extendedmap.s ($ebe8)
          <@3ebea@> ; $8000 -> $14000 instead of what it was before
          <@3ebec BankSwitch8k_8000@>
         ;; At this point,
@@ -69440,7 +69448,7 @@ PrepareScreenMapRead:
         ;;   Bank $a000..$bfff: correct bank to read map data from.
         ;;   $10$11: address of top-left of map ($10 is always 0).
         ;;   A: offset into the map for the current tile ($34, $36)
-        <@3ef36@>
+        <@3ef36@>                    ; NOTE: patched by extendedmap.s ($ef36)
          <@3ef37@>
          <@3ef39@>
          <@3ef3b@>
@@ -70048,7 +70056,7 @@ HandleColdBoot:
         <@3f399 BankSwitch16k@>
         <@3f39c AnimateSNKLogo@>
 HandleWarmBoot:
-        <@3f39f ValidateSaveFiles@>
+        <@3f39f ValidateSaveFiles@>        ; NOTE: patched by hud.s ($f39f)
         ;; Replicate the checkpoint directly into 6480..667f
         ;; Except this is incorrect alignment... seems pointless.
         <@3f3a2@>
@@ -71018,7 +71026,7 @@ _3fe17:
 ;;; Outputs for controller 2 are one later ($44, $46, ..., $4c)
 .org $fe80
 ReadControllersWithDirections:
-        <@3fe80@>
+        <@3fe80@>                      ; NOTE: patched by gamepad.s ($fe80)
 @loop:   <@3fe82 ReadControllerX@>
          <@3fe85@>  ; result of controller read
          <@3fe87@> ; dpad only
@@ -71060,7 +71068,7 @@ ReadControllersWithDirections:
          <@3fec7@>
          <@3fec8@>
          <@3feca@>
-         <@3fecc@>
+         <@3fecc@>                       ; NOTE: patched by gamepad.s ($fecc)
         <@3fecd @loop@> ; $3fe82
         <@3fecf@>
 ;;; --------------------------------
@@ -71081,7 +71089,7 @@ DirectionsByDpadBits:
 ;;;   $44, $46, $4a, $4c - same as above but for controller 2
 .org $fee0
 ReadControllersWithRepeat:
-        <@3fee0@>
+        <@3fee0@>                     ; NOTE: patched by gamepad.s ($fee0)
 -       <@3fee2 ReadControllerX@>
         <@3fee5@>
         <@3fee7@> ; A <- bitmask of previously-unpressed btns
@@ -71108,7 +71116,7 @@ ReadControllersWithRepeat:
           <@3ff0d@>
 +       <@3ff0f@>
         <@3ff11@>
-        <@3ff13@>
+        <@3ff13@>                      ; NOTE: patched by gamepad.s ($ff13)
         <@3ff14 -@> ; $3fee2
         <@3ff16@>
         ;; ----

@@ -77,14 +77,14 @@ SetFlagYA:
 ;;; are irrelevant, since it only changes pal3, which seems to be unused.
 ;;; So stop doing that so that peoples' colors don't change.
 .org $e823
-  lda $6c   ; check current location
-  cmp #$8c  ; is it shyron?
-  bne +     ; if not, then return
-  lda $6484 ; check flag 027
-  bpl +     ; if it's unset then return
+  lda CurrentLocation    ; check current location
+  cmp #LOC_SHYRON        ; is it shyron?
+    bne :>rts            ; if not, then return
+  lda $6484              ; check flag 027
+    bpl :>rts            ; if it's unset then return
   lda #$51
   sta $07f4
   sta $07f5
-+ rts
+  rts
   ;; and we save 14 bytes, to boot.
 FREE_UNTIL $e845

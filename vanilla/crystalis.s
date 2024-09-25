@@ -21286,7 +21286,7 @@ TelepathyResults:
 ;;; --------------------------------
 .org $826f
 ItemGet:
--        <@1c26f@>
+-        <@1c26f@>                                   ; NOTE: patched by itemget.s ($826f)
          <@1c271@>
          <@1c272@>
          <@1c274@>
@@ -21297,7 +21297,7 @@ ItemGet:
          <@1c27d ItemGetDataTable+1@> ; $1db01
          <@1c280@>
          <@1c282 ItemGetTable@>
-         <@1c285@> ; $29 <- the actual item ID
+         <@1c285@> ; $29 <- the actual item ID       ; NOTE: patched by itemget.s ($8285)
          <@1c287 ItemGet_PickSlotAndAdd@>
          <@1c28a@>
          <@1c28c +@> ; $1c28f
@@ -21311,14 +21311,21 @@ ItemGet:
          <@1c291 PrepareMessageFrom24y@>
          ;; 
          <@1c294 SetOrClearFlagsFromBytePair_24y@>
-         <@1c297@> ; should always be ff ???
+         ;; The following code is mostly dead because there is no item
+         ;; chaining.  SetOrClearFlags repeats for multiple flags, and
+         ;; after the flags is always $ff, which branches to the rts.
+         ;; In theory, we could put something other than $ff at the
+         ;; end of the ItemGetData - if this number is positive then
+         ;; it seems as though it would point to a second index in the
+         ;; same table to chain it onto.
+         <@1c297@>                              ; NOTE: patched by itemget.s ($8297)
          bmi :>rts ; $1c29f
          <@1c29b@>        ; DEAD???
-        <@1c29d -@> ; $1c26f  ; DEAD???
+        <@1c29d -@> ; $1c26f  ; DEAD???  ; NOTE: patched by itemget.s ($829e, but this is $829d)
         <@1c29f@>
 ;;; --------------------------------
 .org $82a0
-ItemGet_PickSlotAndAdd:
+ItemGet_PickSlotAndAdd:         ; NOTE: overridden (prepended) by itemget.s
         ;; Inputs:
         ;;   $23 is is itemget slot | $80.
         ;;   $24$25 points to one of the tables starting at $1dde6, via $1db00
@@ -21330,7 +21337,7 @@ ItemGet_PickSlotAndAdd:
         <@1c2a4@>
         <@1c2a5@>
         <@1c2a6@> ; [1]: Number of slots to try
-        <@1c2a8@>
+        <@1c2a8@>                     ; NOTE: patched by itemget.s ($82a8)
         <@1c2a9 ItemGet_FindOpenSlot@>
 ItemGet_AddWeaponBallOrBracelet:
         <@1c2ab@>
@@ -21359,7 +21366,7 @@ ItemGet_Crystalis:
 ;;; --------------------------------
 .org $82de
 ItemGet_WeaponBallOrBracelet_NotCrystalis:
-        <@1c2de@>
+        <@1c2de@>                     ; NOTE: patched by itemget.s ($82de)
         <@1c2e0@>
         <@1c2e3@>
         <@1c2e5 +@> ; $1c2f4
@@ -21873,7 +21880,7 @@ _1c5bf:
         ;; Returns zero in $20 if it should not load.
         <@1c5bf@> ; assume no spawn until proven otherwise
         <@1c5c1@>
-        <@1c5c3@>
+        <@1c5c3@>                 ; NOTE: patched by itemget.s ($85c3)
         <@1c5c4@>
         <@1c5c6@>
         <@1c5c7@>
@@ -30088,7 +30095,7 @@ _2035e:
         <@2036c@>
         <@2036e@>
         <@20371@>
-        <@20372 Inventory_ItemData@>
+        <@20372 Inventory_ItemData@>        ; NOTE: patched by inventory.s ($8372)
         <@20375@>
         <@20377 ++@> ; $20392
          <@20379 SFX_CURSOR_ERROR@>
@@ -30177,7 +30184,7 @@ _203db:
          <@2042d@> ; "$"
          <@2042f ShowMenuMessage@>
 +       <@20432@>
-        <@20434@>
+        <@20434@>        ; NOTE: patched by inventory.s ($8434)
         <@20436@>
         <@20439@>
         <@2043b@>
@@ -30311,7 +30318,7 @@ Menu_YesNoXPositions:
 ;;; --------------------------------
 .org $8534
 Inventory_SortRows:
-        <@20534@>
+        <@20534@>        ; NOTE: patched by inventory.s ($8534)
         <@20536@>
         ;; sort the row number in ($2e), loop until all following rows sorted
 --      <@20538@>
@@ -30370,7 +30377,7 @@ Inventory_SortRows:
         <@2059d@>
 ;;; --------------------------------
 .org $859e
-Inventory_RowWidths:
+Inventory_RowWidths:              ; NOTE: patched by inventory.s ($859e)
         .byte [@2059e@],[@2059f@],[@205a0@],[@205a1@],[@205a2@],[@205a3@],[@205a4@],[@205a5@]
 Inventory_RowStarts:
         .byte [@205a6@],[@205a7@],[@205a8@],[@205a9@],[@205aa@],[@205ab@],[@205ac@],[@205ad@]
@@ -32953,14 +32960,14 @@ LoadGame:
          <@21bc6 _2fc03@>
          <@21bc9@>
          <@21bcb@>
-         <@21bce _21c7a@>
+         <@21bce _21c7a@>            ; NOTE: patched by inventory.s ($9bce)
         ;; ----
 +       <@21bd1@>
         <@21bd3 CopyThreePagesOfBytesByLookup@>
         <@21bd6 _2fc03@>
         <@21bd9@>
         <@21bdb@>
-        <@21bde _21c7a@>
+        <@21bde _21c7a@>             ; NOTE: patched by inventory.s ($9bde)
 ;;; --------------------------------
 .org $9be1
 _21be1:
@@ -62527,7 +62534,7 @@ UpdateEquipmentAndStatus:
         <@3c00a@>
          <@3c00b@> ; 8000 -> 34000
          <@3c00d BankSwitch8k_8000@>
-         <@3c010 PlayerLevel@>
+         <@3c010 PlayerLevel@>             ; NOTE: patched by inventory.s ($c010)
          <@3c013 EquippedPassiveItem@>
          <@3c016 ITEM_POWER_RING@>
          <@3c018 +@> ; $3c01b
@@ -62633,7 +62640,7 @@ UpdateEquipmentAndStatus:
            <@3c0ef DisplayNumberInternal@>
            <@3c0f2 UpdateHPDisplayInternal@>
            <@3c0f5 WaitForNametableFlush@>
-          <@3c0f8@>
+          <@3c0f8@>                         ; NOTE: patched by inventory.s ($c0f8)
           <@3c0f9 BankSwitch8k_a000@>
          <@3c0fc@>
          <@3c0fd BankSwitch8k_8000@>
@@ -63929,7 +63936,7 @@ MainLoopJump_08_ContinueGame:
         <@3c9f5 MainLoopMode@>
         <@3c9f7 GameMode@>
         <@3c9f9@>
-        <@3c9fb@>
+        <@3c9fb@>                 ; NOTE: patched by inventory.s ($c9fb)
         <@3c9fe@>
 ;;; --------------------------------
 ;;; Loads objects in slots 0..3 from entries 6, 4, 5, and a, respectively.
@@ -65015,13 +65022,13 @@ DialogFollowupActionJump_11:
         ;; Give an item (from $6a0,y), which is the 2nd byte
         <@3d21d LookingAt@>
         <@3d220@>
-        <@3d223 GrantItemInRegisterA@>   ; NOTE: patched by dialog.s ($d223)
+        <@3d223 GrantItemInRegisterA@>            ; NOTE: patched by dialog.s ($d223)
 DialogFollowupActionJump_03:
         ;; Give an item (from $680,y)
          <@3d225 LookingAt@>
          <@3d228@>
 GrantItemInRegisterA:
-        <@3d22b@>
+        <@3d22b@>                           ; NOTE: patched by itemget.s ($d22b)
         <@3d22e LookingAt@>
         <@3d231@>
          <@3d232@>
@@ -65273,15 +65280,15 @@ MainGameModeJump_07_TriggerSquareOrTreasureChest:
         <@3d3ee@>
         <@3d3f1@>
         <@3d3f4@>
-        <@3d3f6 +@> ; $3d3fb
+        <@3d3f6 +@> ; $3d3fb                     ; NOTE: patched by itemget.s ($d3f6)
          <@3d3f8 ActivateTriggerSquare@> ; $3d539
         ;; ----
 HandleTreasureChest:
-+       <@3d3fb@>
++       <@3d3fb@>                           ; NOTE: patched by itemget.s ($d3fb)
          <@3d3fd SpawnMimic@>
         <@3d3ff@> ; ItemGet
         <@3d401 HandleItemOrTrigger@> ; $3d834 ; ultimately calls ItemGet
-        <@3d404@>
+        <@3d404@>                            ; NOTE: patched by itemget.s ($d404)
         <@3d406 HandleTreasureChest_TooManyItems@>
         <@3d408 _3d9d8@>
         <@3d40b@>
@@ -65317,7 +65324,7 @@ HandleTreasureChest:
         <@3d450@>
         <@3d453@>
         <@3d455@>
-        <@3d458 ExecuteItemOrTriggerAction@> ; ItemGet message action
+        <@3d458 ExecuteItemOrTriggerAction@>      ; NOTE: patched by itemget.s ($d458)
 ;;; --------------------------------
         <@3d45b@>
 ;;; --------------------------------
@@ -65334,7 +65341,7 @@ DataTable_3d45c:
 .org $d47c
 HandleTreasureChest_TooManyItems:
         ;; Only give a message every 16 frames.
-        <@3d47c@>
+        <@3d47c@>                     ; NOTE: patched by itemget.s ($d47c)
         <@3d47e@>
         bne :<rts ; $3d45b
         <@3d482 _3cc2e@>
@@ -66020,7 +66027,7 @@ MainGameModeJump_12_Inventory:
         <@3d91b@>
         <@3d91d +@> ; $3d930
 _3d91f:
-         <@3d91f UpdateEquipmentAndStatus@>
+         <@3d91f UpdateEquipmentAndStatus@>     ; NOTE: patched by inventory.s ($d91f)
          <@3d922 DrawAllObjectSprites@>
          <@3d925@>
          <@3d927 BankSwitch8k_8000@>
@@ -66057,7 +66064,7 @@ _3d91f:
         <@3d969 PlayerLevel@>
         <@3d96c@>
         <@3d96e@>
-        <@3d971 UpdateEquipmentAndStatus@>
+        <@3d971 UpdateEquipmentAndStatus@>        ; NOTE: patched by inventory.s ($d971)
         <@3d974@>
         <@3d976 BankSwitch16k@>
         <@3d979 InitializeStatusBarNametable@>
@@ -66279,7 +66286,7 @@ _3dafc:
 ;;; If a consumable item or quest item is selected, set EquippedConsumableItem.
 .org $db0e
 SetEquippedConsumableItem:
-        <@3db0e@>
+        <@3db0e@>                    ; NOTE: patched by inventory.s ($db0e)
         <@3db11 +@> ; $3db19
          <@3db13@>
          <@3db16 ++@> ; $3db21
@@ -67540,7 +67547,7 @@ NpcDataJump_2_TreasureChestOrTrigger:         ; Called from $3e215
           <@3e399@> ; don't spawn ($4a0,x <- 0) if zero
 +        <@3e39c MaybeRecordAlternativePatternBank@>
         ;; Check for the three invisible chests
-         <@3e39f@>
+         <@3e39f@>                     ; NOTE: patched by itemget.s ($e39f)
          <@3e3a1 INV_STATUE_OF_ONYX@>
          <@3e3a3 +@> ; $3e3b0
           <@3e3a5 INV_KIRISA_PLANT@>
@@ -69592,7 +69599,7 @@ CheckPassiveFrameEffects:
         <@3f020 ITEM_DEOS_PENDANT@>
           <@3f022 @CheckPsychoArmor@> ; $3f03e
         <@3f024 Ctrl1CurrentDirection@> ; $ff if still
-          <@3f026 @CheckPsychoArmor@> ; $3f03e
+          <@3f026 @CheckPsychoArmor@> ; $3f03e        ; NOTE: patched by inventory.s ($f026)
         <@3f028 GlobalCounter@>
         <@3f02a@>
           <@3f02c @CheckPsychoArmor@> ; $3f03e
@@ -70215,6 +70222,7 @@ KillSomeCycles:
 ;;; next ScreenMode action.
 .org $f455
 VerticalScreenWrapHandler:
+                 ;; NOTE: patched by irq.s ($f455)
            <@3f455@>          ; X = 9 always?
            <@3f458 KillSomeCycles@> ; $3f451
            <@3f45b PPUSTATUS@> ; reset address latch
@@ -70291,7 +70299,7 @@ HandleStatusBarAndNextFrame:      ; IRQ callback 01
 MessageBoxTopHandler:
         <@3f4e5@>
         <@3f4e8 KillSomeCycles@>
-        <@3f4eb@>
+        <@3f4eb@>                 ; NOTE: patched by irq.s ($f4eb)
         <@3f4ec@>
         <@3f4ed@>
         <@3f4ee@>
@@ -70769,11 +70777,11 @@ MaybeUpdateMusic:
         <@3f87a@>
         <@3f87c BankSwitch8k_8000@>
         <@3f87f BANKSELECT@>
-        <@3f882@>
+        <@3f882@>                     ; NOTE: patched by irq.s ($f882)
 ;;; --------------------------------
 ;;; Writes $07f{0..5} as the bank numbers for CHR ROM.
 .org $f883
-SelectCHRRomBanks:
+SelectCHRRomBanks:              ; NOTE: rewritten in irq.s
         <@3f883@>
         <@3f885 BANKSELECT@>
         <@3f888@>

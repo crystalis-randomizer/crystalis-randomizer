@@ -3,20 +3,6 @@
 
 ;;; Routines relating to random number generation.
 
-;;; Store global attempted step counter in $32 as a semi-prng
-.segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
-.reloc
-UpdateGlobalStepCounter:
-  inc $32
-  lda #$00
-  sta $25
-  rts
-.org $98d7
-  nop
-  jsr UpdateGlobalStepCounter
-.assert * = $98db
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .segment "1a"

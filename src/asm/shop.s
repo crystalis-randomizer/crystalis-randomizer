@@ -17,9 +17,11 @@
 
 .ifdef _NORMALIZE_SHOP_PRICES
 
-;;; Initialize tool shop
+;;; =====================
+;;; TODO - why is this needed? it should get rewritten automatically?
 .org $98ee
   lda ToolShopIdTable,x
+;;; =====================
 
 .org $98ff
   clc
@@ -30,19 +32,17 @@
 FREE_UNTIL $9912
 
 ;;; Initialize armor shop
-.org $9895
-  lda ArmorShopIdTable,x ; should be unchanged, but just in case...
-
 .org $98a6
   tax
   jsr CopyShopPrices
   jmp PostInitializeShop
 FREE_UNTIL $98b6
 
-.reloc
+.reloc                          ; smudge from $21f96 to $21f9a
 OVERRIDE
 ShopItemHorizontalPositions:
-  .byte 8,13,18,23
+  .byte [@21f96:d@],[@21f97:d@],[@21f98:d@],[@21f99:d@]
+;;; smudge off
 
 ;;; Initialize inn price
 .org $95cb
@@ -277,6 +277,6 @@ Multiply32Bit:
 ;;; ROM still overwrites this data (since it can still be randomized), so we
 ;;; still need to reserve it.
 .org $9da4
-.res 264
+.res 264 ;; TODO - we should be able to .reloc in the rom and just import it here?
 
 .endif ; _NORMALIZE_SHOP_PRICES

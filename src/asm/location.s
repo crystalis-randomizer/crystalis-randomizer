@@ -81,9 +81,9 @@ LocationChangePreSpawnHook:
 ;;; Triggers are difficult to use, however, and we don't really
 ;;; have any other use cases for now, so we'll go the easy route.
 
-.import TownWarpTable
-.org $dc8c
-  lda TownWarpTable,y
+;; .import TownWarpTable
+;; .org $dc8c
+;;   lda TownWarpTable,y
 
 .ifdef _TWELFTH_WARP_POINT
 .define FIRST_WARP_POINT $f4
@@ -148,13 +148,15 @@ SetWarpFlagForLocation:
 .endif
 
 .ifdef _ALLOW_TELEPORT_OUT_OF_BOSS
-.org $db31
-  .byte $00   ; don't jump
+.org $db30
+  nop         ; don't jump
+  nop
 .endif
 
 .ifdef _ALLOW_TELEPORT_OUT_OF_TOWER
-.org $db39
-  .byte $00   ; don't jump away to prevent warp, just goto next line
+.org $db38
+  nop         ; don't jump away to prevent warp, just goto next line
+  nop
 
 ;; Make sure the down stair always spawns outside Mesia's room
 .pushseg "1b", "fe", "ff"

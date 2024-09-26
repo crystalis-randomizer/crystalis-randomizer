@@ -54,25 +54,179 @@ CheckForLowHpMp:
 ;;; also the only one that does not run with GameMode == #$06.  The fix
 ;;; is simple: don't set the checkpoint in GameMode_06.
 
-.org $bbd5
-;;; Space freed from unused "revert change magic" routine.  We specify
-;;; this directly so that we can use a branch to MaybeSetCheckpointActual
-;;; and thus save 3 bytes.
-FixWarpBootsReuseGlitch:
-  lda $41  ; GameMode
-  cmp #$06 ; item use
-  bne MaybeSetCheckpointActual
-  rts
-FREE_UNTIL $bc00
+FREE "17" [$bbd5, $bcf7)        ; free space from moved routines
 
-.ifdef _DISABLE_WARP_BOOTS_REUSE
-.org $bc00
-.assert * = MaybeSetCheckpoint
-  ;; Normally this just jumps to MaybeSetCheckpointActual, which is kind
-  ;; of pointless, but it provides a convenient point of indirection for
-  ;; us to use here.
-  jmp FixWarpBootsReuseGlitch
-.endif
+;;; --------------------------------
+.reloc                          ; smudge from $2fc09 to $2fc8e
+OVERRIDE
+MaybeSetCheckpoint:
+OVERRIDE
+MaybeSetCheckpointIndirected:
+    .ifdef _DISABLE_WARP_BOOTS_REUSE ; smudge off
+        lda GameMode
+        cmp #GAME_MODE_ITEM_USE ; #$06
+        bne +
+          rts                   ; don't set checkpoint during item use
+    .endif                           ; smudge on
++       <@2fc09@>
+         <@2fc0a@>
+         <@2fc0b@>
+          <@2fc0c@>
+          <@2fc0d@>
+           <@2fc0e PlayerStatus@>
+           <@2fc11@>
+            <@2fc12@>
+            <@2fc14 PlayerStatus@>
+            <@2fc17@>
+-            <@2fc19@>
+             <@2fc1b@>
+             <@2fc1e@>
+             <@2fc1f@>
+            <@2fc21 -@> ; $2fc19
+            <@2fc23 SetCarryIfCheckpoint@>
+            <@2fc26 @loop2@> ; $2fc65
+             <@2fc28@>
+             <@2fc2a@>
+-             <@2fc2b@>
+              <@2fc2e@>
+              <@2fc31@>
+              <@2fc34@>
+             <@2fc35 -@> ; $2fc2b
+             <@2fc37 StageGameDataForSave_7df0@>
+             <@2fc3a@>
+             <@2fc3c@>
+@loop1:
+              <@2fc3e@>
+              <@2fc40@>
+              <@2fc41@>
+              <@2fc43@>
+              <@2fc44@>
+              <@2fc45@>
+              <@2fc47@>
+              <@2fc48@>
+-              <@2fc4a CopyMemoryToCheckpointTable@>
+               <@2fc4d@>
+               <@2fc4f@>
+               <@2fc50@>
+               <@2fc51@>
+              <@2fc53 -@> ; $2fc4a
+              <@2fc55 CopyBytes@>
+              <@2fc58@>
+              <@2fc5a@>
+              <@2fc5c@>
+             <@2fc5e @loop1@> ; $2fc3e
+             <@2fc60 ComputeChecksumForCheckpoint@> ; compute checksum => 70f4
+        ;; Copy checkpoint from main location to backup
+             <@2fc63@>
+@loop2:
+              <@2fc65@>
+              <@2fc68@>
+              <@2fc6b@>
+              <@2fc6e@>
+              <@2fc71@>
+              <@2fc74@>
+              <@2fc77@>
+            <@2fc78 @loop2@> ; $2fc65
+-            <@2fc7a@>
+             <@2fc7d@>
+             <@2fc7f@>
+             <@2fc80@>
+            <@2fc82 -@> ; $2fc7a
+           <@2fc84@>
+           <@2fc85 PlayerStatus@>
+          <@2fc88@>
+          <@2fc89@>
+         <@2fc8a@>
+         <@2fc8b@>
+        <@2fc8c@>
+        <@2fc8d@>
+
+;;; --------------------------------
+.reloc                          ; smudge from $2fc8e to $2fcda
+OVERRIDE
+CopyCheckpointToMemory:
+OVERRIDE
+CopyCheckpointToMemoryIndirected:
+        ;; Back up AXY and $10..$30 (onto stack and $6000)
+        <@2fc8e@>
+         <@2fc8f@>
+         <@2fc90@>
+          <@2fc91@>
+          <@2fc92@>
+           <@2fc93@>
+-           <@2fc95@>
+            <@2fc97@>
+            <@2fc9a@>
+            <@2fc9b@>
+           <@2fc9d -@> ; $2fc95
+           ;; Copy checkpoint to memory by iterating over the copy table
+           <@2fc9f@>             
+           <@2fca1@>              ; $17 <- 0
+@loop:
+            <@2fca3@>
+            <@2fca5@>
+            <@2fca6@>
+            <@2fca8@>
+            <@2fca9@>
+            <@2fcaa@>
+            <@2fcac@>                 ; y <- 6 * $17
+            ;; Load 6 bytes from the copy table (src, dest, len) into $10..$15
+            <@2fcad@>
+-            <@2fcaf CopyCheckpointToMemoryTable@>
+             <@2fcb2@>
+             <@2fcb4@>
+             <@2fcb5@>
+             <@2fcb6@>
+            <@2fcb8 -@> ; $2fcaf
+            <@2fcba CopyBytes@>
+            <@2fcbd@>
+            <@2fcbf@>
+            <@2fcc1@>
+           <@2fcc3 @loop@> ; $2fca3
+           <@2fcc5 CopyExtraStateFromCheckpoint@>
+           ;; Restore AXY and $10..$30
+           <@2fcc8@>
+-           <@2fcca@>
+            <@2fccd@>
+            <@2fccf@>
+            <@2fcd0@>
+           <@2fcd2 -@> ; $2fcca
+          <@2fcd4@>
+          <@2fcd5@>
+         <@2fcd6@>
+         <@2fcd7@>
+        <@2fcd8@>
+        <@2fcd9@>
+
+;;; --------------------------------
+;;; This copies the checkpoint into memory and then sets the game mode
+;;; to CHANGE_LOCATION, which loads all the assets for the correct map.
+;;; It sets the entrance to $ff, which triggers ExitTypeJump_7 to not
+;;; actually set the player's location.
+.reloc                          ; smudge from $2fcda to $2fcf7
+OVERRIDE
+CopyCheckpointToMemoryForContinue:
+OVERRIDE
+CopyCheckpointToMemoryForContinueIndirected:
+        ;; This looks like it's involved in restoring saved games
+        <@2fcda CopyCheckpointToMemory@> ; 2fc8e
+        ;; Copy 7e00..7fff => 6480..667f - this seems redundant with
+        ;; the previous call, which has already copied this?
+        <@2fcdd@>
+-        <@2fcdf@>
+         <@2fce2@>
+         <@2fce5@>
+         <@2fce8@>
+         <@2fceb@>
+        <@2fcec -@> ; $2fcdf
+        ;; Finally set entrance to $ff and set game mode.
+        <@2fcee@>
+        <@2fcf0@>
+        <@2fcf2 GAME_MODE_CHANGE_LOCATION@>
+        <@2fcf4 GameMode@>
+        <@2fcf6@>
+;;; --------------------------------
+;;; smudge off
 
 
 .segment "fe", "ff"

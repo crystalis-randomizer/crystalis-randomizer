@@ -29853,7 +29853,7 @@ InventoryMenu_HandleControllerInput:
         <@201b9@> ; (item name)
         <@201bb ShowMenuMessage@>
         <@201be Inventory_ReadCurrentHoveredItem@>
-        <@201c1@>
+        <@201c1@>                                   ; NOTE: patched by shop.s ($81c1)
         <@201c2@>
         <@201c3 PawnShopPrices@>
         <@201c6 ShopMenu_CurrentItemPrice@>
@@ -30253,7 +30253,7 @@ _2047b:
 +       <@204c0@>
         <@204c1 ShowMenuMessage@> ; "$" in diff spots
         <@204c4 Inventory_ReadCurrentHoveredItem@>
-        <@204c7@>
+        <@204c7@>                                   ; NOTE: patched by shop.s ($84c7)
         <@204c8@>
         <@204c9 PawnShopPrices@>
         <@204cc ShopMenu_CurrentItemPrice@>
@@ -30472,7 +30472,7 @@ DisplayNumberInShop:
 .org $8631
 _20631:
         <@20631 Inventory_ReadCurrentHoveredItem@>
-        <@20634@>
+        <@20634@>                                   ; NOTE: patched by shop.s ($8634)
         <@20635@>
         <@20636@>
         <@20637 PawnShopPrices@>
@@ -32158,7 +32158,7 @@ _2159c:
         <@215c3 ShowMenuMessage@>
         <@215c6@> ; "YES NO"
         <@215c8 ShowMenuMessage@>
-        <@215cb@>
+        <@215cb@>               ; NOTE: patched by shop.s ($95cb)
         <@215ce@>
         <@215cf@>
         <@215d0 InnPrices@>
@@ -32433,7 +32433,7 @@ Shop_UpdatePrice:
         <@2180a ShowMenuMessage@>
         <@2180d@> ; "$"
         <@2180f ShowMenuMessage@>
-        <@21812 Shop_Main_Loop@>
+        <@21812 Shop_Main_Loop@>      ; NOTE: patched by shop.s ($9812)
 ;;; --------------------------------
 .org $9815
 Shop_UpdateSelectionSprite:
@@ -32519,7 +32519,7 @@ InitializeArmorShop:
         <@218a1@>
         <@218a4@>
         <@218a5@>
-        <@218a6@>
+        <@218a6@>                     ; NOTE: patched by shop.s ($98a6)
         <@218a7@>
         <@218a8@>
 -        <@218aa ArmorShopPriceTable@> ; ArmorPriceTable
@@ -32562,7 +32562,7 @@ InitializeToolShop:
         <@218ea@>
         <@218eb@>
         <@218ec@>
--        <@218ee ToolShopIdTable@> ; ToolShopItemTable
+-        <@218ee ToolShopIdTable@>      ; NOTE: patched by shop.s ($98ee)
          <@218f1@>  ; y = 0..3
          <@218f4@>
          <@218f5@>
@@ -32571,7 +32571,7 @@ InitializeToolShop:
         <@218fa@>
         <@218fd@>
         <@218fe@>
-        <@218ff@>
+        <@218ff@>                         ; NOTE: patched by shop.s ($98ff)
         <@21900@>
         <@21901@>
 -        <@21903 ToolShopPriceTable@> ; ToolShopPriceTable
@@ -32617,7 +32617,7 @@ _21912:
 ;;; --------------------------------
 .org $9953
 FindCurrentShopIndex:
-        <@21953@>
+        <@21953@>                           ; NOTE: patched by shop.s ($9953)
         <@21955@>
 -        <@21958 ShopLocations@>
          <@2195b +@> ; $21965
@@ -32957,14 +32957,14 @@ LoadGame:
         <@21bbf +@> ; $21bd1
          <@21bc1@>
          <@21bc3 CopyThreePagesOfBytesByLookup@>
-         <@21bc6 _2fc03@>
+         <@21bc6 CopyCheckpointToMemoryIndirected@> ; 2fc03
          <@21bc9@>
          <@21bcb@>
          <@21bce _21c7a@>            ; NOTE: patched by inventory.s ($9bce)
         ;; ----
 +       <@21bd1@>
         <@21bd3 CopyThreePagesOfBytesByLookup@>
-        <@21bd6 _2fc03@>
+        <@21bd6 CopyCheckpointToMemoryIndirected@> ; 2fc03
         <@21bd9@>
         <@21bdb@>
         <@21bde _21c7a@>             ; NOTE: patched by inventory.s ($9bde)
@@ -33021,7 +33021,7 @@ SaveGame:
         <@21c44@>
         <@21c47@>
         <@21c49 +@> ; $21c64
-         <@21c4b MaybeSetCheckpoint@>
+         <@21c4b MaybeSetCheckpointIndirected@>
          <@21c4e@>
          <@21c50 CopyThreePagesOfBytesByLookup@>
          <@21c53@>
@@ -33031,7 +33031,7 @@ SaveGame:
          <@21c5e@>
          <@21c61 _21c7a@>
 ;;; --------------------------------
-+       <@21c64 MaybeSetCheckpoint@>
++       <@21c64 MaybeSetCheckpointIndirected@>
         <@21c67@>
         <@21c69 CopyThreePagesOfBytesByLookup@>
         <@21c6c@>
@@ -33217,7 +33217,7 @@ DataTable_21da0:
 DataTable_21da2:
         .byte [@21da2@],[@21da3@]
 ;;; --------------------------------
-.org $9da4
+.org $9da4                      ; NOTE: reserved in shop.s, written by rom/shop.ts
 ArmorShopIdTable:
         .byte [@21da4@],[@21da5@],[@21da6@],[@21da7@]
         .byte [@21da8@],[@21da9@],[@21daa@],[@21dab@]
@@ -33463,7 +33463,7 @@ ShopIndices:
         .byte [@21f95@]
 ;;; --------------------------------
 .org $9f96
-ShopItemHorizontalPositions:
+ShopItemHorizontalPositions:    ; NOTE: rewritten by shop.s
         .byte [@21f96@],[@21f97@],[@21f98@],[@21f99@]
 ;;; --------------------------------
         ;; UNUSED?
@@ -39273,13 +39273,13 @@ DataTable_277c7_03:
 .org $b900
 MainGameModeJump_03_DeathAnimation:
         <@27900 PlayerStatus@>
-        <@27903@>
+        <@27903@>                        ; NOTE: patched by playerdeath.s ($b903)
         <@27905 PlayerStatus@>
         <@27908 UpdateEquipmentAndStatus@>
         <@2790b@>
         <@2790d@>
         <@27910 ScreenMode@>
-        <@27912 EquippedConsumableItem@>
+        <@27912 EquippedConsumableItem@>      ; NOTE: patched by playerdeath.s ($b912)
         <@27915 ITEM_OPEL_STATUE@>
         <@27917 +@> ; $2791c
          <@27919 ActivateOpelStatue@>
@@ -39287,7 +39287,7 @@ MainGameModeJump_03_DeathAnimation:
 .org $b91c
 PlayerDeath:
 +       <@2791c@>
-        <@2791e StartAudioTrack@>
+        <@2791e StartAudioTrack@>             ; NOTE: patched by playerdeath.s ($b91e)
         <@27921@>
         <@27923@>
         <@27926@>
@@ -45478,11 +45478,11 @@ Message_21_02:
         .byte     [@2fbc7@],[@2fbc8@],[@2fbc9@],[@2fbca@],[@2fbcb:2@],[@2fbcd@],[@2fbce@],[@2fbcf:1@],[@2fbd0@],[@2fbd1@],[@2fbd2@]
         .byte [@2fbd3@],[@2fbd4@]
 ;;; --------------------------------
-;;; NOTE: This whole block appears to be unused (down to $2fc00)
+;;; NOTE: This whole block is unused (down to $2fc00)
 .org $bbd5
 RevertChangeMagic:
         ;; Remove the status bits used by change magic
-        <@2fbd5 PlayerStatus@>
+        <@2fbd5 PlayerStatus@>          ; NOTE: patched by savegame.s ($bbd5)
         <@2fbd8@>
         <@2fbda PlayerStatus@>
         ;; Play the revert sound
@@ -45503,19 +45503,19 @@ RevertChangeMagic:
         .byte [@2fbff@]
 ;;; --------------------------------
 .org $bc00
-MaybeSetCheckpoint:
-        <@2fc00 MaybeSetCheckpointActual@>
+MaybeSetCheckpointIndirected:           ; NOTE: rewritten by savegame.s
+        <@2fc00 MaybeSetCheckpoint@>
 ;;; --------------------------------
 .org $bc03
-_2fc03:
-        <@2fc03 _2fc8e@>
+CopyCheckpointToMemoryIndirected:       ; NOTE: rewritten by savegame.s
+        <@2fc03 CopyCheckpointToMemory@> ; 2fc8e
 ;;; --------------------------------
 .org $bc06
-_2fc06:
-        <@2fc06 _2fcda@>
+CopyCheckpointToMemoryForContinueIndirected:  ; NOTE: rewritten by savegame.s
+        <@2fc06 CopyCheckpointToMemoryForContinue@> ; 2fcda
 ;;; --------------------------------
 .org $bc09
-MaybeSetCheckpointActual:
+MaybeSetCheckpoint:                     ; NOTE: rewritten by savegame.s
         <@2fc09@>
          <@2fc0a@>
          <@2fc0b@>
@@ -45532,7 +45532,7 @@ MaybeSetCheckpointActual:
              <@2fc1f@>
             <@2fc21 -@> ; $2fc19
             <@2fc23 SetCarryIfCheckpoint@>
-            <@2fc26 +@> ; $2fc65
+            <@2fc26 @loop2@> ; $2fc65
              <@2fc28@>
              <@2fc2a@>
 -             <@2fc2b@>
@@ -45543,7 +45543,8 @@ MaybeSetCheckpointActual:
              <@2fc37 StageGameDataForSave_7df0@>
              <@2fc3a@>
              <@2fc3c@>
---            <@2fc3e@>
+@loop1:
+              <@2fc3e@>
               <@2fc40@>
               <@2fc41@>
               <@2fc43@>
@@ -45561,18 +45562,19 @@ MaybeSetCheckpointActual:
               <@2fc58@>
               <@2fc5a@>
               <@2fc5c@>
-             <@2fc5e --@> ; $2fc3e
+             <@2fc5e @loop1@> ; $2fc3e
              <@2fc60 ComputeChecksumForCheckpoint@> ; compute checksum => 70f4
         ;; Copy checkpoint from main location to backup
              <@2fc63@>
-+ -           <@2fc65@>
+@loop2:
+              <@2fc65@>
               <@2fc68@>
               <@2fc6b@>
               <@2fc6e@>
               <@2fc71@>
               <@2fc74@>
               <@2fc77@>
-            <@2fc78 -@> ; $2fc65
+            <@2fc78 @loop2@> ; $2fc65
 -            <@2fc7a@>
              <@2fc7d@>
              <@2fc7f@>
@@ -45588,7 +45590,8 @@ MaybeSetCheckpointActual:
         <@2fc8d@>
 ;;; --------------------------------
 .org $bc8e
-_2fc8e:
+CopyCheckpointToMemory:                  ; NOTE: rewritten by savegame.s
+        ;; Back up AXY and $10..$30 (onto stack and $6000)
         <@2fc8e@>
          <@2fc8f@>
          <@2fc90@>
@@ -45600,15 +45603,22 @@ _2fc8e:
             <@2fc9a@>
             <@2fc9b@>
            <@2fc9d -@> ; $2fc95
-           <@2fc9f@>
-           <@2fca1@>
---          <@2fca3@>
+           ;; Copy checkpoint to memory by iterating over the copy table
+           ;;     7d00..7d7f => 6400..647f
+           ;;     7e00..7fff => 6480..667f
+           ;;     7d80..7d9c => 0702..071e
+           ;;     7db0..7dd3 => 07dc..07ff
+           <@2fc9f@>             
+           <@2fca1@>              ; $17 <- 0
+@loop:
+            <@2fca3@>
             <@2fca5@>
             <@2fca6@>
             <@2fca8@>
             <@2fca9@>
             <@2fcaa@>
-            <@2fcac@>
+            <@2fcac@>                 ; y <- 6 * $17
+            ;; Load 6 bytes from the copy table (src, dest, len) into $10..$15
             <@2fcad@>
 -            <@2fcaf CopyCheckpointToMemoryTable@>
              <@2fcb2@>
@@ -45620,8 +45630,9 @@ _2fc8e:
             <@2fcbd@>
             <@2fcbf@>
             <@2fcc1@>
-           <@2fcc3 --@> ; $2fca3
+           <@2fcc3 @loop@> ; $2fca3
            <@2fcc5 CopyExtraStateFromCheckpoint@>
+           ;; Restore AXY and $10..$30
            <@2fcc8@>
 -           <@2fcca@>
             <@2fccd@>
@@ -45635,10 +45646,16 @@ _2fc8e:
         <@2fcd8@>
         <@2fcd9@>
 ;;; --------------------------------
+;;; This copies the checkpoint into memory and then sets the game mode
+;;; to CHANGE_LOCATION, which loads all the assets for the correct map.
+;;; It sets the entrance to $ff, which triggers ExitTypeJump_7 to not
+;;; actually set the player's location.
 .org $bcda
-_2fcda:
+CopyCheckpointToMemoryForContinue:       ; NOTE: rewritten by savegame.s
         ;; This looks like it's involved in restoring saved games
-        <@2fcda _2fc8e@>
+        <@2fcda CopyCheckpointToMemory@> ; 2fc8e
+        ;; Copy 7e00..7fff => 6480..667f - this seems redundant with
+        ;; the previous call, which has already copied this?
         <@2fcdd@>
 -        <@2fcdf@>
          <@2fce2@>
@@ -45646,6 +45663,7 @@ _2fcda:
          <@2fce8@>
          <@2fceb@>
         <@2fcec -@> ; $2fcdf
+        ;; Finally set entrance to $ff and set game mode.
         <@2fcee@>
         <@2fcf0@>
         <@2fcf2 GAME_MODE_CHANGE_LOCATION@>
@@ -45725,7 +45743,7 @@ CopyExtraStateFromCheckpoint:
         <@2fd79@>
         <@2fd7c@>
         <@2fd7f@>
-        <@2fd82@>
+        <@2fd82@>          ; NOTE: patched by savegame.s ($bd82) _PITY_HP_AND_MP
         <@2fd85@>
         <@2fd88@>
         <@2fd8b@>
@@ -45758,23 +45776,25 @@ ComputeChecksumForCheckpoint:
         <@2fdbd -@> ; $2fd9b
         <@2fdbf@>
 ;;; --------------------------------
+;;; The checkpoint data lives from $7d00 to $7fff, with a backup
+;;; copy from $6d00 to $6fff
 .org $bdc0
 CopyMemoryToCheckpointTable:
         ;; Memory copy data for checkpointing
         ; .word (src), .word (dest), .word(length)
-        .byte [@2fdc0@],[@2fdc1@],[@2fdc2@],[@2fdc3@],[@2fdc4@],[@2fdc5@]
-        .byte [@2fdc6@],[@2fdc7@],[@2fdc8@],[@2fdc9@],[@2fdca@],[@2fdcb@]
-        .byte [@2fdcc@],[@2fdcd@],[@2fdce@],[@2fdcf@],[@2fdd0@],[@2fdd1@]
-        .byte [@2fdd2@],[@2fdd3@],[@2fdd4@],[@2fdd5@],[@2fdd6@],[@2fdd7@]
-        .byte [@2fdd8@],[@2fdd9@],[@2fdda@],[@2fddb@],[@2fddc@],[@2fddd@]
+        .byte [@2fdc0@],[@2fdc1@],[@2fdc2@],[@2fdc3@],[@2fdc4@],[@2fdc5@] ; 6400..647f => 7d00..7d7f
+        .byte [@2fdc6@],[@2fdc7@],[@2fdc8@],[@2fdc9@],[@2fdca@],[@2fdcb@] ; 6480..667f => 7e00..7fff
+        .byte [@2fdcc@],[@2fdcd@],[@2fdce@],[@2fdcf@],[@2fdd0@],[@2fdd1@] ; 0702..071e => 7d80..7d9c
+        .byte [@2fdd2@],[@2fdd3@],[@2fdd4@],[@2fdd5@],[@2fdd6@],[@2fdd7@] ; 07dc..07ff => 7db0..7dd3
+        .byte [@2fdd8@],[@2fdd9@],[@2fdda@],[@2fddb@],[@2fddc@],[@2fddd@] ; 7d00..7fff => 6d00..6dff
 ;;; --------------------------------
 .org $bdde
 CopyCheckpointToMemoryTable:
         ;; Memory copy data for loading
-        .byte [@2fdde@],[@2fddf@],[@2fde0@],[@2fde1@],[@2fde2@],[@2fde3@]
-        .byte [@2fde4@],[@2fde5@],[@2fde6@],[@2fde7@],[@2fde8@],[@2fde9@]
-        .byte [@2fdea@],[@2fdeb@],[@2fdec@],[@2fded@],[@2fdee@],[@2fdef@]
-        .byte [@2fdf0@],[@2fdf1@],[@2fdf2@],[@2fdf3@],[@2fdf4@],[@2fdf5@]
+        .byte [@2fdde@],[@2fddf@],[@2fde0@],[@2fde1@],[@2fde2@],[@2fde3@] ; 7d00..7d7f => 6400..647f
+        .byte [@2fde4@],[@2fde5@],[@2fde6@],[@2fde7@],[@2fde8@],[@2fde9@] ; 7e00..7fff => 6480..667f
+        .byte [@2fdea@],[@2fdeb@],[@2fdec@],[@2fded@],[@2fdee@],[@2fdef@] ; 7d80..7d9c => 0702..071e
+        .byte [@2fdf0@],[@2fdf1@],[@2fdf2@],[@2fdf3@],[@2fdf4@],[@2fdf5@] ; 7db0..7dd3 => 07dc..07ff
 ;;; --------------------------------
 .org $bdf6
 SetCarryIfCheckpoint:
@@ -49988,7 +50008,7 @@ PowersOfTen:
 ;;; both halves, but the various sword shots are each only
 ;;; checked every other frame.
 .org $8f6e
-CheckAllObjectCollisions:
+CheckAllObjectCollisions:       ; NOTE: rewritten in collision.s 
         <@34f6e@>
         <@34f70@>
         <@34f73@>
@@ -50031,7 +50051,7 @@ CheckAllObjectCollisions:
 ;;; --------------------------------
 ;;; STRIP: word=$2c000
 .org $8fbb
-CollisionJump:
+CollisionJump:       ; NOTE: rewritten in collision.s 
         .word (CollisionJump_00_SwordHitsEnemy)
         .word (CollisionJump_01_EnemyHitsPlayer)
         .word (CollisionJump_02_PlayerInFrontOfNpcOrTrigger)
@@ -50159,7 +50179,7 @@ _3507c:
 ;;; When the player hits an invisible shadow with magic, it
 ;;; becomes its replacement (a visible wraith).
 .org $9082
-PlayerHitInvisibleShadow:
+PlayerHitInvisibleShadow:       ; NOTE: rewritten in attack.s
         <@35082 ObjectLevel@>
         <@35085@>
         bne :>rts
@@ -50176,7 +50196,7 @@ PlayerHitInvisibleShadow:
 ;;; the elemental type for the wall and compare it with the
 ;;; sword.
 .org $9094
-PlayerHitFlagWallOrChannel:
+PlayerHitFlagWallOrChannel:       ; NOTE: rewritten in attack.s
         ;; If elements don't match, do nothing.
         <@35094 ObjectElementalDefense@>
         <@35097 ObjectElementalDefense@>
@@ -50193,7 +50213,7 @@ PlayerHitFlagWallOrChannel:
 ;;;   x - index of the player's sword (2 for sword, 4..b for projectiles).
 ;;;   y - index of the object that was hit.
 .org $90aa
-CollisionJump_00_SwordHitsEnemy:
+CollisionJump_00_SwordHitsEnemy:       ; NOTE: rewritten in attack.s
         ;; Entry point??? - $34fb1
         <@350aa CurrentLocation@>
         <@350ac LOC_DYNA@>
@@ -50267,7 +50287,7 @@ CollisionJump_00_SwordHitsEnemy:
         <@3511e ObjectDefense@>
         <@35121@>
         <@35123 AttackEnemy_DealDamage@>
-AttackEnemy_Immune:
+AttackEnemy_Immune:       ; NOTE: rewritten in attack.s
         ;; Remove the attacking object
          <@35125@>
          <@35127 ObjectActionScript@>
@@ -50279,7 +50299,7 @@ AttackEnemy_Immune:
 +        <@35136 SFX_ATTACK_IMMUNE@>
          <@35138 StartAudioTrack@>
          ;; ----
-AttackEnemy_DealDamage:
+AttackEnemy_DealDamage:       ; NOTE: rewritten in attack.s
         ;; Deal damage to an enemy
         <@3513b ObjectHP@>
         <@3513e@>
@@ -50292,7 +50312,7 @@ AttackEnemy_DealDamage:
          <@3514d SFX_MONSTER_HIT@>
          <@3514f StartAudioTrack@>
          ;; ----
-KillObject:
+KillObject:       ; NOTE: rewritten in attack.s
         ;; Kills object Y, awarding experience and/or performing any death actions.
         <@35152 AwardExperiencePoints@>
         <@35155 ObjectReplacement@>
@@ -50370,7 +50390,7 @@ KillObject:
         <@351f9@>
 ;;; --------------------------------
 .org $91fa
-StartMonsterDeathAnimation:
+StartMonsterDeathAnimation:       ; NOTE: rewritten in attack.s
         <@351fa@>
         <@351fc@>
         <@351ff ObjectTerrain@>
@@ -50396,9 +50416,9 @@ StartMonsterDeathAnimation:
 ;;; not used unless $540,y is zero and $560,y is not 3.  If this does trigger
 ;;; then we double-return out of CollisionJump_00_SwordHitsEnemy
 .org $9229
-CheckThunderSwordReaction:
+CheckThunderSwordReaction:       ; NOTE: rewritten in attack.s
         <@35229 EquippedSword@>
-        <@3522c SWORD_THUNDER@>      ; NOTE: patched by attack.s ($922c)
+        <@3522c SWORD_THUNDER@>
         bne :>rts
         <@35230@>
         bne :>rts
@@ -50423,7 +50443,7 @@ CheckThunderSwordReaction:
         <@3524a@>
 ;;; --------------------------------
 .org $924b
-AwardExperiencePoints:
+AwardExperiencePoints:       ; NOTE: rewritten in attack.s
         <@3524b ObjectExperiencePoints@>
         <@3524e ++@> ; $3525d
         ;; exp < $80 are as-is.
@@ -50944,7 +50964,7 @@ KnockbackObject:
         <@355f3@>
 ;;; --------------------------------
 .org $95f4
-DoneCheckHitbox:
+DoneCheckHitbox:       ; NOTE: rewritten in collision.s 
         <@355f4@>
         <@355f6@>
         <@355f7@>
@@ -50966,7 +50986,7 @@ DoneCheckHitbox:
 ;;;   - lo nibble => $15 (shifted << 2)
 ;;; Next $420,x:40 | $3a0,x:0f<<2 => hitbox shape
 .org $95f8
-CheckHitbox:
+CheckHitbox:       ; NOTE: rewritten in collision.s 
         <@355f8@>
           <@355fa ObjectTerrain@>
           <@355fd DoneCheckHitbox@> ; off screen => no hit
@@ -51086,7 +51106,7 @@ Hitboxes:
 ;;; it should cover all the sword hits?
 ;;; The 4th column is a reference into CollisionJump ($34fbb)
 .org $96f1
-CollisionTable:
+CollisionTable:       ; NOTE: rewritten in collision.s 
         .byte [@356f1@],[@356f2@],[@356f3@],[@356f4@] ; 00 sword blast hits enemy
         .byte [@356f5@],[@356f6@],[@356f7@],[@356f8@] ; 01 " "
         .byte [@356f9@],[@356fa@],[@356fb@],[@356fc@] ; 02 " "
@@ -51210,7 +51230,7 @@ AdHocSpawnObject:
 ;;; Generates a pseudorandom number from 0..7 using a data table.
 ;;; Returns result in A, destroys Y.
 .org $97d7
-GenerateRandomNumber:
+GenerateRandomNumber:           ; NOTE: rewritten by random.s
         <@357d7@>
         <@357d9@>
         <@357db@>
@@ -51220,7 +51240,7 @@ GenerateRandomNumber:
         <@357e3@>
 ;;; --------------------------------
 .org $97e4
-RandomNumbers:
+RandomNumbers:                  ; NOTE: rewritten by rom/randomnumbers.ts
         .byte [@357e4@],[@357e5@],[@357e6@],[@357e7@],[@357e8@],[@357e9@],[@357ea@],[@357eb@],[@357ec@],[@357ed@],[@357ee@],[@357ef@],[@357f0@],[@357f1@],[@357f2@],[@357f3@]
         .byte [@357f4@],[@357f5@],[@357f6@],[@357f7@],[@357f8@],[@357f9@],[@357fa@],[@357fb@],[@357fc@],[@357fd@],[@357fe@],[@357ff@],[@35800@],[@35801@],[@35802@],[@35803@]
         .byte [@35804@],[@35805@],[@35806@],[@35807@],[@35808@],[@35809@],[@3580a@],[@3580b@],[@3580c@],[@3580d@],[@3580e@],[@3580f@],[@35810@],[@35811@],[@35812@],[@35813@]
@@ -51372,7 +51392,7 @@ SpawnDeathReplacement:
 ;;;       clear if the movement was successful.
 ;;;   Object coords and direction updated.
 .org $98d7
-MoveObjectWithSpeedAndDirection:
+MoveObjectWithSpeedAndDirection:         ; NOTE: rewritten by movement.s
         <@358d7@>
         <@358d9@>
         <@358db ObjectDirection@>
@@ -51825,7 +51845,7 @@ ObjectActionJump_01:
         ;; Remove the dolphin-riding bit (because we're on land now?)
           <@35b91 PlayerStatus@>
           <@35b94@>
-          <@35b96 PlayerStatus@>
+          <@35b96 PlayerStatus@>      ; NOTE: patched by movement.s ($9b96)
           <@35b99 ++@> ; $35bd2
           ;; ----
 +        <@35b9c PlayerMetaspriteBase@>
@@ -51966,8 +51986,7 @@ DataTable_35c66:
          <@35c86 +@> ; $35c91
           <@35c88 EquippedPassiveItem@>
           <@35c8b ITEM_WARRIOR_RING@>
-CheckWarriorRing:
-          <@35c8d +@> ; $35c91
+          <@35c8d +@> ; $35c91        ; NOTE: patched by movement.s ($9c8d) _CHARGE_SHOT_ONLY
            <@35c8f@>
 +       <@35c91@>
         <@35c93@>
@@ -52142,14 +52161,14 @@ ObjectActionJump_03:
         <@35dfa +@> ; $35e03
         <@35dfc@>
         <@35dfe +@> ; $35e03
-        <@35e00 ++@> ; $35e39
+        <@35e00 ++@> ; $35e39      ; NOTE: patched by movement.s ($9e00)
         ;; ----
         ;; $0600,x was < #$c or == #$11 - will reset to #$12
 +       <@35e03 EquippedSword@>
         <@35e06 ++@> ; $35e39
         <@35e08@>
         <@35e0a@>
-        <@35e0d GlobalCounter@>
+        <@35e0d GlobalCounter@>      ; NOTE: patched by movement.s ($9e0d)
         <@35e0f@>
         <@35e11 ++@> ; $35e39
          <@35e13 PlayerSwordChargeAmount@>
@@ -52394,7 +52413,7 @@ _36022:
         <@3602c +@> ; $36030
          <@3602e@> ; rabbit boots "magic"
 +       <@36030@>
-        <@36032 DataTable_36092@> ; 0 or 8
+        <@36032 ContinuousMagicTable@> ; 0 or 8
         <@36035@>
         <@36036@> ; $43 or $4b
         <@36039 +@> ; $3603c
@@ -52431,7 +52450,7 @@ _36022:
 ;;; SRTIP: word=$2c000
 .org $a072
 UseMagicJump:
-        .word (UseMagicJump_00_Nothing) ; just rts
+        .word (UseMagicJump_00_Nothing) ; just rts  ; NOTE: patched by magic.s ($a072)
         .word (UseMagicJump_01_Refresh)
         .word (UseMagicJump_02_Paralysis)
         .word (UseMagicJump_03_Telepathy)
@@ -52449,7 +52468,7 @@ UseMagicJump:
         .word (UseMagicJump_00_Nothing)
 ;;; --------------------------------
 .org $a092
-DataTable_36092:
+ContinuousMagicTable:                ; NOTE: rewritten by magic.s
         .byte [@36092@],[@36093@],[@36094@],[@36095@],[@36096@],[@36097@],[@36098@],[@36099@],[@3609a@],[@3609b@],[@3609c@],[@3609d@],[@3609e@],[@3609f@]
         .byte [@360a0@],[@360a1@]
 ;;; --------------------------------
@@ -53034,7 +53053,7 @@ TowerEscalatorCheckInitialSetup:
         ;; which apparently happens only once, right after initially
         ;; populating the room.
         <@3648c@>
-        <@3648f@>
+        <@3648f@>                     ; NOTE: patched by location.s ($a48f)
         <@36491@>
         <@36492@> ; 5c -> ff, ..., 59 -> fc
         <@36494@> ; 5c -> 00, ..., 59 -> 03
@@ -63879,7 +63898,7 @@ MainLoopJump_00_PrepareGame:
          <@3c967@>
          <@3c96a@>
         <@3c96b -@> ; $3c964
-        <@3c96d@>
+        <@3c96d@>                ; NOTE: patched by savegame.s ($c96d)
         <@3c96f@>
         <@3c971@>
         <@3c973@>
@@ -63926,7 +63945,7 @@ MainLoopJump_08_ContinueGame:
         <@3c9da PopulateInitialObjects@>
         <@3c9dd@> ; A000 -> 2E000
         <@3c9df BankSwitch8k_a000@>
-        <@3c9e2 _2fc06@>
+        <@3c9e2 CopyCheckpointToMemoryForContinueIndirected@> ; 2fc06
         <@3c9e5 WaitForNametableFlush@>
         <@3c9e8 UpdateEquipmentAndStatus@>
         <@3c9eb@> ; 8000 -> 24000
@@ -64195,10 +64214,10 @@ CheckForSelectMenu:
         <@3cbc0@>
         ;; ----
 CheckForController2Buttons:
-        <@3cbc1 Ctrl2NewlyPressed@>              ; NOTE: patched by gamepad.s ($cbc1)
+        <@3cbc1 Ctrl2NewlyPressed@>               ; NOTE: patched by gamepad.s ($cbc1)
         <@3cbc3 BUTTON_B@>
         <@3cbc5 MainGameModeJump_04@>
-        <@3cbc7 Ctrl1CurrentlyPressed@>
+        <@3cbc7 Ctrl1CurrentlyPressed@>           ; NOTE: patched by location.s ($cbc7)
         <@3cbc9@> ; check A and B both pressed
          bne :>rts
         <@3cbcd Ctrl2NewlyPressed@>
@@ -65091,7 +65110,7 @@ DialogFollowupActionJump_18:
         <@3d295 WriteObjectCoordinatesFrom_34_37@>
         <@3d298 PlayerStatus@>
         <@3d29b@>
-        <@3d29d PlayerStatus@>
+        <@3d29d PlayerStatus@>            ; NOTE: patched by movement.s ($d29d)
         <@3d2a0@>
         <@3d2a2@>
         <@3d2a5@>
@@ -65404,7 +65423,7 @@ MainGameModeJump_06_ItemUseMessage:
 +       <@3d4e7 ItemUse_Main@>
         <@3d4ea@>
         <@3d4ec BankSwitch8k_a000@>
-        <@3d4ef MaybeSetCheckpoint@>
+        <@3d4ef MaybeSetCheckpointIndirected@>
 ;;; --------------------------------
 .org $d4f2
 ItemUse_Main:
@@ -65528,9 +65547,11 @@ ItemOrTriggerActionJump_01:
         <@3d5c1 WaitForDialogToBeDismissedInternal@>
         <@3d5c4 SFX_START_DOOR@>
         <@3d5c6 StartAudioTrack@>
-        <@3d5c9 LOC_SHYRON_TEMPLE@>
+        <@3d5c9 thunderSwordWarpLocation@>
+             thunderSwordWarpLocation = LOC_SHYRON_TEMPLE
         <@3d5cb CurrentLocation@>
-        <@3d5cd@>
+        <@3d5cd thunderSwordWarpEntrance@>
+             thunderSwordWarpEntrance = [@3d5ce@]
         <@3d5cf CurrentEntrance@>
         <@3d5d1 GAME_MODE_CHANGE_LOCATION@>
         <@3d5d3 GameMode@>
@@ -66306,11 +66327,11 @@ MainGameModeJump_14_TeleportMenu: ; also 1d
         <@3db28 PlayerHP@>
         <@3db2b ++@> ; $3db4a
          <@3db2d@>
-          <@3db30 +@> ; $3db45
+          <@3db30 +@> ; $3db45              ; NOTE: patched by location.s ($db30)
          <@3db32 CurrentLocation@>
          <@3db34@>
          <@3db36@>
-          <@3db38 +@> ; $3db45
+          <@3db38 +@> ; $3db45              ; NOTE: patched by location.s ($db38)
          <@3db3a PlayerStatus@>
          <@3db3d@>
          <@3db3f@>
@@ -66489,7 +66510,7 @@ JumpTable_3dbdc_00:
         <@3dc76@>
         <@3dc77@>
         <@3dc79@>
-        <@3dc7b@>
+        <@3dc7b@>                     ; NOTE: patched by location.s ($dc7b)
         <@3dc7d +@> ; $3dc82
          <@3dc7f _3dbac@>
          ;; ----
@@ -66579,12 +66600,12 @@ BuildWarpMenu:
 -        <@3dd3a@>
          <@3dd3d@>
         <@3dd3e -@> ; $3dd3a
-        <@3dd40@>
+        <@3dd40@>                     ; NOTE: patched by location.s ($dd40)
         <@3dd42@>
 -        <@3dd44@>
          <@3dd46 CheckWarpPointFlag@>
          <@3dd49 +@> ; $3dd53
-          <@3dd4b@>
+          <@3dd4b@>                    ; NOTE: patched by location.s ($dd4b)
           <@3dd4d@>
           <@3dd4e@>
           <@3dd50 StageNametableWriteFromTable@>
@@ -66595,7 +66616,7 @@ BuildWarpMenu:
 .org $dd58
 CheckWarpPointFlag:
         <@3dd58@>
-        <@3dd59@> ; explicit offset
+        <@3dd59@> ; explicit offset   ; NOTE: patched by location.s ($dd59)
         <@3dd5b@>
          <@3dd5c@>
          <@3dd5d@>
@@ -67218,7 +67239,7 @@ CheckForNpcSpawn:
         <@3e195@>    ; npc[0] == $fe => skip to the next one
         <@3e197 ++@>      ; $3e1af
         <@3e199@>
-        <@3e19a@>    ; a <- npc[1]
+        <@3e19a@>    ; a <- npc[1]         ; NOTE: patched by location.s ($e19a)
         <@3e19c@>            ; y <- &npc[0]
         <@3e19d@>            ; a <- npc[1] << 1
         <@3e19e +@> ; $3e1a7 - npc[1] < $80 => try to spawn the NPC
@@ -67597,7 +67618,7 @@ ExitTypeJumpTable:
         .word [@3e3e1:w@]
         .word [@3e3e3:w@]
         .word [@3e3e5:w@]
-        .word (ExitTypeJump_7) ; e0 - ???
+        .word (ExitTypeJump_7_Continue) ; e0 - continue game, don't move player
 ;;; --------------------------------
 .org $e3e9
 _3e3e9:
@@ -67627,8 +67648,9 @@ _3e3e9:
         <@3e419@>
 ;;; --------------------------------
 .org $e41c
-ExitTypeJump_7:
+ExitTypeJump_7_Continue:
         ;; No idea what triggers this... cf. $2fcda writes $6d <- #$ff
+        ;; after checkpointing
         <@3e41c _3e61b@>
         <@3e41f _3e439@>
 ;;; --------------------------------
@@ -67748,7 +67770,7 @@ DoLocationSpecificChecks:
         <@3e4fb _34c49@>
 +       <@3e4fe@> ; a000 -> 2e000
         <@3e500 BankSwitch8k_a000@>
-        <@3e503 MaybeSetCheckpoint@>
+        <@3e503 MaybeSetCheckpointIndirected@>
         <@3e506@>
         <@3e508@>
         <@3e50b@>
@@ -67778,7 +67800,7 @@ ExitTypeJump_2_Warp:
         ;; Teleport
         <@3e533@> ; 2e000 -> a000
         <@3e535 BankSwitch8k_a000@>
-        <@3e538 MaybeSetCheckpoint@>
+        <@3e538 MaybeSetCheckpointIndirected@>
         <@3e53b _3e845@>
         <@3e53e _3e61b@>
         <@3e541 _3e439@>
@@ -67847,7 +67869,7 @@ FallIntoPit:
         <@3e5a7 --@> ; $3e57b
         ;; Move player down one tile on the screen (???)
         <@3e5a9@>
-        <@3e5ab@>
+        <@3e5ab@>                                   ; NOTE: patched by pits.s ($e5ab)
         <@3e5ac@>
         <@3e5ae@>
         <@3e5b0@>
@@ -68057,7 +68079,7 @@ ReadMapDataGraphicsTable:
         <@3e6f9@>
         <@3e6fa@>
         <@3e6fc@>
-        <@3e6ff LoadNpcDataForCurrentLocation@>
+        <@3e6ff LoadNpcDataForCurrentLocation@>     ; NOTE: patched by location.s ($e6ff)
 ;;; --------------------------------
 .org $e702
 CopyMapDataFlags:
@@ -68173,7 +68195,7 @@ CheckForRidingDolphin:
         ;; Remove riding dolphin bit
         <@3e7ae PlayerStatus@>
         <@3e7b1@>
-        <@3e7b3 PlayerStatus@>
+        <@3e7b3 PlayerStatus@>              ; NOTE: patched by movement.s ($e7b3)
         jmp :>rts ; $3e7c3
         ;; ----
         ;; Currently riding dolphin - "spawn" dolphin at player's position
@@ -69491,7 +69513,7 @@ CheckPassiveFrameEffects:
           <@3ef61 @InflictPainOrPoisonDamage@> ; $3ef8c
 @CheckPainTile:  ; 3ef63
          <@3ef63 EquippedPassiveItem@>
-         <@3ef66 ITEM_LEATHER_BOOTS@>
+         <@3ef66 ITEM_LEATHER_BOOTS@>      ; NOTE: patched by movement.s ($ef66) _HAZMAT_SUIT
          <@3ef68 @CheckSwampDamage@> ; $3ef77
           ;; Not wearing leather boots: check if on ground
           <@3ef6a PlayerJumpDisplacement@>
@@ -69653,7 +69675,7 @@ CheckPassiveFrameEffects:
          <@3f082@>
          <@3f084@>
          <@3f086@>
-+       <@3f089@>
++       <@3f089@>          ; NOTE: patched by movement.s ($f089) _CHARGE_SHOT_ONLY
         <@3f08c +@> ; $3f09b
          <@3f08e@>
          <@3f091@>

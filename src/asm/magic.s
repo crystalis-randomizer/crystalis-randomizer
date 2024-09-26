@@ -8,22 +8,15 @@
 
 ;;; Free up some space in the magic table by consolidating the used magics.
 .scope
-  .org $a092
-  ContinuousMagicTable_Orig:
-
-  .org $a032 ; refer to moved table
-    lda ContinuousMagicTable,y
-
   .org $a072
     .word (NoMagic)  ; UseMagicJump_00
 
   .reloc
   NoMagic:
-    rts
-
-  .reloc
-  ContinuousMagicTable:
-    .move 10, ContinuousMagicTable_Orig
-    ;.byte $08,$00,$08,$08,$08,$08,$00,$08,$00,$08
+    rts              ; NOTE: This is basically free - reloc will overlap it
 .endscope
 
+.reloc
+OVERRIDE
+ContinuousMagicTable:           ; smudge from $36092
+    .byte [@36092@],[@36093@],[@36094@],[@36095@],[@36096@],[@36097@],[@36098@],[@36099@],[@3609a@],[@3609b@]

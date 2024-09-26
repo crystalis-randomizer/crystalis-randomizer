@@ -357,13 +357,6 @@ FREE_UNTIL $ba2c
 +   jmp AdHocSpawnObject
 .endif
 
-.segment "1a"
-
-;;; Slimes mutate based on a configurable element 
-.import slimeMutationElement
-.org $922c
-  cmp #slimeMutationElement
-
 FREE "1a" [$8bde, $8bfe)        ; TODO - free other bits
 .import CoinAmounts
 
@@ -905,7 +898,9 @@ StartMonsterDeathAnimation:
 OVERRIDE
 CheckThunderSwordReaction:
         <@35229 EquippedSword@>
-        <@3522c SWORD_THUNDER@>
+        ;;; Slimes mutate based on a configurable element 
+    .import slimeMutationElement
+        <@3522c slimeMutationElement@>
         bne :>rts
         <@35230@>
         bne :>rts

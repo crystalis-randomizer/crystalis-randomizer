@@ -466,6 +466,9 @@ FREE "1a" [$98d7, $9ae8)
 .reloc                          ; smudge from $358d7 to $35907
 OVERRIDE
 MoveObjectWithSpeedAndDirection:
+    .ifdef _RANDOM_FLYER_SPAWNS ; smudge off  (see spawn.s)
+        inc $32
+    .endif                      ; smudge on
         <@358d7@>
         <@358d9@>
         <@358db ObjectDirection@>

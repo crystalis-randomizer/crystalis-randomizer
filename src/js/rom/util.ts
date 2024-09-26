@@ -665,6 +665,7 @@ export function cloneArray<T extends ReadonlyArray<any>>(arr: T): Mutable<T> {
   return [...arr] as Mutable<T>;
 }
 
+/** NOTE: `seg` argument reinterprets a read address into an offset */
 export function readValue(symbol: string, prg: Uint8Array, seg?: Segment): number {
   const values = new Set<number>();
   if (!refsBySymbol().get(symbol)?.length) throw new Error(`No mappings for ${symbol}`);

@@ -37,14 +37,14 @@ ReleaseWhiteRobots:
 
 ;;; Free a few bytes in NpcDataJump_4 by jumping earlier to avoid duplication.
 .org $e22c
-  jmp $e284
+  jmp NpcDataJump_SpawnObjectA ; $e284
   FREE_UNTIL $e239
 ;; .org $e2a8  ; NOTE: This is no good because we use SpawnWall instead!
 ;;   jmp $e284
 ;;   FREE_UNTIL $e2b5
 .org $e3b8 ; NpcData_LoadTrigger
   lda #$0e
-  jmp $e284
+  jmp NpcDataJump_SpawnObjectA ; $e284
   FREE_UNTIL $e3c7
 
 

@@ -651,7 +651,7 @@
 ;;; Interestingly, ylo coordinates have the odd behavior that they wrap
 ;;; around at $ef instead of $ff.
 .segment "00","00:a"
-.org $8000
+.org $8000                      ; NOTE: rewritten by rom/screen.ts
 MapScreen_00:
         .byte [@0@],[@1@],[@2@],[@3@],[@4@],[@5@],[@6@],[@7@],[@8@],[@9@],[@a@],[@b@],[@c@],[@d@],[@e@],[@f@]
         .byte [@10@],[@11@],[@12@],[@13@],[@14@],[@15@],[@16@],[@17@],[@18@],[@19@],[@1a@],[@1b@],[@1c@],[@1d@],[@1e@],[@1f@]
@@ -3511,7 +3511,7 @@ MapScreen_80:
         .byte [@80d0@],[@80d1@],[@80d2@],[@80d3@],[@80d4@],[@80d5@],[@80d6@],[@80d7@],[@80d8@],[@80d9@],[@80da@],[@80db@],[@80dc@],[@80dd@],[@80de@],[@80df@]
         .byte [@80e0@],[@80e1@],[@80e2@],[@80e3@],[@80e4@],[@80e5@],[@80e6@],[@80e7@],[@80e8@],[@80e9@],[@80ea@],[@80eb@],[@80ec@],[@80ed@],[@80ee@],[@80ef@]
 ;;; --------------------------------
-.org $80f0
+.org $80f0                      ; NOTE: rewritten by rom/npc.ts
 PersonData_00: ; portoa pink man on fortune teller island; sahara orange man left
         .byte [@80f0@],[@80f1@],[@80f2@],[@80f3@]
 PersonData_01: ; sahara grey bearded man by well, brynmaer barkeep
@@ -6543,7 +6543,7 @@ _0fff0:
         .byte [@fff0@],[@fff1@],[@fff2@],[@fff3@],[@fff4@],[@fff5@],[@fff6@],[@fff7@],[@fff8@],[@fff9@],[@fffa@],[@fffb@],[@fffc@],[@fffd@],[@fffe@],[@ffff@]
 
 .segment "08","09"
-.org $8000
+.org $8000                      ; NOTE: rewritten by rom/tileset.ts
 BackgroundTilePatterns_00_TL:
         .byte [@10000@],[@10001@],[@10002@],[@10003@],[@10004@],[@10005@],[@10006@],[@10007@],[@10008@],[@10009@],[@1000a@],[@1000b@],[@1000c@],[@1000d@],[@1000e@],[@1000f@]
         .byte [@10010@],[@10011@],[@10012@],[@10013@],[@10014@],[@10015@],[@10016@],[@10017@],[@10018@],[@10019@],[@1001a@],[@1001b@],[@1001c@],[@1001d@],[@1001e@],[@1001f@]
@@ -7414,7 +7414,7 @@ BackgroundTilePatterns_0B_BR:
         .byte [@12ff0@],[@12ff1@],[@12ff2@],[@12ff3@],[@12ff4@],[@12ff5@],[@12ff6@],[@12ff7@],[@12ff8@],[@12ff9@],[@12ffa@],[@12ffb@],[@12ffc@],[@12ffd@],[@12ffe@],[@12fff@]
         ;; Map tile data here somehow?!?
         ;; Groups of $40 indexed by ($10) set in ...?
-.org $b000
+.org $b000                      ; NOTE: rewritten by rom/tileset.ts
 MetatileAttributesMap_00:        ; tileset $80
         .byte [@13000@],[@13001@],[@13002@],[@13003@],[@13004@],[@13005@],[@13006@],[@13007@],[@13008@],[@13009@],[@1300a@],[@1300b@],[@1300c@],[@1300d@],[@1300e@],[@1300f@]
         .byte [@13010@],[@13011@],[@13012@],[@13013@],[@13014@],[@13015@],[@13016@],[@13017@],[@13018@],[@13019@],[@1301a@],[@1301b@],[@1301c@],[@1301d@],[@1301e@],[@1301f@]
@@ -7488,7 +7488,7 @@ MetatileAttributesMap_0B:        ; tileset $ac
         .byte [@132f0@],[@132f1@],[@132f2@],[@132f3@],[@132f4@],[@132f5@],[@132f6@],[@132f7@],[@132f8@],[@132f9@],[@132fa@],[@132fb@],[@132fc@],[@132fd@],[@132fe@],[@132ff@]
 ;;; The following tables are tile effects, indexed by
 ;;; the value stored in $6a (MapData[$6c].Graphics[4]).
-.org $b300
+.org $b300                      ; NOTE: rewritten by rom/tileeffects.ts
 MetatileEffectsMap_B3:
         .byte [@13300@],[@13301@],[@13302@],[@13303@],[@13304@],[@13305@],[@13306@],[@13307@],[@13308@],[@13309@],[@1330a@],[@1330b@],[@1330c@],[@1330d@],[@1330e@],[@1330f@]
         .byte [@13310@],[@13311@],[@13312@],[@13313@],[@13314@],[@13315@],[@13316@],[@13317@],[@13318@],[@13319@],[@1331a@],[@1331b@],[@1331c@],[@1331d@],[@1331e@],[@1331f@]
@@ -7686,7 +7686,7 @@ MetatileEffectsMap_BD:
         .byte [@13dd0@],[@13dd1@],[@13dd2@],[@13dd3@],[@13dd4@],[@13dd5@],[@13dd6@],[@13dd7@],[@13dd8@],[@13dd9@],[@13dda@],[@13ddb@],[@13ddc@],[@13ddd@],[@13dde@],[@13ddf@]
         .byte [@13de0@],[@13de1@],[@13de2@],[@13de3@],[@13de4@],[@13de5@],[@13de6@],[@13de7@],[@13de8@],[@13de9@],[@13dea@],[@13deb@],[@13dec@],[@13ded@],[@13dee@],[@13def@]
         .byte [@13df0@],[@13df1@],[@13df2@],[@13df3@],[@13df4@],[@13df5@],[@13df6@],[@13df7@],[@13df8@],[@13df9@],[@13dfa@],[@13dfb@],[@13dfc@],[@13dfd@],[@13dfe@],[@13dff@]
-.org $be00
+.org $be00                     ; NOTE: rewritten by rom/tileset.ts
 MetatileAlternativesMap_00:      ; tileset $80 - breakable cave entrance
         .byte [@13e00@],[@13e01@],[@13e02@],[@13e03@],[@13e04@],[@13e05@],[@13e06@],[@13e07@],[@13e08@],[@13e09@],[@13e0a@],[@13e0b@],[@13e0c@],[@13e0d@],[@13e0e@],[@13e0f@]
         .byte [@13e10@],[@13e11@],[@13e12@],[@13e13@],[@13e14@],[@13e15@],[@13e16@],[@13e17@],[@13e18@],[@13e19@],[@13e1a@],[@13e1b@],[@13e1c@],[@13e1d@],[@13e1e@],[@13e1f@]
@@ -7853,7 +7853,7 @@ MapScreen_102:
 ;;;           used, but even then it's always unset - so I don't know why it's ever
 ;;;           nonzero, or even exists at all.
 ;;;   - (from-y)(to-y) same as x above
-.org $8300
+.org $8300           ; NOTE: rewritten by rom/location.ts ($8300+2*id)
 MapData:                         ; Not quite sure where this is going - it's used at $3c7af
         .word (MapData_00) ; 00 Start ("Mezame Shrine")
         .word (MapData_01) ; 01 OutsideStart
@@ -16228,7 +16228,7 @@ Sfx76_Ch5:
 ;;;             z: id of spawn (shifted by $#50 for enemies)
 ;;;   * The list of NPCs is terminated by an $ff.
 ;;; NOTE: These pointers span both banks
-.org $9201
+.org $9201                      ; NOTE: rewritten by rom/location.ts ($9201+2*id)
 NpcData:                         ; also includes enemies?
         .word (NpcData_00) ; Start
         .word (NpcData_01) ; OutsideStart
@@ -18726,7 +18726,7 @@ NpcData_fa:                                    ; Sahara - Elder House
 ;;; ----------------------------------------------------------------
 ;;; NOTE: This table has been moved to $1be00 by the randomizer patch.
 ;;; These addresses are in the same page, $a000..bfff
-.org $ac00
+.org $ac00                      ; NOTE: rewritten by rom/objectdata.ts
 ObjectData:
         .word (ObjectData_Object00) ; 00
         .word (ObjectData_Object00)
@@ -21124,7 +21124,7 @@ ParseFlagFromBytePair_24y:
         <@1c152@>
          <@1c153@>
          <@1c155@>
-         <@1c156 PowersOfTwo_1c@>
+         <@1c156 PowersOfTwo_1c@>               ; NOTE: patched by utility.s ($8156)
          <@1c159@>      ; $28 <- 1 << $24[1]&7
         <@1c15b@>
         <@1c15c@>
@@ -21137,7 +21137,7 @@ ParseFlagFromBytePair_24y:
         <@1c166@>
 ;;; --------------------------------
 .org $8167
-PowersOfTwo_1c: 
+PowersOfTwo_1c:                 ; NOTE: freed
         .byte [@1c167@],[@1c168@],[@1c169@],[@1c16a@],[@1c16b@],[@1c16c@],[@1c16d@],[@1c16e@]
 ;;; --------------------------------
 .org $816f
@@ -21446,8 +21446,8 @@ ItemUse:
         <@1c344 SetOrClearFlagsFromBytePair_24y@>
         <@1c347@>
         <@1c349@>
-        beq :>rts ; $1c350
-        <@1c34d ItemUse_TradeIn@> ; don't discard shell flute
+        beq :>rts ; $1c350 (don't discard shell flute)
+         <@1c34d ItemUse_TradeIn@>                ; NOTE: patched by triggers.s ($834d)
         <@1c350@>
         ;; ----
 @jmp:   <@1c351@>
@@ -21510,7 +21510,7 @@ DeleteUsedItem:
 ;;; also fill in the 16-byte gap if needed.
 ;;; STRIP: word=$14000
 .org $8399
-ItemUseJumpTable:
+ItemUseJumpTable:               ; NOTE: rewritten by rom/item.ts (ITEM_USE_JUMP_TABLE)
         .word (ItemUseJump_Invalid)
         .word (ItemUseJump_Invalid)
         .word (ItemUseJump_Invalid)
@@ -21845,7 +21845,7 @@ ItemUseJump_39:                  ; Glowing Lamp
         <@1c58f -@> ; $1c587
         <@1c591 ItemUseJump_Invalid@>
         ;; ----
-+       <@1c594 INV_STATUE_OF_GOLD@>
++       <@1c594 INV_STATUE_OF_GOLD@>            ; NOTE: patched by triggers.s ($8594)
         <@1c596@>
         <@1c599 SFX_FIX_GOLD_STATUE@>
         <@1c59b StartAudioTrack@>
@@ -21911,7 +21911,7 @@ _1c5bf:
 ;;; (i.e. set means clear matches - see ReadFlagFromBytePair_24y).  If ANY flag
 ;;; in a location-entry FAILS to match, then the NPC will NOT spawn.
 ;;; STRIP: word=$14000
-.org $85e0
+.org $85e0                      ; NOTE: rewritten by rom/npc.ts
 NpcSpawnConditionTable:
         .word (NpcSpawnCondition_Always) ; 00 portoa pink man on fortune teller island; sahara orange man left
         .word (NpcSpawnCondition_Always) ; 01 sahara grey bearded man by well, brynmaer barkeep
@@ -22602,7 +22602,7 @@ NpcSpawnCondition_cc: ; vampire 2
 ;;; the last byte of the NpcData entry.  This also corresponds to entries in
 ;;; the PersonData table.
 ;;; STRIP: word=$14000
-.org $895d
+.org $895d                      ; NOTE: rewritten by rom/npc.ts
 NpcDialogTable:
         .word (NpcDialog_00) ; 00 portoa pink man on fortune teller island; sahara orange man left
         .word (NpcDialog_01) ; 01 sahara grey bearded man by well, brynmaer barkeep
@@ -24233,7 +24233,7 @@ NpcDialog_c3: ; rage
         .byte [@1d8ef@],[@1d8f0@],[@1d8f1@],[@1d8f2@],[@1d8f3@] ; default -> 0e:00 (action 1b)
 ;;; --------------------------------
 ;;; Location-indexed table of telepathy state.
-.org $98f4
+.org $98f4            ; NOTE: replaced with different system in rom/telepathy.ts
 TelepathyLocations:
         .byte [@1d8f4@],[@1d8f5@],[@1d8f6@],[@1d8f7@],[@1d8f8@],[@1d8f9@],[@1d8fa@],[@1d8fb@],[@1d8fc@],[@1d8fd@],[@1d8fe@],[@1d8ff@],[@1d900@],[@1d901@],[@1d902@],[@1d903@]
         .byte [@1d904@],[@1d905@],[@1d906@],[@1d907@],[@1d908@],[@1d909@],[@1d90a@],[@1d90b@],[@1d90c@],[@1d90d@],[@1d90e@],[@1d90f@],[@1d910@],[@1d911@],[@1d912@],[@1d913@]
@@ -24484,7 +24484,7 @@ Telepathy_1b_Kensu6:
 ;;; Possibly it handles deleting the item?
 ;;; NOTE: addresses aross 8000..bfff
 .org $9b00
-ItemGetDataTable:
+ItemGetDataTable:               ; NOTE: rewritten in itemget.ts (this.tablePointer)
         ;; Another data table
         .word (ItemGetData_00) ; 00 sword of wind
         .word (ItemGetData_01) ; 01 sword of fire
@@ -24604,7 +24604,7 @@ ItemGetDataTable:
 ;;; This is an auxilliary data table specific to the item, which allows
 ;;; some items to share code, I think.
 .org $9be2
-ItemUseDataTable:
+ItemUseDataTable:               ; NOTE: rewritten by rom/item.ts (ITEM_USE_DATA_TABLE)
         .word (ItemUseData_1d)
         .word (ItemUseData_1d)
         .word (ItemUseData_1d)
@@ -24807,7 +24807,7 @@ TreasureChestSpawnTable:
 ;;; and magics).  Probably 71..7f are unused slots at the end.
 ;;; See also $3d45c which seems to have somewhat of a copy of rows 5-6 that
 ;;; appears to be used for messages.
-.org $9d66
+.org $9d66                      ; NOTE: rewritten in itemget.ts (this.itemPointer)
 ItemGetTable:                     ;  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
         .byte [@1dc62@],[@1dd67@],[@1dd68@],[@1dd69@],[@1dd6a@],[@1dd6b@],[@1dd6c@],[@1dd6d@],[@1dd6e@],[@1dd6f@],[@1dd70@],[@1dd71@],[@1dd72@],[@1dd73@],[@1dd74@],[@1dd75@] ; 0
         .byte [@1dd76@],[@1dd77@],[@1dd78@],[@1dd79@],[@1dd7a@],[@1dd7b@],[@1dd7c@],[@1dd7d@],[@1dd7e@],[@1dd7f@],[@1dd80@],[@1dd81@],[@1dd82@],[@1dd83@],[@1dd84@],[@1dd85@] ; 1
@@ -25636,7 +25636,7 @@ TreasureChestSpawnFlags_3c:
 ;;; Trigger data table.
 ;;; NOTE: All addresses are in a000..bfff
 .org $a17a
-TriggerTable:
+TriggerTable:                   ; NOTE: rewritten by rom/trigger.ts
         .word (Trigger_80)
         .word (Trigger_81)
         .word (Trigger_82)
@@ -28745,7 +28745,7 @@ _1f7bb:
         <@1f7bd@>
         <@1f7c0@>
 ;;; --------------------------------
-.org $b7c1
+.org $b7c1            ; NOTE: rewritten by rom/bosskill.ts (this.base2, this.data2)
 DataTable_1f7c1:                 ; This table is read in fives
         ;; 1st byte is foreground pal3 (2nd NPC palette)
         ;; 2nd byte is foreground pat1 (2nd NPC pattern), seems to be
@@ -28788,7 +28788,7 @@ ObjectActionJump_6f:
            <@1f821@>
          <@1f822 -@> ; $1f81a
 +       <@1f824@>
-        <@1f825@>
+        <@1f825@>                   ; NOTE: patched by stattracker.s ($b825)
         <@1f828@>
         <@1f829@>
         <@1f82a BossKillDataTable@>       ; NOTE: patched by bosses.s ($b82a)
@@ -28800,7 +28800,7 @@ ObjectActionJump_6f:
           <@1f836@>
           <@1f837@>
            <@1f838@>
-           <@1f83a OP_JMP_ABS@>
+           <@1f83a OP_JMP_ABS@>      ; TODO - call Jmp11 instead
            <@1f83c@>
            <@1f83e@>
            <@1f840@>
@@ -28960,7 +28960,7 @@ BossKillJump_Dyna:
 ;;; --------------------------------
 ;;; This is a table of locations, searched by ObjectActionJump_6f when bosses die.
 ;;; The index is then stored in $600,x and used to index the next table.
-.org $b95d
+.org $b95d                      ; NOTE: rewritten by rom/bosskill.ts (this.location)
 BossKillLocations:
         .byte [@1f95d@] ; 00 vampire 1
         .byte [@1f95e@] ; 01 insect
@@ -28984,7 +28984,7 @@ BossKillLocations:
 ;;; explosion only (at least in some cases), since $1f7c1 seems to
 ;;; restore the *final* pattern/palette, at least for pat1/pal3.
 ;;; STRIP: word=$14000
-.org $b96b
+.org $b96b                      ; NOTE: rewritten by rom/bosskill.ts (this.pointer)
 BossKillDataTable:
         ;; boss death, BossDrop
         .word (BossKillData_00_Vampire1)
@@ -31715,7 +31715,7 @@ DataTable_20fa5:
         .byte [@20fe7@],[@20fe8@],[@20fe9@],[@20fea@],[@20feb@],[@20fec@],[@20fed@],[@20fee@],[@20fef@]
 ;;; --------------------------------
 .org $8ff0
-Inventory_ItemData:
+Inventory_ItemData:             ; NOTE: rewrtten by rom/item.ts (ITEM_DATA_TABLE)
         ;; The :40 bit indicates that it's not allowed to be dropped
         ;; Other bits probably have something to do with gfx.
         ;;   :03 looks like a palette select
@@ -31728,7 +31728,7 @@ Inventory_ItemData:
         .byte [@21030@],[@21031@],[@21032@],[@21033@],[@21034@],[@21035@],[@21036@],[@21037@],[@21038@],[@21039@],[@2103a@]
 ;;; --------------------------------
 .org $903b
-Inventory_EquippedId:
+Inventory_EquippedId:             ; NOTE: rewrtten by rom/item.ts (SELECTED_ITEM_TABLE)
         ;; This table stores the value that's stored in $711..$715 for various
         ;; types of equipment
         .byte [@2103b@],[@2103c@],[@2103d@],[@2103e@],[@2103f@],[@21040@],[@21041@],[@21042@],[@21043@],[@21044@],[@21045@],[@21046@],[@21047@],[@21048@],[@21049@],[@2104a@]
@@ -31739,7 +31739,7 @@ Inventory_EquippedId:
 ;;; --------------------------------
 ;;; STRIP: word=$18000
 .org $9086
-MenuItemNameTable:
+MenuItemNameTable:             ; NOTE: rewrtten by rom/item.ts (MENU_NAME_TABLE)
         .word (MenuItemName_00) ; 00
         .word (MenuItemName_01) ; 01
         .word (MenuItemName_02) ; 02
@@ -33676,7 +33676,7 @@ JumpTable_22140:
 ;;; --------------------------------
 .org $a14a
 CreditsModeRunScene:
-        <@2214a@>
+        <@2214a@>                       ; NOTE: patched by stattracker.s ($a14a)
         <@2214d +@> ; $22152
          <@2214f _22120@>
          ;; ----
@@ -33718,7 +33718,7 @@ EndCreditsSceneTable:
         .word (CreditScene_18)        ; 18
         .word (CreditScene_19)        ; 19
         .word (CreditScene_1a)        ; 1a
-        .word (CreditsWaitForTimer)   ; 1b
+        .word (CreditsWaitForTimer)   ; 1b   ; NOTE: patched by stattracker.s ($a19c)
         .word (CreditsDisplayTheEND)  ; 1c
         .word (EndingCreditsFinished) ; 1d
 ;;; --------------------------------
@@ -39879,7 +39879,7 @@ MainGameModeJump_1e_ThrustCrystalis:
 -        <@27e4e@>
          <@27e51@>
         <@27e52 -@> ; $27e4e
-        <@27e54 RequestAttributeTable0Write@>
+        <@27e54 RequestAttributeTable0Write@>     ; NOTE: patched by stattracker.s ($be54)
         <@27e57@>
         <@27e59 BankSwitch8k_8000@>
         <@27e5c@>
@@ -42689,7 +42689,7 @@ DataTable_29b0e:
 ;;; position and direction.
 ;;; QUESTION: how do the multiple-spawns get the right directions?
 .org $bc00                    ; NOTE: These are loaded from the a000 bank (14:a)
-AdHocSpawns:
+AdHocSpawns:                  ; NOTE: rewritten by rom/adhocspawns.ts
         .byte [@29c00@],[@29c01@],[@29c02@],[@29c03@]
         .byte [@29c04@],[@29c05@],[@29c06@],[@29c07@] ; 01 Wind attack 1
         .byte [@29c08@],[@29c09@],[@29c0a@],[@29c0b@] ; 02 Wind attack 2
@@ -45563,7 +45563,8 @@ MaybeSetCheckpoint:                     ; NOTE: rewritten by savegame.s
               <@2fc5a@>
               <@2fc5c@>
              <@2fc5e @loop1@> ; $2fc3e
-             <@2fc60 ComputeChecksumForCheckpoint@> ; compute checksum => 70f4
+        ;; Save checksum in $70f4
+             <@2fc60 ComputeChecksumForCheckpoint@> ; NOTE: patched by stattracker.s ($bc60)
         ;; Copy checkpoint from main location to backup
              <@2fc63@>
 @loop2:
@@ -45631,7 +45632,7 @@ CopyCheckpointToMemory:                  ; NOTE: rewritten by savegame.s
             <@2fcbf@>
             <@2fcc1@>
            <@2fcc3 @loop@> ; $2fca3
-           <@2fcc5 CopyExtraStateFromCheckpoint@>
+           <@2fcc5 CopyExtraStateFromCheckpoint@> ; NOTE: patched by stattracker.s ($bcc5)
            ;; Restore AXY and $10..$30
            <@2fcc8@>
 -           <@2fcca@>
@@ -45835,7 +45836,7 @@ InitialPrg_6400:
 ;;; read, depending on who's reading it.  My guess is that the :01 bit
 ;;; indicates that the location allows saving, and the :80 bit is whether
 ;;; the location is a checkpoint.
-.org $bf00
+.org $bf00                      ; NOTE: rewritten by rom/location.ts ($bf00|id)
 CheckpointLocations:
         .byte [@2ff00@],[@2ff01@],[@2ff02@],[@2ff03@],[@2ff04@],[@2ff05@],[@2ff06@],[@2ff07@],[@2ff08@],[@2ff09@],[@2ff0a@],[@2ff0b@],[@2ff0c@],[@2ff0d@],[@2ff0e@],[@2ff0f@]
         .byte [@2ff10@],[@2ff11@],[@2ff12@],[@2ff13@],[@2ff14@],[@2ff15@],[@2ff16@],[@2ff17@],[@2ff18@],[@2ff19@],[@2ff1a@],[@2ff1b@],[@2ff1c@],[@2ff1d@],[@2ff1e@],[@2ff1f@]
@@ -49148,9 +49149,9 @@ VectorBetweenObjectsXY:
 ;;; In short, pick the 344bc subtable based on speed, then pick the
 ;;; row based on direction, then the column based on step count.
 .org $8480
-ComputeDisplacementVector:
+ComputeDisplacementVector:      ; NOTE: rewritten by speed.s
         ;; Stash the direction (times 8) in $12
-        <@34480@>
+        <@34480@>                     ; NOTE: patched by speed.s ($8480)
         <@34481@>
         <@34482@>
         <@34483@>
@@ -49490,10 +49491,10 @@ NextLevelExpByLevel:
         .byte [@34bbc@],[@34bbd@]
         .byte [@34bbe@],[@34bbf@]
 .org $8bc0
-ArmorDefense:
+ArmorDefense:               ; NOTE: rewritten by rom/item.ts (ARMOR_DEFENSE_TABLE)
         .byte [@34bc0@],[@34bc1@],[@34bc2@],[@34bc3@],[@34bc4@],[@34bc5@],[@34bc6@],[@34bc7@],[@34bc8@]
 .org $8bc9
-ShieldDefense:
+ShieldDefense:              ; NOTE: rewritten by rom/item.ts (SHIELD_DEFENSE_TABLE)
         .byte [@34bc9@],[@34bca@],[@34bcb@],[@34bcc@],[@34bcd@],[@34bce@],[@34bcf@],[@34bd0@],[@34bd1@]
 .org $8bd2
 SwordStabDamage:
@@ -50945,7 +50946,7 @@ KnockbackObject:
          <@355cd@>
          <@355cf@>
          <@355d1 ObjectKnockback@>
-+       <@355d4 ObjectKnockback@>
++       <@355d4 ObjectKnockback@>                 ; NOTE: patched by speed.s ($95d4)
         <@355d7@>
         <@355d9 ObjectDirection@>
         <@355dc +@> ; $355df
@@ -51957,14 +51958,14 @@ _35c03:
          <@35c51@> ; sword stab
          <@35c53 AdHocSpawnObject@>
          <@35c56 EquippedSword@>
-         <@35c59 DataTable_35c66@>
+         <@35c59 SwordElements@>
          <@35c5c@> ; Sword's Element
          <@35c5f SwordStabDamage@> ; NOTE: patched by attack.s ($9c5f)
          <@35c62@>
          <@35c65@>
          ;; ----
-DataTable_35c66:
-        ;; Sword elements
+SwordElements: ; 35c66
+        ;; Sword elements             ; NOTE: patched by walls.s ($9c6b), last elt
         .byte [@35c66@],[@35c67@],[@35c68@],[@35c69@],[@35c6a@],[@35c6b@]
         ;; ----
         ;; Figure out what kind of shot to fire.
@@ -53607,7 +53608,7 @@ ObjectActionJump_07:
         <@3685f@>
         <@36862 ++@> ; $368b0
         ;; Check for two hard-coded locations for spitting fire.
-        <@36864 CurrentLocation@>
+        <@36864 CurrentLocation@>                ; NOTE: patched by walls.s ($a864)
         <@36866@>
         <@36868 +@> ; $36875
          <@3686a@>
@@ -55428,7 +55429,7 @@ ObjectActionJump_5e:  ; Tower defense mechs (waiting for release)
         ;; specific out of each 64 frames.  Since the white robots
         ;; generally occupy slots 0d..12, this effectively splits
         ;; the work in half across two back-to-back frames.
-        <@375f3@>
+        <@375f3@>                     ; NOTE: patched by spawn.s ($b5f3)
         <@375f4@>
         <@375f5@>
         <@375f6@>
@@ -62540,7 +62541,7 @@ Metasprite_ed:                   ; Metasprite ed
 
 .segment "fe","ff"
 .org $c000
-PowersOfTwo:
+PowersOfTwo:                           ; NOTE: patched in utility.s ($c000)
         .byte [@3c000@],[@3c001@],[@3c002@],[@3c003@],[@3c004@],[@3c005@],[@3c006@],[@3c007@]
 ;;; --------------------------------
 .org $c008
@@ -63145,7 +63146,7 @@ LoadOneObjectData_BailOut:
             <@3c403@>
 +         <@3c406@>
           <@3c407@>
-         <@3c409@>
+         <@3c409@>                     ; NOTE: patched by spawn.s ($c409)
          <@3c40a@>
         <@3c40b@>
         <@3c40c@>
@@ -63828,7 +63829,7 @@ MainLoop:
         <@3c904 MainLoopMode@>
         <@3c906@>
         <@3c907@>
-        <@3c908 OP_JMP_ABS@>
+        <@3c908 OP_JMP_ABS@>         ; TODO - call Jmp11 instead
         <@3c90a@>
         <@3c90c MainLoopJumpTable@>
         <@3c90f@>
@@ -64239,7 +64240,7 @@ CheckForController2Buttons:
         <@3cbeb@>
 ;;; --------------------------------
 .org $cbec
-WildWarpLocations:
+WildWarpLocations:              ; NOTE: rewritten in rom/wildwarp.ts (ADDRESS)
         .byte [@3cbec@],[@3cbed@],[@3cbee@],[@3cbef@],[@3cbf0@],[@3cbf1@],[@3cbf2@],[@3cbf3@],[@3cbf4@],[@3cbf5@],[@3cbf6@],[@3cbf7@],[@3cbf8@],[@3cbf9@],[@3cbfa@],[@3cbfb@]
 .org $cbfc
 MainGameModeJump_04:
@@ -64391,7 +64392,7 @@ _3ccdd:
            ;; ----
 +         <@3cd06@>
           <@3cd07@>
-          <@3cd08 OP_JMP_ABS@>
+          <@3cd08 OP_JMP_ABS@>       ; TODO - call Jmp11 instead
           <@3cd0a@>
           <@3cd0c ObjectActionJumpTable@>
           <@3cd0f@>
@@ -65256,7 +65257,7 @@ WaitForDialogToBeDismissedInternal:
          <@3d3b0 RemoveSpritesBehindMessageBox@>
          <@3d3b3@>
         <@3d3b5 -@> ; $3d3aa
-        <@3d3b7@>
+        <@3d3b7@>                   ; NOTE: patched by stattracker.s ($f3b7)
         <@3d3b9 ScreenMode@>
         <@3d3bb@>
         <@3d3bd GAME_MODE_NORMAL@>
@@ -65375,7 +65376,7 @@ HandleTreasureChest_TooManyItems:
 .org $d497
 MainGameModeJump_06_ItemUseMessage:
         ;; Includes status recovery, health, and warp boot town selection
-        <@3d497 EquippedConsumableItem@>
+        <@3d497 EquippedConsumableItem@>         ; NOTE: patched by triggers.s ($d497)
         <@3d49a ITEM_OPEL_STATUE@>
         <@3d49c +@> ; $3d4ac
          <@3d49e@>
@@ -65389,8 +65390,9 @@ MainGameModeJump_06_ItemUseMessage:
 +       <@3d4ac@>
         <@3d4ae@>
         <@3d4b1 EquippedConsumableItem@>
-        <@3d4b4 ITEM_KIRISA_PLANT@>
-        <@3d4b6 ++@> ; $3d4c8
+        <@3d4b4 aryllisWant@>
+             aryllisWant = ITEM_KIRISA_PLANT
+        <@3d4b6 ++@> ; $3d4c8  (smudge on)
          <@3d4b8 PlayerStatus@>
          <@3d4b9 +@> ; $3d4c3
           <@3d4bd@>
@@ -65473,7 +65475,7 @@ ActivateTriggerSquare:
         <@3d546 +@> ; $3d54b
          ;; condition was met
          <@3d548 ExecuteItemOrTriggerAction@> ; Trigger message action
-+       <@3d54b GAME_MODE_NORMAL@>
++       <@3d54b GAME_MODE_NORMAL@>              ; NOTE: patched by triggers.s ($d54b)
         <@3d54d GameMode@>
         <@3d54f MainLoopJump_01_Game@>
 ;;; --------------------------------
@@ -65496,21 +65498,27 @@ ItemOrTriggerActionJump:                 ; TODO - Label the destinations
         .word (ItemOrTriggerActionJump_01) ; 01 thunder sword get -> teleport
         .word (ItemOrTriggerActionJump_02) ; 02 heal dolphin
         .word (ItemOrTriggerActionJump_Noop)
+        ;; NOTE: patched by triggers.s ($d56b)
         .word (ItemOrTriggerActionJump_04) ; 04 noop - use warp boots
         .word (ItemOrTriggerActionJump_Noop) ; 05 noop - use opel statue (?)
+        ;; NOTE: patched by triggers.s ($d56f)
         .word (ItemOrTriggerActionJump_06) ; 06 reload npcs - alarm flute, flute of lime
         .word (ItemOrTriggerActionJump_07) ; 07
+        ;; NOTE: patched by triggers.s ($d573)
         .word (ItemOrTriggerActionJump_08) ; 08 learn paralysis
         .word (ItemOrTriggerActionJump_09) ; 09 use shell flute
         .word (ItemOrTriggerActionJump_0a) ; 0a use statue of gold
+        ;; NOTE: patched by triggers.s ($d579) x5
         .word (ItemOrTriggerActionJump_0b) ; 0b learn barrier
         .word (ItemOrTriggerActionJump_0c) ; 0c use love pendant (learn change)
         .word (ItemOrTriggerActionJump_0d) ; 0d use kirisa plant
         .word (ItemOrTriggerActionJump_0e) ; 0e use ivory statue
         .word (ItemOrTriggerActionJump_0f) ; 0f learn refresh
         .word (ItemOrTriggerActionJump_10) ; 10 open a door (keys, eyeglasses)
+        ;; NOTE: patched by triggers.s ($d585)
         .word (ItemOrTriggerActionJump_06) ; 11 unused?
         .word (ItemOrTriggerActionJump_Noop) ; 12 unused?
+        ;; NOTE: patched by triggers.s ($d589) x2
         .word (ItemOrTriggerActionJump_13) ; 13 use bow of moon
         .word (ItemOrTriggerActionJump_14) ; 14 use bow of sun
         .word (ItemOrTriggerActionJump_15) ; 15
@@ -65676,7 +65684,7 @@ ItemOrTriggerActionJump_09:  ; Spawn Dolphin
         <@3d6a7@>
 ;;; --------------------------------
 .org $d6a8
-DolphinSpawnTable:
+DolphinSpawnTable:               ; NOTE: rewritten by rom/npc.ts ($d6a8)
 ;;; The first four bytes are entrance coordinates (70,x .. d0,x).
 ;;; The fifth byte is an index into the MovementScriptTable.
 ;;; Indexed by either the last entrance ($6d) or else hardcoded
@@ -65871,7 +65879,7 @@ ItemOrTriggerActionJump_1b:
 ;;; --------------------------------
 .org $d7fd
 ItemOrTriggerActionJump_1c:
-        <@3d7fd INV_GAS_MASK@>
+        <@3d7fd INV_GAS_MASK@>                  ; NOTE: patched by triggers.s ($d7fd)
         <@3d7ff GrantItemInRegisterA@>
         <@3d802 DialogFollowupActionJump_06@>
 ;;; --------------------------------
@@ -65925,13 +65933,13 @@ HandleItemOrTrigger:
         ;; NOTE: This is the chest entry point
         <@3d843@>
         <@3d844@>
-        <@3d845 OP_JMP_ABS@>
+        <@3d845 OP_JMP_ABS@>                    ; NOTE: patched by triggers.s ($d845)
         <@3d847@>
         <@3d849 JumpTable_3d885@> ; ItemGet, ItemUse, or TriggerSquare
         <@3d84c@>
         <@3d84e JumpTable_3d885+1@>
         <@3d851@>
-        <@3d853@>
+        <@3d853@>                          ; NOTE: patched by triggers.s ($d853)
         ;; Handle the output
         <@3d856@>
         <@3d858 +@> ; $3d880
@@ -66489,7 +66497,7 @@ JumpTable_3dbdc_07:
 ;;; --------------------------------
 ;;; List of warp points for warp boots/teleport.
 .org $dc58
-TownWarpTable:
+TownWarpTable:                  ; NOTE: rewritten in townwarp.ts (ADDRESS)
         .byte [@3dc58@],[@3dc59@],[@3dc5a@],[@3dc5b@],[@3dc5c@],[@3dc5d@],[@3dc5e@],[@3dc5f@],[@3dc60@],[@3dc61@],[@3dc62@],[@3dc63@]
 ;;; --------------------------------
 .org $dc64
@@ -66634,7 +66642,7 @@ MainGameModeJump_15_TelepathyMenu:
         <@3dd6b@>
         <@3dd6d@>
          <@3dd6e@>
-         <@3dd70@>
+         <@3dd70@>                         ; NOTE: patched by triggers.s ($dd70)
          <@3dd73@>
          <@3dd75@>
          <@3dd78 _3df8f@>
@@ -66731,7 +66739,7 @@ JumpTable_3ddbd_00:
          <@3de0d@>
          <@3de0f ^_1c16f >> 1@> ; $07
          <@3de11 BankSwitch16k@>
-         <@3de14 _1c16f@>
+         <@3de14 _1c16f@>                   ; NOTE: patched by telepathy.s ($de14)
          <@3de17@>
          <@3de19@>
          <@3de1c@>
@@ -66814,7 +66822,7 @@ MainGameModeJump_17_ChangeMagicMenu:
          <@3dec4@>
          <@3dec6@>
          <@3dec9@>
-         <@3decb@>
+         <@3decb@>                         ; NOTE: patched by triggers.s ($decb)
          <@3dece@>
          <@3ded0@>
          <@3ded3 _3df8f@>
@@ -67099,7 +67107,7 @@ AnimateBackgroundAndRespawn:
         <@3e0f9@>
         <@3e0fb@>
 -        <@3e0fd@>
-         <@3e0ff@>
+         <@3e0ff@>                     ; NOTE: patched by spawn.s ($e0ff)
          <@3e101@>
          beq :>>rts ; $fx in first slot => quit (why the and?)
          <@3e105@> ; $13 is (GlobalCounter>>4)+$d
@@ -67282,7 +67290,7 @@ TryNpcSpawn:                             ; TrySpawn
         <@3e1c4@>
         <@3e1c5@>
         <@3e1c7@>
-        <@3e1c9@>
+        <@3e1c9@>                     ; NOTE: patched by spawn.s ($e1c9)
         ;; NOTE(randomizer): we inject `jsr RandomizeFlyerSpawnPosition` here
         ;; npc[0] is y-coordinate (shifted by a nibble)
         <@3e1ca@>
@@ -67364,7 +67372,7 @@ NpcDataJump_4_Misc:              ; Animations, explosions, shopkeepers, etc.
         <@3e224@>
         <@3e226@>
         <@3e228 SpawnShopkeeper@> ; $3e239
--          <@3e22a@>
+-          <@3e22a@>                     ; NOTE: patched by spawn.s ($e22c)
            <@3e22c@>
            <@3e22e@>
            <@3e230 LoadOneObjectDataInternal@>
@@ -67414,6 +67422,7 @@ NpcDataJump_0_Enemy:             ; Called from $3e215
           <@3e27f@>
           <@3e281@>
           <@3e282@>
+NpcDataJump_SpawnObjectA:        ; Called by patches in spawn.s
           <@3e284@> ; object ID = $2f + #$50
           <@3e286@> ; store in position 'x'
           <@3e288 LoadOneObjectDataInternal@>
@@ -67436,9 +67445,10 @@ NpcDataJump_3_Wall:              ; Called from $3e215
         <@3e2a3@>
         <@3e2a5@>
         <@3e2a6@>
+        ;; NOTE: we can't just jmp to SpawnObject because of patch below
         <@3e2a8@> ; object ID = $2f + #$d0
         <@3e2aa@> ; store in position 'x'
-        <@3e2ac LoadOneObjectDataInternal@>
+        <@3e2ac LoadOneObjectDataInternal@>           ; NOTE: patched by walls.s ($e2ac)
         <@3e2af MaybeRecordAlternativePatternBank@>
         <@3e2b2 NpcDataJump_Finish@>
 ;;; --------------------------------
@@ -67580,9 +67590,9 @@ NpcDataJump_2_TreasureChestOrTrigger:         ; Called from $3e215
 +        <@3e3b0@>
          <@3e3b2@>
          <@3e3b5 NpcDataJump_Finish@>
-         ;; ----
+;;; --------------------------------
 NpcData_LoadTrigger:
-        <@3e3b8@>
+        <@3e3b8@>                     ; NOTE: patched by spawn.s ($e3b8)
         <@3e3ba@>
         <@3e3bc@>
         <@3e3be LoadOneObjectDataInternal@>
@@ -69888,7 +69898,7 @@ ResetCheckpointFile:
         <@3f233 -@> ; $3f21b
         <@3f235@>
         <@3f237@> ; unused??
-        <@3f23a FinishSaveFileValidations@>
+        <@3f23a FinishSaveFileValidations@>       ; NOTE: patched by stattracker.s ($f23a)
 ;;; --------------------------------
 ;;; enters with x=0 or x=1 when file 1 replicas mismatch, 2 or 3 for file 2
 ;;; x indicates save file index (0 and 1 are Save 1 replicas, 2 and 3 are
@@ -70057,7 +70067,7 @@ HandleReset:
          <@3f366@>
          <@3f369@>
          <@3f36b HandleColdBoot@>
-          <@3f36d@>
+          <@3f36d@>                   ; NOTE: patched by stattracker.s ($f36d)
           <@3f370@>
           <@3f372 HandleWarmBoot@>
 HandleColdBoot:

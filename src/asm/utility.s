@@ -13,8 +13,11 @@
 .org $8156                      ; 1c156
   lda PowersOfTwo,x ; no need for multiple copies
 
-
 .segment "fe", "ff"
+
+.org $c000
+OVERRIDE
+PowersOfTwo_1c:
 
  
 .reloc

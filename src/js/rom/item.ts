@@ -216,8 +216,8 @@ export class Item extends Entity {
 
     // If Aryllis wants this then set it as the item that requires change
     if (this.itemUseData.some(u => u.tradeNpc() === this.rom.npcs.Aryllis.id)) {
-      a.assign('ARYLLIS_WANT', this.id);
-      a.export('ARYLLIS_WANT');
+      a.assign('aryllisWant', this.id - 0x1c);
+      a.export('aryllisWant');
     }
 
     // writer.write([...stringToBytes(this.messageName), 0],

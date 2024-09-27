@@ -260,8 +260,3 @@ DestroyStatue:
 
 .org $d853
   jsr Jmp11
-
-;;; Aryllis turn-in item check
-.import ARYLLIS_WANT
-.org $d4b4
-  cmp #(ARYLLIS_WANT - $1c)

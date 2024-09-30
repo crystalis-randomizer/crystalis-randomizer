@@ -17,12 +17,6 @@
 
 .ifdef _NORMALIZE_SHOP_PRICES
 
-;;; =====================
-;;; TODO - why is this needed? it should get rewritten automatically?
-.org $98ee
-  lda ToolShopIdTable,x
-;;; =====================
-
 .org $98ff
   clc
   adc #SHOP_COUNT*4 ; 44 = delta between shop tables
@@ -123,7 +117,9 @@ ShopItemHorizontalPositions:
   rts
 FREE_UNTIL $9970
 
-;;; These are exported by the Shops writer.
+;;; NOTE: Many of these are not used here, but must be imported to
+;;; ensure the new values written in rom/shops.ts are correctly
+;;; propagated to the otherwise-untouched references from vanilla.
 .import ShopData, ArmorShopIdTable, ToolShopIdTable, ArmorShopPriceTable
 .import ToolShopPriceTable, InnPrices, ShopLocations
 .import ToolShopScaling, ArmorShopScaling, BasePrices, InnBasePrice

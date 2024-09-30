@@ -66,8 +66,12 @@ export function fixDialog(rom: Rom, predetermined?: ShuffleData) {
     
     replaceMessage('0b:01', '[46:Barrier]', 'APItem');
     replaceMessage('1d:12', '[46:Barrier]', 'APItem');
-
-    replaceMessage('0d:00', '[35:Fog Lamp]', 'APItem');
+    
+    if (predetermined.lime_hint == "") {
+      replaceMessage('0d:00', 'that a [35:Fog Lamp] was', 'there was treasure');
+    } else {
+      replaceMessage('0d:00', '[35:Fog Lamp]', predetermined.lime_hint.substring(0, 18));
+    }
     
     replaceMessage('0e:03', '[09:Ball of Water]', 'APItem');
      

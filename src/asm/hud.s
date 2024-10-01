@@ -159,17 +159,23 @@ ClearCurrentEnemyHPSlot:
 
 .pushseg "1a", "fe", "ff"
 ;;; Calls DisplayNumberInternal for each of the bits in A as follows:
-;; [in] A - bit mask for the different displays to update
-;; [scratch] X - could push X if needed later
-;; The following values are used in the randomizer for this
-;; 0 - Level
-;; 1 - Money
-;; 2 - Exp
-;; 3 - Max MP
-;; 4 - MP
-;; 5 - Enemy HP
-;; 6 - Difficulty
+;;; [in] A - bit mask for the different displays to update
+;;; [scratch] X - could push X if needed later
+;;; The following values are used in the randomizer for this
+;;;   0 - Level
+;;;   1 - Money
+;;;   2 - Exp
+;;;   3 - Max MP
+;;;   4 - MP
+;;;   5 - Enemy HP
+;;;   6 - Difficulty
+;;; NOTE: We add an additional entry point UpdateStatusBarDisplaysFar
+;;; that loads the display mask from $14 so that A can be used for
+;;; bank switching.  (Note that $14 is used as scratch space in
+;;; DisplayNumberInternal, so it's safe to use here.)
 .reloc
+UpdateStatusBarDisplaysFar:
+  lda $14
 UpdateStatusBarDisplays:
   ldx #$07
 -   rol

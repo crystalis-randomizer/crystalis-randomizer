@@ -59,6 +59,10 @@ CheckSwordCollisionPlane:
   .byte $00
 .popseg
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Enemy HP display
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 .ifdef _ENEMY_HP
 .pushseg "fe", "ff"
 
@@ -101,28 +105,6 @@ UpdateEnemyHPDisplay:
 .popseg
 
 
-;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
-.pushseg "3d"
-
-
-;; ;;; New version of GameMode_01, in the expanded PRG
-;; .pushseg "3d", "fe", "ff"
-;; .reloc
-;; LocationChangeInitialHook:
-;;     .ifdef _ENEMY_HP
-;;   jsr ClearCurrentEnemyHPSlotAndRedraw
-;;   jsr $c676 ; WaitForNametableFlush
-;;     .endif
-;;   jmp $ca2e ; MainGameModeJump_01_LocationChange
-
-;; ;;; Change the page of the 01 game mode to 1e (3c/3d).
-;; .org $cb2f
-;;   .byte $1e ; page 3d
-;; .org $cae0
-;;   .word (LocationChangeInitialHook)
-;; .popseg
-
-
 ;;; Call ClearCurrentEnemyHPSlotAndRedraw from ExitTypeJump_0_Normal.
 ;;; This ensures the enemy HP is erased while the screen is faded out,
 ;;; rather than a frame after it fades in (which is a little jarring).
@@ -144,6 +126,25 @@ UpdateEnemyHPDisplay:
   rts
 .popseg
 
+;; ;;; New version of GameMode_01, in the expanded PRG
+;; .pushseg "3d", "fe", "ff"
+;; .reloc
+;; LocationChangeInitialHook:
+;;     .ifdef _ENEMY_HP
+;;   jsr ClearCurrentEnemyHPSlotAndRedraw
+;;   jsr $c676 ; WaitForNametableFlush
+;;     .endif
+;;   jmp $ca2e ; MainGameModeJump_01_LocationChange
+
+;; ;;; Change the page of the 01 game mode to 1e (3c/3d).
+;; .org $cb2f
+;;   .byte $1e ; page 3d
+;; .org $cae0
+;;   .word (LocationChangeInitialHook)
+;; .popseg
+
+;; Force this part to go into the $a000 page so we can have DisplayNumber in $8000
+.pushseg "3d"
 
 ;;; ----------------------------------------------------
 .reloc
@@ -302,8 +303,11 @@ UpdateEnemyHPDisplayInternal:
   jmp DisplayNumberInternal
   ; implicit rts
 .popseg
-
 ;;; Back to 1a/1b/fe/ff
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 .ifdef _FIX_COIN_SPRITES
 ;;; Normally this code reads from a table to give the 16 different coin drop
@@ -326,15 +330,15 @@ FREE_UNTIL $ba2c
 
 
 .ifdef _FIX_SWORD_MANA_CHECK
-.segment "1a"
 .org $9c9a
   lda $0708 ; player mp
-  cmp $8bd8,y ; cost
+  cmp SwordMagicCost,y ; cost
   bcs $9ca7 ; skip switching to level 2
 .endif
 
+.segment "1a","fe","ff"         ; NOTE: don't reloc to 1b
+
 .ifdef _FIX_BLIZZARD_SPAWN
-.segment "1a","fe","ff"
 .org $9cba
   jsr @AdHocSpawnSwordShot
 
@@ -369,6 +373,12 @@ FREE "1a" [$8bde, $8bfe)        ; TODO - free other bits
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 .segment "3c"
+
+;;; We need to be able to call a few 1a routines from 3c.
+.reloc
+UpdateStatusBarDisplays_3c:
+        sta $14
+        FAR_JUMP_LO UpdateStatusBarDisplaysFar
 
 .reloc
 ;;; --------------------------------
@@ -717,6 +727,10 @@ KillObject:
         dec PlayerExp
 @LevelUp:
         inc PlayerLevel
+        ;; Update max hp/mp first, before resetting the exp counter, since
+        ;; we need to hold onto carry bit to check for a second level (in
+        ;; which case we should already have updated hp/mp).
+        jsr @UpdatePlayerMaxHPAndMPAfterLevelUp
         lda PlayerLevel
         asl ; note: clears carry
         tay
@@ -734,8 +748,7 @@ KillObject:
           ;; Adding the PlayerExp hi byte will have set carry if we're back to being
           ;; "positive".  If we _didn't_ carry then we need to add a second level.
           bcc @LevelUp
-+       jsr @UpdatePlayerMaxHPAndMPAfterLevelUp
-        jsr @UpdateDisplayAfterLevelUp
++       jsr @UpdateDisplayAfterLevelUp
         jmp @UpdateCurrentEXPAndExit
 
 @UpdateCurrentEXPAndExit:
@@ -762,32 +775,32 @@ KillObject:
       .endif ; _ENEMY_HP
 
 .reloc
-@UpdatePlayerMaxHPAndMPAfterLevelUp:
-        ldy PlayerLevel
-        lda $8b7f,y
-        sta PlayerMaxHP
-        lda $8b8f,y
-        sta PlayerMaxMP
+@UpdatePlayerMaxHPAndMPAfterLevelUp: ; smudge from $3518b to $351b6
+        <@3518b PlayerLevel@>
+        <@3518e MaxHPByLevel@>
+        <@35191 PlayerMaxHP@>
+        <@35194 MaxMPByLevel@>
+        <@35197 PlayerMaxMP@>
         ;; Add the delta of the max HP/MP to the current
-        sec
-        lda $8b7f,y
-        sbc $8b7e,y
-        clc
-        adc PlayerHP
-        sta PlayerHP
-        sec
-        lda $8b8f,y
-        sbc $8b8e,y
-        clc
-        adc PlayerMP
-        sta PlayerMP
-        rts
+        <@3519a@>
+        <@3519b MaxHPByLevel@>
+        <@3519e MaxHPByLevel-1@>
+        <@351a1@>
+        <@351a2 PlayerHP@>
+        <@351a5 PlayerHP@>
+        <@351a8@>
+        <@351a9 MaxMPByLevel@>
+        <@351ac MaxMPByLevel-1@>
+        <@351af@>
+        <@351b0 PlayerMP@>
+        <@351b3 PlayerMP@>
+        rts                     ; smudge off
 
 .reloc
 @UpdateDisplayAfterLevelUp:
         jsr UpdateHPDisplay ;Internal
         lda #%00011001 ; update displays 0, 3, 4
-        jsr UpdateStatusBarDisplays
+        jsr UpdateStatusBarDisplays_3c
         lda #GAME_MODE_STATUS_MSG
         sta GameMode
                                 ; Update player metasprite information? This was copied from the
@@ -863,6 +876,38 @@ KillObject:
         <@351f9@>
 
     .endif ; _UPDATE_HUD
+
+FREE "1a" [$8b7f, $8bc0)
+.reloc       ; smudge from $34b7f to $34bc0
+;;; NOTE: These are attached because the tables actually start one byte
+;;; after each label, due to the 1-indexed level.  We can probably rewrite
+;;; with arithmetic to avoid this, so that they're separable.
+OVERRIDE
+MaxHPByLevel:
+        .byte [@34b7f@],[@34b80@],[@34b81@],[@34b82@],[@34b83@],[@34b84@],[@34b85@],[@34b86@],[@34b87@],[@34b88@],[@34b89@],[@34b8a@],[@34b8b@],[@34b8c@],[@34b8d@],[@34b8e@]
+OVERRIDE
+MaxMPByLevel:
+        .byte [@34b8f@],[@34b90@],[@34b91@],[@34b92@],[@34b93@],[@34b94@],[@34b95@],[@34b96@],[@34b97@],[@34b98@],[@34b99@],[@34b9a@],[@34b9b@],[@34b9c@],[@34b9d@],[@34b9e@]
+OVERRIDE
+NextLevelExpByLevel:
+        .byte [@34b9f@]
+        .byte [@34ba0@],[@34ba1@]
+        .byte [@34ba2@],[@34ba3@]
+        .byte [@34ba4@],[@34ba5@]
+        .byte [@34ba6@],[@34ba7@]
+        .byte [@34ba8@],[@34ba9@]
+        .byte [@34baa@],[@34bab@]
+        .byte [@34bac@],[@34bad@]
+        .byte [@34bae@],[@34baf@]
+        .byte [@34bb0@],[@34bb1@]
+        .byte [@34bb2@],[@34bb3@]
+        .byte [@34bb4@],[@34bb5@]
+        .byte [@34bb6@],[@34bb7@]
+        .byte [@34bb8@],[@34bb9@]
+        .byte [@34bba@],[@34bbb@]
+        .byte [@34bbc@],[@34bbd@]
+        .byte [@34bbe@],[@34bbf@]
+
 
 ;;; --------------------------------
 

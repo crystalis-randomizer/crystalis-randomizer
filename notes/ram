@@ -945,6 +945,8 @@ for projectiles (540==ff), 560 is imputed status
 for objects loaded from the NpcData table, this is the 4th byte in the table,
 typically the ID.
 
+$561 is terrain under player
+
 
 $580,x
 ------
@@ -1028,13 +1030,25 @@ $660,x
 $661 is a countdown timer used only in stom fight, but apparently never read
 to affect anything other than checking for a multiple of 4?
 
+$660 is the amount of slope speed the player has accumulated, which caps at 9
+since it's the highest 8-dir speed.
+
 
 $680,x
 ------
+$680 has something to do with player slope direction, but I can't figure how to
+ever get anything other than $4 or $84 (in theory if it were ever diagonal, it
+could switch to 5 or 6, but how does it get there in the first place?).  $84
+indicates we _just_ finished falling off a slope and are slowing back down.
 
 
 $6a0,x
 ------
+$6a0 seems to keep track of the number of frames the player has walked into
+a wall - it's 8 when the player is moving freely, then counts down to 0 while
+walking into a wall.  This seems to be related to the way you can single-frame
+tap a diagonal while walking into a wall and you end up moving for 8 frames
+worth of movement.
 
 
 $6c0,x

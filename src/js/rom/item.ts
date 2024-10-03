@@ -216,8 +216,7 @@ export class Item extends Entity {
 
     // If Aryllis wants this then set it as the item that requires change
     if (this.itemUseData.some(u => u.tradeNpc() === this.rom.npcs.Aryllis.id)) {
-      a.assign('aryllisWant', this.id - 0x1c);
-      a.export('aryllisWant');
+      exportValue(a, 'aryllisWant', this.id - 0x1c);
     }
 
     // writer.write([...stringToBytes(this.messageName), 0],
@@ -460,6 +459,7 @@ export class Items extends EntityArray<Item> {
     }
     relocExportLabel(a, 'KeyItemData', [$0e, $0f]);
     a.byte(...uniqueTable);
+    exportValue(a, 'warriorRingDelay', 30);
     return [a.module()];
   }
 }

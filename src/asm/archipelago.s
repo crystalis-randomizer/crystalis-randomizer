@@ -27,7 +27,7 @@ ClearArchipelagoFlagsOnColdBoot:
 HandleArchipelago:
   lda ArchipelagoFlag
   ;check for an incoming item
-  beq AP_Continue
+  beq @AP_Continue
     lda #$02
     sta ArchipelagoFlag
     lda ArchipelagoItemGet
@@ -36,7 +36,7 @@ HandleArchipelago:
       lda $0623
       pha
         jsr FindEmptyOrMonsterSlot
-        bne AP_Continue ; if a isn't 0 coming out, then we didn't find a slot
+        bne @AP_Continue ; if a isn't 0 coming out, then we didn't find a slot
         stx $0623
         lda $70
         sta $70,x
@@ -58,7 +58,7 @@ HandleArchipelago:
 ++  lda #$00
     sta ArchipelagoItemGet
     sta ArchipelagoFlag
-AP_Continue:
+@AP_Continue:
   jmp HandleStatusConditions
 
 .reloc

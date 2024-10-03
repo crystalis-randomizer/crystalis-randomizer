@@ -54,7 +54,7 @@ export function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random, predet
     o[17] = sexp; // EXP
 
     if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
-      if (boss && predetermined && predetermined.bossWeaknesses.has(id)) {
+      if (boss && predetermined?.bossWeaknesses.has(id)) {
         rom.objects[id].elements = predetermined.bossWeaknesses.get(id)!;
       } else if (!SLIMES.has(id)) {
         const bits = [...rom.objects[id].elements.toString(2).padStart(4, '0')];

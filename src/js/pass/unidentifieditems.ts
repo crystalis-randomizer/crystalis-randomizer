@@ -333,7 +333,7 @@ export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random, pred
     for (const item of list) {
       let name = "";
       // could build this map on IDs instead of names
-      if (predetermined && predetermined.keyItemNames.has(item.messageName)) {
+      if (predetermined?.keyItemNames.has(item.messageName)) {
         name = predetermined.keyItemNames.get(item.messageName)!;
       } else {
         name = filteredNames.pop()!;

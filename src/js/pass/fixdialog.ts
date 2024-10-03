@@ -46,7 +46,7 @@ export function fixDialog(rom: Rom, predetermined?: ShuffleData) {
     return rom.items[trade];
   }
   // NOTE: we need to hardcode original names in case they were shuffled.
-  if (predetermined && predetermined.fromArchipelago) {
+  if (predetermined?.fromArchipelago) {
     unmagic('00:1b');
     replaceMessage('00:1b', '[41:Refresh]', 'APItem');
     

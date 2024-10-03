@@ -9,7 +9,7 @@ export function randomizeThunderWarp(rom: Rom, random: Random, predetermined?: S
   let town: number = 0;
   let index: number = -1;
   const towns = [...rom.townWarp.locations].filter(x => x !== 0xff);
-  if (predetermined && predetermined.thunderWarp && 
+  if (predetermined?.thunderWarp && 
       towns.indexOf(predetermined.thunderWarp) >= 0) {
     town = predetermined.thunderWarp;
     index = towns.indexOf(predetermined.thunderWarp);

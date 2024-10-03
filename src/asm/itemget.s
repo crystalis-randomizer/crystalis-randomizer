@@ -165,10 +165,10 @@ PatchStartItemGet:
         cmp #$3c ;Kirisa Meadow
         beq +
           cmp #$3b ;Underwater channel
-          bne bail
+          bne @bail
 +   lda #$00
     sta $4a0,y
-bail:
+@bail:
     pla
     pla
     pla

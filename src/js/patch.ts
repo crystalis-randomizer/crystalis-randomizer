@@ -101,7 +101,7 @@ function defines(flags: FlagSet,
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUDIBLE_WALLS: flags.audibleWallCues(pass),
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(pass),
-    _ARCHIPELAGO: predetermined != undefined && predetermined.fromArchipelago,
+    _ARCHIPELAGO: predetermined?.fromArchipelago == true,
     _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
@@ -289,13 +289,13 @@ async function shuffleInternal(rom: Uint8Array,
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps, but before logic.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
-  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined !== undefined && predetermined.fromArchipelago));
+  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined?.fromArchipelago == true));
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
   const graph = new Graph([world.getLocationList()]);
-  if (!flags.noShuffle() && !(predetermined && predetermined.fromArchipelago)) {
+  if (!flags.noShuffle() && !(predetermined?.fromArchipelago)) {
     const fill = await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
     if (fill) {
       // const n = (i: number) => {
@@ -656,7 +656,7 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random, predetermined:
     const locations = entry[1];
     // pick a random wall type.
     let elt: number = 0;
-    if (predetermined && predetermined.wallMap.has(area.name)) {
+    if (predetermined?.wallMap.has(area.name)) {
       //console.log(`Shuffling walls for ${area.name}`);
       elt = predetermined.wallMap.get(area.name)!;
     } else {
@@ -671,7 +671,7 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random, predetermined:
           if (type === 2) continue;
           if (type === 3) {
             let newElt: number = 0;
-            if (predetermined && predetermined.wallMap.has(location.name)) {
+            if (predetermined?.wallMap.has(location.name)) {
               newElt = predetermined.wallMap.get(location.name)!;
             } else if (predetermined) {
               if (spawn.xt == 23 && predetermined.wallMap.has(`Goa Fortress - Sabera Item`)) {
@@ -893,7 +893,7 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
   embed(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
-  if (predetermined && predetermined.fromArchipelago) {
+  if (predetermined?.fromArchipelago) {
     embed(0x25715, 'ARCHIPELAGO');
   } else {
     embed(0x25716, 'RANDOMIZER');

@@ -63,7 +63,7 @@ function flip(e: Exit2, random: Random) {
 export function shuffleGoa(rom: Rom, random: Random, predetermined?: ShuffleData) {
   const $ = rom.locations;
   let floors = [0, 1, 2, 3];
-  if (predetermined && predetermined.goa_floors){
+  if (predetermined?.goa_floors){
     floors = predetermined.goa_floors.map(floor => floor[0]);
   } else {
     random.shuffle(floors);
@@ -92,7 +92,7 @@ export function shuffleGoa(rom: Rom, random: Random, predetermined?: ShuffleData
   for (const f of floors) {
     const flexible = up || entrances[f][3] || a[a.length - 1][3];
     let reverse = flexible ? random.pick([false, true]) : true;
-    if (predetermined && predetermined.goa_floors){
+    if (predetermined?.goa_floors){
         //just trust that the predetermined did this right
         reverse = predetermined.goa_floors[a.length - 1][1];
     }

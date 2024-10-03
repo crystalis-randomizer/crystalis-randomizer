@@ -19,6 +19,7 @@
 .org $9c6b
   .byte $0f
 
+.ifndef _AUDIBLE_WALLS
 ;;; Invert how walls work: their elemental defense byte stores
 ;;; a single bit, and the sword must have that bit as well: this
 ;;; makes Crystalis able to break all walls.
@@ -26,6 +27,7 @@
   eor #$0f
   and ObjectElementalDefense,x
   .byte $f0  ; change 'bne' to 'beq'.
+.endif
 
 
 .ifdef _CUSTOM_SHOOTING_WALLS
@@ -101,15 +103,15 @@ WallElements:
   cmp #$01
   beq @rts ; Level is too low -> bail out
   lda $0500,y ; ObjectElementalDefense,y
+  eor #$0f
   and $0500,x ; ObjectElementalDefense,x
-  and #$0f
   jsr @AudibleWalls ; Will do a double-return if mismatched
   jmp KillObject
 @rts:
   rts
 .reloc
 @AudibleWalls:
-  beq +
+  bne +
    ;; Element mismatched.
    ;; See if we should play a sound, double-return either way.
    ;; When we spawned the wall, we stored the original element

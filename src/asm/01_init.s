@@ -441,6 +441,9 @@ FREE "14" [$8520, $8528)
 ;;; DMC changes, remove unused DMC configurations.
 FREE "18" [$8be0, $8c0c)
 
+;;; Some unused bytes
+FREE "1a" [$8b7c, $8b7f)
+
 FREE "1b" [$a086, $a0a3)
 
 

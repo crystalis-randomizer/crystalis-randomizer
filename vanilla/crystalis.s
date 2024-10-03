@@ -112,6 +112,10 @@
 .define PlayerArmorDef          $0401
 .define PlayerShieldDef         $0400
 .define PlayerLevel             $0421
+.define PlayerStepCounter       $0480
+.define PlayerAnimationCounter  $04e1
+.define PlayerTerrain           $0561
+.define PlayerSwordCooldown     $0600
 .define PlayerJumpDisplacement  $0620
 .define PlayerSwordChargeAmount $06c0
 .define PlayerMoney             $0702 ; 2 bytes
@@ -553,6 +557,7 @@
 .define LOC_PORTOA               $50
 .define LOC_FISHERMANS_ISLAND    $51
 .define LOC_MESIA_SHRINE         $52
+.define LOC_TOWER_ENTRANCE       $58
 .define LOC_DYNA                 $5f
 .define LOC_ANGRY_SEA            $60
 .define LOC_UNDERGROUND_CHANNEL  $64
@@ -51391,6 +51396,8 @@ SpawnDeathReplacement:
 ;;; Result:
 ;;;   C - set if we collided with an impassible tile.
 ;;;       clear if the movement was successful.
+;;;   $25 - terrain under object
+;;;   $23 - original object direction
 ;;;   Object coords and direction updated.
 .org $98d7
 MoveObjectWithSpeedAndDirection:         ; NOTE: rewritten by movement.s
@@ -52096,11 +52103,11 @@ FallDisplacements:
         .byte [@35d5d@],[@35d5e@],[@35d5f@],[@35d60@],[@35d61@],[@35d62@],[@35d63@],[@35d64@],[@35d65@],[@35d66@],[@35d67@],[@35d68@],[@35d69@],[@35d6a@],[@35d6b@],[@35d6c@]
         .byte [@35d6d@],[@35d6e@],[@35d6f@],[@35d70@],[@35d71@],[@35d72@],[@35d73@],[@35d74@],[@35d75@],[@35d76@],[@35d77@],[@35d78@],[@35d79@],[@35d7a@],[@35d7b@],[@35d7c@]
         .byte [@35d7d@]
-.org $9d7e
-DataTable_35d7e:
+.org $9d7e                      ; NOTE: rewritten by object_player.s
+ChargeLevelThresholds:
         .byte [@35d7e@],[@35d7f@],[@35d80@]
 ;;; --------------------------------
-.org $9d81
+.org $9d81                      ; NOTE: rewritten by object_player.s
 ObjectActionJump_02:
         <@35d81@>
         <@35d83@>
@@ -52183,10 +52190,10 @@ ObjectActionJump_03:
           <@35e26 SFX_SWORD_CHARGED@>
           <@35e28 StartAudioTrack@>
 +        <@35e2b MaxChargeLevel@>
-         <@35e2e DataTable_35d7e@>
-         <@35e31 ObjectDirMetaspriteBase@>
+         <@35e2e ChargeLevelThresholds@>
+         <@35e31 PlayerSwordChargeAmount@>
          <@35e34 ++@> ; $35e39
-          <@35e36 ObjectDirMetaspriteBase@>
+          <@35e36 PlayerSwordChargeAmount@>
 ++      <@35e39@>
         <@35e3c +++@> ; $35e6f
         <@35e3e@>
@@ -52240,7 +52247,7 @@ ObjectActionJump_03:
         <@35eac@>
         <@35eae@>
         <@35eb1@>
-        <@35eb3 DataTable_36017@>
+        <@35eb3 HorizontalDirectionProjectionTable@> ; 36017
         <@35eb6 ++@> ; $35eef
         <@35eb8@>
 +       <@35eba@>
@@ -52335,10 +52342,10 @@ ObjectActionJump_03:
         <@35f8b@>
 +       <@35f8e@>
         <@35f90@>
-        <@35f93 _35fd2@>
+        <@35f93 ApplySlopeToPlayer@>
 ++      <@35f95@>
         <@35f97@>
-        <@35f9a _35fd2@>
+        <@35f9a ApplySlopeToPlayer@>
         <@35f9d@>
         <@35fa0@>
         <@35fa2 +@> ; $35fb4
@@ -52363,8 +52370,8 @@ ObjectActionJump_03:
          <@35fce@>
         <@35fd1@>
 ;;; --------------------------------
-.org $9fd2
-_35fd2:
+.org $9fd2                      ; NOTE: rewritte by object_player.s
+ApplySlopeToPlayer:
         <@35fd2@>
         <@35fd5@>
          <@35fd6@>
@@ -52394,10 +52401,15 @@ _35fd2:
         <@3600e@>
 ;;; --------------------------------
 .org $a00f
-DataTable_3600f:
+;;; This table keyed by player direction and updates to a new
+;;; direction to try.  It's pretty wonky, but doesn't seem to
+;;; actually be used here, since it's always just 4 -> 4.  It's
+;;; possible that this is used in other games with conveyors
+;;; that go in other directions?
+SlopeFallbackDirectionTable:                ; NOTE: deleted by object_player.s
         .byte [@3600f@],[@36010@],[@36011@],[@36012@],[@36013@],[@36014@],[@36015@],[@36016@]
 ;;; Optional directions to maybe store in 360,x (if positive)
-DataTable_36017:
+HorizontalDirectionProjectionTable: ; NOTE: rewritten by object_player.s
         .byte [@36017@],[@36018@],[@36019@],[@3601a@],[@3601b@],[@3601c@],[@3601d@],[@3601e@]
 ;;; --------------------------------
 .org $a01f
@@ -52448,7 +52460,7 @@ _36022:
 ;;; --------------------------------
         .byte [@36071@] ; UNUSED
 ;;; --------------------------------
-;;; SRTIP: word=$2c000
+;;; STRIP: word=$2c000
 .org $a072
 UseMagicJump:
         .word (UseMagicJump_00_Nothing) ; just rts  ; NOTE: patched by magic.s ($a072)
@@ -53436,17 +53448,18 @@ CheckStartedWindmill:
 ;;; --------------------------------
 .org $a70e
 ObjectActionJump_0a:
+        ;; NOTE: X=0
         <@3670e@>
         <@36711 +@> ; $36725
-        <@36713@>
-        <@36716@>
-        <@36718@>
-        <@3671b@>
-        <@3671d@>
-        <@36720 GAME_MODE_STATUS_MSG@>
-        <@36722 GameMode@>
-        <@36724@>
-        ;; ----
+          <@36713@>
+          <@36716@>
+          <@36718@>
+          <@3671b@>
+          <@3671d@>
+          <@36720 GAME_MODE_STATUS_MSG@>
+          <@36722 GameMode@>
+          <@36724@>
+          ;; ----
         ;; Initiate Stom fight: set hardcoded pattern 4e into second slot
 +       <@36725@>
         <@36727@>
@@ -53456,17 +53469,17 @@ ObjectActionJump_0a:
         <@36731@>
         <@36733@>
         bne :>rts ; $36752
-         <@36737@>
-         <@36739@>
-         <@3673c@>
-         <@3673e@>
-         <@36741@>
-         <@36743@>
-         <@36746@>
-         <@36748@>
-         <@3674a@>
-         <@3674c@>
-         <@3674f@>
+          <@36737@>
+          <@36739@>
+          <@3673c@>
+          <@3673e@>
+          <@36741@>
+          <@36743@>
+          <@36746@>
+          <@36748@>
+          <@3674a@>
+          <@3674c@>
+          <@3674f@>
         <@36752@>
 ;;; --------------------------------
 .org $a753

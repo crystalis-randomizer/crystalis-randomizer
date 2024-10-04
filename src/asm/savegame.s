@@ -229,36 +229,54 @@ CopyCheckpointToMemoryForContinueIndirected:
 ;;; smudge off
 
 
-.segment "fe", "ff"
+.segment "17"
+.ifdef _MONEY_AT_START          ; TODO - refactor this away from a .define
+  initialMoney = 100
+.else
+  initialMoney = 0
+.endif
+.export initialMoney
 
-;;; ================================================================
-;;; When initializing a new game, we need more space for custom
-;;; values.  Instead of a bunch of sta $07xx to zero things out,
-;;; use a table.
 
-.org $c96d
-  ldx #$00
--- lda PrepareGameInitialDataTable,x
-    beq +
-   sta $12
-   inx
-   lda PrepareGameInitialDataTable,x
-   sta $10
-   inx
-   lda PrepareGameInitialDataTable,x
-   sta $11
-   inx
-   ldy #$00
--   lda PrepareGameInitialDataTable,x
-    sta ($10),y
-    inx
-    iny
-    dec $12
-   bne -
-  beq --
-+ jsr $c9ff ; PopulateInitialObjects
-  jmp $c008
-FREE_UNTIL $c9da
+.segment "3c"
+.reloc
+PrepareGame_3c:                      ; smudge from $3c957 to $3c9da
+        <@3c957@>
+        <@3c959@>
+-        <@3c95b@>
+         <@3c95e@>
+        <@3c95f -@> ; $3c95b
+        <@3c961@>
+        <@3c963@>
+-        <@3c964@>
+         <@3c967@>
+         <@3c96a@>
+        <@3c96b -@> ; $3c964
+        ;; ================================================================
+        ;; When initializing a new game, we need more space for custom
+        ;; values.  Instead of a bunch of sta $07xx to zero things out,
+        ;; use a table.
+        ldx #$00                     ; smudge off
+--       lda PrepareGameInitialDataTable,x
+          beq +
+         sta $12
+         inx
+         lda PrepareGameInitialDataTable,x
+         sta $10
+         inx
+         lda PrepareGameInitialDataTable,x
+         sta $11
+         inx
+         ldy #$00
+-         lda PrepareGameInitialDataTable,x
+          sta ($10),y
+          inx
+          iny
+          dec $12
+         bne -
+        beq --
++       jsr PopulateInitialObjects
+        jmp UpdateEquipmentAndStatus
 
 .reloc
 PrepareGameInitialDataTable:
@@ -273,12 +291,7 @@ PrepareGameInitialDataTable:
   ;; Various values in the 700 block
   .byte 8
   .word ($0702)
-  .ifdef _MONEY_AT_START
-    .byte 100
-  .else
-    .byte 0
-  .endif
-  .byte $00,$1e,$00,$00,$00,$22,$22
+  .byte initialMoney,$00,$1e,$00,$00,$00,$22,$22
   ;; A few more values in 7xx
   .byte 11
   .word ($0710)
@@ -307,9 +320,3 @@ PrepareGameInitialDataTable:
 .endrepeat
 .endif ; _STATS_TRACKING
   .byte 0
-.ifdef _MONEY_AT_START
-.pushseg "17"
-.org $be80
-  .byte 100
-.popseg
-.endif

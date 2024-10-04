@@ -39,12 +39,13 @@ ObjectActionJump_03:
         <@35da7 ObjectShootMetaspriteBase@> ; $06e0
         <@35daa@>
         ;; Check for "slow" terrain ($40)
-        <@35dac ObjectTerrain@> ; $0380
-          bvc ++              ; smudge off - we rewrote this to save a byte
-          ;; asl              ; smudge on
+        bit ObjectTerrain        ; smudge off (rewrite to save a byte)
+          bvc ++
+          ;; lda ObjectTerrain,x ; smudge on
+          ;; asl
           ;; bpl ++
         ;; Terrain is slow: only draw the top half of the player sprite
-        <@35db2 PlayerJumpDisplacement@> ; $0620
+        <@35dac PlayerJumpDisplacement@> ; $0620
           <@35db5 ++@>
         ;; Not jumping: replace Y with 4c instead of a7
 +       <@35db7@>

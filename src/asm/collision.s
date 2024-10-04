@@ -17,17 +17,6 @@ MoveObjectWithSpeedAndDirection_3c:
         FAR_JUMP_LO MoveObjectWithSpeedAndDirection
 
 
-.pushseg "fe"
-.org $cb79                      ; smudge from $3cb79
-        ;; Replace the 16k bank swap to 0d (i.e. 1a/1b) with a single
-        ;; 8k swap to 3c (the second swap to 1b will happen later).
-        ;; This precedes the call to CheckAllObjectCollisions so that
-        ;; we can call into segmentd 3c.
-        <@3d354@>
-        <@3d35e BankSwitch8k_8000@>
-        <@3d361 CheckAllObjectCollisions@> ; TODO - delete me?
-.popseg
-
 .reloc
 OVERRIDE
 CheckAllObjectCollisions:

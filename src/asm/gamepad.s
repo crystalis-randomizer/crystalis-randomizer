@@ -14,11 +14,6 @@
   lda $4a
 .org $cbb4 ; enter select menu
   lda $4a
-
-.ifndef _CHECK_FLAG0
-.org $cb62 ; game mode 8
-  jsr ReadControllersWithButtonUp
-.endif
 .endif ; _CTRL1_SHORTCUTS
 
 

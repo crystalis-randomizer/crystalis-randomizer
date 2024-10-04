@@ -202,11 +202,9 @@ UpdateStatusBarDisplays:
 .segment "fe", "ff"
 
 .ifdef _UPDATE_HUD
-.org $cb65  ; inside GameModeJump_08_Normal
-  jsr @CheckToRedisplayUI ; was jsr CheckForPlayerDeath
 
 .reloc
-@CheckToRedisplayUI:
+CheckToRedisplayUI:
   lda ShouldRedisplayUI
   beq @CheckEnemyDespawned
   lsr ShouldRedisplayUI
@@ -219,7 +217,7 @@ UpdateStatusBarDisplays:
   lsr ShouldRedisplayUI
   bcc @CheckEnemyDespawned
     jsr UpdateEnemyHPDisplay
-    bne @Exit ; unconditional (no need to check enemy despawn)
+    bne :>rts ; unconditional (no need to check enemy despawn)
 .endif ; _ENEMY_HP
 
 ; Check to see if the current enemy slot is nonzero, but the action script
@@ -227,15 +225,14 @@ UpdateStatusBarDisplays:
 @CheckEnemyDespawned:
 .ifdef _ENEMY_HP
   ldx CurrentEnemySlot
-  beq @Exit
+  beq :>rts
     lda ObjectActionScript,x
-    bne @Exit
+    bne :>rts
       sta CurrentEnemySlot
       jsr UpdateEnemyHPDisplay
 .endif ; _ENEMY_HP
 
-@Exit:
-  jmp CheckForPlayerDeath
+  rts
 .endif
 
 

@@ -360,18 +360,6 @@ TS_COUNT       = $13
 ;;; note: this is dangerous if it would result in a register read
 .define SKIP_TWO_BYTES .byte $2c
 
-.segment "10"       ; 20000
-AfterLoadGame       = $9c7a
-
-.segment "fe"              ; 3c000
-FlushNametableDataWrite         = $c676
-MainLoop_01_Game           = $cab6
-DialogAction_11            = $d21d
-MainLoopItemGet            = $d3ff
-
-.segment "ff"                 ; 3e000
-RestoreBanksAndReturn         = $e756
-
 ;;; Various free sections
 
 ;;; another 256 free in map space

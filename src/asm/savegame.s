@@ -334,11 +334,11 @@ MainGameModeJump_00_Initialize:
         <@3ca5f@> ; 8000 -> 24000
         <@3ca61 BankSwitch16k@>
         <@3ca64 InitializeStatusBarNametable@>
-        <@3ca67 WaitForNametableFlush@>
+        <@3ca67 FlushNametableDataWrite@>
         <@3ca6a@> ; 8000 -> 34000
         <@3ca6c BankSwitch8k_8000@>
         <@3ca6f UpdateHPDisplayInternal@>
-        <@3ca72 WaitForNametableFlush@>
+        <@3ca72 FlushNametableDataWrite@>
         <@3ca75@>
         <@3ca77@>
         <@3ca7a@>

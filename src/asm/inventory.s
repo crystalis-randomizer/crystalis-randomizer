@@ -231,7 +231,7 @@ ReloadInventoryAfterLoad:
 
 .org $c0f8
   jsr PostUpdateEquipment
-  jmp RestoreBanksAndReturn
+  jmp RestoreBanks
 
 
 .reloc

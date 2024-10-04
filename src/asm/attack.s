@@ -132,9 +132,9 @@ UpdateEnemyHPDisplay:
 ;; LocationChangeInitialHook:
 ;;     .ifdef _ENEMY_HP
 ;;   jsr ClearCurrentEnemyHPSlotAndRedraw
-;;   jsr $c676 ; WaitForNametableFlush
+;;   jsr FlushNametableDataWrite
 ;;     .endif
-;;   jmp $ca2e ; MainGameModeJump_01_LocationChange
+;;   jmp MainGameModeJump_01_LocationChange
 
 ;; ;;; Change the page of the 01 game mode to 1e (3c/3d).
 ;; .org $cb2f

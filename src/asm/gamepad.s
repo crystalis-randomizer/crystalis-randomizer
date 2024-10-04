@@ -33,22 +33,22 @@
 .reloc
 ReadControllersWithButtonUp:
   lda #$01
-  jmp $fe82 ; ReadControllersWithDirections+2
+  jmp ReadControllersWithDirections+2 ; $fe82
 
 .reloc
 StartReadCtrl1:
   sta $4c
   ldx #$00
-  jmp $ff17 ; ReadControllerX
+  jmp ReadControllerX ; $ff17
 
 .reloc
 RegisterButtonRelease:
   ;; do nothing if not read with button up
   lda $4c
   bne +
-   sta $46 ; also zero out pressed buttons
-   sta $48
-   rts
+    sta $46 ; also zero out pressed buttons
+    sta $48
+    rts
   ;; any newly-pressed buttons go in $48
 + lda $4b
   ora $48
@@ -66,36 +66,36 @@ RegisterButtonRelease:
   sta $46
   and $48
   sta $48
--- rts
+  rts
 QuickChangeSword:
    lda $48
    and #$cf
    sta $48   ; zero out pressed buttons
    ldx $0711
    cpx #$05
-   beq --     ; rts if crystalis
--   inx
-    cpx #$05
-    bne +
-     ldx #$00
-+   cpx $0711
-     beq --   ; rts if no other sword found
-    cpx #$00
-     beq -
-    lda $642f,x
-     bmi -    ; don't own sword
-    ;; Found a new sword - equip it
-    sta $6428 ; currently equipped index
-    stx $0711 ; equipped sword
-    lda #$00
-    sta $06c0 ; zero out the current charge
-    lda #$4c  ; sfx: cursor select
-    jsr $c125 ; StartAudioTrack
+       beq :<rts   ; rts if crystalis
+-    inx
+     cpx #$05
+     bne +
+       ldx #$00
++    cpx $0711
+       beq :<rts   ; rts if no other sword found
+     cpx #$00
+       beq -
+     lda $642f,x
+       bmi -    ; don't own sword
+     ;; Found a new sword - equip it
+     sta $6428 ; currently equipped index
+     stx $0711 ; equipped sword
+     lda #$00
+     sta $06c0 ; zero out the current charge
+     lda #$4c  ; sfx: cursor select
+     jsr $c125 ; StartAudioTrack
 .ifndef _AUTO_EQUIP_BRACELET
-    jsr $d9d8
-    sty $0719
+     jsr $d9d8
+     sty $0719
 .endif
-    jmp PostInventoryMenu
+     jmp PostInventoryMenu
 CheckSelectShortcuts:
   lda $4b
   cmp #$40   ; newly pressed B?

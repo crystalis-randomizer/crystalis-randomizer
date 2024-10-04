@@ -89,7 +89,7 @@
 .endif ; _ENEMY_HP
   lda #%01011111 ; update all 5 status display (including difficulty)
   jsr UpdateStatusBarDisplays
-  jmp FlushNametableDataWrite ; WaitForNametableFlush
+  jmp FlushNametableDataWrite
 FREE_UNTIL $bad9
 
 .ifdef _ENEMY_HP
@@ -109,10 +109,10 @@ RedrawEnemyHPDisplayAfterClear:
 
 .pushseg "1a", "1b", "fe", "ff"
 .org $e486
-  jsr WaitForNametableFlushDuringLoad
+  jsr FlushNametableDataWriteDuringLoad
 
 .reloc
-WaitForNametableFlushDuringLoad:
+FlushNametableDataWriteDuringLoad:
   jsr $9cef ; Do the original handler for location change
   jmp FlushNametableDataWrite
 .popseg ; 1a/1b/fe/ff

@@ -20916,7 +20916,7 @@ InitiateDialog:
 ;;;    $21 <- low 3 bits from first byte
 ;;;            => $7df where it is the message table part number
 ;;;    $22 <- high 5 bits from first byte, shifted
-;;;            => DialogFollowupActionJump index
+;;;            => DialogAction index
 ;;;            => TriggerActionJump index
 ;;;    Y   += 2
 .org $8078
@@ -26598,7 +26598,7 @@ BossPatternJump_08:              ; Insect 0
          <@1e6f1@>
          <@1e6f3@>
          <@1e6f5 DrawAllObjectSprites@>
-         <@1e6f8 WaitForNametableFlush@>
+         <@1e6f8 FlushNametableDataWrite@>
          <@1e6fb@>
 -         <@1e6fd DataTable_1e77c@>
           <@1e700@>
@@ -28126,7 +28126,7 @@ BossPatternJump_2b:              ; Draygon2 0
         <@1f338@>
         <@1f33b@>
         <@1f33d@>
-        <@1f340 WaitForNametableFlush@>
+        <@1f340 FlushNametableDataWrite@>
         <@1f343@>
         <@1f345 _1f2f8@>
         <@1f348@>
@@ -28447,7 +28447,7 @@ _1f599:
         <@1f5bb@>
         <@1f5be@>
         bne :>rts ; $1f5f8
-        <@1f5c2 WaitForNametableFlush@>
+        <@1f5c2 FlushNametableDataWrite@>
         <@1f5c5@>
         <@1f5c8@>
         <@1f5c9@>
@@ -28599,7 +28599,7 @@ _1f6a3:
 _1f6c1:
           ;; Probably just updating graphics?
         <@1f6c1@>
-        <@1f6c3 WaitForNametableFlush@>
+        <@1f6c3 FlushNametableDataWrite@>
         <@1f6c6@>
         <@1f6c8@>
         <@1f6ca@>
@@ -28885,7 +28885,7 @@ ObjectActionJump_6f:
 .org $b8cf
 BossKillJump_Insect:
          ;; Runs when insect defeated
-        <@1f8cf WaitForNametableFlush@>
+        <@1f8cf FlushNametableDataWrite@>
         <@1f8d2@>
 -        <@1f8d4@>
          <@1f8d6@>
@@ -29268,7 +29268,7 @@ DataTable_1fb8f:
 MainGameModeJump_0c_DisplayStartMenu:
         <@1fc40 ScreenMode@>
         <@1fc42@>
-        <@1fc43 WaitForNametableFlush@>
+        <@1fc43 FlushNametableDataWrite@>
         <@1fc46 WaitForOAMDMA@>
         <@1fc49 ScreenMode@>
         <@1fc4b@>
@@ -29443,7 +29443,7 @@ MainGameModeJump_0d_StartScreen:
         <@1fdf5 -@> ; $1fdf1
         <@1fdf7@>
         <@1fdf9 StageNametableWriteFromTable@>
-        <@1fdfc WaitForNametableFlush@>
+        <@1fdfc FlushNametableDataWrite@>
         <@1fdff UpdateEquipmentAndStatus@>
         <@1fe02@>
         <@1fe04@>
@@ -29522,7 +29522,7 @@ DataTable_1feb7:
 ;;; --------------------------------
 .org $bebf
 _1febf:
-        <@1febf WaitForNametableFlush@>
+        <@1febf FlushNametableDataWrite@>
         <@1fec2 PlayerStatus@>
         <@1fec5 _1ff0a@>
         <@1fec7@>
@@ -30613,7 +30613,7 @@ Menu_UpdateSprite:
 ;;; --------------------------------
 .org $871f
 _2071f:
-        <@2071f WaitForNametableFlush@>
+        <@2071f FlushNametableDataWrite@>
         <@20722@>
 -        <@20724 DataTable_20afd@>
          <@20727@>
@@ -30634,7 +30634,7 @@ _2071f:
         <@20744@>
         <@20746@>
         <@20748@>
---       <@2074a WaitForNametableFlush@>
+--       <@2074a FlushNametableDataWrite@>
 -         <@2074d@>
           <@2074f@>
           <@20751@>
@@ -30677,12 +30677,12 @@ _20776:
 _20795:
         <@20795@>
         <@20797@>
-        <@20799 WaitForNametableFlush@>
+        <@20799 FlushNametableDataWrite@>
         <@2079c ScreenMode@>
         <@2079e@>
         <@207a0 ScreenMode@>
         <@207a2 WriteHeaderToNametableQueue@>
-        <@207a5 WaitForNametableFlush@>
+        <@207a5 FlushNametableDataWrite@>
         <@207a8@>
         <@207a9@>
         <@207ab@>
@@ -30782,7 +30782,7 @@ DrawInventoryBorder:
          ;; finally draw the bottom border of the menu and wait for it to flush
          <@2083c@>
          <@2083e DrawInventoryMenuBorderRow@>
-         <@20841 WaitForNametableFlush@>
+         <@20841 FlushNametableDataWrite@>
          ;; Now write over ??? with #$ff (i *think* its the middle where the items go)
          <@20844@>
          <@20846@>
@@ -30797,7 +30797,7 @@ DrawInventoryBorder:
          <@20856@>
          <@20858@>
          <@2085a WriteHeaderToNametableQueue@>
-         <@2085d WaitForNametableFlush@>
+         <@2085d FlushNametableDataWrite@>
         <@20860@>
         <@20861 ScreenMode@>
         <@20863@>
@@ -30817,7 +30817,7 @@ DrawInventoryMenuBorderRow:
         ;; so also see WriteHeaderToNametableQueue
         ;; 
         ;; Scratches $2e and $2f as loop counter variables
-        <@20864 WaitForNametableFlush@>
+        <@20864 FlushNametableDataWrite@>
         <@20867@>
         ;; Prepare the outer loop to run twice
         <@20869@>
@@ -30891,7 +30891,7 @@ Shop_DrawItemBackground:
          <@208d3 _208d9@>
          <@208d6 _208d9@>
 _208d9: ; This is executed three times in a row
-         <@208d9 WaitForNametableFlush@>
+         <@208d9 FlushNametableDataWrite@>
          <@208dc@>
 -         <@208de@>
           <@208e0@>
@@ -30914,7 +30914,7 @@ _208d9: ; This is executed three times in a row
         <@208ff _20905@>
         <@20902 _20905@>
 _20905: ; This is executed three times in a row
-        <@20905 WaitForNametableFlush@>
+        <@20905 FlushNametableDataWrite@>
         <@20908@>
 -        <@2090a@>
          <@2090c DataTable_2092a@>
@@ -30940,7 +30940,7 @@ DataTable_2092a:
 .org $8933
 ShowMenuMessage:
         <@20933@> ; Save A for later
-         <@20935 WaitForNametableFlush@>
+         <@20935 FlushNametableDataWrite@>
          <@20938@>
          <@2093a@>
          <@2093c@>
@@ -30987,7 +30987,7 @@ ShowMenuMessage:
 .org $898e
 _2098e:
         ;; Done with row - read $ff
-        <@2098e WaitForNametableFlush@>
+        <@2098e FlushNametableDataWrite@>
         <@20991 WriteHeaderToNametableQueue@>
 ;;; --------------------------------
 .org $8994
@@ -32606,7 +32606,7 @@ _21912:
         <@21930 -@> ; $21929
         <@21932@>
         <@21934 DrawInventoryMenuBorderRow@>
-        <@21937 WaitForNametableFlush@>
+        <@21937 FlushNametableDataWrite@>
         <@2193a@>
         <@2193c@>
 -        <@2193e@>
@@ -32902,7 +32902,7 @@ _21b3a:
          <@21b45@>
          <@21b47@>
          <@21b49 +@> ; $21b4e
-         <@21b4b _21c7a@>
+         <@21b4b AfterLoadGame@>
          ;; ----
 +        <@21b4e@>
          <@21b50@>
@@ -32936,7 +32936,7 @@ _21b3a:
         <@21b8a +@> ; $21b94
          <@21b8c@>
          <@21b8e@>
-         <@21b91 _21c7a@>
+         <@21b91 AfterLoadGame@>
          ;; ----
 +       <@21b94@>
         <@21b96@>
@@ -32965,14 +32965,14 @@ LoadGame:
          <@21bc6 CopyCheckpointToMemoryIndirected@> ; 2fc03
          <@21bc9@>
          <@21bcb@>
-         <@21bce _21c7a@>            ; NOTE: patched by inventory.s ($9bce)
+         <@21bce AfterLoadGame@>            ; NOTE: patched by inventory.s ($9bce)
         ;; ----
 +       <@21bd1@>
         <@21bd3 CopyThreePagesOfBytesByLookup@>
         <@21bd6 CopyCheckpointToMemoryIndirected@> ; 2fc03
         <@21bd9@>
         <@21bdb@>
-        <@21bde _21c7a@>             ; NOTE: patched by inventory.s ($9bde)
+        <@21bde AfterLoadGame@>             ; NOTE: patched by inventory.s ($9bde)
 ;;; --------------------------------
 .org $9be1
 _21be1:
@@ -32997,7 +32997,7 @@ _21be1:
           <@21c08@>
           <@21c0a@>
           <@21c0c@>
-          <@21c0f _21c7a@>
+          <@21c0f AfterLoadGame@>
           ;; ----
 +        <@21c12 PlayerStatus@>
          <@21c15@>
@@ -33034,7 +33034,7 @@ SaveGame:
          <@21c58@>
          <@21c5b@>
          <@21c5e@>
-         <@21c61 _21c7a@>
+         <@21c61 AfterLoadGame@>
 ;;; --------------------------------
 +       <@21c64 MaybeSetCheckpointIndirected@>
         <@21c67@>
@@ -33044,7 +33044,7 @@ SaveGame:
         <@21c71@>
         <@21c74@>
         <@21c77@>
-_21c7a:
+AfterLoadGame:
         <@21c7a@>
         <@21c7d +@> ; $21c82
          <@21c7f _2007e@>
@@ -39433,7 +39433,7 @@ DataTable_27a45:
 ;;; --------------------------------
 .org $ba65
 InitializeStatusBarNametable:
-        <@27a65 WaitForNametableFlush@>
+        <@27a65 FlushNametableDataWrite@>
         <@27a68@>
         ;; Draw a row of top border
 -       <@27a6a@>
@@ -39468,7 +39468,7 @@ InitializeStatusBarNametable:
         <@27aa4 StageNametableWriteFromTable@>
         <@27aa7@>
         <@27aa9 StageNametableWriteFromTable@>
-        <@27aac WaitForNametableFlush@>
+        <@27aac FlushNametableDataWrite@>
         ;; Start writing the information into the status bar based on the contents
         ;; of the StatusBarDataTable
         <@27aaf@>
@@ -39491,7 +39491,7 @@ InitializeStatusBarNametable:
          <@27ad2@>
          <@27ad3@>
         <@27ad4 -@> ; $27acc
-        <@27ad6 WaitForNametableFlush@>
+        <@27ad6 FlushNametableDataWrite@>
 ;;; --------------------------------
 .org $bad9
 StatusBarDataTable:              ; NOTE: patched by hud.s ($badb, etc)
@@ -39894,7 +39894,7 @@ MainGameModeJump_1e_ThrustCrystalis:
         <@27e65 -@> ; $27e5e
         <@27e67@>
         <@27e69 StageNametableWriteFromTable@>
-        <@27e6c WaitForNametableFlush@>
+        <@27e6c FlushNametableDataWrite@>
         <@27e6f@>
         <@27e71 BankSwitch8k_8000@>
         ; walk simea to the core of the reactor
@@ -55726,7 +55726,7 @@ ObjectActionJump_08:            ; also 7c
 _37805:
          <@37805@>
          <@37807 _3c75c@>
-         <@3780a WaitForNametableFlush@>
+         <@3780a FlushNametableDataWrite@>
          <@3780d@>
          <@3780e@>
           <@3780f ReadObjectCoordinatesInto_34_37@>
@@ -56036,11 +56036,11 @@ ObjectActionJump_70_00:
 ;;; --------------------------------
 .org $ba71
 _37a71:
-        <@37a71 WaitForNametableFlush@>
+        <@37a71 FlushNametableDataWrite@>
         <@37a74 _37ab8@>
         <@37a77@>
         <@37a79@>
--        <@37a7b WaitForNametableFlush@>
+-        <@37a7b FlushNametableDataWrite@>
          <@37a7e@>
          <@37a80@>
          <@37a82@>
@@ -56224,7 +56224,7 @@ DataTable_37bce:                ; quads
 ;;; --------------------------------
 .org $bbe7
 ObjectActionJump_70_02:
-        <@37be7 WaitForNametableFlush@>
+        <@37be7 FlushNametableDataWrite@>
         <@37bea@>
         <@37bec@>
 -        <@37bee@>
@@ -56363,7 +56363,7 @@ _37cd7:
 .org $bcf6
 ObjectActionJump_70_09:
         <@37cf6@>
-        <@37cf9 WaitForNametableFlush@>
+        <@37cf9 FlushNametableDataWrite@>
         <@37cfc@>
         <@37cfe BankSwitch8k_8000@>
         <@37d01@>
@@ -56373,7 +56373,7 @@ ObjectActionJump_70_09:
         <@37d0a -@> ; $37d03
         <@37d0c@>
         <@37d0e StageNametableWriteFromTable@>
-        <@37d11 WaitForNametableFlush@>
+        <@37d11 FlushNametableDataWrite@>
         <@37d14@>
         <@37d16 BankSwitch8k_8000@>
 ;;; --------------------------------
@@ -62674,7 +62674,7 @@ UpdateEquipmentAndStatus:
 +          <@3c0ed@> ; MP
            <@3c0ef DisplayNumberInternal@>
            <@3c0f2 UpdateHPDisplayInternal@>
-           <@3c0f5 WaitForNametableFlush@>
+           <@3c0f5 FlushNametableDataWrite@>
           <@3c0f8@>                         ; NOTE: patched by inventory.s ($c0f8)
           <@3c0f9 BankSwitch8k_a000@>
          <@3c0fc@>
@@ -63274,7 +63274,7 @@ EnableSpriteRendering:
 .org $c482
 StageNametableWriteFromTable:
         <@3c482@>
-        <@3c484 WaitForNametableFlush@>
+        <@3c484 FlushNametableDataWrite@>
         <@3c487@>
         <@3c488@>
          <@3c489@>
@@ -63355,12 +63355,12 @@ StageNametableWriteFromTable:
           <@3c501@>
           <@3c503@>
           <@3c505 +@> ; $3c50a
-           <@3c507 WaitForNametableFlush@>
+           <@3c507 FlushNametableDataWrite@>
 +         <@3c50a@>
          <@3c50c -@> ; $3c4be
          <@3c50e@>
          <@3c510 +@> ; $3c515
-          <@3c512 WaitForNametableFlush@>
+          <@3c512 FlushNametableDataWrite@>
 +       <@3c515@>
         <@3c516@>
         <@3c517@>
@@ -63454,10 +63454,10 @@ NametablePrecomputedHeaderTable:
 ;;; --------------------------------
 ;;; This is a holding pattern that waits for NMI to flush PPU data writes.
 .org $c676
-WaitForNametableFlush:
+FlushNametableDataWrite:
         <@3c676@>
         <@3c678 NametableBufferWriteOffset@>
-        <@3c67a WaitForNametableFlush@>
+        <@3c67a FlushNametableDataWrite@>
         <@3c67c@>
 ;;; --------------------------------
 .org $c67d
@@ -63746,7 +63746,7 @@ DrawFullScreenByUsingVerticalScroll:
            <@3c838@>
            <@3c83a@>
            <@3c83c@>
--           <@3c83e WaitForNametableFlush@>
+-           <@3c83e FlushNametableDataWrite@>
             <@3c841@> ; 8000 -> 34000
             <@3c843 BankSwitch8k_8000@>
             <@3c846@>
@@ -63780,7 +63780,7 @@ _3c867:
 .org $c874
 ClearBackgroundPaletteAndAttributes:
         ;; I'm assuming the $0f palette is all black.
-        <@3c874 WaitForNametableFlush@>
+        <@3c874 FlushNametableDataWrite@>
         <@3c877@>
         <@3c879@>
 -        <@3c87b@>
@@ -63964,7 +63964,7 @@ MainLoopJump_08_ContinueGame:
         <@3c9dd@> ; A000 -> 2E000
         <@3c9df BankSwitch8k_a000@>
         <@3c9e2 CopyCheckpointToMemoryForContinueIndirected@> ; 2fc06
-        <@3c9e5 WaitForNametableFlush@>
+        <@3c9e5 FlushNametableDataWrite@>
         <@3c9e8 UpdateEquipmentAndStatus@>    ; NOTE: sword charge glitch fixed here
         <@3c9eb@> ; 8000 -> 24000
         <@3c9ed BankSwitch16k@>
@@ -64033,11 +64033,11 @@ MainGameModeJump_00_Initialize:
         <@3ca5f@> ; 8000 -> 24000
         <@3ca61 BankSwitch16k@>
         <@3ca64 InitializeStatusBarNametable@>
-        <@3ca67 WaitForNametableFlush@>
+        <@3ca67 FlushNametableDataWrite@>
         <@3ca6a@> ; 8000 -> 34000
         <@3ca6c BankSwitch8k_8000@>
         <@3ca6f UpdateHPDisplayInternal@>
-        <@3ca72 WaitForNametableFlush@>
+        <@3ca72 FlushNametableDataWrite@>
         <@3ca75@>
         <@3ca77@>
         <@3ca7a@>
@@ -64307,7 +64307,7 @@ _3cc2e:
 ;;; --------------------------------
 .org $cc4d
 MainGameModeJump_1f_DynaAppears:
-        <@3cc4d WaitForNametableFlush@>
+        <@3cc4d FlushNametableDataWrite@>
         <@3cc50@>
         <@3cc52@>
         <@3cc54@>
@@ -64481,7 +64481,7 @@ _3cd8a:
         <@3cd8a _3cdd5@>
         <@3cd8d@>
         <@3cd8e@>
-         <@3cd8f WaitForNametableFlush@>
+         <@3cd8f FlushNametableDataWrite@>
          <@3cd92 _3ce07@>
          <@3cd95 ScreenMode@>
          <@3cd97@>
@@ -64907,55 +64907,55 @@ MainGameModeJump_11_Dialog:
         <@3d113@> ; low: $15: $2a000, high: $16: $2c000 or $18: $30000
         <@3d114@>
         <@3d115@>
-        <@3d116 DialogFollowupActionJump@> ; $3d123
+        <@3d116 DialogAction@> ; $3d123
         <@3d119@>
-        <@3d11b DialogFollowupActionJump+1@> ;$3d124
+        <@3d11b DialogAction+1@> ;$3d124
         <@3d11e@>
         <@3d120@>
 ;;; --------------------------------
 ;;; Indexed by high 5 bits of first byte of dialog selection.
 ;;; STRIP: word=$30000
 .org $d123
-DialogFollowupActionJump:
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_01) ; 01
-        .word (DialogFollowupActionJump_02_Disappear) ; 02 disappear
-        .word (DialogFollowupActionJump_03) ; 03 learn refresh
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_05) ; 05
-        .word (DialogFollowupActionJump_06) ; 06
-        .word (DialogFollowupActionJump_Noop) ; 07
-        .word (DialogFollowupActionJump_08) ; 08
-        .word (DialogFollowupActionJump_09) ; 09
-        .word (DialogFollowupActionJump_0a) ; 0a
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_0c) ; 0c
-        .word (DialogFollowupActionJump_06) ; 0d
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_10) ; 10
-        .word (DialogFollowupActionJump_11) ; 11
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_13) ; 13
-        .word (DialogFollowupActionJump_14) ; 14
-        .word (DialogFollowupActionJump_15) ; 15
-        .word (DialogFollowupActionJump_16) ; 16
-        .word (DialogFollowupActionJump_17_HealPlayerAndDisappear) ; 17 healed by wise men in fortress?
-        .word (DialogFollowupActionJump_18) ; 18
-        .word (DialogFollowupActionJump_19) ; 19
-        .word (DialogFollowupActionJump_1a) ; 1a get ball of water
-        .word (DialogFollowupActionJump_1b) ; 1b ejected from lime tree ??
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_Noop) ;
-        .word (DialogFollowupActionJump_Noop) ;
+DialogAction:
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_01) ; 01
+        .word (DialogAction_02_Disappear) ; 02 disappear
+        .word (DialogAction_03) ; 03 learn refresh
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_05) ; 05
+        .word (DialogAction_06) ; 06
+        .word (DialogAction_Noop) ; 07
+        .word (DialogAction_08) ; 08
+        .word (DialogAction_09) ; 09
+        .word (DialogAction_0a) ; 0a
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_0c) ; 0c
+        .word (DialogAction_06) ; 0d
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_10) ; 10
+        .word (DialogAction_11) ; 11
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_13) ; 13
+        .word (DialogAction_14) ; 14
+        .word (DialogAction_15) ; 15
+        .word (DialogAction_16) ; 16
+        .word (DialogAction_17_HealPlayerAndDisappear) ; 17 healed by wise men in fortress?
+        .word (DialogAction_18) ; 18
+        .word (DialogAction_19) ; 19
+        .word (DialogAction_1a) ; 1a get ball of water
+        .word (DialogAction_1b) ; 1b ejected from lime tree ??
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_Noop) ;
+        .word (DialogAction_Noop) ;
 ;;; --------------------------------
 .org $d163
-DialogFollowupActionJump_Noop:  ; 04, 07, 0b, 0e, 0f, 12, 1c, 1d, 1e, and 1f
+DialogAction_Noop:  ; 04, 07, 0b, 0e, 0f, 12, 1c, 1d, 1e, and 1f
         <@3d163@>
 ;;; --------------------------------
 .org $d164
-DialogFollowupActionJump_05:
+DialogAction_05:
         ;; kensu slime
         <@3d164@>
         <@3d166@>
@@ -64963,7 +64963,7 @@ DialogFollowupActionJump_05:
         <@3d16c@>
 ;;; --------------------------------
 .org $d16d
-DialogFollowupActionJump_17_HealPlayerAndDisappear:
+DialogAction_17_HealPlayerAndDisappear:
         <@3d16d@>
         <@3d16f@>
         <@3d172 PlayerMaxHP@>
@@ -64975,20 +64975,20 @@ DialogFollowupActionJump_17_HealPlayerAndDisappear:
         <@3d183 UpdateHPDisplayInternal@>
         <@3d186@> ; MP
         <@3d188 DisplayNumberInternal@>
-        <@3d18b DialogFollowupActionJump_02_Disappear@>
+        <@3d18b DialogAction_02_Disappear@>
 ;;; --------------------------------
 .org $d18e
-DialogFollowupActionJump_14:
+DialogAction_14:
         <@3d18e INV_MAGIC_FLIGHT@>
         <@3d190 GrantItemInRegisterA@>
-        <@3d193 DialogFollowupActionJump_17_HealPlayerAndDisappear@>
+        <@3d193 DialogAction_17_HealPlayerAndDisappear@>
 ;;; --------------------------------
 ;;; UNUSED?!? - repurpose for WriteObjectCoordinatesAndLoadObjectData
         <@3d196 WaitForAudio@>
         <@3d199 LoadNpcDataForCurrentLocation@>
 ;;; --------------------------------
 .org $d19c
-DialogFollowupActionJump_01:
+DialogAction_01:
         <@3d19c@>
         <@3d19f@>
         <@3d1a0@>
@@ -65003,7 +65003,7 @@ DialogFollowupActionJump_01:
         <@3d1b2 LoadOneObjectDataInternal@>
 ;;; --------------------------------
 .org $d1b5
-DialogFollowupActionJump_13:
+DialogAction_13:
         <@3d1b5@>
         <@3d1b8 _3d1ff@>
         <@3d1bb@>
@@ -65014,7 +65014,7 @@ DialogFollowupActionJump_13:
         <@3d1c7 _3d31f@>
 ;;; --------------------------------
 .org $d1ca
-DialogFollowupActionJump_16:
+DialogAction_16:
         <@3d1ca SFX_DIALOG@>
         <@3d1cc StartAudioTrack@>
         <@3d1cf@>
@@ -65030,7 +65030,7 @@ DialogFollowupActionJump_16:
         <@3d1ea@>
 ;;; --------------------------------
 .org $d1eb
-DialogFollowupActionJump_10:
+DialogAction_10:
         ;; NPC reveals change magic when talked to (asina and kensu)
         <@3d1eb@>
         <@3d1ed@>
@@ -65055,12 +65055,12 @@ _3d1ff:
         <@3d21a LoadNpcDataForCurrentLocation@>   ; NOTE: patched by dialog.s ($d21a)
 ;;; --------------------------------
 .org $d21d
-DialogFollowupActionJump_11:
+DialogAction_11:
         ;; Give an item (from $6a0,y), which is the 2nd byte
         <@3d21d LookingAt@>
         <@3d220@>
         <@3d223 GrantItemInRegisterA@>            ; NOTE: patched by dialog.s ($d223)
-DialogFollowupActionJump_03:
+DialogAction_03:
         ;; Give an item (from $680,y)
          <@3d225 LookingAt@>
          <@3d228@>
@@ -65076,7 +65076,7 @@ GrantItemInRegisterA:
         <@3d23e@>
 ;;; --------------------------------
 .org $d23f
-DialogFollowupActionJump_06:    ; also 0d
+DialogAction_06:    ; also 0d
         ;; NPC walks away (treasure hunter)?
         <@3d23f@>
         <@3d241@>
@@ -65091,7 +65091,7 @@ DialogFollowupActionJump_06:    ; also 0d
         <@3d259@>
 ;;; --------------------------------
 .org $d25a
-DialogFollowupActionJump_0c:
+DialogAction_0c:
         ;; Dwarf child starts following?
         <@3d25a@>
         <@3d25d@>
@@ -65099,7 +65099,7 @@ DialogFollowupActionJump_0c:
         <@3d262@>
 ;;; --------------------------------
 .org $d263
-DialogFollowupActionJump_09:
+DialogAction_09:
         ;; Talk to Zebu student
         <@3d263 SFX_TREASURE@>   ; NOTE: patched by dialog.s ($d263)
         <@3d265 StartAudioTrack@>
@@ -65115,7 +65115,7 @@ DialogFollowupActionJump_09:
         <@3d27d DisplayNumberInternal@>   ; NOTE: patched by dialog.s ($d27d)
 ;;; --------------------------------
 .org $d280
-DialogFollowupActionJump_18:
+DialogAction_18:
         <@3d280@>
         <@3d282@>
         <@3d285@> ; 8000 -> 34000
@@ -65137,7 +65137,7 @@ DialogFollowupActionJump_18:
         <@3d2ad@>
 ;;; --------------------------------
 .org $d2ae
-DialogFollowupActionJump_19:
+DialogAction_19:
         ;; Give shield ring then walk out
         <@3d2ae INV_SHIELD_RING@>
         <@3d2b0 GrantItemInRegisterA@> ; hard-code rather than $680,x
@@ -65156,7 +65156,7 @@ DialogFollowupActionJump_19:
         <@3d2d2@>
 ;;; --------------------------------
 .org $d2d3
-DialogFollowupActionJump_15:
+DialogAction_15:
         <@3d2d3@>
         <@3d2d6@>
         beq :>rts ; $3d2f3
@@ -65173,7 +65173,7 @@ DialogFollowupActionJump_15:
         <@3d2f3@>
 ;;; --------------------------------
 .org $d2f4
-DialogFollowupActionJump_0a:
+DialogAction_0a:
         <@3d2f4@>
         <@3d2f6 BankSwitch8k_8000@>
         <@3d2f9@>   ; NOTE: patched by dialog.s ($d2f9)
@@ -65190,7 +65190,7 @@ DialogFollowupActionJump_0a:
         <@3d314@>
         <@3d317@> ; "Boss ID" 3 (since rage has no chest)
         <@3d319@>
-DialogFollowupActionJump_02_Disappear:
+DialogAction_02_Disappear:
         <@3d31c@>
 _3d31f:
         <@3d31f@>
@@ -65204,7 +65204,7 @@ _3d31f:
         <@3d333 StartAudioTrack@>
 ;;; --------------------------------
 .org $d336
-DialogFollowupActionJump_1a:
+DialogAction_1a:
         <@3d336 INV_BALL_OF_WATER@>
         <@3d338 GrantItemInRegisterA@>
         <@3d33b@>
@@ -65212,7 +65212,7 @@ DialogFollowupActionJump_1a:
         <@3d340@>
 ;;; --------------------------------
 .org $d341
-DialogFollowupActionJump_1b:
+DialogAction_1b:
         <@3d341@>
         <@3d343@>
         <@3d346@>
@@ -65586,10 +65586,10 @@ ItemOrTriggerActionJump_01:
 ItemOrTriggerActionJump_02:
         <@3d5d6@>
         <@3d5d8@>
-        <@3d5db DialogFollowupActionJump_11@>
+        <@3d5db DialogAction_11@>
         <@3d5de@>
         <@3d5e0@>
-        <@3d5e3 DialogFollowupActionJump_06@>
+        <@3d5e3 DialogAction_06@>
 ;;; --------------------------------
 .org $d5e6
 ItemOrTriggerActionJump_07:
@@ -65638,7 +65638,7 @@ ItemOrTriggerActionJump_0a:      ; use statue of gold
 ;;; --------------------------------
 .org $d63f
 ItemOrTriggerActionJump_10:      ; use key to styx, key to prison, eyeglasses
-DialogFollowupActionJump_08:     ; open swan gate
+DialogAction_08:     ; open swan gate
         <@3d63f@>
         <@3d642@>
         <@3d644 +@> ; $3d652
@@ -65898,7 +65898,7 @@ ItemOrTriggerActionJump_1b:
 ItemOrTriggerActionJump_1c:
         <@3d7fd INV_GAS_MASK@>                  ; NOTE: patched by triggers.s ($d7fd)
         <@3d7ff GrantItemInRegisterA@>
-        <@3d802 DialogFollowupActionJump_06@>
+        <@3d802 DialogAction_06@>
 ;;; --------------------------------
 .org $d805
 ItemOrTriggerActionJump_1d:
@@ -66768,7 +66768,7 @@ JumpTable_3ddbd_00:
         <@3de2c@>
         <@3de2d@>
 -        <@3de2f WaitForOAMDMA@>
-         <@3de32 WaitForNametableFlush@>
+         <@3de32 FlushNametableDataWrite@>
          <@3de35 _3de72@>
          <@3de38@>
          <@3de3b@>
@@ -66848,7 +66848,7 @@ MainGameModeJump_17_ChangeMagicMenu:
          <@3deda@>
          <@3dedc@>
          <@3dede@>
-         <@3dee1 WaitForNametableFlush@>
+         <@3dee1 FlushNametableDataWrite@>
 JumpTable_3df0e_04:             ; also 05
           <@3dee4 _3ddcd@>
           <@3dee7@>
@@ -66937,7 +66937,7 @@ JumpTable_3df0e_00:
 _3df8f:
         <@3df8f@>
         <@3df91@>
-        <@3df94 WaitForNametableFlush@>
+        <@3df94 FlushNametableDataWrite@>
         <@3df97@>
         <@3df99 BankSwitch8k_8000@>
         <@3df9c DrawMessageBoxBackground@>
@@ -66966,7 +66966,7 @@ _3df8f:
 ;;; --------------------------------
 .org $dfce
 _3dfce:
-        <@3dfce WaitForNametableFlush@>
+        <@3dfce FlushNametableDataWrite@>
         <@3dfd1 _3dffd@>
 _3dfd4:
         <@3dfd4@>
@@ -67650,7 +67650,7 @@ ExitTypeJumpTable:
 .org $e3e9
 _3e3e9:
         <@3e3e9 DrawAllObjectSprites@>
-        <@3e3ec WaitForNametableFlush@>
+        <@3e3ec FlushNametableDataWrite@>
         <@3e3ef SCREEN_MODE_NORMAL@>
         <@3e3f1 ScreenMode@>
         <@3e3f3@>
@@ -67763,10 +67763,10 @@ DoLocationSpecificChecks:
         <@3e4af@>
         <@3e4b1@>
         <@3e4b3 WaitForOAMDMA@>
-        <@3e4b6 WaitForNametableFlush@>
+        <@3e4b6 FlushNametableDataWrite@>
         <@3e4b9@>
         <@3e4bb DrawFullScreenByUsingVerticalScroll@>
-        <@3e4be WaitForNametableFlush@>
+        <@3e4be FlushNametableDataWrite@>
         <@3e4c1@>
 -       <@3e4c3@>
         <@3e4c4@>
@@ -68164,6 +68164,7 @@ CopyMapDataFlags:
           <@3e752@>
           <@3e753 -@> ; $3e70d
         ;; ----
+        ;; TODO - jmp RestoreBanks
 ++       <@3e756@>
          <@3e757 BankSwitch8k_a000@>
         <@3e75a@>
@@ -68308,7 +68309,7 @@ CheckForShyronMassacre:
 ;;; --------------------------------
 .org $e845
 _3e845:
-        <@3e845 WaitForNametableFlush@>
+        <@3e845 FlushNametableDataWrite@>
         <@3e848@>
         <@3e84a BankSwitch8k_8000@>
         <@3e84d@>

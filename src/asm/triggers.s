@@ -95,7 +95,7 @@ FinishTriggerSquare:
   beq +
    lda #$08  ; game mode normal
    sta $41
-+ jmp MainLoop_01_Game
++ jmp MainLoopJump_01_Game
 
 ;; Change trigger action 4 to do any "start game" actions.
 .org $d56b

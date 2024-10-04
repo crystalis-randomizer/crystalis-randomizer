@@ -96,7 +96,7 @@ MainLoopJump_08_ContinueGame:
         <@3c9dd@> ; A000 -> 2E000
         <@3c9df BankSwitch8k_a000@>
         <@3c9e2 CopyCheckpointToMemoryForContinueIndirected@> ; 2fc06
-        <@3c9e5 WaitForNametableFlush@>
+        <@3c9e5 FlushNametableDataWrite@>
     .ifdef _DISABLE_SWORD_CHARGE_GLITCH   ; smudge off
         jsr PostInventoryMenu             ; defined in inventory.s
     .else                                 ; smudge on

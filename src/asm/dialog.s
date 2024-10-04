@@ -15,7 +15,7 @@
 
 .segment "fe", "ff"
 
-.org $d223 ; part of DialogFollowupActionJump_11 (give 2nd item)
+.org $d223 ; part of DialogAction_11 (give 2nd item)
   bpl GrantItemInRegisterA ; change from bne to handle sword of wind
 
 ;;; Fix bug in dialog action 9 where carrying from the low byte of money

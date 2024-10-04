@@ -1,0 +1,30 @@
+Freeing up space in rom bank 1a
+-------------------------------
+
+Goal: free up a bunch of space in 1a by moving large portions of it to an extended page.
+This should allow a few things:
+ * Expanding the speed tables to get 8- and 16-dir speeds.  Possibly remove 8-dir tables
+   and use a direction bit to indicate 16-dir mode?  This will require storing one fewer
+   bit of knockback?
+ * Expanding some other code, such as passive items.
+
+Plan: copy large portions of the vanilla code into src/asm, with our modifications inline.
+We'll want to make the modifications very clear since otherwise it's hard to see what's
+actually going on.
+
+It's possible we end up wanting to do this for the entire game...?  Hard to say.
+
+We need to find a section that can be easily carved out, and clearly document which
+routines and data tables have entries and exits from which others.  A separable routine
+is one that only accesses and is accessed by other separable chunks.  If a separated
+routine needs to call a stationary one, we can make a stub in the new page that swaps
+the old page back in temporarily (this costs extra time, so should only be done in
+non-inner-loop contexts).
+
+Also need to pay attention to what we write programatically.
+
+Candidates:
+ * CheckAllObjectCollisions (34f6e) .. CollisionTable (ends 3572d)
+    - this gives about 1.5k of extra space in segment 1a
+    - expanding all speeds to 16-dir would cost just under 1k, leaving an extra
+      500 bytes for other purposes

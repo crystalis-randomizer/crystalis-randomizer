@@ -21,3 +21,6 @@ node_modules
 tsconfig.tsbuildinfo
 npm-debug.log
 .tsc.out
+scraps
+gh-pages
+test/testdata-prev

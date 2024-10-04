@@ -5,9 +5,10 @@ import {Npc} from '../rom/npc';
 import {hex} from '../rom/util';
 import {buildTradeInMap} from './shuffletrades';
 import {fail} from '../assert';
+import { ShuffleData } from '../appatch';
 
 /** Finds references to given items and replaces it with the actual items. */
-export function fixDialog(rom: Rom) {
+export function fixDialog(rom: Rom, predetermined?: ShuffleData) {
   const {
     flags: {
       AkahanaStatueOfOnyxTradein,
@@ -45,22 +46,118 @@ export function fixDialog(rom: Rom) {
     return rom.items[trade];
   }
   // NOTE: we need to hardcode original names in case they were shuffled.
-
-  if (!ZebuAtWindmill.item.isMagic()) unmagic('00:1b');
-  replaceMessage('00:1b', '[41:Refresh]', item(ZebuAtWindmill.item));
+  if (predetermined?.fromArchipelago) {
+    unmagic('00:1b');
+    replaceMessage('00:1b', '[41:Refresh]', 'APItem');
+    
+    replaceMessage('02:02', '[29:Gas Mask]', 'APItem');
+    
+    unmagic('03:01');
+    replaceMessage('03:01', '[43:Telepathy]', 'APItem');
+      
+    replaceMessage('05:0a', '[44:Teleport]', 'APItem');
+      
+    replaceMessage('0a:0c', '[28:Flute of Lime]', 'APItem');
+    unmagic('0b:01');
+    replaceMessage('0b:01', '[45:Recover]', 'APItem');
+    
+    unmagic('0b:01');
+    unmagic('1d:12');
+    
+    replaceMessage('0b:01', '[46:Barrier]', 'APItem');
+    replaceMessage('1d:12', '[46:Barrier]', 'APItem');
+    
+    if (predetermined.lime_hint == "") {
+      replaceMessage('0d:00', 'that a [35:Fog Lamp] was', 'there was treasure');
+    } else {
+      replaceMessage('0d:00', '[35:Fog Lamp]', predetermined.lime_hint.substring(0, 18));
+    }
+    
+    replaceMessage('0e:03', '[09:Ball of Water]', 'APItem');
+     
+    unmagic('13:02');
+    replaceMessage('13:02', '[47:Change]', 'APItem');
+      
+    replaceMessage('18:07', 'teach', 'give');
+    replaceMessage('18:07', '[48:Flight]', 'APItem');
+  
+    unmagic('1c:10');
+    replaceMessage('1c:10', '[42:Paralysis]', 'APItem');
+    
+    // TODO - shuffle which item reconstructs which other?
+    replaceMessage('20:06', 'Statue of Gold', 'APItem');
+    
+    // Find the dolphin underground channel message.
+    const dolphinChannelTrigger = rom.allocatedTriggers.get('channel item');
+    if (dolphinChannelTrigger != null) {
+      replaceMessage(rom.trigger(dolphinChannelTrigger).message.mid,
+                     '[3b:Love Pendant]',
+                     'APItem');
+    }
+  } else {
+    if (!ZebuAtWindmill.item.isMagic()) unmagic('00:1b');
+    replaceMessage('00:1b', '[41:Refresh]', item(ZebuAtWindmill.item));
+    
+    replaceMessage('02:02', '[29:Gas Mask]', item(AkahanaStatueOfOnyxTradein));
+    
+    if (!StomFightReward.item.isMagic()) unmagic('03:01');
+    replaceMessage('03:01', '[43:Telepathy]', item(StomFightReward));
+      
+    replaceMessage('05:0a', '[44:Teleport]', item(MtSabreWestTornel));
+      
+    replaceMessage('0a:0c', '[28:Flute of Lime]', item(PortoaQueenItem));
+    if (!AsinaInBackRoom.item.isMagic()) unmagic('0b:01');
+    replaceMessage('0b:01', '[45:Recover]', item(AsinaInBackRoom));
+    
+    if (!BehindWhirlpool.item.isMagic()) {
+      unmagic('0b:01');
+      unmagic('1d:12');
+    }
+    replaceMessage('0b:01', '[46:Barrier]', item(BehindWhirlpool));
+    replaceMessage('1d:12', '[46:Barrier]', item(BehindWhirlpool));
+    
+    // Look for a key item in the fog lamp/kirisa plant caves.
+    // Order is back of fog lamp, kirisa back-to-front, then front of fog lamp
+    let fogLampCaveLoot = findLoot(0x4f, 0x4e, 0x4d, 0x4c, 0x47, 0x46, 0x45, 0x44,
+                                   0x4b, 0x4a, 0x49, 0x48);
+    if (fogLampCaveLoot) {
+      replaceMessage('0d:00', '[35:Fog Lamp]', item(fogLampCaveLoot));
+    } else {
+      replaceMessage('0d:00', 'that a [35:Fog Lamp] was', 'there was treasure');
+    }
+    
+    replaceMessage('0e:03', '[09:Ball of Water]', item(Rage));
+     
+    if (!KensuInSwan.item.isMagic()) {
+      unmagic('13:02');
+    }
+    replaceMessage('13:02', '[47:Change]', item(KensuInSwan));
+      
+    if (!SlimedKensu.item.isMagic()) replaceMessage('18:07', 'teach', 'give');
+    replaceMessage('18:07', '[48:Flight]', item(SlimedKensu));
+  
+    if (!MtSabreNorthSummit.item.isMagic()) unmagic('1c:10');
+    replaceMessage('1c:10', '[42:Paralysis]', item(MtSabreNorthSummit));
+    
+    // TODO - shuffle which item reconstructs which other?
+    replaceMessage('20:06', 'Statue of Gold', item(RepairedStatue));
+    
+    // Find the dolphin underground channel message.
+    const dolphinChannelTrigger = rom.allocatedTriggers.get('channel item');
+    if (dolphinChannelTrigger != null) {
+      replaceMessage(rom.trigger(dolphinChannelTrigger).message.mid,
+                     '[3b:Love Pendant]',
+                     item(UndergroundChannelUnderwaterChest));
+    }
+  }
 
   const akahanaWant = tradeIn(AkahanaInBrynmaer);
   replaceMessage('02:01', 'an unusual statue', vague(akahanaWant));
   replaceMessage('02:02', 'a statue', `the ${commonNoun(akahanaWant)}`);
-  replaceMessage('02:02', '[29:Gas Mask]', item(AkahanaStatueOfOnyxTradein));
-
-  if (!StomFightReward.item.isMagic()) unmagic('03:01');
-  replaceMessage('03:01', '[43:Telepathy]', item(StomFightReward));
 
   const tornelWant = findTornelTradeIn(rom);
   replaceMessage('03:01', '[06:Tornado Bracelet]', item(tornelWant));
   replaceMessage('05:0a', '[06:Tornado Bracelet]', item(tornelWant));
-  replaceMessage('05:0a', '[44:Teleport]', item(MtSabreWestTornel));
 
   const fogLampWant = tradeIn(Fisherman);
   replaceMessage('09:01', '[35:Fog Lamp]', item(fogLampWant));
@@ -69,32 +166,11 @@ export function fixDialog(rom: Rom) {
   replaceMessage('09:06', 'lamp', commonNoun(fogLampWant));
 
   const queenWant = PortoaQueen.dialog(PortoaPalace_ThroneRoom)[1].condition;
-  replaceMessage('0a:0c', '[28:Flute of Lime]', item(PortoaQueenItem));
   replaceMessage('0a:0d', '[02:Sword of Water]', item(queenWant));
   // TODO - consider replacing 0a:0d but we need to also replace condition?
-  if (!AsinaInBackRoom.item.isMagic()) unmagic('0b:01');
-  replaceMessage('0b:01', '[45:Recover]', item(AsinaInBackRoom));
-
-  if (!BehindWhirlpool.item.isMagic()) {
-    unmagic('0b:01');
-    unmagic('1d:12');
-  }
-  replaceMessage('0b:01', '[46:Barrier]', item(BehindWhirlpool));
-  replaceMessage('1d:12', '[46:Barrier]', item(BehindWhirlpool));
-
-  // Look for a key item in the fog lamp/kirisa plant caves.
-  // Order is back of fog lamp, kirisa back-to-front, then front of fog lamp
-  let fogLampCaveLoot = findLoot(0x4f, 0x4e, 0x4d, 0x4c, 0x47, 0x46, 0x45, 0x44,
-                                 0x4b, 0x4a, 0x49, 0x48);
-  if (fogLampCaveLoot) {
-    replaceMessage('0d:00', '[35:Fog Lamp]', item(fogLampCaveLoot));
-  } else {
-    replaceMessage('0d:00', 'that a [35:Fog Lamp] was', 'there was treasure');
-  }
 
   const rageWant = rom.npcs.Rage.dialog()[0].condition;
   replaceMessage('0e:03', '[02:Sword of Water]', item(rageWant));
-  replaceMessage('0e:03', '[09:Ball of Water]', item(Rage));
 
   // TODO - message 10:0c is only half-correct.  If item names are randomized
   // then even without a location the message is still useful.  So just do that
@@ -116,31 +192,11 @@ export function fixDialog(rom: Rom) {
   const lovePendantWant = tradeIn(rom.npcs.KensuInSwan);
   replaceMessage('13:02', '[3b:Love Pendant]', item(lovePendantWant));
   replaceMessage('13:00', 'pendant', commonNoun(lovePendantWant));
-  if (!KensuInSwan.item.isMagic()) {
-    unmagic('13:02');
-  }
-  replaceMessage('13:02', '[47:Change]', item(KensuInSwan));
 
   const ivoryStatueWant = tradeIn(rom.npcs.SlimedKensu);
   replaceMessage('18:06', '[3d:Ivory Statue]', item(ivoryStatueWant));
   replaceMessage('18:07', '[3d:Ivory Statue]', item(ivoryStatueWant));
   replaceMessage('18:06', `It's in a room`, '{0b:Karmine} is');
-  if (!SlimedKensu.item.isMagic()) replaceMessage('18:07', 'teach', 'give');
-  replaceMessage('18:07', '[48:Flight]', item(SlimedKensu));
-
-  if (!MtSabreNorthSummit.item.isMagic()) unmagic('1c:10');
-  replaceMessage('1c:10', '[42:Paralysis]', item(MtSabreNorthSummit));
-
-  // TODO - shuffle which item reconstructs which other?
-  replaceMessage('20:06', 'Statue of Gold', item(RepairedStatue));
-
-  // Find the dolphin underground channel message.
-  const dolphinChannelTrigger = rom.allocatedTriggers.get('channel item');
-  if (dolphinChannelTrigger != null) {
-    replaceMessage(rom.trigger(dolphinChannelTrigger).message.mid,
-                   '[3b:Love Pendant]',
-                   item(UndergroundChannelUnderwaterChest));
-  }
 
   // TODO - consider warping on a random sword? - message 1c:11
 

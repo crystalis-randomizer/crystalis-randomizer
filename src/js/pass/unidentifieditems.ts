@@ -1,6 +1,7 @@
 import {FlagSet} from '../flagset';
 import {Random} from '../random';
 import {Rom} from '../rom';
+import {ShuffleData} from '../appatch';
 
 // NOTE: the ! prefix indicates it is used when community jokes are
 // not enabled.  This is a much smaller set.  Everything WITHOUT an
@@ -308,7 +309,7 @@ const GLASSES_NAMES = [
 ];
 const [] = [PLANT_NAMES, PENDANT_NAMES, GLASSES_NAMES];
 
-export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
+export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random, predetermined?: ShuffleData) {
   if (!flags.unidentifiedItems()) return;
   const items = (...ids: number[]) => ids.map(id => rom.items[id]);
   const keys = items(0x32, 0x33, 0x34);
@@ -330,7 +331,13 @@ export function unidentifiedItems(rom: Rom, flags: FlagSet, random: Random) {
     random.shuffle(filteredNames);
     const palettes = random.shuffle([0, 1, 2, 3]);
     for (const item of list) {
-      const name = filteredNames.pop()!;
+      let name = "";
+      // could build this map on IDs instead of names
+      if (predetermined?.keyItemNames.has(item.messageName)) {
+        name = predetermined.keyItemNames.get(item.messageName)!;
+      } else {
+        name = filteredNames.pop()!;
+      }
       if (rom.spoiler) rom.spoiler.addUnidentifiedItem(item.id, item.messageName, name);
       item.menuName = item.messageName = name;
       item.palette = palettes.pop()!;

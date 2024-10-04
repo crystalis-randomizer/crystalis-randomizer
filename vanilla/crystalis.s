@@ -64003,7 +64003,7 @@ PopulateInitialObjects:
 InitialObjectsTable:
         .byte [@3ca26@],[@3ca27@],[@3ca28@],[@3ca29@],[@3ca2a@],[@3ca2b@],[@3ca2c@],[@3ca2d@]
 ;;; --------------------------------
-.org $ca2e
+.org $ca2e                      ; NOTE: rewritten by location.s
 MainGameModeJump_01_LocationChange:
         <@3ca2e _3e3e9@>
         <@3ca31@> ; 8000 -> 34000
@@ -64028,7 +64028,7 @@ MainGameModeJump_01_LocationChange:
          ;; ----
 +       <@3ca5e@>
 ;;; --------------------------------
-.org $ca5f
+.org $ca5f                      ; NOTE: rewritten by savegame.s
 MainGameModeJump_00_Initialize:
         <@3ca5f@> ; 8000 -> 24000
         <@3ca61 BankSwitch16k@>
@@ -64066,7 +64066,7 @@ MainGameModeJump_00_Initialize:
         ;; ----
         <@3cab5@>
 ;;; --------------------------------
-.org $cab6
+.org $cab6                      ; NOTE: rewritten by main.s
 MainLoopJump_01_Game:
         <@3cab6 GameMode@>
         <@3cab8@>
@@ -64074,7 +64074,7 @@ MainLoopJump_01_Game:
          <@3cabc@>
          <@3cabe +@> ; $3cac3
           <@3cac0 _3cc2e@>
-+       <@3cac3@> ; update the global counter
++       <@3cac3 GlobalCounter@> ; update the global counter
         <@3cac5 GameMode@>
         <@3cac7@>
         <@3cac8@>
@@ -64087,7 +64087,7 @@ MainLoopJump_01_Game:
         <@3cad8 BankSwitch16k@>
         <@3cadb@>
 ;;; --------------------------------
-.org $cade
+.org $cade                      ; NOTE: rewritten by main.s
 MainGameModeJumpTable: 
         ;; The bank for these addresses is given by the same offset in $3cb2e
         ;; Most are in the fixed bank, so it loads 0, but some are in banks
@@ -64132,7 +64132,7 @@ MainGameModeJumpTable:
         .word [@3cb28:w@]
         .word [@3cb2a:w@]
         .word [@3cb2c:w@]
-.org $cb2e
+.org $cb2e                      ; NOTE: rewritten by main.s
 MainGameModeJumpBank:
         .byte [@3cb2e@] ; 00
         .byte [@3cb2f@] ; 01
@@ -64177,7 +64177,7 @@ MainGameModeJumpBank:
         .byte [@3cb56@],[@3cb57@],[@3cb58@],[@3cb59@],[@3cb5a@],[@3cb5b@],[@3cb5c@],[@3cb5d@],[@3cb5e@],[@3cb5f@],[@3cb60@],[@3cb61@]
 ;;; --------------------------------
 ;;; Normal mode: player is moving on the main map.  This runs nearly every frame.
-.org $cb62
+.org $cb62                      ; NOTE: rewritten by main.s
 MainGameModeJump_08_Normal:
         <@3cb62 ReadControllersWithDirections@>    ; NOTE: patched by flags.s OR gamepad.s ($cb62)
         <@3cb65 CheckForPlayerDeath@>              ; NOTE: patched by hud.s ($cb65)
@@ -64222,7 +64222,7 @@ CheckForStartMenu:
         <@3cbb1 MainGameModeJump_1f_DynaAppears@> ; special code for dyna's room
         ;; ----
 CheckForSelectMenu:
-        <@3cbb4 Ctrl1NewlyPressed@>              ; NOTE: patched by gamepad.s ($cbb4)
+        <@3cbb4 Ctrl1NewlyPressed@>               ; NOTE: patched by gamepad.s ($cbb4)
         <@3cbb6 BUTTON_SELECT@>
          <@3cbb8 CheckForController2Buttons@>
         <@3cbba GAME_MODE_SELECT_MENU@>

@@ -12,32 +12,25 @@
 .ifdef _CHECK_FLAG0
 ;;; Note: this is a debugging aid added to determine if anything
 ;;; is accidentally setting flag 0.  It should not make a difference, 
-.org $cb62 ; main game mode jump 08
-    jsr CheckFlag0              ; was jsr ReadControllersWithDirections
 
 .reloc
 CheckFlag0:
     lda $6480
     lsr
-    bcc +
-     asl
-     sta $6480
-     lda #$00
-     sta $20
-     sta $21
-     ldx #$0c
+    bcs +
+      rts
++   asl
+    sta $6480
+    lda #$00
+    sta $20
+    sta $21
+    ldx #$0c
 -     lda $6140,x
       eor #$ff
-      sta $6140,x
-      dex
-     bpl -
-     jsr LoadAndShowDialog
-
-.ifdef _CTRL1_SHORTCUTS
-+  jmp ReadControllersWithButtonUp
-.else
-+  jmp ReadControllersWithDirections
-.endif
+        sta $6140,x
+        dex
+      bpl -
+    jmp LoadAndShowDialog
 .endif ; _CHECK_FLAG0
 
 

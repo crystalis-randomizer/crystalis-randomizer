@@ -320,3 +320,49 @@ PrepareGameInitialDataTable:
 .endrepeat
 .endif ; _STATS_TRACKING
   .byte 0
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Rewrite vanilla code
+
+.segment "fe", "ff"
+FREE "fe" [$ca5f, $cab6)
+
+.reloc                               ; smudge from $3ca5f to $3cab6
+OVERRIDE
+MainGameModeJump_00_Initialize:
+        <@3ca5f@> ; 8000 -> 24000
+        <@3ca61 BankSwitch16k@>
+        <@3ca64 InitializeStatusBarNametable@>
+        <@3ca67 WaitForNametableFlush@>
+        <@3ca6a@> ; 8000 -> 34000
+        <@3ca6c BankSwitch8k_8000@>
+        <@3ca6f UpdateHPDisplayInternal@>
+        <@3ca72 WaitForNametableFlush@>
+        <@3ca75@>
+        <@3ca77@>
+        <@3ca7a@>
+        <@3ca7c@>
+        <@3ca7f@>
+        <@3ca82@>
+        <@3ca85@>
+        <@3ca88@>
+        <@3ca8a@>
+        <@3ca8d@>
+        <@3ca90@>
+        <@3ca93@>
+        <@3ca96@>
+        <@3ca98@>
+        <@3ca9b MainGameModeJump_01_LocationChange@>
+        <@3ca9e GAME_MODE_FLASH_AT_START@>
+        <@3caa0 GameMode@>
+        <@3caa2@>
+        <@3caa4@>
+        <@3caa7 ReadControllersWithDirections@>
+        <@3caaa@>
+        beq :>rts ; $3cab5
+          <@3caae GAME_MODE_NORMAL@>
+          <@3cab0 GameMode@>
+          <@3cab2 UpdateEquipmentAndStatus@>
+          ;; ----
+        <@3cab5@>

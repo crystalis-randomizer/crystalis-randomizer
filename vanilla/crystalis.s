@@ -45828,7 +45828,9 @@ InitialPrg_6400:
         .byte [@2fe60@],[@2fe61@],[@2fe62@],[@2fe63@],[@2fe64@],[@2fe65@],[@2fe66@],[@2fe67@],[@2fe68@],[@2fe69@],[@2fe6a@],[@2fe6b@],[@2fe6c@],[@2fe6d@],[@2fe6e@],[@2fe6f@]
         .byte [@2fe70@],[@2fe71@],[@2fe72@],[@2fe73@],[@2fe74@],[@2fe75@],[@2fe76@],[@2fe77@],[@2fe78@],[@2fe79@],[@2fe7a@],[@2fe7b@],[@2fe7c@],[@2fe7d@],[@2fe7e@],[@2fe7f@]
         ;; NOTE: $be82 and $be84 patched by attack.s (swap $00 and $1e)
-        .byte [@2fe80@],[@2fe81@],[@2fe82@],[@2fe83@],[@2fe84@],[@2fe85@],[@2fe86@],[@2fe87@],[@2fe88@],[@2fe89@],[@2fe8a@],[@2fe8b@],[@2fe8c@],[@2fe8d@],[@2fe8e@],[@2fe8f@]
+              initialMoney = [@2fe80@] ; provided by savegame.s
+        .byte initialMoney
+        .byte     [@2fe81@],[@2fe82@],[@2fe83@],[@2fe84@],[@2fe85@],[@2fe86@],[@2fe87@],[@2fe88@],[@2fe89@],[@2fe8a@],[@2fe8b@],[@2fe8c@],[@2fe8d@],[@2fe8e@],[@2fe8f@]
         .byte [@2fe90@],[@2fe91@],[@2fe92@],[@2fe93@],[@2fe94@],[@2fe95@],[@2fe96@],[@2fe97@],[@2fe98@],[@2fe99@],[@2fe9a@],[@2fe9b@],[@2fe9c@],[@2fe9d@],[@2fe9e@],[@2fe9f@]
         .byte [@2fea0@],[@2fea1@],[@2fea2@],[@2fea3@],[@2fea4@],[@2fea5@],[@2fea6@],[@2fea7@],[@2fea8@],[@2fea9@],[@2feaa@],[@2feab@],[@2feac@],[@2fead@],[@2feae@],[@2feaf@]
         .byte [@2feb0@],[@2feb1@],[@2feb2@],[@2feb3@],[@2feb4@],[@2feb5@],[@2feb6@],[@2feb7@],[@2feb8@],[@2feb9@],[@2feba@],[@2febb@],[@2febc@],[@2febd@],[@2febe@],[@2febf@]
@@ -62926,6 +62928,8 @@ PowersOfTwoInReverse:            ; NOTE: only used by routine immediately above
 ;;;        If it's #$ff, then quit after zeroing out the relevant memory.
 ;;;   $10  slot to load the object into.  This runs from 0..$1f, though in
 ;;;        practice I think the lower bound is actually $0d.
+;;; Side effects:
+;;;   Wrecks the 2nd bank (sets it to bank $0d)
 .org $c25d
 LoadOneObjectDataInternal:
         <@3c25d@>
@@ -63835,7 +63839,7 @@ ImmediateWriteNametableDataToPpu:
         .byte [@3c8f0@],[@3c8f1@],[@3c8f2@],[@3c8f3@],[@3c8f4@],[@3c8f5@],[@3c8f6@],[@3c8f7@],[@3c8f8@],[@3c8f9@],[@3c8fa@],[@3c8fb@],[@3c8fc@],[@3c8fd@],[@3c8fe@],[@3c8ff@]
 ;;; --------------------------------
 ;;; This loop happens nearly every frame.  Occasionally it takes a few frames to get back.
-.org $c900
+.org $c900                      ; NOTE: rewritten by main.s
 MainLoop:
         <@3c900@>
         <@3c902 MainLoop@>
@@ -63861,7 +63865,7 @@ MainLoop:
 ;;;   4: two frames after killing dyna
 ;;;   5: ending sequence
 ;;;   8: three frames on hitting continue
-.org $c91f
+.org $c91f                      ; NOTE: rewritten by main.s
 MainLoopJumpTable:
         .word (MainLoopJump_00_PrepareGame)
         .word (MainLoopJump_01_Game)
@@ -63873,33 +63877,33 @@ MainLoopJumpTable:
         .word [@3c92d:w@]
         .word (MainLoopJump_08_ContinueGame)
 ;;; --------------------------------
-.org $c931
+.org $c931                      ; NOTE: rewritten by main.s
 MainLoopJump_02_PrepareTitleScreen:
         <@3c931@>
         <@3c933 BankSwitch16k@>
         <@3c936 MainLoop_PrepareTitleScreen@>
 ;;; --------------------------------
-.org $c939
+.org $c939                      ; NOTE: rewritten by main.s
 MainLoopJump_03_TitleScreen:
         <@3c939@>
         <@3c93b BankSwitch16k@>
         <@3c93e ReadControllersWithRepeat@>
         <@3c941 MainLoop_TitleScreen@>
 ;;; --------------------------------
-.org $c944
+.org $c944                      ; NOTE: rewritten by main.s
 MainLoopJump_04_PrepareEndingSequence:
         <@3c944@>
         <@3c946 BankSwitch16k@>
         <@3c949 MainLoop_PrepareEndingSequence@>
 ;;; --------------------------------
-.org $c94c
+.org $c94c                      ; NOTE: rewritten by main.s
 MainLoopJump_05_EndingSequence:
         <@3c94c@>
         <@3c94e BankSwitch16k@>
         <@3c951 ReadControllersWithRepeat@>
         <@3c954 MainLoop_EndingSequence@>
 ;;; --------------------------------
-.org $c957
+.org $c957                      ; NOTE: rewritten by main.s, savegame.s
 MainLoopJump_00_PrepareGame:
         <@3c957@>
         <@3c959@>
@@ -63912,7 +63916,7 @@ MainLoopJump_00_PrepareGame:
          <@3c967@>
          <@3c96a@>
         <@3c96b -@> ; $3c964
-        <@3c96d@>                ; NOTE: patched by savegame.s ($c96d)
+        <@3c96d@>                ; NOTE: significant refactoring from here
         <@3c96f@>
         <@3c971@>
         <@3c973@>
@@ -63954,14 +63958,14 @@ MainLoopJump_00_PrepareGame:
         <@3c9d6 UpdateEquipmentAndStatus@>
         <@3c9d9@>
 ;;; --------------------------------
-.org $c9da
+.org $c9da                      ; NOTE: rewritten by main.s
 MainLoopJump_08_ContinueGame:
         <@3c9da PopulateInitialObjects@>
         <@3c9dd@> ; A000 -> 2E000
         <@3c9df BankSwitch8k_a000@>
         <@3c9e2 CopyCheckpointToMemoryForContinueIndirected@> ; 2fc06
         <@3c9e5 WaitForNametableFlush@>
-        <@3c9e8 UpdateEquipmentAndStatus@>
+        <@3c9e8 UpdateEquipmentAndStatus@>    ; NOTE: sword charge glitch fixed here
         <@3c9eb@> ; 8000 -> 24000
         <@3c9ed BankSwitch16k@>
         <@3c9f0 InitializeStatusBarNametable@>
@@ -63969,11 +63973,11 @@ MainLoopJump_08_ContinueGame:
         <@3c9f5 MainLoopMode@>
         <@3c9f7 GameMode@>
         <@3c9f9@>
-        <@3c9fb@>                 ; NOTE: patched by inventory.s ($c9fb)
+        <@3c9fb@>
         <@3c9fe@>
 ;;; --------------------------------
 ;;; Loads objects in slots 0..3 from entries 6, 4, 5, and a, respectively.
-.org $c9ff
+.org $c9ff                      ; NOTE: rewritten by main.s
 PopulateInitialObjects:
         <@3c9ff@>
         <@3ca01@>
@@ -63995,7 +63999,7 @@ PopulateInitialObjects:
         <@3ca23 -@> ; $3ca14
         <@3ca25@>
 ;;; --------------------------------
-.org $ca26
+.org $ca26                      ; NOTE: rewritten by main.s
 InitialObjectsTable:
         .byte [@3ca26@],[@3ca27@],[@3ca28@],[@3ca29@],[@3ca2a@],[@3ca2b@],[@3ca2c@],[@3ca2d@]
 ;;; --------------------------------

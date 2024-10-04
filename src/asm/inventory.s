@@ -253,17 +253,6 @@ ApplySpeedBoots:
 + rts
 
 
-.ifdef _DISABLE_SWORD_CHARGE_GLITCH
-.org $c9fb
-  jsr @ReloadInventoryAfterContinue
-
-.reloc
-@ReloadInventoryAfterContinue:
-  sta $07e8
-  jsr PostInventoryMenu
-  rts
-.endif
-
 ;;; Patch MainGameModeJump_12_Inventory
 .org $d91f
   jsr PostInventoryMenu
@@ -283,7 +272,7 @@ PostInventoryMenu:
   bne +
    lda #2
    sta $0719
-+ jmp UpdateEquipmentAndStatus  ; Defined in vanilla (init.s)
++ jmp UpdateEquipmentAndStatus
 
 .reloc
 AutoEquipBracelets:

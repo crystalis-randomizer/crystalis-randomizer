@@ -1,0 +1,21 @@
+# ES Modules + ts-node + mocha
+
+This whole situation is a bit of a nightmare.
+
+## Requirements
+
+* unit test needs to work (`npm run unit`)
+* esbuild needs to produce a bundle
+* CLI applications need to work
+* LSP integration with editor?
+
+## Nice to have
+
+* top-level await?
+
+## Possible solutions
+
+* deno?
+    * migrate tests to deno
+    * needs *.ts imports :-(
+    * node version becomes awkward - platform runtime? converter?

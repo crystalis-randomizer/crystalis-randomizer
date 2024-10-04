@@ -8,10 +8,13 @@ deploy_key.pub
 dist
 target
 .vscode
+scraps
+gh-pages
 
 # testing
 cov.*
 test/testdata
+test/testdata-prev
 test/testdata.backup
 unused
 

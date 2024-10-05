@@ -823,6 +823,8 @@ $3c0,x
 ------
 HP
 
+player: 3c1 is current hp, 3c0 is max hp
+
 
 $3e0,x
 ------
@@ -966,7 +968,7 @@ This is also used for mosquito wings.
 $5a0,x
 ------
 must wait to move - counts down to zero when able to move again?
- - set by paralysis
+ - set by paralysis, or stone for the player
 
 
 $5c0,x

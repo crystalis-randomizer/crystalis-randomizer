@@ -52299,10 +52299,11 @@ ObjectActionJump_03:
            <@35f24@>
            <@35f27 PlayerMP@>
            <@35f2a +@> ; $35f37
-            <@35f2c@>
-            <@35f2e@>
+            <@35f2c GlobalCounter@>
+            <@35f2e flightMpSpeedMask@>
+                 flightMpSpeedMask = [@35f2f@]
             <@35f30 +@> ; $35f37
-             <@35f32@>
+             <@35f32 mpCost_flight@>
              <@35f34 SpendMPOrDoubleReturn@>
 +       <@35f37@>
         <@35f3a +@> ; $35f4c
@@ -52496,7 +52497,7 @@ UseMagicJump_00_Nothing:
 UseMagicJump_01_Refresh:
         <@360a3 UseMagic_CheckCurse@>
         <@360a6 PlayerMP@>
-        <@360a9@>
+        <@360a9 mpCost_refresh@>
         <@360ab +@> ; $360b0
         <@360ad UseMagic_InsufficientMP@>
         ;; ----
@@ -52513,7 +52514,8 @@ UseMagicJump_01_Refresh:
          <@360c6@> ; each bar is 4 HP
           bne :>rts
 +       <@360ca UpdateHPDisplayInternal@>
-        <@360cd@>
+        <@360cd mpCost_refresh@>
+             mpCost_refresh = [@360ce@]
         <@360cf SpendMPOrDoubleReturn@>
         <@360d2@>
         <@360d4 UseMagic_EndWithSpawn@> ; (unconditional)
@@ -52525,7 +52527,8 @@ UseMagicJump_02_Paralysis:
         <@360d7 UseMagic_CheckCurse@>
         <@360da@>
         bne :<rts
-        <@360df@>
+        <@360df mpCost_paralysis@>
+             mpCost_paralysis = [@360e0@]
         <@360e1 SpendMPOrDoubleReturn@>
         <@360e4@>
 .org $a0e6
@@ -52548,9 +52551,11 @@ UseMagicJump_06_Barrier:
 +       <@360fc PlayerMP@>
         <@360ff UseMagic_InsufficientMP@>
         <@36101 GlobalCounter@>
-        <@36103@> ; spend 1MP every 8 frames (8/sec)
+        <@36103 barrierMpSpeedMask@>
+             barrierMpSpeedMask = [@36104@] ; spend 1MP every 8 frames (8/sec)
         <@36105 +@> ; $3610c
-         <@36107@>
+         <@36107 mpCost_barrier@>
+              mpCost_barrier = [@36108@]
          <@36109 SpendMPOrDoubleReturn@>
 +       <@3610c@>
         <@3610e@>
@@ -52563,7 +52568,8 @@ UseMagicJump_08_Flight:
         <@36117 GlobalCounter@>
         <@36119@>
         <@3611b +@> ; $36122
-         <@3611d@>
+         <@3611d mpCost_flight@>
+              mpCost_flight = [@3611e@]
          <@3611f SpendMPOrDoubleReturn@>
 +       <@36122@>
         <@36125 +@> ; $36133
@@ -52621,7 +52627,8 @@ UseMagicJump_05_Recover:
         <@3617d PlayerStatus@>
         <@36180@>
         beq :>rts ; skip unless there's status to recover
-        <@36184@> ; 24
+        <@36184 mpCost_recover@>
+             mpCost_recover = [@36185@] ; 24
         <@36186 SpendMPOrDoubleReturn@>
         <@36189 GAME_MODE_RECOVER_MAGIC@>
         <@3618b UseMagic_SetGameMode@> ; unconditional
@@ -66556,7 +66563,7 @@ JumpTable_3dbdc_00:
         <@3dc9d +@> ; $3dca9
         <@3dc9f@>
         <@3dca1 BankSwitch8k_8000@>
-        <@3dca4@> ; 20
+        <@3dca4 mpCost_teleport@> ; 20
         <@3dca6 SpendMPOrDoubleReturn@>
 + -      <@3dca9@> ; holding pattern
          <@3dcab@>
@@ -66929,7 +66936,8 @@ JumpTable_3df0e_00:
         <@3df7f PlayerStatus@>
         <@3df82@>
         <@3df84 BankSwitch8k_8000@>
-        <@3df87@>
+        <@3df87 mpCost_teleport@>
+             mpCost_teleport = [@3df88@]
         <@3df89 SpendMPOrDoubleReturn@>
         <@3df8c JumpTable_3df0e_01@>
 ;;; --------------------------------
@@ -69526,7 +69534,7 @@ PrepareScreenMapRead:
         <@3ef52@>
         <@3ef54@>
 ;;; --------------------------------
-.org $ef55
+.org $ef55                      ; NOTE: rewritten by object_player.s
 CheckPassiveFrameEffects:
 ;;; First check for poison/swamp/pain damage.  This is a little
 ;;; complicated because the checks are all mixed together.
@@ -69541,7 +69549,8 @@ CheckPassiveFrameEffects:
           <@3ef61 @InflictPainOrPoisonDamage@> ; $3ef8c
 @CheckPainTile:  ; 3ef63
          <@3ef63 EquippedPassiveItem@>
-         <@3ef66 ITEM_LEATHER_BOOTS@>      ; NOTE: patched by movement.s ($ef66) _HAZMAT_SUIT
+         <@3ef66 item_preventPain@>
+              item_preventPain = ITEM_LEATHER_BOOTS
          <@3ef68 @CheckSwampDamage@> ; $3ef77
           ;; Not wearing leather boots: check if on ground
           <@3ef6a PlayerJumpDisplacement@>
@@ -69555,11 +69564,13 @@ CheckPassiveFrameEffects:
          <@3ef79 LOC_SWAMP@>
           <@3ef7b @CheckParalysis@> ; 3efbc
          <@3ef7d EquippedPassiveItem@>
-         <@3ef80 ITEM_GAS_MASK@>
+         <@3ef80 item_preventSwamp@>
+              item_preventSwamp = ITEM_GAS_MASK
           <@3ef82 @CheckParalysis@> ; 3efbc
          ;; Inflict damage every 8 frames
          <@3ef84 GlobalCounter@>
-         <@3ef86@>
+         <@3ef86 swampDamageSpeedMask@>
+              swampDamageSpeedMask = [@3ef87@]
           <@3ef88 @CheckParalysis@> ; 3efbc
          <@3ef8a @InflictSwampDamage@> ; 3ef92
          ;; ----
@@ -69570,13 +69581,15 @@ CheckPassiveFrameEffects:
 ;;; do basically the same thing, just at different speeds.
 @InflictPainOrPoisonDamage:  ; 3ef8c
         <@3ef8c GlobalCounter@>
-        <@3ef8e@>
+        <@3ef8e painDamageSpeedMask@>
+             painDamageSpeedMask = [@3ef8f@]
         <@3ef90 @CheckParalysis@> ; 3efbc
 @InflictSwampDamage:  ; 3ef92
         ;; Every 32 frames, poison takes 4 HP
         <@3ef92 PlayerHP@>
         <@3ef95@>
-        <@3ef96@>
+        <@3ef96 painDamageAmount@>
+             painDamageAmount = [@3ef97@]
         <@3ef98 +@> ; $3ef9c
          <@3ef9a@> ; don't wrap past zero
 +       <@3ef9c PlayerHP@>
@@ -69639,7 +69652,7 @@ CheckPassiveFrameEffects:
         ;;  ... and we're in normal game mode, then try to cast 'recover'
         <@3f00f@> ; 8000 -> 34000
         <@3f011 BankSwitch8k_8000@>
-        <@3f014@>
+        <@3f014 mpCost_recover@>
         <@3f016 SpendMPOrDoubleReturn@>
         <@3f019 GAME_MODE_RECOVER_MAGIC@>
         <@3f01b GameMode@>

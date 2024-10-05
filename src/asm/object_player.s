@@ -413,3 +413,309 @@ ChargeLevelThresholds:
 OVERRIDE
 HorizontalDirectionProjectionTable:
         .byte [@361c5@],[@3629c@],[@362a2@],[@362ad@],[@36312@],[@3641c@],[@3648e@],[@364c8@]
+
+;;; ----------------------------------------------------------------
+
+
+.segment "1a", "fe", "ff"
+
+;;; Set up X to index an effect speed table.  These tables contain
+;;; four masks, which should have the N rightmost bits set, depending
+;;; on how often something should occur:
+;;;   0 - never
+;;;   1 - every other frame (30/s)
+;;;   3 - every four frames (15/s)
+;;;   7 - every eight frames (8/s)
+;;;  15 - every 16 frames (4/s)
+;;;  31 - every 32 frames (2/s)
+;;;  63 - every 64 frames (1/s)
+;;; 128 - every 128 frames (2s)
+;;; 255 - every 256 frames (4s)
+;;; 
+;;; Inputs:
+;;;   A - 0 if item is equipped, nonzero otherwise
+;;; Output:
+;;;   X - 0 if item equipped and player not moving
+;;;       1 if item equipped and player is moving
+;;;       2 if item not equipped and player not moving
+;;;       3 if item not equipped and player is moving
+;;;
+;;; Usage:
+;;;   SpeedTable:
+;;;     .byte mask_itemStill, mask_itemMoving, mask_still, mask_moving
+;;;   ApplyItemEffect:
+;;;     lda EquippedPassiveItem
+;;;     eor #itemId
+;;;     jsr CheckItemAndMovement
+;;;     and SpeedTable,x
+;;;     cmp #1
+;;;     bne @skip
+;;;   @applyEffect:
+;;;     ...
+;;;   @skip
+CheckItemAndMovement:
+        <@369d9@>
+        <@369e7 +@>
+          <@372fc 2@>
++       <@373b0 Ctrl1CurrentDirection@>
+        <@373d0 +@>
+          <@3761a@>
++       <@376a2 GlobalCounter@>
+        <@376a5@>
+
+.segment "fe","ff"     ; NOTE: could also move to "1a" with an early bank switch
+
+;;; --------------------------------
+FREE "ff" [$ef55, $f0a4)
+.reloc                               ; smudge from $3ef55 to $3f0a4
+OVERRIDE
+CheckPassiveFrameEffects:
+        lda #$1a ; 8000 -> 34000     ; smudge off
+        jsr BankSwitch8k_8000
+;;; First check for poison/swamp/pain damage.  This is a little
+;;; complicated because the checks are all mixed together.
+@CheckPoisonStatus:                  ; smudge on
+        <@3ef55 GlobalCounter@>
+        <@3ef57@>
+        <@3ef58 @CheckPainTile@>
+          ;; Check poison status every 128 frames
+          <@3ef5a PlayerStatus@>
+          <@3ef5d STATUS_MASK@>
+          <@3ef5f STATUS_POISON@>
+          <@3ef61 @InflictPainOrPoisonDamage@>
+@CheckPainTile:  ; 3ef63
+         <@3ef63 EquippedPassiveItem@>
+         <@3ef66 item_preventPain@>
+
+    .ifdef _HAZMAT_SUIT
+              item_preventPain = ITEM_GAS_MASK ; TODO - set this in TS?
+    .else
+              item_preventPain = ITEM_LEATHER_BOOTS
+    .endif
+
+         <@3ef68 @CheckSwampDamage@>
+          ;; Not wearing leather boots: check if on ground
+          <@3ef6a PlayerJumpDisplacement@>
+          <@3ef6d @CheckSwampDamage@>
+           ;; On ground: check if standing on a pain square
+           <@3ef6f@> ; ?? susceptibility ?? currrent terrain ??
+           <@3ef72@>
+           <@3ef75 @InflictPainOrPoisonDamage@>
+@CheckSwampDamage:  ; 3ef77
+         <@3ef77 CurrentLocation@>
+         <@3ef79 LOC_SWAMP@>
+          <@3ef7b @CheckParalysis@>
+         <@3ef7d EquippedPassiveItem@>
+         <@3ef80 item_preventSwamp@>
+              item_preventSwamp = ITEM_GAS_MASK
+          <@3ef82 @CheckParalysis@>
+         ;; Inflict damage every 8 frames
+         <@3ef84 GlobalCounter@>
+         <@3ef86 swampDamageSpeedMask@>
+              swampDamageSpeedMask = [@3ef87@] ; TODO - make this adjustable
+          <@3ef88 @CheckParalysis@>
+         <@3ef8a @InflictSwampDamage@>
+         ;; ----
+;;; NOTE: Pain and poison have different frequencies. We already checked
+;;; the poison frequency above _before_ checking the status bit, but the
+;;; pain tile check was independent of the timer, so we check that timer
+;;; here instead.  This falls through to @InflictSwampDamage since they
+;;; do basically the same thing, just at different speeds.
+@InflictPainOrPoisonDamage:  ; 3ef8c
+        <@3ef8c GlobalCounter@>
+        <@3ef8e painDamageSpeedMask@>
+             painDamageSpeedMask = [@3ef8f@] ; TODO - make this adjustable
+        <@3ef90 @CheckParalysis@>
+@InflictSwampDamage:  ; 3ef92
+        ;; Every 32 frames, poison takes 4 HP
+        <@3ef92 PlayerHP@>
+        <@3ef95@>
+        <@3ef96 painDamageAmount@>
+             painDamageAmount = [@3ef97@]
+        <@3ef98 +@>
+         <@3ef9a@> ; don't wrap past zero
++       <@3ef9c PlayerHP@>
+        ;; Update audio-visual for the poison damage
+        <@3ef9f SFX_POISON@>
+        <@3efa1 StartAudioTrack@>
+        <@3efa4@>
+-        <@3efa6@>
+         <@3efa8@>
+         <@3efab@>
+        <@3efac -@>
+        <@3efae WaitForOAMDMA@>
+        ;; lda #$1a
+        ;; jsr BankSwitch8k_8000        ; NOTE: mv to top and rm dupe below to save 5 bytes
+        <@3efb3 UpdateHPDisplayInternal@>
+        <@3efb6 LoadPalettesForLocation@>
+@CheckParalysis:  ; 3efbc
+        <@3efbc@>
+        <@3efbe BankSwitch8k_8000@>
+        <@3efc1 PlayerStatus@>
+        <@3efc4 STATUS_MASK@>
+        <@3efc6 STATUS_PARALYZED@>
+          <@3efc8 @CheckStone@>
+        <@3efca PlayerSwordChargeAmount@>
+        <@3efcd@>                ; max charge while paralyzed (reset to zero after)
+        <@3efcf @CheckStone@>
+          <@3efd1@>
+          <@3efd3 PlayerSwordChargeAmount@>
+          <@3efd6 SFX_LANDING@>
+          <@3efd8 StartAudioTrack@>
+@CheckStone:  ; $3efdb
+        <@3efdb PlayerStatus@>
+        <@3efde STATUS_MASK@>
+        <@3efe0 STATUS_STONE@>
+          <@3efe2 @CheckDeosPendant@> ; Not stoned: skip these checks
+        <@3efe4@> ; only nonzero if stoned?
+        <@3efe7 @CheckStoneRecoverMagic@>
+          ;; Clear stone status after timer runs down
+          <@3efe9 PlayerStatus@>
+          <@3efec@>
+          <@3efee PlayerStatus@>
+          <@3eff1@>
+          <@3eff3@>
+          <@3eff6 LoadPalettesForLocation@>
+          <@3eff9 @CheckDeosPendant@>
+        ;; ----
+@CheckStoneRecoverMagic:  ; 3effc
+        ;; This is a special case to allow casting recover when stoned.
+        <@3effc EquippedMagic@>
+        <@3efff MAGIC_RECOVER@>
+          <@3f001 @CheckDeosPendant@>
+        ;; If 'recover' is equipped ...
+        <@3f003 Ctrl1NewlyPressed@>
+        <@3f005 BUTTON_A@>
+          <@3f007 @CheckDeosPendant@>
+        ;; ... and button A was just pressed ...
+        <@3f009 GameMode@>
+        <@3f00b GAME_MODE_NORMAL@>
+          <@3f00d @CheckDeosPendant@>
+        ;;  ... and we're in normal game mode, then try to cast 'recover'
+        ;; lda #$1a ; 8000 -> 34000
+        ;; jsr BankSwitch8k_8000
+        <@3f00f mpCost_recover@>      ; 24
+        <@3f011 SpendMPOrDoubleReturn@>
+        <@3f014 GAME_MODE_RECOVER_MAGIC@>
+        <@3f01b GameMode@>
+@CheckDeosPendant:  ; 3f01d
+        ;; If wearing Deo's Pendant: +1 MP on 64th frame unless moving
+        <@3f01d EquippedPassiveItem@>
+        eor #item_recoverMp       ; smudge off
+             item_recoverMp = ITEM_DEOS_PENDANT
+        jsr CheckItemAndMovement
+        and DeoSpeedTable,x
+        cmp #1
+        bne @CheckPsychoArmor
+        ;; cmp #ITEM_DEOS_PENDANT  ; smudge on
+        ;;   bne @CheckPsychoArmor
+        ;; lda Ctrl1CurrentDirection ; $ff if still
+        ;;   bpl @CheckPsychoArmor        ; NOTE: patched by inventory.s ($f026)
+        ;; lda GlobalCounter
+        ;; and #$3f
+        ;;   bne @CheckPsychoArmor
+        <@3f024 PlayerMP@>
+        <@3f031 PlayerMaxMP@>
+          <@3f034 @CheckPsychoArmor@>
+        <@3f036 PlayerMP@>
+        <@3f039@> ; MP
+        <@3f03b DisplayNumberInternal@>
+@CheckPsychoArmor:  ; 3f03e
+        ;; If wearing Psycho Armor: +1 HP on 16th frame unless moving
+        <@3f03e EquippedArmor@>
+        eor #armor_recoverHp               ; smudge off
+             armor_recoverHp = ARMOR_PSYCHO ; 8
+        jsr CheckItemAndMovement
+        and PsychoArmorSpeedTable,x
+        cmp #1
+        bne @CheckMesiaMessage
+        ;; cmp #armor_recoverHp            ; smudge on
+        ;;   bne @CheckMesiaMessage
+        ;; lda Ctrl1CurrentDirection ; $ff if still
+        ;;   bpl @CheckMesiaMessage
+        <@3f045 PlayerMaxHP@>
+        <@3f04c PlayerHP@>
+          <@3f04f @CheckMesiaMessage@>
+        ;; lda GlobalCounter
+        ;; and #psychoArmorSpeedMask
+        ;;      psychoArmorSpeedMask = $0f
+        ;;   bne @CheckMesiaMessage
+        <@3f057 PlayerHP@>
+        ; lda #$03 ; ignored - stale from an earlier version?
+        <@3f05c UpdateHPDisplayInternal@>
+@CheckMesiaMessage:  ; 3f05f
+        ;; If we're in Mesia's shrine, dec $4fe - why?!?
+        ;; This is read at 382be 7 frames later...?
+        ;; But this doesn't seem to matter - it's possible
+        ;; Mesia somehow spawns in $1e, even though there's
+        ;; no NpcData entry there.
+        <@3f05f CurrentLocation@>
+        <@3f061 LOC_MESIA_SHRINE@>
+          <@3f063 @CheckPitTile@>
+        <@3f065@>
+@CheckPitTile:  ; 3f068
+        ;; Check pits???
+        <@3f068@>
+          <@3f06b +@>
+        <@3f06d@>
+        <@3f070@>
+          <@3f071 +@>
+        <@3f073@>
+        <@3f076 +@>
+          ;; Fall down a pit: set $6f:60 bit.
+          <@3f078 GAME_MODE_CHANGE_LOCATION@>
+          <@3f07a GameMode@>
+          <@3f07c@>
+          <@3f07e@>
+          <@3f080@>
+          <@3f082@>
+          <@3f084@>
+          <@3f086@>
++:      
+    .ifdef _CHARGE_SHOT_ONLY
+        <@3f089 Ctrl1CurrentDirection@> ; $ff if still
+        <@3f0f2 +@>
+          <@3f0f8 PlayerStandingTimer@>
+          <@3f362 warriorRingDelay@>
+          <@3f372 ++@>
+            <@3f50e@>
+        <@3f51c 1@>
+        .byte [@3fa93@] ; Use bit to skip the lda #0
+        ;; this is safe because it compiles to BIT $00a9 which has no side effects
+        ;; player moved so reset timer
++       <@3fdfe 0@>
+        <@3fe03 PlayerStandingTimer@>
+++:
+    .endif
+
+        <@3e513@>
+        <@3e587 +@>
+         <@3f08e@>
+         <@3f091@>
+         <@3f094@>
+         <@3f096@>
+         bne :>rts
++       <@3f09b@>
+        <@3f09e@>
+        <@3f0a0@>
+        <@3f0a3@>
+;;; --------------------------------
+
+    mpCost_recover = [@3f23d@]
+
+.reloc
+DeoSpeedTable:
+        .byte deoSpeed_still,deoSpeed_moving,0,0
+    .ifdef _BUFF_DEOS_PENDANT
+              deoSpeed_still = [@3f314@]
+              deoSpeed_moving = [@3f836@]
+    .else
+              deoSpeed_still = [@3f8e0@]
+              deoSpeed_moving = [@3f8e5:d@]
+    .endif
+
+.reloc
+PsychoArmorSpeedTable:
+        .byte psychoArmorSpeed_still,psychoArmorSpeed_moving,0,0
+              psychoArmorSpeed_still = [@3fa5e@]
+              psychoArmorSpeed_moving = [@3fbf4:d@]

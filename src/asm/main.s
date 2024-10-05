@@ -221,9 +221,6 @@ MainGameModeJumpTable:
         .word (MainGameModeJump_22_Inn)
         .word (MainGameModeJump_23_PawnShop)
         .word (MainGameModeJump_24_EmptyShop)
-        .word [@3cb28:w@]
-        .word [@3cb2a:w@]
-        .word [@3cb2c:w@]
 .reloc                               ; smudge from $3cb2e to $3cb62
 OVERRIDE
 MainGameModeJumpBank:
@@ -264,10 +261,6 @@ MainGameModeJumpBank:
         .byte [@3cb50@] ; 22
         .byte [@3cb51@] ; 23
         .byte [@3cb52@] ; 24
-        .byte [@3cb53@] ; 25
-        .byte [@3cb54@] ; 26
-        .byte [@3cb55@] ; 27
-        .byte [@3cb56@],[@3cb57@],[@3cb58@],[@3cb59@],[@3cb5a@],[@3cb5b@],[@3cb5c@],[@3cb5d@],[@3cb5e@],[@3cb5f@],[@3cb60@],[@3cb61@]
 ;;; --------------------------------
 ;;; Normal mode: player is moving on the main map.  This runs nearly every frame.
 .reloc                               ; smudge from $3cb62 to $3cb84

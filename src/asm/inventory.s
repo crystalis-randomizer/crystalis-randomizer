@@ -333,17 +333,3 @@ FREE_UNTIL $db28
     sta EquippedConsumableItem
     rts
 .endif
-
-
-
-.ifdef _BUFF_DEOS_PENDANT
-;;; Skip the check that the player is stationary.  We could also adjust
-;;; the speed by changing the mask at $7f02b from $3f to $1f to make it
-;;; faster, or $7f to slow it down.  Possibly we could start it at $7f and
-;;; lsr if stationary, so that MP recovers quickly when still, but at half
-;;; speed when moving?  We might want to consider how this plays with
-;;; refresh and psycho armor...
-.org $f026
-  nop
-  nop
-.endif

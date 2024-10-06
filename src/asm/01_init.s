@@ -678,3 +678,14 @@ FREE_UNTIL $a000
 .org $a000
 FREE_UNTIL $a005
 
+;;; This makes an easy way to insert a breakpoint anywhere.
+;;; Just break at 7fff0 (or 7fff1, etc)
+.segment "ff"
+.define DEBUGGER jsr Debugger
+.define DEBUGGER1 jsr Debugger+1
+.define DEBUGGER2 jsr Debugger+2
+.org $fff0
+Debugger:
+  .repeat 10
+    rts
+  .endrepeat

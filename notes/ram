@@ -986,8 +986,10 @@ sprite's y-coordinate (relative to corner of screen)
 $600,x
 ------
 $600 is a countdown timer for swinging the sword.
- - when initiating the swing, it's set to #$11, when
-   it's $b or less, another tap of B will swing it again.
+ - when initiating the swing, it's set to #$11
+ - when walking and holding B, it's $12
+ - when it's $b or less, another tap of B will swing again
+
 
 $603 seems to be a countdown timer that's set to #$10 when bumping into somebody
 and then counts down once the dialog disappears, during which no other interactions

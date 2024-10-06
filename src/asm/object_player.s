@@ -87,63 +87,37 @@ ObjectActionJump_03:
         <@35df1 BUTTON_B@>
           <@35df3 @skipSwordCharge@> ; not holding B
         ;; holding down B
-        <@35df5 PlayerSwordCooldown@>
+
+        ;; We make a change from vanilla here to consolidate the various
+        ;; moving/still paths, along with checking for rabbit boots.
+        ;; But we can't reuse CheckItemAndMovement, unfortunately.
+        lda EquippedPassiveItem             ; smudge off
+        eor #item_chargeWhileWalking
+        tay                     ; this is mostly copied from CheckItemAndMovement
+        beq +                   ; but we use Y instead of X, and we do movement later
+          ldy #2
++       <@35df5 PlayerSwordCooldown@>           ; smudge on
         <@35df8@>
         <@35dfa +@>
-         <@35dfc@>
-         <@35dfe +@>
+          <@35dfc@>
+          <@35dfe +@>
+            ;; Player is moving.  Increment y, or just skip charging entirely if
+            ;; we're already at charge level 2.
+            iny                             ; smudge off
+            lda PlayerSwordChargeAmount
+            cmp #$10
+            bcs @skipSwordCharge
 
-        ;; player is walking...?
-    .ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
-
-        ;; In charge shot only mode, we want to have the charge while walking enabled
-        ;; even without rabbit boots
-
-        ;; TODO - pull this into a separate independent flag
-
-      .ifndef _CHARGE_SHOT_ONLY
-          <@35e03 EquippedPassiveItem@>
-          <@35e19 ITEM_RABBIT_BOOTS@> ; require rabbit boots
-          <@35e1b @skipSwordCharge@>
-      .endif
-
-          <@35ea3 PlayerSwordChargeAmount@>
-          <@364b4@> ; don't charge past level 2
-          <@364b6 @skipSwordCharge@>
-
-    .else
-          <@35e00 @skipSwordCharge@>
-    .endif
-          ;; ----
-          ;; $0600,x was < #$c or == #$11 - will reset to #$12
-+       <@35e03 EquippedSword@>
++       <@35e03 EquippedSword@>                   ; smudge on
         <@35e06 @skipSwordCharge@>
         <@35e08@>
         <@35e0a PlayerSwordCooldown@>
 
-    ;; TODO: change this to a separate flag for the charge-while-walking speed
+        lda GlobalCounter                   ; smudge off
+        and SwordChargeSpeed,y
+        cmp #1
 
-    ;; If we only have charge shot, buff rabbit boots to charge twice as fast
-    ;; while equipped
-    .ifdef _CHARGE_SHOT_ONLY
-        ;; Timer of 30 frames
-
-        <@35e0d EquippedPassiveItem@>
-        <@35e19 ITEM_RABBIT_BOOTS@>
-        <@35e1b +@>
-          <@35e26 1@>
-          .byte [@35e85@] ; abs BIT instruction to skip the other load
-          ;; NOTE: it's safe to BIT here as it turns into BIT $03a9
-          ;; which doesn't have side effects on read
-+       <@35e8a 3@>
-        <@35ec8 GlobalCounter@>
-
-    .else
-        <@35e0d GlobalCounter@>
-        <@35e0f@>
-    .endif
-
-        <@35e11 @skipSwordCharge@>
+        <@35e11 @skipSwordCharge@>                ; smudge on
           ;; Increase sword charge amount
           <@35e13 PlayerSwordChargeAmount@>
           <@35e16 PlayerSwordChargeAmount@>
@@ -416,6 +390,29 @@ HorizontalDirectionProjectionTable:
 
 ;;; ----------------------------------------------------------------
 
+.reloc                          ; smudge off
+SwordChargeSpeed:
+        .byte swordChargeSpeedWithItem_still
+        .byte swordChargeSpeedWithItem_moving
+        .byte swordChargeSpeed_still
+        .byte swordChargeSpeed_moving
+
+.ifdef _RABBIT_BOOTS_CHARGE_WHILE_WALKING
+  item_chargeWhileWalking = ITEM_RABBIT_BOOTS
+.else
+  item_chargeWhileWalking = $fe ; never satisfied
+.endif
+
+swordChargeSpeed_still = 3
+.ifdef _CHARGE_SHOT_ONLY
+  swordChargeSpeed_moving = 3
+  swordChargeSpeedWithItem_still = 1
+  swordChargeSpeedWithItem_moving = 1
+.else
+  swordChargeSpeed_moving = 0
+  swordChargeSpeedWithItem_still = swordChargeSpeed_still
+  swordChargeSpeedWithItem_moving = swordChargeSpeed_still
+.endif
 
 .segment "1a", "fe", "ff"
 
@@ -454,14 +451,14 @@ HorizontalDirectionProjectionTable:
 ;;;     ...
 ;;;   @skip
 CheckItemAndMovement:
-        <@369d9@>
-        <@369e7 +@>
-          <@372fc 2@>
-+       <@373b0 Ctrl1CurrentDirection@>
-        <@373d0 +@>
-          <@3761a@>
-+       <@376a2 GlobalCounter@>
-        <@376a5@>
+        tax
+        beq +
+          ldx #2
++       lda Ctrl1CurrentDirection
+        bmi +
+          inx
++       lda GlobalCounter
+        rts
 
 .segment "fe","ff"     ; NOTE: could also move to "1a" with an early bank switch
 

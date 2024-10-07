@@ -13,9 +13,10 @@
 .org $9b96 ; clear dolphin bit => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 
-.ifdef _CHARGE_SHOT_ONLY
+.ifdef _WARRIOR_RING_TURRET
 
-.import warriorRingDelay ; set to 30 by rom/items.ts ??
+warriorRingTurretDelay = 30
+warriorRingTurretShotFrequency = 3
 
 ;; Turn warrior ring into turret mode
 .org $9c8d ; CheckWarriorRing
@@ -24,49 +25,22 @@
 
 .reloc
 CheckIfStandingStillForWarriorRing:
-  bne @Exit
+  bne :>rts
   ; The warrior ring is equiped so now check to see if we've stood still for long enough
   lda PlayerStandingTimer
-  cmp #warriorRingDelay
   bne +
+    ;; timer finished: increase charge level to fire a shot
     inc $10
-    bpl @Exit
+    bpl :>rts
 +
   ; check our stab counter, every 3rd stab gets a free shot
-  lda WarriorRingStabCounter
-  cmp #2 ; = 3-1 to account for bpl being branch greater than
-  bpl +
-    inc WarriorRingStabCounter
-    rts
-+ inc $10
-  lda #0
+  dec WarriorRingStabCounter
+    bmi +
+    bne :>rts                   ; no free shot yet
+  inc $10
++ lda #warriorRingTurretFreeShotFrequency
   sta WarriorRingStabCounter
-@Exit:
   rts
-
-; Patch global counter to track how long a player is standing still for
-.org $f089 ; Near end of GlobalCounter processing
-  jsr UpdatePlayerStandingTimer
-.pushseg "fe", "ff"
-.reloc
-UpdatePlayerStandingTimer:
-  lda Ctrl1CurrentDirection ; $ff if still
-  bpl +
-    lda PlayerStandingTimer
-    cmp #warriorRingDelay
-    beq @Exit
-      clc
-      adc #1
-      .byte $2c ; Use bit to skip the lda #0
-      ; this is safe because it compiles to BIT $00a9 which has no side effects
-+ ; player moved so reset timer
-  lda #0
-  sta PlayerStandingTimer
-@Exit:
-  ; Continue patched function
-  lda $071a
-  rts
-.popseg
 
 .endif
 

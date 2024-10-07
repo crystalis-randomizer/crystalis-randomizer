@@ -16,3 +16,9 @@ describe('FlagSet', () => {
   // TODO - more tests!
 
 });
+
+
+
+
+// TODO - next step is to start migrating passes to accept Config instead of FlagSet.
+//   - while we're at it, we might as well also move them into the pass/ folder, etc.

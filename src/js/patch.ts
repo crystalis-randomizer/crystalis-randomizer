@@ -45,6 +45,7 @@ import * as version from './version';
 import { shuffleAreas } from './pass/shuffleareas';
 import { checkTriggers } from './pass/checktriggers';
 import { Sprite } from './characters';
+import { Config } from './config';
 
 const EXPAND_PRG: boolean = true;
 const ASM = ModuleId('asm');
@@ -93,16 +94,16 @@ const {} = {watchArray} as any;
 
 function defines(flags: FlagSet,
                  pass: 'early' | 'late'): string {
+  const config = flags.config;
   const defines: Record<string, boolean> = {
-    _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
-                                 flags.shuffleBossElements(),
+    _ALLOW_TELEPORT_OUT_OF_BOSS: config.enemies.permadeath &&
+                                 config.enemies.tetrarchWeaknesses !== Config.Randomization.VANILLA,
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
-    _AUDIBLE_WALLS: flags.audibleWallCues(pass),
-    _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(pass),
+    _AUDIBLE_WALLS: pass === 'late' && config.options.accessibility.audibleWallCues || false,
+    _AUTO_EQUIP_BRACELET: pass === 'late' && config.quality.autoEquipBracelet || false,
     _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
-    _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
-    _BUFF_DYNA: flags.buffDyna(), // true,
-    _CHARGE_SHOT_ONLY: flags.chargeShotsOnly(),
+    _BUFF_DEOS_PENDANT: config.items.deosPendantMpRestoreWhileWalkingSpeed > 0, // TODO - implement
+    _BUFF_DYNA: config.enemies.buffDyna, // true,
     _CHECK_FLAG0: true,
     _CTRL1_SHORTCUTS: flags.controllerShortcuts(pass),
     _CUSTOM_SHOOTING_WALLS: true,
@@ -151,13 +152,38 @@ function defines(flags: FlagSet,
     _ENEMY_HP: flags.shouldUpdateHud(),
     _UPDATE_HUD: flags.shouldUpdateHud(),
     _WARP_FLAGS_TABLE: true,
-    _WARRIOR_RING_TURRET: flags.chargeShotsOnly(),
+    _WARRIOR_RING_TURRET: config.items.warriorRingTurret,
     _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
   };
-  return Object.keys(defines)
+
+  const exports = {
+    warriorRingTurretDelay: config.items.warriorRingTurretDelay,
+    warriorRingTurretFreeShotFrequency: config.items.warriorRingTurretFreeShotFrequency,
+    swordChargeSpeed_still: speedMask(config.items.chargeSpeed),
+    swordChargeSpeed_moving: speedMask(config.items.chargeWhileWalkingSpeed),
+    swordChargeSpeedWithItem_still: speedMask(config.items.chargeWithItemSpeed),
+    swordChargeSpeedWithItem_moving:
+      speedMask(config.items.chargeWhileWalkingWithItemSpeed),
+    deoSpeed_still: speedMask(config.items.deosPendantMpRestoreSpeed),
+    deoSpeed_moving: speedMask(config.items.deosPendantMpRestoreWhileWalkingSpeed),
+    psychoArmorSpeed_still: speedMask(config.items.psychoArmorHealSpeed),
+    psychoArmorSpeed_moving: speedMask(config.items.psychoArmorHealWhileWalkingSpeed),
+  };
+
+  function speedMask(speed: number) {
+    if (speed <= 0) return 0;
+    if (speed > 8) return 1;
+    return (1 << (9 - speed)) - 1;
+  }
+
+  const definesString = Object.keys(defines)
       .filter(d => defines[d])
       .map(d => `.define ${d} ${defines[d]}\n`)
       .join('');
+  const exportsString = Object.keys(exports)
+      .map(e => `${e} = ${exports[e]}\n.export ${e}\n`)
+      .join('');
+  return definesString + exportsString;
 }
 
 function patchGraphics(rom: Uint8Array, sprites: Sprite[]) {

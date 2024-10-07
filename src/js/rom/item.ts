@@ -459,7 +459,6 @@ export class Items extends EntityArray<Item> {
     }
     relocExportLabel(a, 'KeyItemData', [$0e, $0f]);
     a.byte(...uniqueTable);
-    exportValue(a, 'warriorRingDelay', 30);
     return [a.module()];
   }
 }

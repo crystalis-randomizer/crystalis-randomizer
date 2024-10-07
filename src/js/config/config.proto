@@ -508,27 +508,27 @@ message Config {
     optional bool no_stabs = 4
       [(default) = false,
        (group.charge_shot_only_mode) = true];
-    // 0: disabled, 1: 8 sec/tick, 2: 4 sec/tick, 3: 2 sec/tick, 4: 1 sec/tick
-    // 5: 2 tick/sec, 6: 4 tick/sec, 7: 8 tick/sec, 8: 15 tick/sec, 9: 30 tick/sec
+    // 0: disabled, 1: 4 sec/tick, 2: 2 sec/tick, 3: 1 sec/tick, 4: 2 tick/sec,
+    // 5: 4 tick/sec, 6: 8 tick/sec, 7: 15 tick/sec, 8: 30 tick/sec
     // The normal charge speed, on a logarithmic scale:
     optional uint32 charge_speed = 5
-      [(min) = 1, (max) = 9,
+      [(min) = 1, (max) = 8,
        (default) = 7];
     // Enable sword charging while walking without any items equipped.
     // This is recommended when charge_shots_only is enabled.
     optional uint32 charge_while_walking_speed = 6
-      [(min) = 0, (max) = 9,
+      [(min) = 0, (max) = 8,
        (default) = 0,
        (group.charge_shot_only_mode) = 7];
     // Charge speed while equipped item (rabbit boots and/or charge ring) and
     // standing still.
     optional uint32 charge_with_item_speed = 7
-      [(min) = 1, (max) = 9,
+      [(min) = 1, (max) = 8,
        (default) = 7,
        (group.charge_shot_only_mode) = 8];
     // Charge speed while walking w/ charge boost item.
     optional uint32 charge_while_walking_with_item_speed = 8
-      [(min) = 0, (max) = 9,
+      [(min) = 0, (max) = 8,
        (default) = 7,
        (group.charge_shot_only_mode) = 8];
 
@@ -542,7 +542,7 @@ message Config {
        (default) = 30];
     // Frequency of "free" shots during turret delay.
     // For value N, every Nth stab will be a shot.
-    optional uint32 warrior_ring_turret_delay_shot_frequency = 11
+    optional uint32 warrior_ring_turret_free_shot_frequency = 11
       [(min) = 1, (max) = 255,
        (default) = 3];
 
@@ -566,14 +566,14 @@ message Config {
        (default) = 255];
 
     // MP restore rate for Deo's Pendant
-    // 0: none, 1: 8 sec/MP, 2: 4 sec/MP, 3: 2 sec/MP, 4: 1 sec/MP,
-    // 5: 2 MP/sec, 6: 4 MP/sec, 7: 8 MP/sec, 8: 15 MP/sec, 9: 30 MP/sec
+    // 0: disabled, 1: 4 sec/MP, 2: 2 sec/MP, 3: 1 sec/MP, 4: 2 MP/sec,
+    // 5: 4 MP/sec, 6: 8 MP/sec, 7: 15 MP/sec, 8: 30 MP/sec
     optional uint32 deos_pendant_mp_restore_speed = 15
-      [(min) = 0, (max) = 9,
+      [(min) = 1, (max) = 8,
        (default) = 3];
     // Buffs Deo's Pendant to restore MP while walking, at this speed.
     optional uint32 deos_pendant_mp_restore_while_walking_speed = 16
-      [(min) = 0, (max) = 9,
+      [(min) = 0, (max) = 8,
        (default) = 3,
        (preset.vanilla) = 0];
     // Combines Leather Boots and Gas Mas into a new Hazmat Suit item,
@@ -630,14 +630,14 @@ message Config {
        (preset.vanilla) = false];
 
     // HP restore rate for Deo's Pendant
-    // 0: none, 1: 8 sec/HP, 2: 4 sec/HP, 3: 2 sec/HP, 4: 1 sec/HP,
-    // 5: 2 HP/sec, 6: 4 HP/sec, 7: 8 HP/sec, 8: 15 HP/sec, 9: 30 HP/sec
+    // 0: none, 1: 4 sec/HP, 2: 2 sec/HP, 3: 1 sec/HP, 4: 2 HP/sec,
+    // 5: 4 HP/sec, 6: 8 HP/sec, 7: 15 HP/sec, 8: 30 HP/sec
     optional uint32 psycho_armor_heal_speed = 26
-      [(min) = 0, (max) = 9,
+      [(min) = 1, (max) = 8,
        (default) = 5];
     // Buffs Psycho Armor to restore HP while walking, at the given rate.
     optional uint32 psycho_armor_heal_while_walking_speed = 27
-      [(min) = 0, (max) = 9,
+      [(min) = 0, (max) = 8,
        (default) = 0];
 
     // Whether the armor/shield defense values should be a balanced

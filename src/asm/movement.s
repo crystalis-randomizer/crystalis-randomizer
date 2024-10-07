@@ -15,8 +15,8 @@
 
 .ifdef _WARRIOR_RING_TURRET
 
-warriorRingTurretDelay = 30
-warriorRingTurretFreeShotFrequency = 3
+;; .import warriorRingTurretDelay ; set by patch.ts defines()
+;; .import warriorRingTurretFreeShotFrequency ; set by patch.ts defines()
 
 ;; Turn warrior ring into turret mode
 .org $9c8d ; CheckWarriorRing

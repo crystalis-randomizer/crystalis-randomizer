@@ -151,6 +151,7 @@ function defines(flags: FlagSet,
     _ENEMY_HP: flags.shouldUpdateHud(),
     _UPDATE_HUD: flags.shouldUpdateHud(),
     _WARP_FLAGS_TABLE: true,
+    _WARRIOR_RING_TURRET: flags.chargeShotsOnly(),
     _ZEBU_STUDENT_GIVES_ITEM: flags.zebuStudentGivesItem(),
   };
   return Object.keys(defines)

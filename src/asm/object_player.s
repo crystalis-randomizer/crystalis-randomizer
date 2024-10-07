@@ -669,19 +669,16 @@ CheckPassiveFrameEffects:
           <@3f084@>
           <@3f086@>
 +:      
-    .ifdef _CHARGE_SHOT_ONLY
-        <@3f089 Ctrl1CurrentDirection@> ; $ff if still
-        <@3f0f2 +@>
-          <@3f0f8 PlayerStandingTimer@>
-          <@3f362 warriorRingDelay@>
-          <@3f372 ++@>
-            <@3f50e@>
-        <@3f51c 1@>
-        .byte [@3fa93@] ; Use bit to skip the lda #0
-        ;; this is safe because it compiles to BIT $00a9 which has no side effects
-        ;; player moved so reset timer
-+       <@3fdfe 0@>
-        <@3fe03 PlayerStandingTimer@>
+
+    .ifdef _WARRIOR_RING_TURRET
+        <@3f3a0 PlayerStandingTimer@>
+        <@3f3a1 ++@>
+          <@3f435@>
+          <@3f480 Ctrl1CurrentDirection@> ; $ff if still
+          <@3f5fe +@>
+            ;; player moved so reset timer
+            <@3f7fe warriorRingTurretDelay@>
++         <@3f802 PlayerStandingTimer@>
 ++:
     .endif
 

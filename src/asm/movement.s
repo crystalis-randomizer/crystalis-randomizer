@@ -16,7 +16,7 @@
 .ifdef _WARRIOR_RING_TURRET
 
 warriorRingTurretDelay = 30
-warriorRingTurretShotFrequency = 3
+warriorRingTurretFreeShotFrequency = 3
 
 ;; Turn warrior ring into turret mode
 .org $9c8d ; CheckWarriorRing
@@ -35,7 +35,7 @@ CheckIfStandingStillForWarriorRing:
 +
   ; check our stab counter, every 3rd stab gets a free shot
   dec WarriorRingStabCounter
-    bmi +
+    bmi +                       ; NOTE: if it started at zero, reset
     bne :>rts                   ; no free shot yet
   inc $10
 + lda #warriorRingTurretFreeShotFrequency

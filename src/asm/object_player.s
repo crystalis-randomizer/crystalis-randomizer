@@ -671,15 +671,16 @@ CheckPassiveFrameEffects:
 +:      
 
     .ifdef _WARRIOR_RING_TURRET
-        <@3f3a0 PlayerStandingTimer@>
-        <@3f3a1 ++@>
+        <@3f2b3 Ctrl1CurrentDirection@> ; $ff if still
+        <@3f2bb +@>
+          ;; moving
+          <@3f2d5 warriorRingTurretDelay@>
+          <@3f306 ++@>     ; uncond unless delay is zero, which is fine
++       ;; standing still, decrement timer if nonzero
+          <@3f3a0 PlayerStandingTimer@>
+            <@3f3a1 ++@>
           <@3f435@>
-          <@3f480 Ctrl1CurrentDirection@> ; $ff if still
-          <@3f5fe +@>
-            ;; player moved so reset timer
-            <@3f7fe warriorRingTurretDelay@>
-+         <@3f802 PlayerStandingTimer@>
-++:
+++      <@3f505 PlayerStandingTimer@>
     .endif
 
         <@3e513@>

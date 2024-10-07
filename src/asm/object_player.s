@@ -390,6 +390,8 @@ HorizontalDirectionProjectionTable:
 
 ;;; ----------------------------------------------------------------
 
+;; .import swordChargeSpeedWithItem_still, swordChargeSpeedWithItem_moving
+;; .import swordChargeSpeed_still, swordChargeSpeed_moving
 .reloc                          ; smudge off
 SwordChargeSpeed:
         .byte swordChargeSpeedWithItem_still
@@ -401,17 +403,6 @@ SwordChargeSpeed:
   item_chargeWhileWalking = ITEM_RABBIT_BOOTS
 .else
   item_chargeWhileWalking = $fe ; never satisfied
-.endif
-
-swordChargeSpeed_still = 3
-.ifdef _CHARGE_SHOT_ONLY
-  swordChargeSpeed_moving = 3
-  swordChargeSpeedWithItem_still = 1
-  swordChargeSpeedWithItem_moving = 1
-.else
-  swordChargeSpeed_moving = 0
-  swordChargeSpeedWithItem_still = swordChargeSpeed_still
-  swordChargeSpeedWithItem_moving = swordChargeSpeed_still
 .endif
 
 .segment "1a", "fe", "ff"
@@ -696,21 +687,14 @@ CheckPassiveFrameEffects:
         <@3f0a3@>
 ;;; --------------------------------
 
-    mpCost_recover = [@3f23d@]
+    mpCost_recover = [@3f23d@]        ; also defined in crystalis.s ???
 
+;; .import deoSpeed_still, deoSpeed_moving
 .reloc
 DeoSpeedTable:
         .byte deoSpeed_still,deoSpeed_moving,0,0
-    .ifdef _BUFF_DEOS_PENDANT
-              deoSpeed_still = [@3f314@]
-              deoSpeed_moving = [@3f836@]
-    .else
-              deoSpeed_still = [@3f8e0@]
-              deoSpeed_moving = [@3f8e5:d@]
-    .endif
 
+;; .import psychoArmorSpeed_still, psychoArmorSpeed_moving
 .reloc
 PsychoArmorSpeedTable:
         .byte psychoArmorSpeed_still,psychoArmorSpeed_moving,0,0
-              psychoArmorSpeed_still = [@3fa5e@]
-              psychoArmorSpeed_moving = [@3fbf4:d@]

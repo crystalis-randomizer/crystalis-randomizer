@@ -109,11 +109,11 @@ function defines(flags: FlagSet,
     _CTRL1_SHORTCUTS: pass === 'late' &&
       (config.quality.quickSwapSword || config.quality.quickWildWarp),
     _CUSTOM_SHOOTING_WALLS: true,
-    _DISABLE_SHOP_GLITCH: flags.disableShopGlitch(),
-    _DISABLE_STATUE_GLITCH: flags.disableStatueGlitch(),
-    _DISABLE_SWORD_CHARGE_GLITCH: flags.disableSwordChargeGlitch(),
-    _DISABLE_TRIGGER_SKIP: flags.disableTriggerGlitch(),
-    _DISABLE_WARP_BOOTS_REUSE: flags.disableShopGlitch(),
+    _DISABLE_SHOP_GLITCH: config.glitches.shopGlitch === Config.GlitchMode.FORBID,
+    _DISABLE_STATUE_GLITCH: config.glitches.statueGlitch === Config.GlitchMode.FORBID,
+    _DISABLE_SWORD_CHARGE_GLITCH: config.glitches.swordChargeGlitch === Config.GlitchMode.FORBID,
+    _DISABLE_TRIGGER_SKIP: config.glitches.triggerSkip === Config.GlitchMode.FORBID,
+    _DISABLE_WARP_BOOTS_REUSE: !config.glitches.allowWarpBootsReuse,
     _DISABLE_WILD_WARP: false,
     _EXTRA_EXTENDED_SCREENS: true,
     _EXTRA_PITY_MP: true,  // TODO: allow disabling this
@@ -123,20 +123,29 @@ function defines(flags: FlagSet,
     _FIX_SHAKING: true,
     _FIX_SWORD_MANA_CHECK: true,
     _FIX_VAMPIRE: true,
-    _HAZMAT_SUIT: flags.changeGasMaskToHazmatSuit(),
-    _LEATHER_BOOTS_GIVE_SPEED: flags.leatherBootsGiveSpeed(),
-    _MAX_SCALING_IN_TOWER: flags.maxScalingInTower(),
-    _MONEY_AT_START: flags.shuffleHouses() || flags.shuffleAreas(),
+    _HAZMAT_SUIT: config.items.hazmatSuit,
+    _LEATHER_BOOTS_GIVE_SPEED: config.items.addSpeedBoots,
+    _MAX_SCALING_IN_TOWER: config.enemies.maxScalingInTower,
+    // TODO: make this configurable?  but maybe allow an empty default?  -1?
+    // How to easily correlate with student having item and/or money?
+    _MONEY_AT_START: Boolean(config.maps.shuffleHouseEntrances || config.maps.shuffleAreaConnections),
     _NERF_FLIGHT: true,
     _NERF_MADO: true,
-    _NEVER_DIE: flags.neverDie(),
-    _NORMALIZE_SHOP_PRICES: flags.shuffleShops(),
-    _OOPS_ALL_MIMICS: flags.alwaysMimics(),
+    _NEVER_DIE: config.debug.neverDie,
+    _NORMALIZE_SHOP_PRICES: config.towns.rescalePrices,
+    // TODO: how to make this fractional???
+    _OOPS_ALL_MIMICS: Boolean(config.enemies.itemsFromMimics),
     _PITY_HP_AND_MP: true,
     _PROGRESSIVE_BRACELET: true,
-    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: flags.rabbitBootsChargeWhileWalking(),
+    _RABBIT_BOOTS_CHARGE_WHILE_WALKING: Boolean(config.items.rabbitBootsChargeWhileWalking),
     _RANDOM_FLYER_SPAWNS: true,
-    _RANDOM_WILD_WARP_COUNT: flags.randomizeWildWarp(),
+    // TODO: this could be cleaned up if we had access to the rom itself.
+    _RANDOM_WILD_WARP_COUNT:
+      config.maps.wildWarp === Config.Maps.WildWarp.RANDOM ?
+      config.maps.wildWarpCount < 16 : 
+      config.maps.wildWarp === Config.Maps.WildWarp.FIXED ?
+      config.maps.wildWarpLocations.length < 16 :
+      false,
     _RESCALE_DAMAGE: true,
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     // skip title when debugging locally

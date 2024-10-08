@@ -298,7 +298,10 @@ export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M,
 
   toBinary(val: M|G): Uint8Array {
     const recs = [];
-    for (const field of this.fieldsById.values()) {
+    // stable sort so that we always get the same result
+    const ids = [...this.fieldsById.keys()].sort((a, b) => a - b);
+    for (const id of ids) {
+      const field = this.fieldsById.get(id)!;
       const value = (val as Record<string, unknown>)[field.name];
 //console.log(field.constructor, field.name, '[', String(value).substring(0, 20), ']');
       for (const entry of field.entries(value)) {

@@ -971,6 +971,7 @@ class DebugMode extends FlagSection {
 export class FlagSet {
   private flags: Map<Flag, Mode>;
   private _config?: Config = undefined;
+  private _gen?: ConfigGenerator = undefined;
 
   constructor(str: string|Map<Flag, Mode> = '@Casual') {
     if (typeof str !== 'string') {
@@ -1006,6 +1007,22 @@ export class FlagSet {
 
   get config(): Config {
     if (this._config) return this._config;
+
+    // TODO - is it a problem to just return 0 for all randoms for now?
+    const rand: Random = {
+      next: () => 0,
+      nextInt: () => 0,
+      nextNormal: () => 0,
+      child: () => rand,
+    };
+      
+    const evaluator = new ScriptEvaluator(rand);
+    return this._config = this.configGen.generate(evaluator);
+
+  }
+
+  get configGen(): ConfigGenerator {
+    if (this._gen) return this._gen;
     const gen = new ConfigGenerator();
     // TODO - set gen fields from flags.
     const placement = () => gen.placement || (gen.placement = new Config.PlacementGenerator());
@@ -1305,16 +1322,7 @@ export class FlagSet {
     if (this.check(DebugMode.NeverDie, true)) debug().neverDie = true;
     if (this.check(DebugMode.NoShuffle, true)) placement().algorithm = Config.Placement.Algorithm.VANILLA;
 
-    // TODO - is it a problem to just return 0 for all randoms for now?
-    const rand: Random = {
-      next: () => 0,
-      nextInt: () => 0,
-      nextNormal: () => 0,
-      child: () => rand,
-    };
-      
-    const evaluator = new ScriptEvaluator(rand);
-    return this._config = gen.generate(evaluator);
+    return this._gen = gen;
   }
 
   filterOptional(): FlagSet {

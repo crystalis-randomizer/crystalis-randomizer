@@ -1,3 +1,8 @@
+Flag -> Config migration
+ * fixed wild warp (pass/wildwarp.ts)
+
+====
+
 Cleanups after merging v2.0.0
  - @PatchResistance in oops-all-mimics code - just patch it in TS?
  - look for asm patches to `.org $....` - see about swapping in variable reads

@@ -2,8 +2,9 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src/js",
-    "module": "es2022",
+    "module": "nodenext",
     "target": "es2020",
+    "noEmit": true,
   },
   "include": [
     "src/js/**/*.ts"

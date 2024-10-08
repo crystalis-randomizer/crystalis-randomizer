@@ -31,10 +31,9 @@ import { toggleMaps } from './pass/togglemaps';
 import { unidentifiedItems } from './pass/unidentifieditems';
 import { misspell } from './pass/misspell';
 import { writeLocationsFromMeta } from './pass/writelocationsfrommeta';
+import { updateWildWarp } from './pass/wildwarp';
 import { Random } from './random';
 import { Rom, ModuleId } from './rom';
-import { Area } from './rom/area';
-import { Location, Spawn } from './rom/location';
 import { fixTilesets } from './rom/screenfix';
 import { Shop, ShopType } from './rom/shop';
 import { Spoiler } from './rom/spoiler';
@@ -46,6 +45,8 @@ import { shuffleAreas } from './pass/shuffleareas';
 import { checkTriggers } from './pass/checktriggers';
 import { Sprite } from './characters';
 import { Config } from './config';
+import { Shuffle } from './shuffle';
+import { updateWalls } from './pass/walls';
 
 const EXPAND_PRG: boolean = true;
 const ASM = ModuleId('asm');
@@ -95,7 +96,7 @@ const {} = {watchArray} as any;
 function defines(flags: FlagSet,
                  pass: 'early' | 'late'): string {
   const config = flags.config;
-  const defines: Record<string, boolean> = {
+  const defines: Record<string, boolean|null> = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: config.enemies.permadeath &&
                                  config.enemies.tetrarchWeaknesses !== Config.Randomization.VANILLA,
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
@@ -166,15 +167,15 @@ function defines(flags: FlagSet,
   const exports = {
     warriorRingTurretDelay: config.items.warriorRingTurretDelay,
     warriorRingTurretFreeShotFrequency: config.items.warriorRingTurretFreeShotFrequency,
-    swordChargeSpeed_still: speedMask(config.items.chargeSpeed),
-    swordChargeSpeed_moving: speedMask(config.items.chargeWhileWalkingSpeed),
-    swordChargeSpeedWithItem_still: speedMask(config.items.chargeWithItemSpeed),
+    swordChargeSpeed_still: speedMask(config.items.chargeSpeed!),
+    swordChargeSpeed_moving: speedMask(config.items.chargeWhileWalkingSpeed!),
+    swordChargeSpeedWithItem_still: speedMask(config.items.chargeWithItemSpeed!),
     swordChargeSpeedWithItem_moving:
-      speedMask(config.items.chargeWhileWalkingWithItemSpeed),
-    deoSpeed_still: speedMask(config.items.deosPendantMpRestoreSpeed),
-    deoSpeed_moving: speedMask(config.items.deosPendantMpRestoreWhileWalkingSpeed),
-    psychoArmorSpeed_still: speedMask(config.items.psychoArmorHealSpeed),
-    psychoArmorSpeed_moving: speedMask(config.items.psychoArmorHealWhileWalkingSpeed),
+      speedMask(config.items.chargeWhileWalkingWithItemSpeed!),
+    deoSpeed_still: speedMask(config.items.deosPendantMpRestoreSpeed!),
+    deoSpeed_moving: speedMask(config.items.deosPendantMpRestoreWhileWalkingSpeed!),
+    psychoArmorSpeed_still: speedMask(config.items.psychoArmorHealSpeed!),
+    psychoArmorSpeed_moving: speedMask(config.items.psychoArmorHealWhileWalkingSpeed!),
   };
 
   function speedMask(speed: number) {
@@ -188,7 +189,7 @@ function defines(flags: FlagSet,
       .map(d => `.define ${d} ${defines[d]}\n`)
       .join('');
   const exportsString = Object.keys(exports)
-      .map(e => `${e} = ${exports[e]}\n.export ${e}\n`)
+      .map(e => `${e} = ${exports[e as keyof typeof exports]}\n.export ${e}\n`)
       .join('');
   return definesString + exportsString;
 }
@@ -233,11 +234,15 @@ export async function shuffle(rom: Uint8Array,
 
   // First reencode the seed, mixing in the flags for security.
   if (typeof seed !== 'number') throw new Error('Bad seed');
-  const newSeed = crc32(seed.toString(16).padStart(8, '0') + String(originalFlags.filterOptional())) >>> 0;
+  const flagHash = originalFlags.configGen.toBinary();
+  const seedBytes = new Uint32Array(1);
+  seedBytes[0] = seed;
+  const newSeed = crc32([...new Uint8Array(seedBytes.buffer), ...flagHash]);
   const random = new Random(newSeed);
 
   const attemptErrors = [];
-  const maxAttempts = originalFlags.mayShuffleAreas() ? 12 : 5;
+  const mayShuffleAreas = Boolean(originalFlags.configGen.maps?.shuffleAreaConnections);
+  const maxAttempts = mayShuffleAreas ? 12 : 5;
   // const maxAttempts = 1;
   for (let i = 0; i < maxAttempts; i++) { // for now, we'll try 5 attempts
     try {
@@ -260,11 +265,15 @@ async function shuffleInternal(rom: Uint8Array,
                                spriteReplacements: Sprite[]|undefined,
                                origPrg: Uint8Array,
                               ): Promise<readonly [Uint8Array, number]>  {
+  // TODO - switch over generating Config once flags are gone
   const originalFlagString = String(originalFlags);
   const flags = originalFlags.filterRandom(random);
   flags.validate();
   const parsed = new Rom(rom);
   const actualFlagString = String(flags);
+  const config = flags.config;
+  const s: Shuffle = {config, random, rom: parsed};
+
 // (window as any).cave = shuffleCave;
   parsed.flags.defrag();
   compressMapData(parsed);
@@ -281,6 +290,7 @@ async function shuffleInternal(rom: Uint8Array,
   if (typeof globalThis == 'object') (globalThis as any).rom = parsed;
   parsed.spoiler = new Spoiler(parsed);
   if (log) log.spoiler = parsed.spoiler;
+  // TODO - print out config
   if (actualFlagString !== originalFlagString) {
     parsed.spoiler.flags = actualFlagString;
   }
@@ -294,15 +304,16 @@ async function shuffleInternal(rom: Uint8Array,
   // Set up shop and telepathy
   parsed.scalingLevels = 48;
 
-  if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
+  if (config.towns.shopContents !== Config.Randomization.VANILLA) {
+    shuffleShops(parsed, flags, random);
+  }
 
-  if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
-  updateWallSpawnFormat(parsed);
-  randomizeWalls(parsed, flags, random);
+  if (config.maps.shuffleGoaFloorConnections) shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
+  updateWalls(s);
   crumblingPlatforms(parsed, random);
 
-  if (flags.nerfWildWarp()) parsed.wildWarp.locations.fill(0);
-  if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+  updateWildWarp(s);
+
   if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random);
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
@@ -619,90 +630,6 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
   }
 }
 
-/**
- * We rearrange how walls spawn to support custom shooting walls,
- * among other things.  The signal to the game (and later passes)
- * that we've made this change is to set the 0x20 bit on the 3rd
- * spawn byte (i.e. the spawn type).
- */
-function updateWallSpawnFormat(rom: Rom) {
-  for (const location of rom.locations) {
-    if (!location.used) continue;
-    for (const spawn of location.spawns) {
-      if (spawn.isWall()) {
-        const elem = spawn.id & 0xf;
-        spawn.id = elem | (elem << 4);
-        const shooting = spawn.isShootingWall(location);
-        spawn.data[2] = shooting ? 0x33 : 0x23;
-        // const iron = spawn.isIronWall();
-        // spawn.data[2] = 0x23 | (shooting ? 0x10 : 0) | (iron ? 0x40 : 0);
-      }
-    }
-  }
-}
-
-function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
-  // NOTE: We can make any wall shoot by setting its $10 bit on the type byte.
-  // But this also requires matching pattern tables, so we'll leave that alone
-  // for now to avoid gross graphics.
-
-  // All other walls will need their type moved into the upper nibble and then
-  // the new element goes in the lower nibble.  Since there are so few iron
-  // walls, we will give them arbitrary elements independent of the palette.
-  // Rock/ice walls can also have any element, but the third palette will
-  // indicate what they expect.
-
-  if (!flags.randomizeWalls()) return;
-  // Basic plan: partition based on palette, look for walls.
-  const pals = [
-    [0x05, 0x38], // rock wall palettes
-    [0x11], // ice wall palettes
-    [0x6a], // "ember wall" palettes
-    [0x14], // "iron wall" palettes
-  ];
-
-  function wallType(spawn: Spawn): number {
-    if (spawn.data[2] & 0x20) {
-      return (spawn.id >>> 4) & 3;
-    }
-    return spawn.id & 3;
-  }
-
-  const partition = new DefaultMap<Area, Location[]>(() => []);
-  for (const location of rom.locations) {
-    partition.get(location.data.area).push(location);
-  }
-  for (const locations of partition.values()) {
-    // pick a random wall type.
-    const elt = random.nextInt(4);
-    const pal = random.pick(pals[elt]);
-    let found = false;
-    for (const location of locations) {
-      for (const spawn of location.spawns) {
-        if (spawn.isWall()) {
-          const type = wallType(spawn);
-          if (type === 2) continue;
-          if (type === 3) {
-            const newElt = random.nextInt(4);
-            if (rom.spoiler) rom.spoiler.addWall(location.name, type, newElt);
-            spawn.data[2] |= 0x20;
-            spawn.id = 0x30 | newElt;
-          } else {
-            // console.log(`${location.name} ${type} => ${elt}`);
-            if (!found && rom.spoiler) {
-              rom.spoiler.addWall(location.name, type, elt);
-              found = true;
-            }
-            spawn.data[2] |= 0x20;
-            spawn.id = type << 4 | elt;
-            location.tilePalettes[2] = pal;
-          }
-        }
-      }
-    }
-  }
-}
-
 function noMusic(rom: Rom): void {
   for (const m of [...rom.locations, ...rom.bosses.musics]) {
     m.bgm = 0;
@@ -732,41 +659,6 @@ function shuffleMusic(rom: Rom, _flags: FlagSet, random: Random): void {
       updated.add(music);
     }
   }
-}
-
-function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
-  const locations: Location[] = [];
-  for (const l of rom.locations) {
-    if (l && l.used &&
-        // don't add mezame because we already add it always
-        l.id &&
-        // don't warp into shops
-        !l.isShop() &&
-        // don't warp into water
-        l !== rom.locations.EvilSpiritIsland1 &&
-        l !== rom.locations.UndergroundChannel &&
-        // don't warp into tower
-        (l.id & 0xf8) !== 0x58 &&
-        // don't warp to either side of Draygon 2
-        l !== rom.locations.Crypt_Draygon2 &&
-        l !== rom.locations.Crypt_Teleporter &&
-        // don't warp into mesia shrine because of queen logic
-        // (and because it's annoying)
-        l !== rom.locations.MesiaShrine &&
-        // don't warp into rage because it's just annoying
-        l !== rom.locations.LimeTreeLake) {
-      locations.push(l);
-    }
-  }
-  random.shuffle(locations);
-  rom.wildWarp.locations = [];
-  const min_warps = 4;
-  const count = random.nextInt(16 - min_warps) + min_warps;
-  for (const loc of [...locations.slice(0, count)]) {
-    rom.wildWarp.locations.push(loc.id);
-    if (rom.spoiler) rom.spoiler.addWildWarp(loc.id, loc.name);
-  }
-  rom.wildWarp.locations.push(0);
 }
 
 function buffDyna(rom: Rom, _flags: FlagSet): void {
@@ -901,6 +793,7 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
 }
 
 function updateTablesPreCommit(rom: Rom, flags: FlagSet) {
+  const config = flags.config;
   // Change some enemy scaling from the default, if flags ask for it.
   if (flags.decreaseEnemyDamage()) {
     rom.scaling.setPhpFormula(s => 16 + 6 * s);
@@ -909,7 +802,7 @@ function updateTablesPreCommit(rom: Rom, flags: FlagSet) {
 
   // Update the coin drop buckets (goes with enemy stat recomputations
   // in postshuffle.s)
-  if (flags.disableShopGlitch()) {
+  if (config.glitches.shopGlitch === Config.GlitchMode.FORBID) {
     // bigger gold drops if no shop glitch, particularly at the start
     // - starts out fibonacci, then goes linear at 600
     rom.coinDrops.values = [

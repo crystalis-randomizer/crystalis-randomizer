@@ -70066,7 +70066,7 @@ HandleReset:
         <@3f32a@>
         <@3f32c@>
         <@3f32e@>
-        <@3f331 MAIN_LOOP_PREPARE_TITLE_MOVIE@>
+        <@3f331 MAIN_LOOP_PREPARE_TITLE_MOVIE@>  ; NOTE: patched by main.s ($f332) _SKIP_TITLE
         <@3f333 MainLoopMode@>
         <@3f335@>
         <@3f337@>
@@ -70124,7 +70124,7 @@ HandleColdBoot:
          <@3f395@>
 +       <@3f397@> ; 8000 -> 24000
         <@3f399 BankSwitch16k@>
-        <@3f39c AnimateSNKLogo@>
+        <@3f39c AnimateSNKLogo@>      ; NOTE: patched by main.s ($f39c) _SKIP_TITLE
 HandleWarmBoot:
         <@3f39f ValidateSaveFiles@>        ; NOTE: patched by hud.s ($f39f)
         ;; Replicate the checkpoint directly into 6480..667f

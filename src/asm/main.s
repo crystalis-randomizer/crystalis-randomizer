@@ -5,6 +5,15 @@
 
 .segment "fe","ff"
 
+
+.ifdef _SKIP_TITLE
+.org $f332
+  .byte MAIN_LOOP_PREPARE_CONTINUE
+.org $f39c
+  jmp HandleWarmBoot
+.endif
+
+
 FREE "fe" [$c900, $ca2e)
 
 ;;; --------------------------------

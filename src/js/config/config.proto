@@ -728,6 +728,11 @@ message Config {
     // optional bool simplify_invisible_chests = 7
     //   [(default) = true,
     //    (preset.full_vanilla) = false];
+
+    // Whether to track statistics, including when various key items were found
+    optional bool stat_tracking = 12
+      [(default) = true,
+       (preset.full_vanilla) = false];
   }
 
 

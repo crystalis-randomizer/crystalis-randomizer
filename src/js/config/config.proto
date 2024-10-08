@@ -1255,6 +1255,9 @@ message Config {
        (preset.mystery) = "=?"];
     optional bool require_long_trigger_skip = 10
       [(default) = false];
+    optional bool allow_warp_boots_reuse = 11
+      [(default) = false,
+       (preset.vanilla) = true];
   }
 
   enum GlitchMode { 

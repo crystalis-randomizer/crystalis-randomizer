@@ -16,7 +16,7 @@ import { fixDialog } from './pass/fixdialog';
 import { fixEntranceTriggers } from './pass/fixentrancetriggers';
 import { fixMovementScripts } from './pass/fixmovementscripts';
 import { fixSkippableExits } from './pass/fixskippableexits';
-import { randomizeThunderWarp } from './pass/randomizethunderwarp';
+import { updateThunderWarp } from './pass/thunderwarp';
 import { rescaleMonsters } from './pass/rescalemonsters';
 import { shuffleGoa } from './pass/shufflegoa';
 import { shuffleHouses } from './pass/shufflehouses';
@@ -313,8 +313,7 @@ async function shuffleInternal(rom: Uint8Array,
   crumblingPlatforms(parsed, random);
 
   updateWildWarp(s);
-
-  if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random);
+  updateThunderWarp(s);
   rescaleMonsters(parsed, flags, random);
   unidentifiedItems(parsed, flags, random);
   misspell(parsed, flags, random);

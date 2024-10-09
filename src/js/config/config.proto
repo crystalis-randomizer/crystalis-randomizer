@@ -828,16 +828,19 @@ message Config {
        // isn't granted correctly. We could potentially add some other way
        // to warp back to this location in that case?
        (preset.vanilla) = SHYRON__TEMPLE];
-    optional ItemName thunder_sword_warp_item = 14
-      [(default) = SWORD_OF_THUNDER];
-    optional ThunderSwordWarpItemTrigger thunder_sword_item_trigger = 15
-      [(default) = VANILLA];
-    enum ThunderSwordWarpItemTrigger {
-      VANILLA = 0;
+    // How to randomize the item that triggers the thunder sword warp.
+    optional ThunderSwordWarpItem thunder_sword_warp_item = 14
+      [(default) = FIXED];
+    enum ThunderSwordWarpItem {
+      FIXED = 0;
       SWORD = 1;
       UNIQUE = 2;
       RANDOM = 3;
     }
+    // Item that triggers the warp.  This has no effect unless
+    // `thunder_sword_item_item` is set to `FIXED`.
+    optional ItemName thunder_sword_warp_item_fixed = 15
+      [(default) = SWORD_OF_THUNDER];
 
     // TODO - random sabre N entrance requirement?
     // TODO - move to random transition????

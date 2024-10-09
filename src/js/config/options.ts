@@ -22,6 +22,7 @@ export interface FieldOptions {
 
 export interface EnumValueOptions {
   alias?: readonly string[];
+  category?: readonly number;
 }
 
 export function fieldOptionsToJson(o: FieldOptions): Record<number, unknown>|undefined {

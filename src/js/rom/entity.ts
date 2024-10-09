@@ -4,8 +4,14 @@ import {Module} from '../asm/module';
 import {Rom} from '../rom';
 import {hex} from './util';
 
-export class Entity {
-  constructor(readonly rom: Rom, readonly id: number) {}
+export class EntityBase {
+  constructor(readonly rom: Rom) {}
+}
+
+export class Entity extends EntityBase {
+  constructor(rom: Rom, readonly id: number) {
+    super(rom);
+  }
 
   write(): Module[] {
     return [];

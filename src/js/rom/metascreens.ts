@@ -9,6 +9,7 @@ import {MetascreenData, bottomEdge, bottomEdgeHouse, cave, door, downStair,
        } from './metascreendata.js';
 import {Metatileset, Metatilesets} from './metatileset';
 import {ScreenFix /*, withRequire*/} from './screenfix';
+import { EntityBase } from './entity';
 
 const DEBUG = false;
 
@@ -48,7 +49,7 @@ const DEBUG = false;
 // }
 
 // extends Set<Metascreen> ???
-export class Metascreens {
+export class Metascreens extends EntityBase {
 
   readonly [index: number]: Metascreen;
   readonly length = 0;
@@ -57,7 +58,8 @@ export class Metascreens {
   private readonly screensById = new DefaultMap<number, Metascreen[]>(() => []);
   private readonly registeredFixes = new Set<ScreenFix>();
 
-  constructor(readonly rom: Rom) {
+  constructor(rom: Rom) {
+    super(rom);
     for (const key in this) { // add names
       const val = this[key];
       if (val instanceof Metascreen) val.name = key;

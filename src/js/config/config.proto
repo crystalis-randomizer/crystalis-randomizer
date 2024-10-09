@@ -916,6 +916,8 @@ message Config {
     repeated LocationName wild_warp_locations = 15;
 
     // How to randomize wall elements.
+    // NOTE: Using "SHUFFLE" here will have the effect of never making
+    // ember walls for the water sword, and will favor rock walls.
     optional Randomization wall_elements = 16
       [(default) = RANDOM,
        (preset.vanilla) = VANILLA,

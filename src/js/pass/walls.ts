@@ -67,31 +67,59 @@ function randomizeWalls(s: Shuffle): void {
   for (const location of rom.locations) {
     partition.get(location.data.area).push(location);
   }
+
+  const pickWall = config.maps.wallElements === Config.Randomization.SHUFFLE ?
+    (() => {
+      // shuffle requires getting a list of the existing walls
+      const elements: number[] = [];
+      for (const locations of partition.values()) {
+        for (const location of locations) {
+          for (const spawn of location.spawns) {
+            if (!spawn.isWall()) continue;
+            const type = wallType(spawn);
+            if (type === 2) continue;
+            elements.push(type);
+          }
+        }
+      }
+      random.shuffle(elements);
+      return (e?: number) => {
+        if (e == null) return elements.pop()!;
+        // try to remove an `e` from the list
+        const i = elements.indexOf(e);
+        if (i >= 0) elements.splice(i, 1);
+        return e;
+      }
+    })() : (e?: number) => e ?? random.nextInt(4);
+
   for (const locations of partition.values()) {
     // pick a random wall type.
-    const elt = random.nextInt(4);
-    const pal = random.pick(pals[elt]);
-    let found = false;
+    let elt: number|undefined;
+    let pal: number|undefined;
     for (const location of locations) {
       for (const spawn of location.spawns) {
-        if (spawn.isWall()) {
-          const type = wallType(spawn);
-          if (type === 2) continue;
-          if (type === 3) {
-            const newElt = random.nextInt(4);
-            if (rom.spoiler) rom.spoiler.addWall(location.name, type, newElt);
-            spawn.data[2] |= 0x20;
-            spawn.id = 0x30 | newElt;
-          } else {
-            // console.log(`${location.name} ${type} => ${elt}`);
-            if (!found && rom.spoiler) {
+        if (!spawn.isWall()) continue;
+        const type = wallType(spawn);
+        if (type === 2) continue;
+        if (type === 3) {
+          const newElt = pickWall();
+          if (rom.spoiler) rom.spoiler.addWall(location.name, type, newElt);
+          spawn.data[2] |= 0x20;
+          spawn.id = 0x30 | newElt;
+        } else {
+          // console.log(`${location.name} ${type} => ${elt}`);
+          if (elt == null) {
+            elt = pickWall();
+            pal = random.pick(pals[elt]);
+            if (rom.spoiler) {
               rom.spoiler.addWall(location.name, type, elt);
-              found = true;
             }
-            spawn.data[2] |= 0x20;
-            spawn.id = type << 4 | elt;
-            location.tilePalettes[2] = pal;
+          } else {
+            pickWall(elt);
           }
+          spawn.data[2] |= 0x20;
+          spawn.id = type << 4 | elt;
+          location.tilePalettes[2] = pal!;
         }
       }
     }

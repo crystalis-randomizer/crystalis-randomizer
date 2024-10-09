@@ -175,14 +175,6 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   // TODO - consider making a Transformation interface, with ordering checks
   alarmFluteIsKeyItem(rom, flags); // NOTE: pre-shuffle
   brokahanaWantsMado1(rom);
-  if (flags.teleportOnThunderSword()) {
-    teleportOnThunderSword(rom);
-    // not Shyron_Temple since no-thunder-sword-for-massacre
-    rom.townWarp.thunderSwordWarp = [rom.locations.Shyron.id, 0x41];
-  } else {
-    noTeleportOnThunderSword(rom);
-  }
-
   undergroundChannelLandBridge(rom);
   if (flags.fogLampNotRequired()) fogLampNotRequired(rom, flags);
 
@@ -698,19 +690,6 @@ function requireTelepathyForDeo(rom: Rom): void {
   // both generic bunnies (59) and deo (5a).
   SaharaBunny.globalDialogs.push(GlobalDialog.of(~Telepathy.id, [0x1a, 0x12]));
   Deo.globalDialogs.push(GlobalDialog.of(~Telepathy.id, [0x1a, 0x13]));
-}
-
-function teleportOnThunderSword(rom: Rom): void {
-  const {
-    flags: {WarpShyron},
-  } = rom;
-  // itemget 03 sword of thunder => set 2fd shyron warp point
-  rom.itemGets[0x03].flags.push(WarpShyron.id);
-}
-
-function noTeleportOnThunderSword(rom: Rom): void {
-  // Change sword of thunder's action to bbe the same as other swords (16)
-  rom.itemGets[0x03].acquisitionAction.action = 0x16;
 }
 
 function adjustItemNames(rom: Rom, flags: FlagSet): void {

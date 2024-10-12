@@ -82,6 +82,7 @@ export class ObjectData extends Entity {
     if (this === this.rom.objects.blueSlime) {
       // Figure out which bit is set (elements = 1<<(b-1))
       // Note the extra offset is due to 0 being "no sword equipped"
+      // If there are more than one immune elements, this will pick the last.
       let e = this.elements;
       let b = 0;
       while (e) {

@@ -1045,12 +1045,15 @@ message Config {
     optional Randomization randomize_enemies = 5
       [(default) = SHUFFLE,
        (preset.vanilla) = VANILLA];
+
+    // TODO - move enemy positions?
+
     // Whether to randomize enemy weaknesses.  In SHUFFLE mode, enemies will
     // retain the same number of weaknesses, whereas in RANDOM mode, each
     // will get a completely random combination.  This option does not affect
     // tetrarchs, which always have only a single weakness.
     optional Randomization enemy_weaknesses = 6
-      [(default) = SHUFFLE,
+      [(default) = RANDOM,
        (preset.vanilla) = VANILLA,
        (preset.casual) = VANILLA,
        (preset.classic) = VANILLA,
@@ -1058,6 +1061,21 @@ message Config {
        (preset.tournament_2022_early) = "=?",
        (preset.tournament_2022_mid) = "=?",
        (preset.tournament_2022_finals) = "=?"];
+
+    // Whether normal enemies can change their number of weaknesses.  If this is
+    // false then any given enemy will have the same number of weaknesses.  If
+    // it's true, then the number of weaknesses may change.
+    bool change_weakness_count = 19
+      [(default) = false];
+
+    // Whether to allow Draygon1 and Draygon2 to have any immunities.
+    bool allow_draygon_immunity = 20
+      [(default) = false];
+
+    // Whether to allow robots to have any immunities.
+    bool allow_robot_immunity = 21
+      [(default) = false];
+
     // Whether to randomize tetrarch weaknesses.  In SHUFFLE mode, weaknesses
     // will be swapped between the 7 bosses, keeping two wind, two fire, two
     // water, and one thunder; in RANDOM mode, each tetrarch will get a random
@@ -1141,6 +1159,8 @@ message Config {
     // TODO - make this enum, and then we only spawn the given enemies anywhere
     // (i.e. "oops all robots", "oops all flail guys", etc)
     // repeated EnemyName only_spawn = 16;
+
+    // TODO - enemy stats
 
     // Replace all coin sprites with the same one (TODO: different per page?)
     // NOTE: Disabling this with enemies shuffled will lead to glitched graphics,

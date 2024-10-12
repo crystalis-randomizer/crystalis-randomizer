@@ -1,9 +1,9 @@
-import {FlagSet} from '../flagset';
-import {Random} from '../random';
-import {Rom} from '../rom';
+import { Config } from '../config';
 import {seq} from '../rom/util';
+import { Shuffle } from '../shuffle';
 
-export function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random) {
+export function rescaleMonsters(s: Shuffle) {
+  const {config, random, rom} = s;
 
   // TODO - find anything sharing the same memory and update them as well
   const unscaledMonsters =
@@ -31,12 +31,102 @@ export function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random) {
   // Fix Sabera 1's elemental defense to no longer allow thunder
   rom.objects[0x7d].elements |= 0x08;
 
-  const BOSSES = new Set([0x57, 0x5e, 0x68, 0x7d, 0x88, 0x97, 0x9b, 0x9e]);
-  const SLIMES = new Set([0x50, 0x53, 0x5f, 0x69]);
+  const TETRARCHS = new Set([
+    rom.objects.kelbesque1.id,
+    rom.objects.sabera1.id,
+    rom.objects.mado1.id,
+    rom.objects.kelbesque2.id,
+    rom.objects.sabera2.id,
+    rom.objects.mado2.id,
+    rom.objects.karmine.id,
+  ]);
+  const DRAYGON = new Set([
+    rom.objects.draygon1.id,
+    rom.objects.draygon2.id,
+  ]);
+  const ROBOTS = new Set([
+    rom.objects.brownRobot.id,
+    rom.objects.whiteRobot.id,
+  ]);
+  const SLIMES = new Set([
+    rom.objects.blueSlime.id,
+    rom.objects.redSlime.id,
+    rom.objects.largeBlueSlime.id,
+    rom.objects.largeRedSlime.id,
+  ]);
+
+  // if shuffling weaknesses (rather than randomizing) then keep track
+  // of the count of each weakness so that we can keep the proportion
+  // roughly the same.
+  const weaknessCounts: number[] = [];
+  const normalWeaknesses: number[]|undefined =
+    config.enemies.enemyWeaknesses === Config.Randomization.RANDOM ? undefined : [];
+  const tetrarchWeaknesses: number[]|undefined =
+    config.enemies.tetrarchWeaknesses === Config.Randomization.RANDOM ? undefined : [];
+  for (const id of SCALED_MONSTERS.keys()) {
+    if (DRAYGON.has(id) || ROBOTS.has(id)) continue;
+    const tetrarch = TETRARCHS.has(id);
+    const elts = rom.objects[id].elements;
+    const weaknesses = tetrarch ? tetrarchWeaknesses : normalWeaknesses;
+    if (!weaknesses) continue;
+    let count = 0;
+    for (let i = 8; i; i >>>= 1) {
+      if (!(elts & i)) continue;
+      weaknesses.push(i);
+      count++;
+    }
+    if (!tetrarch) weaknessCounts?.push(count);
+  }
+  // NOTE: should be empty if not shuffling
+  random.shuffle(weaknessCounts);
+  if (normalWeaknesses) random.shuffle(normalWeaknesses);
+  if (tetrarchWeaknesses) random.shuffle(tetrarchWeaknesses);
+  function pickWeaknesses(count: number|undefined): number {
+    if (!normalWeaknesses) {
+      // respect count if defined, otherwise just rand(14)
+      if (!count) return random.nextInt(14) + 1;
+      const bits = [1, 2, 4, 8];
+      let mask = 0;
+      for (let i = 0; i < count; i++) {
+        const j = random.nextInt(bits.length);
+        mask |= bits.splice(j, 1)[0];
+      }
+      return mask;
+    } else {
+      count ??= random.nextInt(4);
+      let mask = 0;
+      const rejected = [];
+      while (count) {
+        const next = normalWeaknesses.pop() ?? 1 << random.nextInt(4);
+        if (next & mask) {
+          rejected.push(next);
+        } else {
+          mask |= next;
+        }
+        count--;
+      }
+      normalWeaknesses.splice(0, 0, ...rejected);
+      return mask;
+    }
+  }
+  function countBits(n: number): number {
+    return [...n.toString(2)].filter(x => x === '1').length;
+  }
+
   for (const [id, {sdef, swrd, hits, satk, dgld, sexp}] of SCALED_MONSTERS) {
     // indicate that this object needs scaling
     const o = rom.objects[id].data;
-    const boss = BOSSES.has(id) ? 1 : 0;
+    const tetrarch = TETRARCHS.has(id);
+    const draygon = DRAYGON.has(id);
+    const robot = ROBOTS.has(id);
+    const changeNumber =
+      draygon ? config.enemies.allowDraygonImmunity :
+      robot ? config.enemies.allowRobotImmunity :
+      config.enemies.enemyWeaknesses === Config.Randomization.RANDOM;
+    const changeWeaknesses =
+      tetrarch ? config.enemies.tetrarchWeaknesses !== Config.Randomization.VANILLA :
+      SLIMES.has(id) && config.enemies.enemyWeaknesses !== Config.Randomization.VANILLA;
+      
     o[2] |= 0x80; // recoil
     o[6] = hits; // HP
     o[7] = satk;  // ATK
@@ -52,17 +142,22 @@ export function rescaleMonsters(rom: Rom, flags: FlagSet, random: Random) {
     o[16] = o[16] & 0x0f | dgld << 4; // GLD
     o[17] = sexp; // EXP
 
-    if (boss ? flags.shuffleBossElements() : flags.shuffleMonsterElements()) {
-      if (!SLIMES.has(id)) {
-        const bits = [...rom.objects[id].elements.toString(2).padStart(4, '0')];
-        random.shuffle(bits);
-        rom.objects[id].elements = Number.parseInt(bits.join(''), 2);
+    if (changeWeaknesses) {
+      let weakness: number;
+      if (tetrarch) {
+        // not changing number
+        weakness = tetrarchWeaknesses?.pop() ?? 1 << random.nextInt(4);
+      } else {
+        const count = changeNumber ? weaknessCounts.pop() :
+          countBits(rom.objects[id].elements);
+        weakness = pickWeaknesses(count);
       }
+      rom.objects[id].elements = weakness;
     }
   }
 
   // handle slimes all at once
-  if (flags.shuffleMonsterElements()) {
+  if (config.enemies.enemyWeaknesses !== Config.Randomization.VANILLA) {
     // pick an element for slime defense
     const e = random.nextInt(4);
     for (const id of SLIMES) {
@@ -84,6 +179,8 @@ interface MonsterData {
   dgld: number;
   sexp: number;
 }
+
+// TODO - fold this into objects.ts
 
 /* tslint:disable:trailing-comma whitespace */
 export const SCALED_MONSTERS: Map<number, MonsterData> = new Map([

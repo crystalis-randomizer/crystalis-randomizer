@@ -314,7 +314,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   updateWildWarp(s);
   updateThunderWarp(s);
-  rescaleMonsters(parsed, flags, random);
+  rescaleMonsters(s);
   unidentifiedItems(parsed, flags, random);
   misspell(parsed, flags, random);
   shuffleTrades(parsed, flags, random);

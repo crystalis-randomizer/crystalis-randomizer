@@ -93,9 +93,8 @@ export function parseSeed(seed: string): number {
 // prevent unused errors about watchArray - it's used for debugging.
 const {} = {watchArray} as any;
 
-function defines(flags: FlagSet,
+function defines(config: Config,
                  pass: 'early' | 'late'): string {
-  const config = flags.config;
   const defines: Record<string, boolean|null> = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: config.enemies.permadeath &&
                                  config.enemies.tetrarchWeaknesses !== Config.Randomization.VANILLA,
@@ -439,7 +438,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   async function asm(pass: 'early' | 'late') {
     // First synthesize the flags file
-    const flagFile = defines(flags, pass);
+    const flagFile = defines(config, pass);
     const asm = new Assembler(Cpu.P02, {overwriteMode: 'forbid'});
     const toks = new TokenStream();
     // Then read all the patch sources

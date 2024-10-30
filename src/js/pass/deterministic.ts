@@ -12,6 +12,7 @@ import {assert} from '../util';
 import {Monster} from '../rom/monster';
 import {Patterns} from '../rom/pattern';
 import { readLittleEndian } from '../rom/util';
+import { Shuffle } from '../shuffle';
 
 const [] = [hex]; // generally useful
 
@@ -143,7 +144,8 @@ export function deterministicPreParse(prg: Uint8Array): void {
   write(prg, 0x2656e, "Simea", 0x10, 0, "     ", 0x10, 0);
 }
 
-export function deterministic(rom: Rom, flags: FlagSet): void {
+export function deterministic(s: Shuffle, flags: FlagSet): void {
+  const {config, rom} = s;
   // NOTE: do this very early to make sure refs to warp point flags are
   // updated to reflect shifts (probably not an issue anymore now that
   // we track flag moves separately).
@@ -152,7 +154,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   removeWarpTriggers(rom);
   consolidateItemGrants(rom);
   addMezameTrigger(rom);
-  normalizeSwords(rom, flags);
+  normalizeSwords(s);
 
   fixFlyableWalls(rom);
   fixMonsterTerrain(rom);
@@ -167,8 +169,8 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   adjustGoaFortressTriggers(rom);
   preventNpcDespawns(rom, flags);
   leafElderInSabreHeals(rom);
-  if (flags.requireHealedDolphinToRide()) requireHealedDolphin(rom);
-  if (flags.saharaRabbitsRequireTelepathy()) requireTelepathyForDeo(rom);
+  if (config.triggers.healDolphinToRide) requireHealedDolphin(rom);
+  if (config.triggers.deoRequiresTelepathy) requireTelepathyForDeo(rom);
 
   adjustItemNames(rom, flags);
 
@@ -402,7 +404,8 @@ function removeWarpTriggers(rom: Rom): void {
   // TODO: deallocate these triggers so they can be reassigned!
 }
 
-function normalizeSwords(rom: Rom, flags: FlagSet) {
+function normalizeSwords(s: Shuffle) {
+  const {rom, config} = s;
   // wind 1 => 1 hit               => 3
   // wind 2 => 1 hit               => 6
   // wind 3 => 2-3 hits 8MP        => 8
@@ -439,12 +442,15 @@ function normalizeSwords(rom: Rom, flags: FlagSet) {
   rom.objects[0x1b].atk = 7; // thunder 3
   rom.objects[0x1f].atk = 7; // thunder 3
 
-  if (flags.slowDownTornado()) {
+  if (config.items.adjustTornadoSpeed) {
     // TODO - tornado (obj 12) => speed 07 instead of 08
     //      - lifetime is 480 => 70 maybe too long, 60 sweet spot?
+    const adj = config.items.adjustTornadoSpeed;
     const tornado = rom.objects[0x12];
-    tornado.speed = 0x07;
-    tornado.data[0x0c] = 0x60; // increase lifetime (480) by 20%
+    tornado.speed += adj;
+    tornado.data[0x0c] *= 1 - adj * .2 // increase lifetime (480) by 20%
+    // TODO - consider a lookup table?
+    //   -1: 0x60 (+20%)
   }
 }
 

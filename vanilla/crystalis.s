@@ -21042,7 +21042,7 @@ TriggerSquare:
         <@1c100@>
         <@1c102@>
         <@1c104@>
-        <@1c106@> ; one (or more) condition failed - do nothing
+        <@1c106@> ; one (or more) on failed - do nothing
 ;;; --------------------------------
 .org $8107
 TriggerSquare_ConditionMet:
@@ -21819,6 +21819,9 @@ ItemUseJump_24_Rts:
 .org $8565
 ItemUseJump_StatueOfOnyx:
         <@1c565 ItemUse_CheckRequiredNPC@>
+        ;; NOTE: this can be decoupled from shellflute by instead writing
+        ;;   beq :<rts
+        ;;   jmp Invalid
          <@1c568 +@> ; jmp ItemUseJump_Invalid
         <@1c56a@>
         ;; ----

@@ -152,6 +152,7 @@ export type EnumOf<T> = {[K in keyof T]: K extends 'descriptor' ? never : T[K]}[
 
 export class Namespace {
   readonly nested: ReadonlyMap<string, Namespace> = new Map();
+
   constructor(
     readonly name: string,
     readonly parent: Namespace|null,
@@ -165,9 +166,19 @@ export class Namespace {
     const type = this.nested.get(name);
     if (type) return type;
     if (!this.parent) throw new Error(`unknown type: ${name}`);
+    
     return this.parent.resolve(name);
   }
 }
+
+// There are several important types here: MessageBase and
+// GeneratorBase are the main APIs for interacting with proto message
+// types.  The generated code declares new classes that extend these
+// base classes, and inserts their descriptor (a MessageType) as the
+// static `descriptor` property.  The static properties of the public
+// APIs are all installed to initialize themselves lazily at the
+// finest-grained level, so that forward-refereneces work regardless
+// of the actual order the classes are defined in.
 
 type MessageCtor<M extends MessageBase<M, G>, G extends GeneratorBase<M, G>> =
   {new (): M, descriptor: MessageType<M, G>};
@@ -176,7 +187,7 @@ type GeneratorCtor<M extends MessageBase<M, G>, G extends GeneratorBase<M, G>> =
 export class MessageBase<M extends MessageBase<M, G>, G extends GeneratorBase<M, G>> {
   declare static readonly descriptor: MessageType<any, any>;
   constructor() {
-    new.target.descriptor.init(this as any);
+    new.target.descriptor.initInstance(this as any);
   }
   toBinary(): Uint8Array {
     return (this.constructor as MessageCtor<M, G>).descriptor.toBinary(this as any);
@@ -185,10 +196,10 @@ export class MessageBase<M extends MessageBase<M, G>, G extends GeneratorBase<M,
     return (this.constructor as MessageCtor<M, G>).descriptor.toJson(this as any);
   }
 
-  // NOTE: Must be called immediately after defining the class.
-  static init(descriptor: MessageType<any, any>) {
-    (this as any).descriptor = descriptor;
-    for (const f of descriptor.fieldsById.values()) {
+  // NOTE: Call on the top-level classes at the end.
+  static finish() {
+    (this.descriptor as any).finish();
+    for (const f of this.descriptor.fieldsById.values()) {
       (this as any)[f.name] = f;
     }
   }
@@ -229,28 +240,49 @@ export class GeneratorBase<M extends MessageBase<M, G>, G extends GeneratorBase<
   }
 }
 
+export function defineMessage<M extends MessageBase<M, G>, G extends GeneratorBase<M, G>>(
+  name: string,
+  messageCtor: MessageCtor<M, G>,
+  generatorCtor: GeneratorCtor<M, G>,
+  parent: Namespace,
+  spec: MessageJson,
+): void {
+  const descriptor = new MessageType<M, G>(name, spec, messageCtor, generatorCtor, parent);
+  messageCtor.descriptor = descriptor;
+  generatorCtor.messageCtor = messageCtor;
+
+  // Define getters for messageCtor static fields.
+  //   TODO - define getters
+  // actually, these may not need to be lazy if the presets/groups are lazy?
+  // but in general, we want to get all the parent/child relationships wired up
+  // BEFORE we do any resolution of anything
+
+  for (const f of descriptor.fieldsById.values()) {
+    (messageCtor as any)[f.name] = f;
+  }
+}
+
 // NOTE: also includes the root, which just has nested elements and no fields
 export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M, G>> extends Namespace implements Type<G> {
   readonly scriptable = false;
   readonly fieldsById: ReadonlyMap<number, FieldInfo<any, any>>;
   readonly fieldsByCanonicalizedName: ReadonlyMap<string, FieldInfo<any, any>>;
-  readonly groups: ReadonlyArray<ReadonlyArray<FieldInfo<any, any>>>;
+
+  private _groups: ReadonlyArray<ReadonlyArray<FieldInfo<any, any>>>|undefined;
 
   constructor(
     name: string,
-    obj: MessageJson,
+    spec: MessageJson,
     readonly messageCtor: MessageCtor<M, G>,
     readonly generatorCtor: GeneratorCtor<M, G>,
     parent: Namespace,
-    presets: Map<number, string>,
   ) {
     super(name, parent);
-    messageCtor.descriptor = this;
-    generatorCtor.messageCtor = messageCtor;
+
+    // TODO - make these lazy?
     const byId = new Map<number, FieldInfo<any, any>>();
     const byName = new Map<string, FieldInfo<any, any>>();
-    const groups = new Map<number, Array<FieldInfo<any, any>>>();
-    for (const [name, val] of Object.entries(obj.fields || {})) {
+    for (const [name, val] of Object.entries(spec.fields || {})) {
       const field = FieldInfo.of(name, val as FieldJson, this);
       byId.set(field.id, field);
       byName.set(canonicalize(name), field);
@@ -265,20 +297,26 @@ export class MessageType<M extends MessageBase<M, G>, G extends GeneratorBase<M,
     }
     this.fieldsById = byId;
     this.fieldsByCanonicalizedName = byName;
-
-    for (const f of this.fieldsById.values()) {
-      const group = f.group;
-      if (group == null) continue;
-      let arr = groups.get(group[0]);
-      if (arr == null) {
-        groups.set(group[0], arr = [byId.get(group[0])!]);
-      }
-      arr.push(f);
-    }
-    this.groups = [...groups.values()];
   }
 
-  init(obj: Record<string, unknown>): void {
+  get groups(): ReadonlyArray<ReadonlyArray<FieldInfo<any, any>>> {
+    if (this._groups == null) {
+      const groups = new Map<number, Array<FieldInfo<any, any>>>();
+      for (const f of this.fieldsById.values()) {
+        const group = f.group;
+        if (group == null) continue;
+        let arr = groups.get(group[0]);
+        if (arr == null) {
+          groups.set(group[0], arr = [this.fieldsById.get(group[0])!]);
+        }
+        arr.push(f);
+      }
+      this._groups = [...groups.values()];
+    }
+    return this._groups;
+  }
+
+  initInstance(obj: Record<string, unknown>): void {
     for (const field of this.fieldsById.values()) {
       if (obj instanceof this.messageCtor && field.options.generatorOnly) continue;
       obj[field.name] = field.init();

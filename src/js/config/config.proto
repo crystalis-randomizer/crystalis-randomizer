@@ -744,16 +744,60 @@ message Config {
       [(default) = true,
        (preset.vanilla) = false];
 
-    optional bool beach_kensu_triggers_dolphin = 3
-      [(default) = false,
-       (group.vanilla_dolphin) = true];
-    optional bool beach_kensu_gives_item = 4
+    // What is required for the shell flute to successfully summon the dolphin?
+    enum RideDolphin {
+      // No additional requirement beyond having shell flute
+      NOTHING = 1;
+      // Player must talk to Kensu in the beach hut (vanilla)
+      BEACH_KENSU = 2;
+      // Player must heal the dolphin in the underground channel (default)
+      HEALED_DOLPHIN = 3;
+
+      // NOTE: we could add a "BOTH" option, but we'd need a way to have
+      // ItemUseJump_ShellFlute check two flags, or else add an extra flag that
+      // gets automatically set when the other flags are both set.  We could
+      // possibly do this with SetOrClearFlagsFromBytePair_24y.
+    }
+    optional RideDolphin ride_dolphin = 3
+      [(default) = HEALED_DOLPHIN,
+       (group.vanilla_dolphin) = BEACH_KENSU];
+
+    // What is required for the fisherman to spawn?
+    enum SpawnFisherman {
+      // No additional requirement, he always spawns
+      NOTHING = 1;
+      // Fisherman spawns after finding the specific shell flute item (vanilla)
+      SHELL_FLUTE = 2;
+      // Fisherman spawns after healing the dolphin
+      HEALED_DOLPHIN = 3;
+      // Fisherman spawns after finding the fog lamp that he wants (default)
+      FOG_LAMP = 4;
+    }
+    optional SpawnFisherman spawn_fisherman = 4
+      [(default) = FOG_LAMP,
+       (group.vanilla_dolphin) = SHELL_FLUTE];
+
+    // What is required for Kensu to spawn in the beach house?
+    enum SpawnBeachKensu {
+      // Kensu always spawns (vanilla)
+      NOTHING = 1;
+      // Kensu only spawns after turning in the fog lamp (default)
+      BOAT = 2;
+      // Kensu only spawns after player has the shell flute
+      SHELL_FLUTE = 3;
+    }
+    optional SpawnBeachKensu spawn_beach_kensu = 5
+      [(default) = BOAT,
+       (group.vanilla_dolphin) = NOTHING];
+
+    // Whether Kensu gives an item (repurposed $67) and disappears when talking
+    // with him.
+    optional bool beach_kensu_gives_item = 6
       [(default) = true,
        (group.vanilla_dolphin) = false];
-    optional bool heal_dolphin_to_ride = 5
-      [(default) = false,
-       (group.vanilla_dolphin) = true];
-    optional bool vanilla_dolphin = 6
+
+    // Flags group for returning to the original vanilla dolphin interactions.
+    optional bool vanilla_dolphin = 7
       [(default) = false,
        (preset.vanilla) = true,
        (preset.mystery) = "=?",
@@ -761,22 +805,23 @@ message Config {
        (preset.tournament_2022_mid) = "=?",
        (preset.tournament_2022_finals) = "=?"];
 
-    optional bool deo_requires_telepathy = 7
+    optional bool deo_requires_telepathy = 8
       [(default) = true,
        (preset.vanilla) = false];
 
     // If this is set, Draygon 2 will _not_ spawn unless the player has
     // found all four swords.  This was previously part of "story mode",
     // but has been split out into a separate option.
-    optional bool draygon2_requires_all_swords = 8
+    optional bool draygon2_requires_all_swords = 9
       [(default) = false,
        (preset.mystery) = "=?"];
+
     // If this is set, Draygon 2 will _not_ spawn unless the player has
     // defeated all other major bosses first (specifically, both forms of
     // Kelbesque, Sabera, and Mado, plus Karmine and Draygon 1).  This was
     // previously bundled together with "draygon2 requires all swords" and
     // called "story mode", but has been split into a separate option.
-    optional bool draygon2_requires_all_bosses = 9
+    optional bool draygon2_requires_all_bosses = 10
       [(default) = true,
        (preset.vanilla) = false,
        (preset.casual) = false,
@@ -786,25 +831,26 @@ message Config {
 
     // If this is set, Draygon 2 will spawn in his final form immediately
     // upon entering his screen.  The Bow of Truth becomes a no-use item.
-    optional bool draygon2_spawns_without_bow_of_truth = 10
+    optional bool draygon2_spawns_without_bow_of_truth = 11
       [(default) = false,
        (preset.mystery) = "=rand()<.2",
        (group.no_bow_mode) = true];
+
     // If this is set, the Mezame cryotube becomes a doorway directly to
     // Draygon 2.  The door is two-way, meaning that it does not provide
     // access to the two chests buried in the crypt (they still require
     // the Bows of Sun and Moon to access the normal way).
-    optional bool draygon2_portal_at_start = 11
+    optional bool draygon2_portal_at_start = 12
       [(default) = false,
        (preset.mystery) = "=rand()<.2",
        (group.no_bow_mode) = true];
 
-    optional bool no_bow_mode = 16
+    optional bool no_bow_mode = 13
       [(default) = false,
        (preset.mystery) = "=?"];
 
     // What happens when the player picks up the Sword of Thunder.
-    optional ThunderSwordWarp thunder_sword_warp = 12
+    optional ThunderSwordWarp thunder_sword_warp = 14
       [(default) = RANDOM_TOWN,
        (preset.vanilla) = FIXED,
        (preset.casual) = NONE,
@@ -822,14 +868,14 @@ message Config {
     }
     // The fixed location to warp to when the player gets the Sword of Thunder.
     // This has no effect unless `thunder_sword_warp` is set to `FIXED`.
-    optional LocationName thunder_sword_warp_location = 13
+    optional LocationName thunder_sword_warp_location = 15
       [(default) = SHYRON,
        // NOTE: This adds a softlock risk in the logic if the warp point
        // isn't granted correctly. We could potentially add some other way
        // to warp back to this location in that case?
        (preset.vanilla) = SHYRON__TEMPLE];
     // How to randomize the item that triggers the thunder sword warp.
-    optional ThunderSwordWarpItem thunder_sword_warp_item = 14
+    optional ThunderSwordWarpItem thunder_sword_warp_item = 16
       [(default) = FIXED];
     enum ThunderSwordWarpItem {
       FIXED = 0;
@@ -839,7 +885,7 @@ message Config {
     }
     // Item that triggers the warp.  This has no effect unless
     // `thunder_sword_item_item` is set to `FIXED`.
-    optional ItemName thunder_sword_warp_item_fixed = 15
+    optional ItemName thunder_sword_warp_item_fixed = 17
       [(default) = SWORD_OF_THUNDER];
 
     // TODO - random sabre N entrance requirement?

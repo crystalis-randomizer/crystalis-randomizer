@@ -305,7 +305,7 @@ class Writer {
       },
       2);
     const parent = namespace ? `${namespace}.descriptor` : 'root';
-    this.emit(`${m}.init(new MessageType<${m}, ${g}>('${m}', ${descriptor}, ${m}, ${g}, ${parent}));`);
+    this.emit(`defineMessage('${m}', ${m}, ${g}, ${parent}, ${descriptor});`);
   }
 
   emitEnum(info: EnumInfo) {
@@ -357,7 +357,7 @@ class Writer {
 const writer = new Writer();
 writer.emitImport(
   '../../src/js/config/runtime',
-  ['EnumOf', 'GeneratorBase', 'MessageBase', 'MessageType', 'Namespace', 'Script', 'defineEnum']);
+  ['EnumOf', 'GeneratorBase', 'MessageBase', 'MessageType', 'Namespace', 'Script', 'defineEnum', 'defineMessage']);
 
 // Export preset id-to-name map separately, since descriptor ctor needs access to them.
 writer.indent(`\nconst presetsById = new Map<number, string>([`);

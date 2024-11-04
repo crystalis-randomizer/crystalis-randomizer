@@ -1,18 +1,19 @@
 // Perform initial cleanup/setup of the ROM.
 
-import {FlagSet} from '../flagset';
-import {Rom} from '../rom';
-import {Spawn} from '../rom/location';
-import {MessageId} from '../rom/messageid';
-import {GlobalDialog, LocalDialog} from '../rom/npc';
-import {ShopType} from '../rom/shop';
-import {Trigger} from '../rom/trigger';
-import {hex, Mutable} from '../rom/util';
-import {assert} from '../util';
-import {Monster} from '../rom/monster';
-import {Patterns} from '../rom/pattern';
+import { FlagSet } from '../flagset';
+import { Rom } from '../rom';
+import { Spawn } from '../rom/location';
+import { MessageId } from '../rom/messageid';
+import { GlobalDialog, LocalDialog } from '../rom/npc';
+import { ShopType } from '../rom/shop';
+import { Trigger } from '../rom/trigger';
+import { hex, Mutable } from '../rom/util';
+import { assert } from '../util';
+import { Monster } from '../rom/monster';
+import { Patterns } from '../rom/pattern';
 import { readLittleEndian } from '../rom/util';
 import { Shuffle } from '../shuffle';
+import { Config } from '../config';
 
 const [] = [hex]; // generally useful
 
@@ -178,7 +179,7 @@ export function deterministic(s: Shuffle, flags: FlagSet): void {
   alarmFluteIsKeyItem(rom, flags); // NOTE: pre-shuffle
   brokahanaWantsMado1(rom);
   undergroundChannelLandBridge(rom);
-  if (flags.fogLampNotRequired()) fogLampNotRequired(rom, flags);
+  configureDolphin(s);
 
   evilSpiritIslandRequiresDolphin(rom);
   channelItemRequiresDolphin(rom);
@@ -513,40 +514,123 @@ function undergroundChannelLandBridge(rom: Rom) {
   tiles[0x58] = 0x8c;
 }
 
-function fogLampNotRequired(rom: Rom, flags: FlagSet) {
+function configureDolphin(s: Shuffle) {
+  const {rom, config} = s;
   const {
-    flags: {AlwaysTrue, InjuredDolphin, FogLamp,
-            KensuInCabin, ReturnedFogLamp},
-    items: {ShellFlute},
+    flags: {AbleToRideDolphin, AlwaysTrue, FogLamp, InjuredDolphin,
+            KensuInCabin: KensuFlag, ReturnedFogLamp,
+            ShellFlute: ShellFluteFlag},
+    items: {ShellFlute: ShellFluteItem},
     locations: {BoatHouse, Portoa_FishermanHouse},
-    npcs,
+    npcs: {Fisherman, KensuInCabin: KensuNpc},
   } = rom;
-    
-  // Need to make several changes.
-  // (1) dolphin only requires shell flute, make the flag check free
-  //     unless healing is required.
-  const requireHealed = flags.requireHealedDolphinToRide();
-  ShellFlute.itemUseData[0].want =
-      requireHealed ? InjuredDolphin.id : AlwaysTrue.id;
-  // (2) kensu 68 (@61) drops an item (67 magic ring)
-  npcs.KensuInCabin.data[0] = 0x67;
-  npcs.KensuInCabin.localDialogs.get(-1)![0].message.action = 0x0a;
-  npcs.KensuInCabin.localDialogs.get(-1)![0].flags = [];
-  npcs.KensuInCabin.spawnConditions.set(BoatHouse.id,
-                                        [ReturnedFogLamp.id, ~KensuInCabin.id]);
-  // (3) fisherman 64 spawns on fog lamp rather than shell flute
-  npcs.Fisherman.spawnConditions.set(Portoa_FishermanHouse.id, [FogLamp.id]);
+  const {
+    beachKensuGivesItem,
+    rideDolphin,
+    spawnBeachKensu,
+    spawnFisherman,
+  } = config.triggers;
+  const {
+    RideDolphin,
+    SpawnBeachKensu,
+    SpawnFisherman,
+  } = Config.Triggers;
 
-  // (4) fix up itemget 67 from itemget 64 (delete the flag)
-  rom.itemGets[0x64].flags = [];
-  rom.itemGets[0x67].copyFrom(rom.itemGets[0x64]);
+  // Vanilla dolphin interaction is as follows:
+  //  1. Talking to rage moves Asina into the back room.
+  //  2. Talking to Asina in the back room spawns the hurt dolphin.
+  //  3. Healing the dolphin gives shell flute and spawns fisherman.
+  //     Shell flute does not work yet.
+  //  4. Giving fog lamp to fisherman unlocks the boat but nothing else.
+  //  6. Kensu is always in beach hut, talking to him enables shell flute.
+
+  // Changes we can make to this include:
+  //  1. Shell flute flag requirement:
+  //      a. talking to kensu (vanilla)
+  //      b. healed dolphin (default)
+  //      c. nothing
+  //  2. Fisherman spawn requirement:
+  //      a. heal the dolphin (vanilla)
+  //      b. found the fog lamp (default)
+  //      c. found the shell flute (alt vanilla)
+  //      d. nothing
+  //  3. Beach Kensu spawn requirement:
+  //      a. always spawns (vanilla)
+  //      b. turned in fog lamp (default)
+  //      c. got shell flute
+  //  4. whether kensu drops a new item or not (we use itemget 67 for this)
+
+  // This all sits on top of the queen interactions, which are also a mess.
+  // Vanilla queen is triggered by
+  //  1. stepping behind the guarded door -> give flute of lime
+  //  2. finding sword of water -> no longer give item, talk about rage instead
+  //  3. talking to Rage -> move to back room
+  // Note that vanilla logic loses flute of lime check if player talks to Rage
+  // before getting that item.  We fix that unconditionally since we don't want
+  // to lose items.
+
+  // Kensu in cabin ($68 @ $61) needs to be available even after visiting Joel.
+  // Clear the spawn requirements (assigned later).
+  const kensuSpawn = [];
+
+  // 1. Update shell flute requirement
+  if (rideDolphin === RideDolphin.BEACH_KENSU) {
+    // Vanilla, but just for fun we make Kensu disappear after talking to him
+    kensuSpawn.push(~AbleToRideDolphin.id);
+    KensuNpc.dialog()[0].message.action = 0x02; // disappear
+  } else {
+    // Don't need to track "able to ride dolphin"
+    KensuNpc.localDialogs.get(-1)![0].flags = [];
+    rom.flags.free(AbleToRideDolphin.id);
+
+    if (rideDolphin === RideDolphin.HEALED_DOLPHIN) {
+      ShellFluteItem.itemUseData[0].want = InjuredDolphin.id;
+    } else {
+      // assert(rideDolphin === RideDolphin.NOTHING)
+      ShellFluteItem.itemUseData[0].want = AlwaysTrue.id;
+    }
+  }
+
+  // 2. Update fisherman's spawn
+  const fishermanSpawn = [];
+  if (spawnFisherman === SpawnFisherman.FOG_LAMP) {
+    fishermanSpawn.push(FogLamp.id);
+  } else if (spawnFisherman === SpawnFisherman.SHELL_FLUTE) {
+    fishermanSpawn.push(ShellFluteFlag.id);
+  } else if (spawnFisherman === SpawnFisherman.HEALED_DOLPHIN) {
+    fishermanSpawn.push(InjuredDolphin.id);
+  }    
+  Fisherman.spawnConditions.set(Portoa_FishermanHouse.id, fishermanSpawn);
+
+  // 3. Update Kensu's spawn requirement
+  if (spawnBeachKensu === SpawnBeachKensu.BOAT) {
+    kensuSpawn.push(ReturnedFogLamp.id);
+  } else if (spawnBeachKensu === SpawnBeachKensu.SHELL_FLUTE) {
+    kensuSpawn.push(ShellFluteFlag.id);
+  }
+
+  // 4. Give Kensu an item
+  if (beachKensuGivesItem) {
+    // kensu 68 (@61) drops an item (67 magic ring)
+    KensuNpc.data[0] = 0x67;
+    KensuNpc.dialog()[0].message.action = 0x0a;
+
+    // fix up itemget 67 from itemget 64 (delete the flag)
+    rom.itemGets[0x64].flags = [];
+    rom.itemGets[0x67].copyFrom(rom.itemGets[0x64]);
+
+    // don't spawn kensu after giving item
+    kensuSpawn.push(~KensuFlag.id);
+  }
+
+  KensuNpc.spawnConditions.set(BoatHouse.id, kensuSpawn);
+
   //rom.itemGets[0x67].flags = [0x0c1];
 
   // TODO - graphics screwed up - figure out if object action is changing
   // the pattern tables based on (e.g.) $600,x maybe?  Can we prevent it?
 
   // TODO - add a notes file about this.
-
 }
 
 /**
@@ -927,10 +1011,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
 
   const {
     locations: {
-      BoatHouse, Brynmaer,
-      Crypt_Draygon2,
-      Joel_Shed,
-      Leaf_ElderHouse,
+      Brynmaer, Crypt_Draygon2, Joel_Shed, Leaf_ElderHouse,
       MtSabreNorth_SummitCave, MtSabreWest_Upper,
       PortoaPalace_ThroneRoom, Portoa_PalaceEntrance,
       Portoa_AsinaRoom, Portoa_FortuneTeller,
@@ -945,7 +1026,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
       Akahana /* 16 */, AkahanaInBrynmaer, /* 82 */ Asina /* 62 */,
       AztecaInShyron /* 6e */,
       Clark /* 44 */, Draygon /* cb */, FortuneTeller /* 39 */,
-      Kensu /* 7e */, KensuInCabin /* 68 */, KensuInSwan /* 74 */,
+      Kensu /* 7e */, KensuInSwan /* 74 */,
       LeafElder /* 0d */, LeafRabbit /* 13 */,
       OakChild /* 1f */, OakElder /* 1d */, OakMother /* 1e */,
       PortoaPalaceFrontGuard /* 34 */, PortoaQueen /* 38 */,
@@ -1147,13 +1228,6 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   PortoaQueen.localDialogs.set(PortoaPalace_ThroneRoom.id,
                                PortoaQueen.dialog());
   PortoaQueen.localDialogs.delete(-1);
-
-  // Kensu in cabin ($68 @ $61) needs to be available even after visiting Joel.
-  // Change him to just disappear after setting the rideable dolphin flag (09b),
-  // and to not even show up at all unless the fog lamp was returned (021).
-  KensuInCabin.spawnConditions.set(BoatHouse.id, [~flags.AbleToRideDolphin.id,
-                                                  flags.ReturnedFogLamp.id]);
-  KensuInCabin.dialog()[0].message.action = 0x02; // disappear
 
   // Azteca in Shyron (6e) shouldn't spawn after massacre (027)
   AztecaInShyron.spawns(Shyron_Temple).push(~flags.ShyronMassacre.id);

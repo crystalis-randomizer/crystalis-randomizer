@@ -280,8 +280,8 @@ async function shuffleInternal(rom: Uint8Array,
   unidentifiedItems(parsed, flags, random, predetermined);
   misspell(parsed, flags, random);
   shuffleTrades(parsed, flags, random, predetermined);
-  if (flags.shuffleHouses()) shuffleHouses(parsed, flags, random);
-  if (flags.shuffleAreas()) shuffleAreas(parsed, flags, random);
+  if (flags.shuffleHouses()) shuffleHouses(parsed, flags, random, predetermined);
+  if (flags.shuffleAreas()) shuffleAreas(parsed, flags, random, predetermined);
   fixEntranceTriggers(parsed);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
   writeLocationsFromMeta(parsed);

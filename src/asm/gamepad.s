@@ -171,6 +171,40 @@ SoftReset:
 .assert * <= $cbd3
 .endif
 
+.ifdef _RANDOM_WILD_WARP_COUNT
+.org $cbd3
+  ; happening before warping, so $0780 should contain index we want to go to
+  lda $0780
+  jsr LoopWildWarpIndex
+  lda WildWarpLocations,y
+  sta $6c ; CurrentLocation
+  lda #$00
+  sta $6d ; CurrentEntrance
+  inc $0780
+  lda #$01 ; GAME_MODE_CHANGE_LOCATION
+  sta GameMode
+  pla
+  pla
+  rts
+.assert * = $cbec
+
+.import wildWarpCount
+  
+.reloc
+LoopWildWarpIndex:
+  clc
+  tay ; leave subroutine with index in y register
+  bpl +
+    ; negative index ($fe or $ff), add wildWarpCount to loop correctly
+    adc #wildWarpCount
+    bne ++ ; unconditional
++ sbc #(wildWarpCount-1) ; clc above makes this subtract wildWarpCount
+  bcc +++ ; branch if carry was needed
+++  sta $0780
+    tay ; leave subroutine with index in y register
++++ rts
+.endif ; _RANDOM_WILD_WARP_COUNT
+  
 ;;; TODO - quick select items
 ;; .org $7cb62
 ;;   jsr ReadControllersAndUpdateStart

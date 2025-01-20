@@ -33,6 +33,7 @@ import { HouseType } from '../rom/location';
 import { ConnectionType } from '../rom/metascreendata';
 import { FlagSet } from '../flagset';
 import { DefaultMap } from '../util';
+import { ShuffleData } from '../appatch';
 
 interface House {
   type: HouseType;
@@ -53,7 +54,30 @@ const icons = new Map<HouseType, number>([
 const shops = new Set<HouseType>(['inn', 'armor', 'tool', 'pawn']);
 const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
-export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
+function makeConnection(rom: Rom, house: House, replacement: House, first: boolean) {
+  console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} ${house.type} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]} ${replacement.type}`);
+  Metalocation.connect(rom, house.outside, replacement.inside);
+  // Replace the icon (if applicable)
+  if (!first) return;
+  if (icons.get(house.type) === icons.get(replacement.type)) return;
+  const outside = rom.locations[house.outside[0] >>> 8];
+  if (outside.meta.tileset !== rom.metatilesets.town) return;
+  const exits = Metalocation.findExitTiles(rom, house.outside);
+  if (exits.length > 1) return;
+  let coord = exits[0] - 0x20;
+  if ((exits[0] & 0xf0) < 0x20) coord -= 0x0f10; // funny vertical math
+  const pos = coord >> 8;
+  const tile = coord & 0xff;
+  const icon = icons.get(replacement.type) ??
+    (outside.meta.get(pos).data.tallHouses?.includes(tile) ?
+     TALL_HOUSE_ICON : HOUSE_ICON);
+  let x = pos >> 4;
+  let y = pos & 0xf;
+  let screenIndex = outside.screens[x][y];
+  rom.screens[screenIndex].tiles[tile] = icon;
+}
+
+export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random, predetermined?: ShuffleData) {
   const {
     locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron},
     metascreens: {squareTownNE_house,
@@ -76,6 +100,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   }
 
   // First order of business: collect all the connections.
+  const byLocName = new Map<string, House>();
   const byType = new DefaultMap<HouseType, House[]>(() => []);
   const byLocPos = new DefaultMap<number, House[]>(() => []); // key: LocPos
   const screens = new DefaultMap<number, Set<number>>(() => new Set()); // ScrId -> LocPos
@@ -122,6 +147,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
         //   locpos -= 0x10; // icon is actually on previous screen
         // }
         byLocPos.get(locpos).push(house);
+        byLocName.set(location.name, house);
         byType.get(location.data.houseType).push(house);
         const screen =
             rom.locations[locpos >>> 8]
@@ -130,7 +156,19 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
       // }
     }
   }
-
+  
+  if (predetermined?.houseConnections)
+  {
+    for (const [outsideKey, insideKey] of predetermined?.houseConnections) {
+      const outsideHouse = byLocName.get(outsideKey)!;
+      const insideHouse = byLocName.get(insideKey)!;
+      makeConnection(rom, outsideHouse, insideHouse, true);
+      const byLocPosIndex = byLocPos.get(outsideHouse.outside[0]).indexOf(outsideHouse);
+      if (byLocPosIndex > -1) byLocPos.get(outsideHouse.outside[0]).splice(byLocPosIndex, 1);
+      const byTypeIndex = byType.get(insideHouse.type).indexOf(insideHouse);
+      if (byTypeIndex > -1) byType.get(insideHouse.type).splice(byTypeIndex, 1);
+    }
+  }
   // Two passes: 1. only handle overloaded screens; 2. all the rest.
   const secondPass = new Map<number, Set<number>>();
   const firstPass = new Map<number, Set<number>>();
@@ -185,23 +223,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
           rom.spoiler.addHouse(replacement.inside[0] >>> 8, house.outside[0] >>> 8);
         }
         // Make the connection
-        //console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]}`);
-        Metalocation.connect(rom, house.outside, replacement.inside);
-        // Replace the icon (if applicable)
-        if (!first) continue;
-        if (icons.get(house.type) === icons.get(replacement.type)) continue;
-        const outside = rom.locations[house.outside[0] >>> 8];
-        if (outside.meta.tileset !== rom.metatilesets.town) continue;
-        const exits = Metalocation.findExitTiles(rom, house.outside);
-        if (exits.length > 1) continue;
-        let coord = exits[0] - 0x20;
-        if ((exits[0] & 0xf0) < 0x20) coord -= 0x0f10; // funny vertical math
-        const pos = coord >> 8;
-        const tile = coord & 0xff;
-        const icon = icons.get(replacement.type) ??
-          (outside.meta.get(pos).data.tallHouses?.includes(tile) ?
-           TALL_HOUSE_ICON : HOUSE_ICON);
-        rom.screens[outside.screens[pos >> 4][pos & 0xf]].tiles[tile] = icon;
+        makeConnection(rom, house, replacement, first);
       }
       first = false;
     }

@@ -45,6 +45,7 @@ import * as version from './version';
 import { shuffleAreas } from './pass/shuffleareas';
 import { checkTriggers } from './pass/checktriggers';
 import { Sprite } from './characters';
+import { ShuffleData } from './appatch';
 
 const EXPAND_PRG: boolean = true;
 const ASM = ModuleId('asm');
@@ -92,13 +93,15 @@ export function parseSeed(seed: string): number {
 const {} = {watchArray} as any;
 
 function defines(flags: FlagSet,
-                 pass: 'early' | 'late'): string {
+                 pass: 'early' | 'late',
+                 predetermined?: ShuffleData): string {
   const defines: Record<string, boolean> = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: flags.hardcoreMode() &&
                                  flags.shuffleBossElements(),
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
     _AUDIBLE_WALLS: flags.audibleWallCues(pass),
     _AUTO_EQUIP_BRACELET: flags.autoEquipBracelet(pass),
+    _ARCHIPELAGO: predetermined?.fromArchipelago == true,
     _BARRIER_REQUIRES_CALM_SEA: true, // flags.barrierRequiresCalmSea(),
     _BUFF_DEOS_PENDANT: flags.buffDeosPendant(),
     _BUFF_DYNA: flags.buffDyna(), // true,
@@ -167,6 +170,7 @@ export async function shuffle(rom: Uint8Array,
                               seed: number,
                               originalFlags: FlagSet,
                               spriteReplacements?: Sprite[],
+                              predetermined?: ShuffleData,
                               log?: {spoiler?: Spoiler},
                               progress?: ProgressTracker,
                             ): Promise<readonly [Uint8Array, number]> {
@@ -205,7 +209,7 @@ export async function shuffle(rom: Uint8Array,
   // const maxAttempts = 1;
   for (let i = 0; i < maxAttempts; i++) { // for now, we'll try 5 attempts
     try {
-      return await shuffleInternal(rom, originalFlags, seed, random, log, progress, spriteReplacements, origPrg);
+      return await shuffleInternal(rom, originalFlags, seed, random, log, progress, spriteReplacements, predetermined, origPrg);
     } catch (error) {
       if (error.name === 'UsageError') throw error;
       attemptErrors.push(error);
@@ -222,6 +226,7 @@ async function shuffleInternal(rom: Uint8Array,
                                log: {spoiler?: Spoiler}|undefined,
                                progress: ProgressTracker|undefined,
                                spriteReplacements: Sprite[]|undefined,
+                               predetermined: ShuffleData|undefined,
                                origPrg: Uint8Array,
                               ): Promise<readonly [Uint8Array, number]>  {
   const originalFlagString = String(originalFlags);
@@ -252,28 +257,31 @@ async function shuffleInternal(rom: Uint8Array,
   // Make deterministic changes.
   deterministic(parsed, flags);
   fixTilesets(parsed);
-  standardMapEdits(parsed, standardMapEdits.generateOptions(flags, random));
+  standardMapEdits(parsed, standardMapEdits.generateOptions(flags, random, predetermined));
   toggleMaps(parsed, flags, random);
 
   // Set up shop and telepathy
   parsed.scalingLevels = 48;
 
-  if (flags.shuffleShops()) shuffleShops(parsed, flags, random);
+  if (flags.shuffleShops()) shuffleShops(parsed, flags, random, predetermined);
 
-  if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random); // NOTE: must be before shuffleMazes!
+  if (flags.shuffleGoaFloors()) shuffleGoa(parsed, random, predetermined); // NOTE: must be before shuffleMazes!
   updateWallSpawnFormat(parsed);
-  randomizeWalls(parsed, flags, random);
+  randomizeWalls(parsed, flags, random, predetermined);
   crumblingPlatforms(parsed, random);
-
+  if (predetermined) {
+    parsed.wildWarp.locations = predetermined.wildwarps;
+  } else {
+    if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
+  }
   if (flags.nerfWildWarp()) parsed.wildWarp.locations.fill(0);
-  if (flags.randomizeWildWarp()) shuffleWildWarp(parsed, flags, random);
-  if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random);
-  rescaleMonsters(parsed, flags, random);
-  unidentifiedItems(parsed, flags, random);
+  if (flags.randomizeThunderTeleport()) randomizeThunderWarp(parsed, random, predetermined);
+  rescaleMonsters(parsed, flags, random, predetermined);
+  unidentifiedItems(parsed, flags, random, predetermined);
   misspell(parsed, flags, random);
-  shuffleTrades(parsed, flags, random);
-  if (flags.shuffleHouses()) shuffleHouses(parsed, flags, random);
-  if (flags.shuffleAreas()) shuffleAreas(parsed, flags, random);
+  shuffleTrades(parsed, flags, random, predetermined);
+  if (flags.shuffleHouses()) shuffleHouses(parsed, flags, random, predetermined);
+  if (flags.shuffleAreas()) shuffleAreas(parsed, flags, random, predetermined);
   fixEntranceTriggers(parsed);
   if (flags.randomizeMaps()) shuffleMazes(parsed, flags, random);
   writeLocationsFromMeta(parsed);
@@ -281,13 +289,13 @@ async function shuffleInternal(rom: Uint8Array,
 
   // NOTE: Shuffle mimics and monsters *after* shuffling maps, but before logic.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
-  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
+  if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined?.fromArchipelago == true));
 
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
   const graph = new Graph([world.getLocationList()]);
-  if (!flags.noShuffle()) {
+  if (!flags.noShuffle() && !(predetermined?.fromArchipelago)) {
     const fill = await graph.shuffle(flags, random, undefined, progress, parsed.spoiler);
     if (fill) {
       // const n = (i: number) => {
@@ -345,7 +353,7 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.blackoutMode()) blackoutMode(parsed);
 
   misc(parsed, flags, random);
-  fixDialog(parsed);
+  fixDialog(parsed, predetermined);
   fixMovementScripts(parsed);
   checkTriggers(parsed);
 
@@ -393,7 +401,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   async function asm(pass: 'early' | 'late') {
     // First synthesize the flags file
-    const flagFile = defines(flags, pass);
+    const flagFile = defines(flags, pass, predetermined);
     const asm = new Assembler(Cpu.P02, {overwriteMode: 'forbid'});
     const toks = new TokenStream();
     // Then read all the patch sources
@@ -475,7 +483,7 @@ async function shuffleInternal(rom: Uint8Array,
 
   const hasGraphics = spriteReplacements?.some((spr) => Sprite.isCustom(spr)) || false;
 
-  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics);
+  const crc = stampVersionSeedAndHash(rom, originalSeed, originalFlagString, prgCopy, hasGraphics, predetermined);
 
   // Do optional randomization now...
   if (flags.randomizeMusic('late')) {
@@ -513,6 +521,12 @@ function misc(rom: Rom, flags: FlagSet, random: Random) {
   // message texts to prevent line overflow, etc.  We should
   // also make some hooks to easily swap out items where it
   // makes sense.
+  const apItemMessage = rom.messages.parts[1][2];
+  apItemMessage.text = `
+      You've found
+       an APItem!
+`
+  
   rom.messages.parts[2][2].text = `
 {01:Akahana} is handed a statue.#
 Thanks for finding that.
@@ -531,7 +545,7 @@ Here, have this lame
   rom.messages.parts[0][0xe].fixText();
 };
 
-function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
+function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: ShuffleData|undefined): void {
   const shops: {[type: number]: {contents: number[], shops: Shop[]}} = {
     [ShopType.ARMOR]: {contents: [], shops: []},
     [ShopType.TOOL]: {contents: [], shops: []},
@@ -539,11 +553,20 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
   // Read all the contents.
   for (const shop of rom.shops) {
     if (!shop.used || shop.location === 0xff) continue;
-    const data = shops[shop.type];
-    if (data) {
-      data.contents.push(...shop.contents.filter(x => x !== 0xff));
-      data.shops.push(shop);
+    if (predetermined && shop.type === ShopType.TOOL) {
       shop.contents = [];
+      const inventory = predetermined.shopInventories.get(shop.location);
+      for (const stock of inventory!) {
+        shop.contents.push(stock);
+      }
+      shop.contents.sort((a, b) => a - b);
+    } else {
+      const data = shops[shop.type];
+      if (data) {
+        data.contents.push(...shop.contents.filter(x => x !== 0xff));
+        data.shops.push(shop);
+        shop.contents = [];
+      }
     }
   }
   // Shuffle the contents.  Pick order to drop items in.
@@ -597,7 +620,7 @@ function updateWallSpawnFormat(rom: Rom) {
   }
 }
 
-function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
+function randomizeWalls(rom: Rom, flags: FlagSet, random: Random, predetermined: ShuffleData|undefined): void {
   // NOTE: We can make any wall shoot by setting its $10 bit on the type byte.
   // But this also requires matching pattern tables, so we'll leave that alone
   // for now to avoid gross graphics.
@@ -628,9 +651,17 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
   for (const location of rom.locations) {
     partition.get(location.data.area).push(location);
   }
-  for (const locations of partition.values()) {
+  for (const entry of partition.entries()) {
+    const area = entry[0];
+    const locations = entry[1];
     // pick a random wall type.
-    const elt = random.nextInt(4);
+    let elt: number = 0;
+    if (predetermined?.wallMap.has(area.name)) {
+      //console.log(`Shuffling walls for ${area.name}`);
+      elt = predetermined.wallMap.get(area.name)!;
+    } else {
+      elt = random.nextInt(4);
+    }
     const pal = random.pick(pals[elt]);
     let found = false;
     for (const location of locations) {
@@ -639,14 +670,31 @@ function randomizeWalls(rom: Rom, flags: FlagSet, random: Random): void {
           const type = wallType(spawn);
           if (type === 2) continue;
           if (type === 3) {
-            const newElt = random.nextInt(4);
+            let newElt: number = 0;
+            if (predetermined?.wallMap.has(location.name)) {
+              newElt = predetermined.wallMap.get(location.name)!;
+            } else if (predetermined) {
+              if (spawn.xt == 23 && predetermined.wallMap.has(`Goa Fortress - Sabera Item`)) {
+                // ugly hardcoding - is there a better way for these two?
+                newElt = predetermined.wallMap.get(`Goa Fortress - Sabera Item`)!;
+              } else if (predetermined.wallMap.has(`Goa Fortress - Sabera Boss`)){
+                newElt = predetermined.wallMap.get(`Goa Fortress - Sabera Boss`)!;
+              } else {
+                console.warn(`We have shuffle data but can't find ${spawn.id} at ${location.name} in wallMap`);
+                console.warn("Falling back to standard wall randomization.");
+                newElt = random.nextInt(4);
+              }
+            } else {
+              newElt = random.nextInt(4);
+            }
+            //console.log(`${location.name} ${type} => ${elt}`);
             if (rom.spoiler) rom.spoiler.addWall(location.name, type, newElt);
             spawn.data[2] |= 0x20;
             spawn.id = 0x30 | newElt;
           } else {
-            // console.log(`${location.name} ${type} => ${elt}`);
+            //console.log(`${location.data.area.name} ${type} => ${elt}`);
             if (!found && rom.spoiler) {
-              rom.spoiler.addWall(location.name, type, elt);
+              rom.spoiler.addWall(location.data.area.name, type, elt);
               found = true;
             }
             spawn.data[2] |= 0x20;
@@ -777,7 +825,8 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
                                         seed: number,
                                         flagString: string,
                                         early: Uint8Array,
-                                        hasGraphics: boolean): number {
+                                        hasGraphics: boolean,
+                                        predetermined?: ShuffleData): number {
   // Use up to 26 bytes starting at PRG $25ea8
   // Would be nice to store (1) commit, (2) flags, (3) seed, (4) hash
   // We can use base64 encoding to help some...
@@ -844,7 +893,11 @@ export function stampVersionSeedAndHash(rom: Uint8Array,
   embed(0x27885, intercalate(crcString.substring(0, 4), crcString.substring(4)));
 
   // embed(0x25ea8, `v.${hash}   ${seed}`);
-  embed(0x25716, 'RANDOMIZER');
+  if (predetermined?.fromArchipelago) {
+    embed(0x25715, 'ARCHIPELAGO');
+  } else {
+    embed(0x25716, 'RANDOMIZER');
+  }
   if (version.STATUS === 'unstable') embed(0x2573c, 'BETA');
   // NOTE: it would be possible to add the hash/seed/etc to the title
   // page as well, but we'd need to replace the unused letters in bank

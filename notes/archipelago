@@ -60,3 +60,86 @@ potentially be very efficient about defragging early on?
 If there's only a single large chunk of free space in each
 block then we can dispense with the fancy linker and just
 write stupidly.
+
+
+======
+
+Notes from CodeGorilla:
+
+Decided to take an alternate approach to the above, with some pros and cons. The basic
+approach is as follows:
+
+1. The Crystalis APWorld knows about all the flags and logic, including being able to make
+   any random decisions that impact the logic directly. It only decides as much as it needs
+   to in order to give proper logic to the Archipelago Generator process.
+2. After fill is complete, the APWorld uses the generate_output step to write all of the
+   relevant information into a .json file (including flagstring, seed, and any random 
+   decisions made by the generator for logic), which then gets compressed and stored as an
+   .apcrys file (secretly a .zip file with a bespoke file extension.
+3. Once the multiworld is generated, the host will give the .apcrys file to the player, and
+   the player will take the .apcrys file and their vanilla ROM to our website to apply the 
+   specific data from the patch file instead of making random decisions. Any flags that
+   cause randomness and don't affect logic get decided here.
+4. In addition, using an .apcrys file in this way will add a bunch of custom ASM, mainly
+   focused in a) separating item flags from location flags, and b) communicating with the
+   Archipelago client as appropriate.
+5. The user can now use this patched ROM in BizHawk, along with Archipelago's BizHawkClient
+   to connect to their multiworld and start playing.
+
+As mentioned, there are some pros and cons to this approach:
+Pros:
+  - Romless generation. AP core devs are generally pushing ROM games towards this approach 
+    where possible. This allows AP hosts more ability to generate games, which makes it much
+	easier for Crystalis to be played (and tested)
+  - Taking advantage of the full power of AP's Region system for the logic graph. More
+    generally, by building the Regions and Entrances (and associated logic) by hand, we can
+	optimize it's shape specifically for the AP fill algorithm.
+  - Genereralized Entrance Randomization. Archipelago has (or will have soon) a generalized
+    algorithm for randomizing entrances. This algorithm supports grouping of entrances, which
+	means we'll be able to use it for both house and area shuffle. (Goa shuffle may still
+	need special handling, due to invalid combinations of floors.)
+  - Easier to read and maintain. The approach which wrapped all of Crystalis Randomizer into 
+    a single file and then called into it from Python code resulted in a file over 100K lines 
+	long. Getting that reviewed in a code review when eventually PR'ing to AP core (should that 
+	happen) seems highly improbable.
+
+Cons:
+  - Error prone. While I'm reasonably confident in the implementation of the logic, it's
+    certainly more likely to fail than reading the logic directly from the randomizer itself.
+  - Potentially results in divergent codebases. Again, while I'm trying to maintain parity
+    with this codebase, any logic change in the base randomizer now necessitates a mirrored
+	change in the .apworld. This can be particularly problematic if this .apworld is accepted
+	by the AP Core devs, as that ties .apworld changes down to AP's release schedule.
+  - Extra website step is not ideal UX for the player. It adds an extra roadblock to playing,
+    and works differently to most other ROM games. (That said, there is precedent in the Final
+	Fantasy Mystic Quest implementation.
+  - Some features may be too complex to represent in the .apcrys file. In particular, I'm not
+    currently sure how to implement Wm - randomize maps - in a way that the logic can be read 
+	reasonably and a representation can be sent to this codebase to rearrange the map in the
+	way logic expects.
+
+In my opinion, the pros overall outweigh the cons, hence why I settled on this approach, but
+I could certainly see another developer taking a different approach.
+
+Feature To-Do list:
+  -logic and implementation of flags not yet implemented:	
+    -Wa, Wh (using GER, not in initial release)
+    -Wm (not a clue; implementation TBD, not in initial release)
+  -Archipelago specific features:
+    -Unit tests
+    -Deathlink >:)
+	-Gifting interface? (maybe take over pawn-shops? not convinced this makes sense, but I'm willing to consider it)
+	-Option for local items being baked into the ROM? (Probably not, given how item flags end up working, but you never know)
+	
+Other notes:
+  Currently we don't bake any information into the ROM about what items are. However, this information
+  is available from the Archipelago generation. I am resistant to putting it into the patch data, as it
+  would result in the patch data doubling as a personal spoiler log for anyone with a little technical 
+  savvy. The might be a world where only local items get baked into the ROM, in which case I can just use
+  item IDs, which would do a sufficient amount of obfuscation, hopefully. I've also toyed around with the
+  idea of making the Crystalis Randomizer code connect to the Archipelago server as a client; then all the
+  data could be stored in slot_data and be available at patch time while still not being apparent to the
+  player. This might be more work than it's worth, however - it depends on how much players complain about
+  every location having an APItem. The ASM would need to change significantly to allow some items to be
+  baked into the ROM and some be generic APItems. This is all lower priority, IMO, than getting Wham! 
+  functional in AP.

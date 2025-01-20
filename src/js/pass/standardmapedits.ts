@@ -5,6 +5,7 @@ import {Flag, Spawn} from '../rom/locationtables';
 import {Location} from '../rom/location';
 import {Metalocation} from '../rom/metalocation';
 import {cloneArray} from '../rom/util';
+import {ShuffleData} from '../appatch';
 
 type EastCaveExit = 'cordel' | 'lime' | 'goa' | 'desert';
 
@@ -36,14 +37,19 @@ export function standardMapEdits(rom: Rom, opts: Options) {
 }
 
 export namespace standardMapEdits {
-  export function generateOptions(flags: FlagSet, random: Random): Options {
+  export function generateOptions(flags: FlagSet, random: Random, predetermined?: ShuffleData): Options {
     const options: Options = {};
     if (flags.addEastCave()) {
       options.eastCave = {};
       const exits: EastCaveExit[] = ['cordel', 'lime', 'goa', 'desert'];
-      let i = random.nextInt(4);
-      [options.eastCave.exit1] = exits.splice(i, 1);
-      options.eastCave.exit2 = random.pick(exits);
+      if (predetermined) {
+        options.eastCave.exit1 = exits[predetermined.gbcCaveExits[0]];
+        options.eastCave.exit2 = exits[predetermined.gbcCaveExits[1]];
+      } else {
+        let i = random.nextInt(4);
+        [options.eastCave.exit1] = exits.splice(i, 1);
+        options.eastCave.exit2 = random.pick(exits);
+      }
     } else if (flags.connectLimeTreeToLeaf()) {
       options.classicLimeTreeToLeaf = true;
     }

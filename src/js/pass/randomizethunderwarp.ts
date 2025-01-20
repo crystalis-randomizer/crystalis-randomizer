@@ -1,14 +1,23 @@
 import {Random} from '../random';
 import {Rom} from '../rom';
+import {ShuffleData} from '../appatch';
 
-export function randomizeThunderWarp(rom: Rom, random: Random) {
+export function randomizeThunderWarp(rom: Rom, random: Random, predetermined?: ShuffleData) {
   // TODO - flag for adding zombie town warp point?  given effect on flags,
   // it seems like this should probably just be required, unless we added
   // an abstraction for flags that would allow not hardcoding numbers.
-
+  let town: number = 0;
+  let index: number = -1;
   const towns = [...rom.townWarp.locations].filter(x => x !== 0xff);
-  const index = random.nextInt(towns.length);
-  const town = towns[index];
+  if (predetermined?.thunderWarp && 
+      towns.indexOf(predetermined.thunderWarp) >= 0) {
+    town = predetermined.thunderWarp;
+    index = towns.indexOf(predetermined.thunderWarp);
+  } else {
+    index = random.nextInt(towns.length);
+    town = towns[index];
+    console.log(`Using random Thunder Warp: ${town}`);
+  }
   let entrance = 0x40;
   if (town === rom.locations.Shyron.id ||
       town === rom.locations.Shyron_Temple.id) {

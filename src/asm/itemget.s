@@ -16,6 +16,11 @@
 
 .segment "0e", "fe", "ff"
 
+.ifdef _ARCHIPELAGO
+; these should be set in messages.ts
+.import APItemMessagePart, APItemMessageId
+.endif
+
 ;; If LookingAt is $1f and the item goes into the $20 row then we can't
 ;; just reject - instead, add the item to an overflow chest.
 ;; We use the bytes at 64b8..64bf to store the overflow.
@@ -136,10 +141,53 @@ PatchStartItemGet:
     +
     jmp MimicOrChest
 @NotAMimicOrChest: ; Just a person so load the item and return
+.ifdef _ARCHIPELAGO
+  lda ArchipelagoFlag
+  cmp #$02
+  beq ++
+    ldy #$01
+    lda $23
+    jsr SetFlagYA
+    lda #APItemMessageId
+    sta $06c3
+    lda #APItemMessagePart
+    sta $06e3
+    lda #$10 ; GAME_MODE_STATUS_MSG
+    sta GameMode
+    ldy $0623
+    lda $0300,y
+    ; need this check again because this could actually be a dead mimic
+    cmp #$aa
+    beq +
+      lda $23
+      cmp #$25 ;Cordel Grass
+      beq +
+        cmp #$3c ;Kirisa Meadow
+        beq +
+          cmp #$3b ;Underwater channel
+          bne @bail
++   lda #$00
+    sta $4a0,y
+@bail:
+    pla
+    pla
+    pla
+    pla
+    pla
+    pla
+    rts
+++:
+.endif _ARCHIPELAGO
   lda $23
   sta $61fe
+.ifdef _ARCHIPELAGO
+  nop ; tax
+  nop ; if we're here in Archipelago, assume $23 is the direct item to get, not a check.
+  nop ; lda CheckToItemGetMap,x
+.else
   tax
   lda CheckToItemGetMap,x
+.endif ; _ARCHIPELAGO
   tay
   .import itemGet_getToItemThreshold
   cmp #itemGet_getToItemThreshold
@@ -161,10 +209,20 @@ MimicOrChest:
   ; they just touched the chest for the first time so spawn a mimic
   lda $23
   sta $61fe
+.ifdef _ARCHIPELAGO
+  nop ; tax
+  nop ; if we're here in Archipelago, assume $23 is the direct item to get, not a check.
+  nop ; lda CheckToItemGetMap,x
+.else
   tax
   lda CheckToItemGetMap,x
+.endif ; _ARCHIPELAGO
   tay
+.ifdef _ARCHIPELAGO
+  cmp #$FF ; Always spawn a mimic with an APItem inside
+.else
   cmp #$70
+.endif ; _ARCHIPELAGO
   bcc @ConvertChestToMimic
     ; Mimics are the 16 objects from $70 to $80, so use the Powers of Two lookup to convert from the mimic to
     ; a mask for the byte. $70-$77 in the lo byte $78-$7f in hi
@@ -247,10 +305,56 @@ ReplaceObjectAndPatchChest:
 .else
 .reloc
 PatchStartItemGet:
+.ifdef _ARCHIPELAGO
+  lda ArchipelagoFlag
+  cmp #$02
+  beq ++
+    ldy #$01
+    lda $23
+    jsr SetFlagYA
+    lda #APItemMessageId
+    sta $06c3
+    lda #APItemMessagePart
+    sta $06e3
+    lda #$10 ; GAME_MODE_STATUS_MSG
+    sta GameMode
+    ; Check to see if we are opening a chest or getting an item from a person.
+    ; A chest uses the metasprite $aa so check for that
+    ; A mimic also uses $aa, but when this will be called later to give the item
+    ; the mimic will already be dead, and the metasprite will be $90
+    ldy $0623
+    lda $0300,y
+    cmp #$aa
+    beq +
+      lda $23
+      cmp #$25 ;Cordel Grass
+      beq +
+        cmp #$3c ;Kirisa Meadow
+        beq +
+          cmp #$3b ; Underwater channel
+          bne @NotAMimicOrChest
++   lda #$00
+    sta $4a0,y
+@NotAMimicOrChest:
+    pla
+    pla
+    pla
+    pla
+    pla
+    pla
+    rts
+++:
+.endif _ARCHIPELAGO
   lda $23
   sta $61fe
+.ifdef _ARCHIPELAGO
+  nop ; tax
+  nop ; if we're here in Archipelago, assume $23 is the direct item to get, not a check.
+  nop ; lda CheckToItemGetMap,x
+.else
   tax
   lda CheckToItemGetMap,x
+.endif ; _ARCHIPELAGO
   tay
   cmp #$70
   bcc @RegularItem
@@ -381,7 +485,11 @@ ItemGetFollowup:
   ;; jmp SetOrClearFlagsFromBytePair_24y
   ldy #$02
   lda $62
+.ifdef _ARCHIPELAGO
+  jmp SetFlagYA
+.else
   jsr SetFlagYA
+.endif
   ldy #$01
   lda $61fe
   jmp SetFlagYA
@@ -472,8 +580,18 @@ ReloadLocationGraphicsAfterChest:
   lda $057f
   and #$07
   tay
+.ifdef _ARCHIPELAGO
+  lda ArchipelagoFlag
+  cmp #02
+  beq +
+  lda SlotFlagsStart,x
+  jmp ++
++ lda ItemFlagsStart,x
+++ and PowersOfTwo,y
+.else
   lda SlotFlagsStart,x
   and PowersOfTwo,y
+.endif ; _ARCHIPELAGO
   beq +
    pla
    pla

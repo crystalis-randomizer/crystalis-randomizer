@@ -6,6 +6,8 @@ import {EXPECTED_CRC32_NES, EXPECTED_CRC32_SNK_40TH} from './rom.js';
 import { FlagSet } from './flagset';
 import { ProgressTracker } from './progress';
 import { CharacterSet, Sprite, parseNssFile } from './characters';
+import { ZipArchive, ZipEntry } from "@shortercode/webzip";
+import { parseAPCrysJSON } from './appatch';
 
 // global state
 let flags;
@@ -14,6 +16,8 @@ export let rom;
 let romName;
 let race = false;
 let debug = false;
+let apPatch;
+let apPatchName;
 
 window.global = window;
 const permalink = typeof CR_PERMALINK === 'boolean' && CR_PERMALINK;
@@ -63,6 +67,9 @@ const main = () => {
   // Check for a stored ROM.
   loadRomFromStorage();
   initializeStateFromHash(true);
+  
+  // Check for a stored patch file
+  loadAPPatchFromStorage();
 
   // Wire up the presets menu.
   if (!flags) document.querySelector('[data-default-preset]').click();
@@ -192,6 +199,21 @@ async function click(e) {
       await shuffleRom(patch.parseSeed(seed));
       ga('send', 'timing', 'Main', 'spoiler', new Date().getTime() - start, label);
       break;
+    } else if (t.id === 'ap-patch') {
+      const apcrysZipArchive = await ZipArchive.from_blob(apPatch);
+      const apJsonZipEntry = apcrysZipArchive.get('archipelago.json');
+      let apJson = undefined;
+      if (apJsonZipEntry) {
+        apJson = await apJsonZipEntry.get_string();
+      }
+      const patchDataZipEntry = apcrysZipArchive.get('patch_data.json');
+      const patchDataJson = await patchDataZipEntry.get_string();
+      const [apSeed, apFlagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      const seedHex = patch.parseSeed(apSeed);
+      const [patched, crc] = await patchRom(seedHex, apFlagset, predetermined);
+      if (!patched) break;
+      const filename = apPatchName.replace(/\.apcrys|$/, '.nes');
+      download(patched, filename);
     }
     t = t.parentElement;
   }
@@ -229,7 +251,7 @@ const shuffleRom = async (seed) => {
   try {
     [shuffled, crc] =
         await patch.shuffle(
-          orig, seed, flagsClone, [sprite], log, progressTracker);
+          orig, seed, flagsClone, [sprite], undefined, log, progressTracker);
   } catch (err) {
     const invalid = err.name === 'UsageError';
     document.body.classList.add(invalid ? 'invalid' : 'failure');
@@ -268,6 +290,50 @@ const shuffleRom = async (seed) => {
     replaceSpoiler('spoiler-houses', s.houses.map(({house, town}) => `${house}: ${town}`.replace(/\s*-\s*/g, ' ')));
   }
   document.getElementById('checksum').textContent =
+      // shifted by header
+      read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
+  return [shuffled, crc];
+};
+
+const patchRom = async (seed, apFlags, predetermined) => {
+  document.getElementById('ap-seed').textContent = seed.toString(16).padStart(8, '0');
+  document.getElementById('ap-flagstring-out').textContent = String(apFlags);
+  const progressEl = document.getElementById('patch-progress');
+  const progressTracker = new ProgressTracker();
+  const orig = rom.slice();
+  let done = false;
+  const flagsClone = new FlagSet(String(apFlags)); // prevent modifying
+  document.body.classList.add('patching');
+  const showWork = () => {
+    if (done) return;
+    progressEl.value = progressTracker.value();
+    setTimeout(showWork, 120);
+  }
+  showWork();
+  let shuffled;
+  let crc;
+  const selectedsimeaSprite = document.querySelector('input[name="simea-replacement"]:checked').value;
+  const sprite = await CharacterSet.get("simea").get(selectedsimeaSprite);
+  try {
+    [shuffled, crc] =
+        await patch.shuffle(
+          orig, seed, flagsClone, [sprite], predetermined, undefined, progressTracker);
+  } catch (err) {
+    const invalid = err.name === 'UsageError';
+    document.body.classList.add(invalid ? 'invalid' : 'failure');
+    const errorText = document.getElementById(invalid ? 'invalid-text' : 'error-text');
+    errorText.textContent = invalid ? err.message : err.stack;
+    errorText.parentElement.parentElement.scrollIntoViewIfNeeded();
+    document.getElementById('ap-checksum').textContent = 'SHUFFLE FAILED!';
+    throw err;
+  }
+  if (crc < 0) {
+    document.getElementById('ap-checksum').textContent = `SHUFFLE FAILED! ${crc}`;
+    return [null, null];
+  }
+  done = true;
+  document.body.classList.remove('patching');
+  document.getElementById('ap-checksum').textContent =
       // shifted by header
       read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
   return [shuffled, crc];
@@ -465,6 +531,36 @@ const loadSpriteSelectionsFromStorage = () => {
     reader.readAsText(file);
   });
 }
+
+const loadAPPatchFromStorage = () => {
+  const name = window['localStorage'].getItem('ap-patch-name');
+  const data = window['localStorage'].getItem('ap-patch');
+  const upload = document.getElementById('ap-patch-file');
+  const confirmPatchUpload = () => {
+    document.getElementById('ap-patch-name').textContent = apPatchName;
+    document.body.classList.add('patch-uploaded');
+  };
+  // const shuffle = document.getElementById('shuffle');
+  // const badcrc = document.getElementById('badcrc');
+  if (name && data) {
+    apPatch = data;
+    apPatchName = name;
+    confirmPatchUpload();
+  }
+  upload.addEventListener('change', () => {
+    const file = upload.files[0];
+    const reader = new FileReader();
+    reader.addEventListener('loadend', () => {
+      const raw = new Uint8Array(reader.result);
+      window['localStorage'].setItem('ap-patch', raw);
+      window['localStorage'].setItem('ap-patch-name', file.name);
+      apPatch = raw;
+      apPatchName = file.name;
+      confirmPatchUpload();
+    });
+    reader.readAsArrayBuffer(file);
+  });
+};
 
 export function addMapReplacement(key, value) {
   if(value instanceof Map) {

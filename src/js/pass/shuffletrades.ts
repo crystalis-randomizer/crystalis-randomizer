@@ -1,10 +1,11 @@
 import {FlagSet} from '../flagset';
 import {Random} from '../random';
 import {Rom} from '../rom';
-import {Item} from '../rom/item';
+import {Item, ItemUse} from '../rom/item';
+import {ShuffleData} from '../appatch';
 
 // Shuffle the palettes.
-export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
+export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random, predetermined?: ShuffleData) {
   if (!flags.randomizeTrades()) return;
   const {
     items: {StatueOfOnyx, FogLamp, LovePendant,
@@ -24,14 +25,33 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
     [IvoryStatue, 0, 'Slimed Kensu'],
     // [FluteOfLime, 3, 'Stoned Akahana'],
   ] as const;
-  const npcs = items.map(([item, trade, npcName]) => {
+  let npcs = items.map(([item, trade, npcName]) => {
     if (item.trades.indexOf(trade) < 0 || trade >= item.itemUseData.length) {
       throw new Error(`not a trade: ${item} ${trade}`);
     }
     const use = item.itemUseData[trade]; // use.want === NPC id | 100
     return [use, item.id /* original item */, npcName] as const;
   });
-  random.shuffle(npcs);
+  if (predetermined) {
+    /* need to reorder npcs so that they are in this order:
+        1. Receiver of Ivory Statue
+        2. Receiver of Kirisa Plant
+        3. Receiver of Love Pendant
+        4. Receiver of Fog Lamp
+        5. Receiver of Statue of Onyx
+    */
+    let newNpcs: Array<readonly [ItemUse, number, string]> = new Array<readonly [ItemUse, number, string]>(); 
+    for (const [item] of items) {
+      const receiver = predetermined.tradeInMap.get(item.messageName);
+      const receiverIdx = npcs.findIndex(([itemUse, itemId, npcName]) => {return npcName == receiver});
+      newNpcs.push(npcs[receiverIdx]);
+    }
+    // Reverse the array to get the expected order, given the .pop() below
+    newNpcs.reverse();
+    npcs = newNpcs;
+  } else {
+    random.shuffle(npcs);
+  }
 
   for (const [item, trade] of items) {
     const [use, originalItem, npcName] = npcs.pop()!;
@@ -50,13 +70,23 @@ export function shuffleTrades(rom: Rom, flags: FlagSet, random: Random) {
               .map(([k, v]) => [map.get(k) ?? k, v]));
 
   // Also randomize Rage and Tornel
-  const rage = rom.items[random.nextInt(4)];
+  let rage: Item;
+  if (predetermined) {
+    rage = rom.items[predetermined.rageId];    
+  } else {
+    rage = rom.items[random.nextInt(4)];
+  }
   rom.npcs[0xc3].localDialogs.get(-1)![0].condition = 0x200 | rage.id;
   if (rom.spoiler) rom.spoiler.addTrade(rage.id, rage.messageName, 'Rage');
   // Portoa queen 38 takes the same sword as Rage
   rom.npcs.PortoaQueen.dialog(PortoaPalace_ThroneRoom)[1].condition = 0x200 | rage.id;
 
-  const tornel = rom.items[random.nextInt(4) * 2 + 6];
+  let tornel: Item; 
+  if (predetermined) {
+    tornel = rom.items[predetermined.tornelId];   
+  } else {
+    tornel = rom.items[random.nextInt(4) * 2 + 6];
+  }
   for (const ds of rom.npcs[0x5f].localDialogs.values()) {
     for (let i = 2; i < ds.length; i++) {
       if (ds[i].message.action === 3) {

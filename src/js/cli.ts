@@ -10,6 +10,7 @@ import * as patch from './patch';
 import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
+import {parseAPCrysJSON} from './appatch';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -35,6 +36,9 @@ Options
                      a seed manually, nor with output patterns
                      that don't include %s or %c.
   --force            Don't fail due to wrong input file checksum.
+  --apPatch=PATH     Ignore other seed and flags input, and read
+                     settings and some randomization from an 
+                     .apcrys file located at PATH.
 
 Flags
   The randomizer supports a number of options, documented in detail
@@ -61,6 +65,7 @@ const main = (...args: string[]) => {
   let seed = '';
   let output = '%n_%c';
   let force = false;
+  let apPatchPath = '';
   while (args[0] && args[0].startsWith('--')) {
     let arg = args.shift()!.substring(2);
     let value = undefined;
@@ -96,6 +101,8 @@ const main = (...args: string[]) => {
         console.log(name.replace(/ /g, ''));
       }
       process.exit(0);
+    } else if (arg == 'apPatch' && value) {
+      apPatchPath = value;
     } else {
       console.error(`Bad argument: ${arg}`);
       usage(1);
@@ -105,12 +112,13 @@ const main = (...args: string[]) => {
   if (args.length != 1) usage(1);
   if (count > 1) {
     if (seed) fail('Cannot specify both --count and --seed');
+    if (apPatchPath) fail('Cannot specify both --count and --apPatch');
     if (!/%[sc]/.test(output)) {
       fail('--output must have a %c or %s placeholder when --count is given');
     }
   }
 
-  const flagset = new FlagSet(flags);
+  let flagset = new FlagSet(flags);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const orig_crc = crc32(rom);
   if (orig_crc != EXPECTED_CRC32_NES && orig_crc != EXPECTED_CRC32_SNK_40TH) {
@@ -118,13 +126,27 @@ const main = (...args: string[]) => {
     if (!force) fail('Run with --force to proceed anyway');
     console.error('Proceeding anyway');
   }
-
+  
   return Promise.all(new Array(count).fill(0).map(async () => {
+    let predetermined = undefined;
+    if (apPatchPath) {
+      const unzipper = require('unzipper');
+      const decoder: TextDecoder = new TextDecoder('utf-8');
+      const apcrysDir = await unzipper.Open.file(apPatchPath);
+      const apFile = apcrysDir.files.find(f => f.path === 'archipelago.json');
+      const apBytes: Uint8Array = await apFile.buffer() 
+      const apJson: string = decoder.decode(apBytes);
+      const patchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.json');
+      const patchDataBytes: Uint8Array = await patchDataFile.buffer();
+      const patchDataJson: string = decoder.decode(patchDataBytes);
+      [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+    }
+    
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset);
+        await patch.shuffle(orig, s, flagset, undefined, predetermined);
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;

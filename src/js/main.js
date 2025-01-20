@@ -2,7 +2,7 @@ import * as patch from './patch';
 import * as render from './render';
 import * as version from './version';
 import { crc32 } from './crc32';
-import { EXPECTED_CRC32 } from './rom';
+import {EXPECTED_CRC32_NES, EXPECTED_CRC32_SNK_40TH} from './rom.js';
 import { FlagSet } from './flagset';
 import { ProgressTracker } from './progress';
 import { CharacterSet, Sprite, parseNssFile } from './characters';
@@ -457,7 +457,8 @@ const loadRomFromStorage = () => {
   const upload = document.getElementById('pick-file');
   const checkCrc = () => {
     document.body.classList.add('rom-uploaded');
-    document.body.classList.toggle('rom-broken', crc32(rom) != EXPECTED_CRC32);
+    const orig_crc = crc32(rom);
+    document.body.classList.toggle('rom-broken', orig_crc != EXPECTED_CRC32_NES && orig_crc != EXPECTED_CRC32_SNK_40TH);
   };
   // const shuffle = document.getElementById('shuffle');
   // const badcrc = document.getElementById('badcrc');

@@ -2,7 +2,7 @@
 
 import '../../target/build/build_info'; // side effect global set (affects version module)
 
-import {EXPECTED_CRC32_NES, EXPECTED_CRC32_SNK_40TH} from './rom.js';
+import {EXPECTED_CRC32S} from './rom.js';
 import {FlagSet, Preset} from './flagset';
 import {crc32} from './crc32';
 import * as fs from 'fs';
@@ -113,8 +113,8 @@ const main = (...args: string[]) => {
   const flagset = new FlagSet(flags);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const orig_crc = crc32(rom);
-  if (orig_crc != EXPECTED_CRC32_NES && orig_crc != EXPECTED_CRC32_SNK_40TH) {
-    console.error(`WARNING: Bad CRC for input rom: ${crc32(rom).toString(16)}`);
+  if (!EXPECTED_CRC32S.has(orig_crc)) {
+    console.error(`WARNING: Bad CRC for input rom: ${orig_crc.toString(16)}`);
     if (!force) fail('Run with --force to proceed anyway');
     console.error('Proceeding anyway');
   }

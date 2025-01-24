@@ -801,8 +801,9 @@ function pickFile(receiver?: (picker: Element) => void): Promise<Uint8Array> {
   });
 }
 
-export const EXPECTED_CRC32_NES = 0x1bd39032;
-export const EXPECTED_CRC32_SNK_40TH = 0xb305c8ec;
+const EXPECTED_CRC32_NES = 0x1bd39032;
+const EXPECTED_CRC32_SNK_40TH = 0xb305c8ec;
+export const EXPECTED_CRC32S = new Set<number>([EXPECTED_CRC32_NES, EXPECTED_CRC32_SNK_40TH]);
 
 // Format: [address, broken, fixed]
 const ADJUSTMENTS = [

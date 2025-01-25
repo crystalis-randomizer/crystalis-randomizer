@@ -122,15 +122,14 @@ In my opinion, the pros overall outweigh the cons, hence why I settled on this a
 I could certainly see another developer taking a different approach.
 
 Feature To-Do list:
-  -logic and implementation of flags not yet implemented:	
-    -Wa, Wh (using GER, not in initial release)
+  -logic and implementation of flags not yet implemented:
     -Wm (not a clue; implementation TBD, not in initial release)
   -Archipelago specific features:
     -Unit tests
-    -Deathlink >:)
-	-Gifting interface? (maybe take over pawn-shops? not convinced this makes sense, but I'm willing to consider it)
-	-Option for local items being baked into the ROM? (Probably not, given how item flags end up working, but you never know)
-	
+    -additional trap types
+    -Gifting interface? (maybe take over pawn-shops? not convinced this makes sense, but I'm willing to consider it)
+    -Option for local items being baked into the ROM? (Probably not, given how item flags end up working, but you never know)
+
 Other notes:
   Currently we don't bake any information into the ROM about what items are. However, this information
   is available from the Archipelago generation. I am resistant to putting it into the patch data, as it

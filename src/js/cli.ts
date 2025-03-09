@@ -60,6 +60,7 @@ const showPreset = ({description, flagString, name}: Preset) => {
 };
 
 const main = (...args: string[]) => {
+  let outputSet = false;
   let flags = '@Standard';
   let count = 1;
   let seed = '';
@@ -82,6 +83,7 @@ const main = (...args: string[]) => {
       flags = '@' + value.replace(/ /g, '');
     } else if (arg == 'output' && value) {
       output = value;
+      outputSet = true;
     } else if (arg == 'seed' && value) {
       seed = value;
     } else if (arg == 'count' && value) {
@@ -103,6 +105,10 @@ const main = (...args: string[]) => {
       process.exit(0);
     } else if (arg == 'apPatch' && value) {
       apPatchPath = value;
+      if (!outputSet)
+      {
+        output = apPatchPath.replace(/\.apcrys|$/, ''); 
+      }
     } else {
       console.error(`Bad argument: ${arg}`);
       usage(1);

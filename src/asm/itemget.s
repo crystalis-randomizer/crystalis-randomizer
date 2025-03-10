@@ -161,12 +161,19 @@ PatchStartItemGet:
     beq +
       lda $23
       cmp #$25 ;Cordel Grass
-      beq +
+      beq ++
         cmp #$3c ;Kirisa Meadow
-        beq +
-          cmp #$3b ;Underwater channel
+        beq ++
+          cmp #$3b ; Underwater channel
+          beq ++
           bne @bail
-+   lda #$00
++   lda $23
+    cmp #$07 ; Giant Insect
+    bne ++
+      ; if this is the insect chest, we need to fix the screen scroll
+      lda #0 ; SCREEN_MODE_NORMAL
+      sta ScreenMode
+++  lda #$00
     sta $4a0,y
 @bail:
     pla
@@ -328,12 +335,19 @@ PatchStartItemGet:
     beq +
       lda $23
       cmp #$25 ;Cordel Grass
-      beq +
+      beq ++
         cmp #$3c ;Kirisa Meadow
-        beq +
+        beq ++
           cmp #$3b ; Underwater channel
+          beq ++
           bne @NotAMimicOrChest
-+   lda #$00
++   lda $23
+    cmp #$07 ; Giant Insect
+    bne ++
+      ; if this is the insect chest, we need to fix the screen scroll
+      lda #0 ; SCREEN_MODE_NORMAL
+      sta ScreenMode
+++  lda #$00
     sta $4a0,y
 @NotAMimicOrChest:
     pla

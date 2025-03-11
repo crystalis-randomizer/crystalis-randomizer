@@ -1,6 +1,5 @@
 // Perform initial cleanup/setup of the ROM.
 
-import { FlagSet } from '../flagset';
 import { Rom } from '../rom';
 import { Spawn } from '../rom/location';
 import { MessageId } from '../rom/messageid';
@@ -146,7 +145,7 @@ export function deterministicPreParse(prg: Uint8Array): void {
   write(prg, 0x2656e, "Simea", 0x10, 0, "     ", 0x10, 0);
 }
 
-export function deterministic(s: Shuffle, flags: FlagSet): void {
+export function deterministic(s: Shuffle): void {
   const {config, rom} = s;
   // NOTE: do this very early to make sure refs to warp point flags are
   // updated to reflect shifts (probably not an issue anymore now that
@@ -196,15 +195,15 @@ export function deterministic(s: Shuffle, flags: FlagSet): void {
 
   patchTooManyItemsMessage(rom);
 
-  if (flags.hardcoreMode()) hardcoreMode(rom);
+  if (config.enemies.permadeath) hardcoreMode(rom);
 
-  if (flags.shouldUpdateHud()) {
+  if (config.quality.updateHud) {
     useNewStatusBarGraphics(rom);
-    rom.writeMonsterNames = true;
+    rom.writeMonsterNames = Boolean(config.quality.enemyHpInHud);
   }
-  if (flags.shouldColorSwordElements()) useElementSwordColors(rom);
+  if (config.quality.colorSwordByElement) useElementSwordColors(rom);
 
-  if (flags.hasStatTracking()) updateGraphicsForStatTracking(rom);
+  if (config.quality.statTracking) updateGraphicsForStatTracking(rom);
 
   fixWildWarp(rom);
 

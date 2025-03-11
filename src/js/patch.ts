@@ -295,7 +295,7 @@ async function shuffleInternal(rom: Uint8Array,
   }
 
   // Make deterministic changes.
-  deterministic(s, flags);
+  deterministic(s);
   fixTilesets(parsed);
   standardMapEdits(parsed, standardMapEdits.generateOptions(flags, random));
   toggleMaps(parsed, flags, random);

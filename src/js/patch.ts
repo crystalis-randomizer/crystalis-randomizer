@@ -384,8 +384,6 @@ async function shuffleInternal(rom: Uint8Array,
     parsed.items.FruitOfPower.value = 56;
   }
 
-  if (flags.storyMode()) storyMode(parsed);
-
   // Do this *after* shuffling palettes
   if (flags.blackoutMode()) blackoutMode(parsed);
 
@@ -682,29 +680,6 @@ function blackoutMode(rom: Rom) {
     if (indoors.has(loc.tileset)) loc.tilePalettes.fill(0x9a);
   }
 }
-
-const storyMode = (rom: Rom) => {
-  // shuffle has already happened, need to use shuffled flags from
-  // NPC spawn conditions...
-  const conditions = [
-    // Note: if bosses are shuffled we'll need to detect this...
-    rom.flags.Kelbesque1.id,
-    rom.flags.Sabera1.id,
-    rom.flags.Mado1.id,
-    rom.flags.Kelbesque2.id,
-    rom.flags.Sabera2.id,
-    rom.flags.Mado2.id,
-    rom.flags.Karmine.id,
-    rom.flags.Draygon1.id,
-    rom.flags.SwordOfWind.id,
-    rom.flags.SwordOfFire.id,
-    rom.flags.SwordOfWater.id,
-    rom.flags.SwordOfThunder.id,
-    // TODO - statues of moon and sun may be relevant if entrance shuffle?
-    // TODO - vampires and insect?
-  ];
-  rom.npcs[0xcb].spawnConditions.get(0xa6)!.push(...conditions);
-};
 
 // Stamp the ROM
 export function stampVersionSeedAndHash(rom: Uint8Array,

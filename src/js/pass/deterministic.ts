@@ -192,7 +192,7 @@ export function deterministic(s: Shuffle, flags: FlagSet): void {
   fixReverseWalls(rom);
   if (config.items.noStabs) disableStabs(rom);
   updateSwordWallLevel(s);
-  if (flags.noBowMode()) noBowMode(rom);
+  updateDraygon2Spawn(s);
 
   patchTooManyItemsMessage(rom);
 
@@ -1381,24 +1381,86 @@ function updateSwordWallLevel(s: Shuffle): void {
   }
 }
 
-function noBowMode(rom: Rom): void {
+function updateDraygon2Spawn(s: Shuffle): void {
   // Initial trigger gives "used bow of truth".
   const {
-    flags: {UsedBowOfTruth},
+    rom,
+    config: {
+      triggers: {
+        draygon2SpawnsWithoutBowOfTruth,
+        draygon2PortalAtStart,
+        draygon2RequiresAllBosses,
+        draygon2RequiresAllSwords,
+      },
+    },
+  } = s;
+  const {
+    flags: {
+      Draygon1,
+      Karmine,
+      Kelbesque1,
+      Kelbesque2,
+      Mado1,
+      Mado2,
+      Sabera1,
+      Sabera2,
+      SwordOfFire,
+      SwordOfThunder,
+      SwordOfWater,
+      SwordOfWind,
+      UsedBowOfTruth,
+    },
     locations: {Crypt_Draygon2, MezameShrine},
+    npcs: {Draygon},
   } = rom;
   let trigger!: Trigger;
-  for (const spawn of MezameShrine.spawns) {
-    if (spawn.isTrigger() && spawn.tile === 0x88) {
-      trigger = rom.trigger(spawn.id);
+
+  if (draygon2SpawnsWithoutBowOfTruth) {
+    // Rather than changing the spawn coding, we just set the flag so that
+    // the player's already used the bow at the start.
+    for (const spawn of MezameShrine.spawns) {
+      if (spawn.isTrigger() && spawn.tile === 0x88) {
+        trigger = rom.trigger(spawn.id);
+      }
     }
+    if (!trigger) throw new Error(`Could not find start trigger`);
+    trigger.flags.push(UsedBowOfTruth.id);
   }
-  if (!trigger) throw new Error(`Could not find start trigger`);
-  trigger.flags.push(UsedBowOfTruth.id);
-  // Add an exit straight to draygon
-  rom.tileEffects[0xb9 - 0xb3].effects[0x58] = 0;
-  MezameShrine.meta.setExit(
+  if (draygon2PortalAtStart) {
+    // Add an exit straight to draygon
+    rom.tileEffects[0xb9 - 0xb3].effects[0x58] = 0;
+    MezameShrine.meta.setExit(
       0, 'door', [Crypt_Draygon2.meta.id << 8 | 0x10, 'edge:bottom']);
+  }
+  const spawnConditions = Draygon.spawnConditions.get(Crypt_Draygon2.id)!;
+  if (draygon2RequiresAllBosses) {
+    spawnConditions.push(
+      // NOTE: we recently moved this logic from post-shuffle to pres-shuffle.
+      // There was a comment about how, when shuffle had already happened, we'd
+      // need to use shuffled flags from NPC spawn conditions - but I don't know
+      // if that's still relevant.  Hopefully this just works.
+      // NOTE: this may also need further changes if bosses end up getting
+      // shuffled among each other.
+      Kelbesque1.id,
+      Sabera1.id,
+      Mado1.id,
+      Kelbesque2.id,
+      Sabera2.id,
+      Mado2.id,
+      Karmine.id,
+      Draygon1.id,
+      // TODO - statues of moon and sun may be relevant if entrance shuffle?
+      // TODO - vampires and insect?
+    );
+  }
+  if (draygon2RequiresAllSwords) {
+    spawnConditions.push(
+      SwordOfWind.id,
+      SwordOfFire.id,
+      SwordOfWater.id,
+      SwordOfThunder.id,
+    );
+  }
 }
 
 // For now this just fixes the shot to be all elements instead of none.

@@ -37,6 +37,8 @@ export function fixDialog(rom: Rom) {
 
   // Stom's "I'll, be waiting..." dialog - the comma is just wrong.
   replaceMessage('03:06', ',', '');
+  // Fix translation of "the emperor is the worst" (alt. "splendid").
+  replaceMessage('17:0c', 'the worst', 'the best');
 
   const tradeIns = buildTradeInMap(rom);
   function tradeIn(npc: Npc): Item {

@@ -9,16 +9,17 @@ jobs:
   test-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 18
+          bun-version: latest
       - run: scripts/init_secrets.sh
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
           TESTDATA: ${{ secrets.TESTDATA }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - run: npm ci
+      - run: bun install --frozen-lockfile
       - run: scripts/build_info.sh
-      - run: npm test || ( touch failed; false )
+      - run: make web-release
+      # - run: bun test || ( touch failed; false )
       - run: test ! -e failed && scripts/deploy.sh

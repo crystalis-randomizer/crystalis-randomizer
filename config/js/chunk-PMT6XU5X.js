@@ -1,0 +1,1 @@
+import{b as e}from"./chunk-PIDEUWOP.js";var s,a=e(()=>{s=class{constructor(){this.tasks=0,this.completed=0}addTasks(t){this.tasks+=t}addCompleted(t){this.completed+=t}value(){return this.tasks&&this.completed/this.tasks}}});export{s as a,a as b};

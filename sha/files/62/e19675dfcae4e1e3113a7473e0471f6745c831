@@ -1,0 +1,1 @@
+import{a as t}from"./chunk-2O3NKUHW.js";import"./chunk-PIDEUWOP.js";var d=class{constructor(e){let n=document.getElementById("menu");this.element=t(n,"div"),t(this.element,"div").textContent=e}addItem(e,n){let i=t(this.element,"div");return i.textContent=e,i.addEventListener("click",n),this}};export{d as Menu};

@@ -1,0 +1,1 @@
+var r=(e,n,...o)=>{let t=document.createElement(n);e.appendChild(t);for(let c of o)t.classList.add(c);return t},d=(e,n)=>{let o=document.createTextNode(n);e.appendChild(o)},s=(e,n,o)=>{let t=r(e,"a");return t.textContent=n,t.href="javascript:;",t.addEventListener("click",o),t},a=(e,n)=>`$${e.toString(16).padStart(n,0)}`;export{r as a,d as b,s as c,a as d};

@@ -15,6 +15,7 @@ import { readLittleEndian } from '../rom/util';
 import { Shuffle } from '../shuffle';
 import { Config } from '../config';
 
+const {FORBID} = Config.GlitchMode;
 const [] = [hex]; // generally useful
 
 function write(arr: Uint8Array, start: number, ...data: (number|string)[]) {
@@ -168,15 +169,14 @@ export function deterministic(s: Shuffle, flags: FlagSet): void {
   makeBraceletsProgressive(rom);
 
   adjustGoaFortressTriggers(rom);
-  preventNpcDespawns(rom, flags);
+  preventNpcDespawns(s);
   leafElderInSabreHeals(rom);
-  if (config.triggers.healDolphinToRide) requireHealedDolphin(rom);
   if (config.triggers.deoRequiresTelepathy) requireTelepathyForDeo(rom);
 
-  adjustItemNames(rom, flags);
+  adjustItemNames(s);
 
   // TODO - consider making a Transformation interface, with ordering checks
-  alarmFluteIsKeyItem(rom, flags); // NOTE: pre-shuffle
+  alarmFluteIsKeyItem(s); // NOTE: pre-shuffle
   brokahanaWantsMado1(rom);
   undergroundChannelLandBridge(rom);
   configureDolphin(s);
@@ -184,14 +184,14 @@ export function deterministic(s: Shuffle, flags: FlagSet): void {
   evilSpiritIslandRequiresDolphin(rom);
   channelItemRequiresDolphin(rom);
   simplifyInvisibleChests(rom);
-  addCordelWestTriggers(rom, flags);
-  if (flags.disableRabbitSkip()) fixRabbitSkip(rom);
-  if (flags.disableFlightStatueSkip()) fixFlightStatueSkip(rom);
-  patchLimeTreeLake(rom, flags);
+  addCordelWestTriggers(s);
+  if (config.glitches.rabbitSkip === FORBID) fixRabbitSkip(rom);
+  if (config.glitches.flightStatueSkip === FORBID) fixFlightStatueSkip(rom);
+  patchLimeTreeLake(s);
 
   fixReverseWalls(rom);
-  if (flags.chargeShotsOnly()) disableStabs(rom);
-  if (flags.orbsOptional()) orbsOptional(rom);
+  if (config.items.noStabs) disableStabs(rom);
+  updateSwordWallLevel(s);
   if (flags.noBowMode()) noBowMode(rom);
 
   patchTooManyItemsMessage(rom);
@@ -522,7 +522,7 @@ function configureDolphin(s: Shuffle) {
             ShellFlute: ShellFluteFlag},
     items: {ShellFlute: ShellFluteItem},
     locations: {BoatHouse, Portoa_FishermanHouse},
-    npcs: {Fisherman, KensuInCabin: KensuNpc},
+    npcs: {Fisherman, FishermanDaughter, KensuInCabin: KensuNpc},
   } = rom;
   const {
     beachKensuGivesItem,
@@ -601,6 +601,16 @@ function configureDolphin(s: Shuffle) {
     fishermanSpawn.push(InjuredDolphin.id);
   }    
   Fisherman.spawnConditions.set(Portoa_FishermanHouse.id, fishermanSpawn);
+  {
+    // Update daughter's dialog to be opposite of spawn
+    const dialog = FishermanDaughter.localDialogs.get(-1)!;
+    const tpl = dialog.shift()!;
+    for (const condition of fishermanSpawn) {
+      const d = tpl.clone();
+      d.condition = ~condition;
+      dialog.unshift(d);
+    }
+  }
 
   // 3. Update Kensu's spawn requirement
   if (spawnBeachKensu === SpawnBeachKensu.BOAT) {
@@ -682,7 +692,10 @@ function adjustGoaFortressTriggers(rom: Rom): void {
   l.GoaFortress_Kensu.spawns.splice(1, 1); // kensu slime screen lock trigger
 }
 
-function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
+// NOTE: This is a requirement, the only use of config is in deciding where
+// to put the alarm flute (zebu student vs chests in mezame vs east cave?)
+function alarmFluteIsKeyItem(s: Shuffle): void {
+  const {config, rom} = s;
   const {
     items: {AlarmFlute},
     flags: {TalkedToZebuStudent, ZebuStudent},
@@ -699,11 +712,11 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   AlarmFlute.basePrice = 0;
 
   
-  if (flags.zebuStudentGivesItem()) {
+  if (config.triggers.zebuStudentGivesItem) {
     // Zebu student (aka windmill guard): secondary item -> alarm flute
     WindmillGuard.data[1] = 0x31;
   } else {
-    // Actually make use of the TalkedToZebuStudet flag;
+    // Actually make use of the TalkedToZebuStudent flag;
     WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.
     const dialog = WindmillGuard.dialog(Leaf_StudentHouse)[0];
     dialog.condition = ~TalkedToZebuStudent.id;
@@ -755,22 +768,6 @@ function brokahanaWantsMado1(rom: Rom): void {
   dialog.condition = ~Mado1.id;
 }
 
-function requireHealedDolphin(rom: Rom): void {
-  const {
-    flags: {InjuredDolphin, ShellFlute},
-    npcs: {Fisherman, FishermanDaughter},
-  } = rom;
-  // Normally the fisherman ($64) spawns in his house ($d6) if you have
-  // the shell flute (236).  Here we also add a requirement on the healed
-  // dolphin slot (025), which we keep around since it's actually useful.
-  Fisherman.spawnConditions.set(0xd6, [ShellFlute.id, InjuredDolphin.id]);
-  // Also fix daughter's dialog ($7b).
-  const daughterDialog = FishermanDaughter.localDialogs.get(-1)!;
-  daughterDialog.unshift(daughterDialog[0].clone());
-  daughterDialog[0].condition = ~InjuredDolphin.id;
-  daughterDialog[1].condition = ~ShellFlute.id;
-}
-
 function requireTelepathyForDeo(rom: Rom): void {
   const {
     flags: {Telepathy},
@@ -782,13 +779,14 @@ function requireTelepathyForDeo(rom: Rom): void {
   Deo.globalDialogs.push(GlobalDialog.of(~Telepathy.id, [0x1a, 0x13]));
 }
 
-function adjustItemNames(rom: Rom, flags: FlagSet): void {
-  if (flags.leatherBootsGiveSpeed()) {
+function adjustItemNames(s: Shuffle): void {
+  const {config, rom} = s;
+  if (config.items.addSpeedBoots) {
     // rename leather boots to speed boots
     const leatherBoots = rom.items[0x2f]!;
     leatherBoots.menuName = 'Speed Boots';
     leatherBoots.messageName = 'Speed Boots';
-    if (flags.changeGasMaskToHazmatSuit()) {
+    if (config.items.hazmatSuit) {
       const gasMask = rom.items[0x29];
       gasMask.menuName = 'Hazmat Suit';
       gasMask.messageName = 'Hazmat Suit';
@@ -832,10 +830,12 @@ function simplifyInvisibleChests(rom: Rom): void {
 }
 
 // Add the statue of onyx and possibly the teleport block trigger to Cordel West
-function addCordelWestTriggers(rom: Rom, flags: FlagSet) {
+function addCordelWestTriggers(s: Shuffle) {
+  const {config, rom} = s;
   const {CordelPlainEast, CordelPlainWest} = rom.locations;
+  const copyTriggers = config.glitches.teleportSkip === FORBID;
   for (const spawn of CordelPlainEast.spawns) {
-    if (spawn.isChest() || (flags.disableTeleportSkip() && spawn.isTrigger())) {
+    if (spawn.isChest() || (copyTriggers && spawn.isTrigger())) {
       // Copy if (1) it's the chest, or (2) we're disabling teleport skip
       CordelPlainWest.spawns.push(spawn.clone());
     }
@@ -951,7 +951,8 @@ function leafElderInSabreHeals(rom: Rom): void {
 
 // Prevent Rage skip by adding trees on either side of entrance.
 // TODO - make this optional? account for it in logic?
-function patchLimeTreeLake(rom: Rom, flags: FlagSet): void {
+function patchLimeTreeLake(s: Shuffle): void {
+  const {config, rom} = s;
   const loc = rom.locations.LimeTreeLake;
   const screen = rom.screens[rom.metascreens.limeTreeLake.sid];
 
@@ -961,7 +962,7 @@ function patchLimeTreeLake(rom: Rom, flags: FlagSet): void {
   // rom.metatilesets.lime.getTile(0x7b).setTiles([0x7f, 0x7f, 0x7f, 0x7f])
   //     .setAttrs(0).setEffects(6); //.replaceIn(rom.metascreens.limeTreeLake);
 
-  if (flags.disableRageSkip()) {
+  if (config.glitches.rageSkip === FORBID) {
     // Shift the whole top part of the screen down.
     screen.set2d(0x20, screen.get2d(0x00, 0x8f));
     // Remove the (now lower) branch sticking out the right side of the tree.
@@ -994,7 +995,8 @@ function patchLimeTreeLake(rom: Rom, flags: FlagSet): void {
   }
 }
 
-function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
+function preventNpcDespawns(s: Shuffle): void {
+  const {config, rom} = s;
 
   // function dialog(id: number, loc: number = -1): LocalDialog[] {
   //   const result = rom.npcs[id].localDialogs.get(loc);
@@ -1268,7 +1270,7 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   // Enter shyron ($81) should set warp no matter what
   rom.trigger(0x81).conditions = [];
 
-  if (opts.barrierRequiresCalmSea()) {
+  if (config.triggers.whirlpoolItemRequiresCalmSea) {
     // Learn barrier ($84) requires calm sea
     rom.trigger(0x84).conditions.push(flags.CalmedAngrySea.id);
     // TODO - consider not setting 051 and changing the condition to match the item
@@ -1361,12 +1363,21 @@ function disableStabs(rom: Rom): void {
   // Warrior ring now functions as a "turret" mode after 32 frames of standing still
 }
 
-function orbsOptional(rom: Rom): void {
-  for (const obj of [0x10, 0x14, 0x18, 0x1d]) {
-    // 1. Loosen terrain susceptibility of level 1 shots
-    rom.objects[obj].terrainSusceptibility &= ~0x04;
-    // 2. Increase the level to 2 (rather than changing the asm)
-    rom.objects[obj].level = 2;
+function updateSwordWallLevel(s: Shuffle): void {
+  const {config: {items: {swordLevelForWalls}}, rom} = s;
+
+  if (swordLevelForWalls === 1) {
+    for (const obj of [0x10, 0x14, 0x18, 0x1d]) {
+      // 1. Loosen terrain susceptibility of level 1 shots
+      rom.objects[obj].terrainSusceptibility &= ~0x04;
+      // 2. Increase the level to 2 (rather than changing the asm)
+      rom.objects[obj].level = 2;
+    }
+  } else if (swordLevelForWalls === 3) {
+    // Decrease level of level2 shots to 1
+    for (const obj of [0x11, 0x13, 0x15, 0x19, 0x1e]) {
+      rom.objects[obj].level = 1;
+    }
   }
 }
 

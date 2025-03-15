@@ -326,7 +326,7 @@ PlayerHit_ApplyKnockback:
           <@35458@>
           <@3545b@>
           <@3545e@>
-          <@35461 MoveObjectWithSpeedAndDirection@>
+          <@35461 MoveObjectWithSpeedAndDirection_3c@>
          <@35464@>
          <@35465@>
         <@35468@>

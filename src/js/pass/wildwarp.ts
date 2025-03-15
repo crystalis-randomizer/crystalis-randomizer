@@ -40,8 +40,8 @@ function shuffleWildWarp(s: Shuffle): void {
   }
   random.shuffle(locations);
   rom.wildWarp.locations = [];
-  const min_warps = 4;
-  const count = random.nextInt(16 - min_warps) + min_warps;
+  // NOTE: mezame is always one of the locations, so pick one less.
+  const count = s.config.maps.wildWarpCount - 1;
   for (const loc of [...locations.slice(0, count)]) {
     rom.wildWarp.locations.push(loc.id);
     if (rom.spoiler) rom.spoiler.addWildWarp(loc.id, loc.name);

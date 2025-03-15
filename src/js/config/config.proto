@@ -958,7 +958,7 @@ message Config {
     // NOTE: Only used if wild warp is RANDOM
     optional uint32 wild_warp_count = 14
       [(min) = 2, (max) = 16,
-       (default) = 16,
+       (default) = 8, // "=rand(12)+5", // TODO - this is broken
        (preset.vanilla) = 16,
        (preset.mystery) = "=?"];
     // NOTE: Only used if wild warp is FIXED

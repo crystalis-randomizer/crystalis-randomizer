@@ -850,7 +850,7 @@ abstract class NumberType implements Type<number> {
 
   fromJson(json: unknown): number {
     const n = Number(json);
-    if (isNaN(n)) throw new Error(`bad number`);
+    if (isNaN(n)) throw new Error(`bad number: ${json}`);
     return this.clamp(n);
   }
 

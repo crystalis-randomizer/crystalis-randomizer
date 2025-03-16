@@ -980,6 +980,9 @@ export interface Evaluator {
   newEvaluator(): Evaluator;
 }
 
+const DEFAULT: unique symbol = Symbol('DEFAULT');
+export type DEFAULT = typeof DEFAULT;
+
 export class SimplePresetEvaluator implements Evaluator {
   constructor(readonly presetDescriptor: EnumType) {}
   private readonly presets: (string|number)[] = [];
@@ -1006,14 +1009,21 @@ export class SimplePresetEvaluator implements Evaluator {
       const v = this.getValueForPreset(field, p);
       if (v != null) return v;
     }
-    const d = field.options.default;
-    if (d != null) return field.fromJson(d);
-    return undefined;
+    return this.getValueForPreset(field, DEFAULT);
   }
-  protected getValueForPreset(field: FieldInfo<any, any>, preset: string|number): unknown {
+  protected getValueForPreset(
+    field: FieldInfo<any, any>,
+    preset: string|number|DEFAULT,
+  ): unknown {
     // NOTE: this should be overridden (but may call super.getValueForPreset)
-    if (typeof preset !== 'number') return undefined;
-    let v = field.preset[preset];
+    let v: unknown;
+    if (preset === DEFAULT) {
+      v = field.default;
+    } else if (typeof preset === 'number') {
+      v = field.preset[preset];
+    } else {
+      return undefined;
+    }
     if (v instanceof Script) v = this.evaluate(v.script, field);
     return v;
   }

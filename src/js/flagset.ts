@@ -972,6 +972,7 @@ export class FlagSet {
   private flags: Map<Flag, Mode>;
   private _config?: Config = undefined;
   private _gen?: ConfigGenerator = undefined;
+  private _random?: Random = undefined;
 
   constructor(str: string|Map<Flag, Mode> = '@Casual') {
     if (typeof str !== 'string') {
@@ -1008,16 +1009,8 @@ export class FlagSet {
   get config(): Config {
     if (this._config) return this._config;
     (globalThis as any).configGen = this.configGen;
-
-    // TODO - is it a problem to just return 0 for all randoms for now?
-    const rand: Random = {
-      next: () => 0,
-      nextInt: () => 0,
-      nextNormal: () => 0,
-      child: () => rand,
-    };
-      
-    const evaluator = new ScriptEvaluator(rand);
+    if (!this._random) throw new Error('no random');
+    const evaluator = new ScriptEvaluator(this._random);
     return this._config = this.configGen.generate(evaluator);
   }
 
@@ -1337,8 +1330,10 @@ export class FlagSet {
       if (v !== '?') return v;
       return random.pick([true, false, ...(k.opts.modes || '')]);
     }
-    return new FlagSet(
+    const f = new FlagSet(
         new Map([...this.flags].map(([k, v]) => [k, pick(k, v)])));
+    f._random = random;
+    return f;
   }
 
   toString() {

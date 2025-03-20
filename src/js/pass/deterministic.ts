@@ -594,9 +594,11 @@ function configureDolphin(s: Shuffle) {
   const fishermanSpawn = [];
   if (spawnFisherman === SpawnFisherman.FOG_LAMP) {
     fishermanSpawn.push(FogLamp.id);
-  } else if (spawnFisherman === SpawnFisherman.SHELL_FLUTE) {
+  } else if (spawnFisherman === SpawnFisherman.SHELL_FLUTE ||
+             spawnFisherman === SpawnFisherman.HEALED_AND_SHELL_FLUTE) {
     fishermanSpawn.push(ShellFluteFlag.id);
-  } else if (spawnFisherman === SpawnFisherman.HEALED_DOLPHIN) {
+  } else if (spawnFisherman === SpawnFisherman.HEALED_DOLPHIN ||
+             spawnFisherman === SpawnFisherman.HEALED_AND_SHELL_FLUTE) {
     fishermanSpawn.push(InjuredDolphin.id);
   }    
   Fisherman.spawnConditions.set(Portoa_FishermanHouse.id, fishermanSpawn);

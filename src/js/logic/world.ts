@@ -1,5 +1,6 @@
 import {Area} from '../spoiler/area';
 import {die} from '../assert';
+import {Config} from '../config';
 import {FlagSet} from '../flagset';
 import {Random} from '../random';
 import {Rom} from '../rom';
@@ -22,6 +23,8 @@ import {TileId} from './tileid';
 import {TilePair} from './tilepair';
 import {WallType} from './walltype';
 import { Monster } from '../rom/monster';
+
+const {GlitchMode, Randomization} = Config;
 
 const [] = [hex];
 
@@ -110,8 +113,12 @@ export class World {
 
   private chestRequirement: Requirement = Requirement.OPEN;
 
+  // TODO - migrate to just passing config directly
+  private readonly config: Config;
+
   constructor(readonly rom: Rom, readonly flagset: FlagSet,
               readonly tracker = false) {
+    this.config = flagset.config;
     // Set up some initial state
     if (flagset.alwaysMimics()) {
       const swords = [rom.flags.SwordOfWind, rom.flags.SwordOfFire, rom.flags.SwordOfWater, rom.flags.SwordOfThunder];
@@ -174,7 +181,6 @@ export class World {
         Shyron_ToolShop,
       },
       flags: {
-        AbleToRideDolphin,
         BallOfFire, BallOfThunder, BallOfWater, BallOfWind,
         Barrier, BlizzardBracelet, BowOfMoon, BowOfSun,
         BreakStone, BreakIce, BreakIron,
@@ -197,6 +203,7 @@ export class World {
       },
       items: {
         MedicalHerb,
+        ShellFlute: ShellFluteItem,
         WarpBoots,
       },
     } = this.rom;
@@ -205,7 +212,8 @@ export class World {
     this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
     this.addCheck([start], BowOfMoon.r, [UsedBowOfMoon.id]);
     this.addCheck([start], BowOfSun.r, [UsedBowOfSun.id]);
-    this.addCheck([start], and(AbleToRideDolphin, ShellFlute),
+    const shellFluteCondition = [ShellFluteItem.itemUseData[0].want] as Condition;
+    this.addCheck([start], and(shellFluteCondition, ShellFlute),
                   [CurrentlyRidingDolphin.id]);
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
     this.addItemCheck([start], and(GlowingLamp, BrokenStatue),
@@ -233,7 +241,9 @@ export class World {
     let breakIce: Requirement = SwordOfFire.r;
     let formBridge: Requirement = SwordOfWater.r;
     let breakIron: Requirement = SwordOfThunder.r;
-    if (!this.flagset.orbsOptional()) {
+    const {items: {swordLevelForWalls}} = this.config;
+    const joiner = [,, or, and][swordLevelForWalls];
+    if (joiner) {
       const wind2 = or(BallOfWind, TornadoBracelet);
       const fire2 = or(BallOfFire, FlameBracelet);
       const water2 = or(BallOfWater, BlizzardBracelet);
@@ -242,11 +252,11 @@ export class World {
       breakIce = Requirement.meet(breakIce, fire2);
       formBridge = Requirement.meet(formBridge, water2);
       breakIron = Requirement.meet(breakIron, thunder2);
-      if (this.flagset.assumeSwordChargeGlitch()) {
-        const level2 =
+      if (this.config.glitches.swordChargeGlitch === GlitchMode.REQUIRE) {
+        const breakAny =
             Requirement.or(breakStone, breakIce, formBridge, breakIron);
         function need(sword: Flag): Requirement {
-          return level2.map(
+          return breakAny.map(
               (c: readonly Condition[]) =>
                   c[0] === sword.c ? c : [sword.c, ...c]);
         }
@@ -268,51 +278,44 @@ export class World {
     this.addCheck([start], or(Flight, RabbitBoots), [ClimbSlope9.id]);
     this.addCheck([start], Barrier.r, [ShootingStatue.id, ShootingStatueSouth.id]);
     this.addCheck([start], GasMask.r, [TravelSwamp.id]);
-    const pain = this.flagset.changeGasMaskToHazmatSuit() ? GasMask : LeatherBoots;
+    const pain = this.config.items.hazmatSuit ? GasMask : LeatherBoots;
     this.addCheck([start], or(Flight, RabbitBoots, pain), [CrossPain.id]);
 
-    if (this.flagset.leatherBootsGiveSpeed()) {
+    if (this.config.items.addSpeedBoots) {
       this.addCheck([start], LeatherBoots.r, [ClimbSlope8.id]);
     }
-    if (this.flagset.assumeGhettoFlight()) {
+    if (this.config.glitches.ghettoFlight === GlitchMode.REQUIRE) {
       this.addCheck(
         [start], and(CurrentlyRidingDolphin, RabbitBoots),
         [ClimbWaterfall.id]);
     }
-    if (this.flagset.fogLampNotRequired()) {
-      // not actually used...?
-      const requireHealed = this.flagset.requireHealedDolphinToRide();
-      this.addCheck([start],
-                    requireHealed ? InjuredDolphin.r : [[]],
-                    [AbleToRideDolphin.id]);
-    }
-    if (!this.flagset.guaranteeBarrier()) {
+    if (!this.config.placement.ensureBarrierBeforeStatues) {
       this.addCheck([start], [[Money.c, BuyHealing.c],
                               [Money.c, ShieldRing.c],
                               [Money.c, Refresh.c]],
                     [ShootingStatue.id, ShootingStatueSouth.id]);
     }
-    if (this.flagset.assumeFlightStatueSkip()) {
+    if (this.config.glitches.flightStatueSkip === GlitchMode.REQUIRE) {
       // NOTE: with no money, we've got 16 MP, which isn't enough
       // to get past seven statues.
       this.addCheck([start], [[Money.c, Flight.c]], [ShootingStatue.id]);
     }
-    if (!this.flagset.guaranteeGasMask()) {
+    if (!this.config.placement.ensureGasMaskBeforeSwamp) {
       this.addCheck([start], [[Money.c, BuyHealing.c],
                               [Money.c, Refresh.c]],
                     [TravelSwamp.id, CrossPain.id]);
     }
-    if (this.flagset.assumeWildWarp()) {
+    if (this.config.maps.wildWarpInLogic) {
       this.addCheck([start], Requirement.OPEN, [WildWarp.id]);
     }
-    if (this.flagset.assumeTriggerGlitch()) {
+    if (this.config.glitches.triggerSkip === GlitchMode.REQUIRE) {
       this.addCheck([start], Requirement.OPEN, [TriggerSkip.id]);
       this.addCheck([start], TriggerSkip.r,
                     [CrossPain.id, ClimbSlope8.id,
                      ClimbSlope9.id /*, ClimbSlope10.id */]);
     }
     // Stom skip (only required for charge-shots only)
-    if (this.flagset.chargeShotsOnly()) {
+    if (this.config.items.noStabs) {
       for (const location of this.rom.townWarp.locations) {
         const loc = this.rom.locations[location];
         const entrance = loc.entrances[0];
@@ -334,7 +337,7 @@ export class World {
     // Start the game at Mezame Shrine.
     this.addRoute(new Route(this.entrance(MezameShrine), []));
     // Sword of Thunder warp
-    if (this.flagset.teleportOnThunderSword()) {
+    if (this.flagset.teleportOnThunderSword()) { // TODO
       const warp = this.rom.townWarp.thunderSwordWarp;
       this.addRoute(new Route(this.entrance(warp[0], warp[1] & 0x1f),
                               [SwordOfThunder.c, BuyWarp.c]));
@@ -342,7 +345,7 @@ export class World {
                               [SwordOfThunder.c, Teleport.c]));
     }
     // Wild warp
-    if (this.flagset.assumeWildWarp()) {
+    if (this.config.maps.wildWarpInLogic) {
       for (const location of this.rom.wildWarp.locations) {
         // Don't count channel in logic because you can't actually move.
         if (location === this.rom.locations.UndergroundChannel.id) continue;
@@ -410,7 +413,7 @@ export class World {
       prefill: (random: Random) => {
         const {Crystalis, MesiaInTower, LeafElder} = this.rom.flags;
         const map = new Map([[MesiaInTower.id, Crystalis.id]]);
-        if (this.flagset.guaranteeSword()) {
+        if (this.config.placement.earlySword) {
           // Pick a sword at random...? inverse weight?
           map.set(LeafElder.id, 0x200 | random.nextInt(4));
         }
@@ -851,18 +854,17 @@ export class World {
     switch (trigger.message.action) {
       case 0x19:
         // push-down trigger
-        if (trigger.id === 0x86 && !this.flagset.assumeRabbitSkip()) {
+        if (trigger.id === 0x86 && this.config.glitches.rabbitSkip !== GlitchMode.REQUIRE) {
           // bigger hitbox to not find the path through
           hitbox = Hitbox.adjust(hitbox, [0, -1], [0, 1]);
         } else if (trigger.id === 0xba &&
-                   !this.flagset.assumeTeleportSkip() &&
-                   !this.flagset.disableTeleportSkip()) {
+                   this.config.glitches.teleportSkip === GlitchMode.ALLOW) {
           // copy the teleport hitbox into the other side of cordel
           hitbox = Hitbox.atLocation(hitbox,
                                      this.rom.locations.CordelPlainEast,
                                      this.rom.locations.CordelPlainWest);
         }
-        if (this.flagset.assumeTriggerGlitch()) {
+        if (this.config.glitches.triggerSkip === GlitchMode.REQUIRE) {
           // all push-down triggers can be skipped with trigger skip...
           antiRequirements = Requirement.or(antiRequirements, this.rom.flags.TriggerSkip.r);
         }
@@ -882,7 +884,7 @@ export class World {
       case 0x18: { // stom fight
         // Special case: warp boots glitch required if charge shots only.
         const req =
-          this.flagset.chargeShotsOnly() ?
+          this.config.items.noStabs ?
           Requirement.meet(requirements, this.rom.flags.StomSkip.r) :
           requirements;
         this.addItemCheck(hitbox, req, this.rom.flags.StomFightReward.id,
@@ -950,7 +952,7 @@ export class World {
       this.addBossCheck(hitbox, this.rom.bosses.Sabera1, req);
     }
 
-    if ((npc.data[2] & 0x04) && !this.flagset.assumeStatueGlitch()) {
+    if ((npc.data[2] & 0x04) && this.config.glitches.statueGlitch !== GlitchMode.REQUIRE) {
       let antiReq;
       antiReq = this.filterAntiRequirements(spawnConditions);
       if (npc === this.rom.npcs.Rage) {
@@ -1051,7 +1053,11 @@ export class World {
 
       case 0x0a: // normally this hard-codes glowing lamp, but we extended it to drop any chest
         // since we drop a chest, we want to add a sword requirement if it turns into a mimic
-        const swordReq = this.flagset.alwaysMimics() ? [[...req, this.rom.flags.Sword.c]] : [req];
+
+        // TODO - use some other data to determine if _this_ item is a mimic?
+        // const swordReq = this.config.enemies.itemsFromMimics ?
+        const swordReq = this.flagset.alwaysMimics ?
+            [[...req, this.rom.flags.Sword.c]] : [req];
         this.addItemCheck(hitbox, swordReq, 0x100 | npc.data[0], info);
         break;
 
@@ -1097,7 +1103,7 @@ export class World {
     // glitch if appropriate.  There could theoretically be cases where the
     // guard is paralyzable but the geometry prevents the player from actually
     // hitting them before they move, but it doesn't happen in practice.
-    if (this.flagset.assumeStatueGlitch()) return;
+    if (this.config.glitches.statueGlitch === GlitchMode.REQUIRE) return;
     const extra: Condition[][] = [];
     for (const spawn of location.spawns.slice(0, 2)) {
       if (spawn.isNpc() && this.rom.npcs[spawn.id].isParalyzable()) {
@@ -1105,7 +1111,7 @@ export class World {
         break;
       }
     }
-    if (this.flagset.assumeTriggerGlitch()) {
+    if (this.config.glitches.triggerSkip === GlitchMode.REQUIRE) {
       extra.push([this.rom.flags.TriggerSkip.c]);
     }
     this.addTerrain(hitbox,
@@ -1287,7 +1293,8 @@ export class World {
     const mapped = this.rom.slots[spawn.id];
     if (mapped >= 0x70) return; // TODO - mimic% may care
     const item = this.rom.items[mapped];
-    const unique = this.flagset.preserveUniqueChecks() ? !!item?.unique : true;
+    const unique = this.config.placement.shuffleConsumablesWithKeyItems ?
+      true  : Boolean(item?.unique);
     this.addItemCheck([TileId.from(location, spawn)], this.chestRequirement,
                       slot, {lossy: false, unique});
   }
@@ -1305,13 +1312,14 @@ export class World {
       Sword, SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder,
     } = this.rom.flags;
     if (location.id === this.limeTreeEntranceLocation && monster.isBird() &&
-        this.flagset.assumeRageSkip()) {
+        this.config.glitches.rageSkip === GlitchMode.REQUIRE) {
       this.addCheck([this.entrance(location)], Requirement.OPEN, [RageSkip.id]);
 
     }
-    if (!(monster.goldDrop)) return;
+    if (!monster.goldDrop) return;
     const hitbox = [TileId.from(location, spawn)];
-    if (!this.flagset.guaranteeMatchingSword()) {
+    if (this.config.enemies.tinkMode === GlitchMode.REQUIRE) {
+      // If tinking is required then we can get money from any enemy.
       this.addCheck(hitbox, Sword.r, [Money.id]);
       return;
     }
@@ -1370,20 +1378,30 @@ export class World {
     // TODO - handle boss shuffle somehow?
     if (boss === this.rom.bosses.Rage) {
       // Special case for Rage.  Figure out what he wants from the dialog.
-      const unknownSword = this.tracker && this.flagset.randomizeTrades();
+      const unknownSword = this.tracker && this.config.towns.shuffleTrades;
       if (unknownSword) return this.rom.flags.Sword.r; // any sword might do.
       return [[this.rom.npcs.Rage.dialog()[0].condition as Condition]];
     }
     const id = boss.object;
     const r = new Requirement.Builder();
-    if (this.tracker && this.flagset.shuffleBossElements() ||
-        !this.flagset.guaranteeMatchingSword()) {
+    const isTetrarch = // NOTE: we include draygon and dyna here
+      boss !== this.rom.bosses.Insect &&
+      boss !== this.rom.bosses.Vampire1 &&
+      boss !== this.rom.bosses.Vampire2;
+    if (
+      (this.tracker &&
+        this.config.enemies.tetrarchWeaknesses !== Randomization.VANILLA
+      ) || this.config.enemies.tinkMode === GlitchMode.REQUIRE
+    ) {
       r.addAll(this.rom.flags.Sword.r);
     } else {
-      const level = this.flagset.guaranteeSwordMagic() ? boss.swordLevel : 1;
+      const level =
+        Math.min(this.config.placement.ensureMinimumSwordLevelBeforeTetrarchs,
+                 boss.swordLevel);
+      
       const obj = this.rom.objects[id];
       for (let i = 0; i < 4; i++) {
-        if (obj.isVulnerable(i)) r.addAll(this.swordRequirement(i, level));
+        if (obj.isVulnerable(i)) r.addAll(this.swordRequirement(i, level, isTetrarch));
       }
     }
     // Can't actually kill the boss if it doesn't spawn.
@@ -1393,31 +1411,40 @@ export class World {
       extra.push(...this.filterRequirements(spawnCondition)[0]);
     }
     if (boss === this.rom.bosses.Insect) {
-      extra.push(this.rom.flags.InsectFlute.c, this.rom.flags.GasMask.c);
+      if (this.config.placement.ensureGasMaskBeforeInsect) {
+        extra.push(this.rom.flags.InsectFlute.c, this.rom.flags.GasMask.c);
+      }
     } else if (boss === this.rom.bosses.Draygon2) {
       extra.push(this.rom.flags.BowOfTruth.c);
     }
-    if (this.flagset.guaranteeRefresh()) {
+    if (this.config.placement.ensureRefreshBeforeBosses) {
       extra.push(this.rom.flags.Refresh.c);
     }
     r.restrict([extra]);
     return Requirement.freeze(r);
   }
 
-  swordRequirement(element: number, level: number): Requirement {
+  swordRequirement(element: number, level: number, isTetrarch: boolean): Requirement {
     const sword = [
       this.rom.flags.SwordOfWind, this.rom.flags.SwordOfFire,
       this.rom.flags.SwordOfWater, this.rom.flags.SwordOfThunder,
     ][element];
-    if (level === 1) return sword.r;
+    if (!isTetrarch) return sword.r;
     const powers = [
       [this.rom.flags.BallOfWind, this.rom.flags.TornadoBracelet],
       [this.rom.flags.BallOfFire, this.rom.flags.FlameBracelet],
       [this.rom.flags.BallOfWater, this.rom.flags.BlizzardBracelet],
       [this.rom.flags.BallOfThunder, this.rom.flags.StormBracelet],
     ][element];
-    if (level === 3) return and(sword, ...powers);
-    return powers.map(power => [sword.c, power.c]);
+    const r = level === 1 ? sword.r :
+      level === 2 ? powers.map(power => [sword.c, power.c]) : // OR
+      level === 3 ? and(sword, ...powers) :
+      (() => {throw new Error(`unknown sword level: ${level}`);});
+    if (!this.config.placement.ensureOffensiveUpgradeBeforeTetrarchs) return r;
+    // Requirement is EITHER level3 (and) OR (r AND power ring) OR (r AND warrior ring)
+    const ring = [[this.rom.flags.PowerRing.c], [this.rom.flags.WarriorRing.c]];
+    return Requirement.or(and(sword, ...powers),
+                          Requirement.meet(r, ring));
   }
 
   itemGrant(id: number): number {

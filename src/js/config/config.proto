@@ -766,16 +766,21 @@ message Config {
     enum SpawnFisherman {
       // No additional requirement, he always spawns
       NOTHING = 1;
-      // Fisherman spawns after finding the specific shell flute item (vanilla)
+      // Fisherman spawns after finding the specific shell flute item
       SHELL_FLUTE = 2;
       // Fisherman spawns after healing the dolphin
       HEALED_DOLPHIN = 3;
+      // Fisherman spawns only after both healing the dolphin _and_ finding the
+      // shell flute (vanilla)
+      HEALED_AND_SHELL_FLUTE = 4;
       // Fisherman spawns after finding the fog lamp that he wants (default)
-      FOG_LAMP = 4;
+      FOG_LAMP = 5;
     }
     optional SpawnFisherman spawn_fisherman = 4
       [(default) = FOG_LAMP,
-       (group.vanilla_dolphin) = SHELL_FLUTE];
+       // TODO - not sure how this interacts with the group?
+       (preset.vanilla) = SHELL_FLUTE,
+       (group.vanilla_dolphin) = HEALED_AND_SHELL_FLUTE];
 
     // What is required for Kensu to spawn in the beach house?
     enum SpawnBeachKensu {

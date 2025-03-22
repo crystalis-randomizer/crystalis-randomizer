@@ -172,6 +172,7 @@ export class World {
         MezameShrine,
         Oak,
         Shyron_ToolShop,
+        TowerMesia
       },
       flags: {
         AbleToRideDolphin,
@@ -190,7 +191,7 @@ export class World {
         RabbitBoots, Refresh, RepairedStatue, RescuedChild,
         ShellFlute, ShieldRing,
         ShootingStatue, ShootingStatueSouth, StomSkip, StormBracelet,
-        Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind,
+        Sword, SwordOfFire, SwordOfThunder, SwordOfWater, SwordOfWind, Crystalis,
         TornadoBracelet, TravelSwamp, TriggerSkip,
         UsedBowOfMoon, UsedBowOfSun,
         WildWarp,
@@ -202,6 +203,7 @@ export class World {
     } = this.rom;
     const start = this.entrance(MezameShrine);
     const enterOak = this.entrance(Oak);
+    const mesiaCombineSword = this.entrance(TowerMesia);
     this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
     this.addCheck([start], BowOfMoon.r, [UsedBowOfMoon.id]);
     this.addCheck([start], BowOfSun.r, [UsedBowOfSun.id]);
@@ -210,6 +212,11 @@ export class World {
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
     this.addItemCheck([start], and(GlowingLamp, BrokenStatue),
                       RepairedStatue.id, {lossy: true, unique: true});
+
+    if (this.flagset.shuffleMesiaTower()) {
+      this.addItemCheck([mesiaCombineSword], and(SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder),
+          Crystalis.id, {lossy: false, unique: true});
+    }
 
     // Add shops
     for (const shop of this.rom.shops) {
@@ -234,10 +241,16 @@ export class World {
     let formBridge: Requirement = SwordOfWater.r;
     let breakIron: Requirement = SwordOfThunder.r;
     if (!this.flagset.orbsOptional()) {
-      const wind2 = or(BallOfWind, TornadoBracelet);
-      const fire2 = or(BallOfFire, FlameBracelet);
-      const water2 = or(BallOfWater, BlizzardBracelet);
-      const thunder2 = or(BallOfThunder, StormBracelet);
+      let wind2 = or(BallOfWind, TornadoBracelet);
+      let fire2 = or(BallOfFire, FlameBracelet);
+      let water2 = or(BallOfWater, BlizzardBracelet);
+      let thunder2 = or(BallOfThunder, StormBracelet);
+      if (this.flagset.shuffleMesiaTower()) {
+        wind2 = or(BallOfWind, TornadoBracelet, Crystalis);
+        fire2 = or(BallOfFire, FlameBracelet, Crystalis);
+        water2 = or(BallOfWater, BlizzardBracelet, Crystalis);
+        thunder2 = or(BallOfThunder, StormBracelet, Crystalis);
+      }
       breakStone = Requirement.meet(breakStone, wind2);
       breakIce = Requirement.meet(breakIce, fire2);
       formBridge = Requirement.meet(formBridge, water2);

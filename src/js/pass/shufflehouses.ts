@@ -55,7 +55,7 @@ const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
 export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   const {
-    locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron},
+    locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron, TowerMesia},
     metascreens: {squareTownNE_house,
                   fortressTownEntrance,
                   mountainPathE_gate},
@@ -68,9 +68,14 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
     mountainPathE_gate.data.id,
   ]);
 
+  if (flags.shuffleMesiaTower()) {
+    TowerMesia.data.houseType = 'house';
+  }
+
   if (flags.shuffleAreas()) {
     // Set a few additional locations as palaces
-    for (const loc of [Goa, GoaFortress_Exit, Shyron, Crypt_Hall1]) {
+    const locs = [Goa, GoaFortress_Exit, Shyron, Crypt_Hall1];
+    for (const loc of locs) {
       loc.data.houseType = 'palace';
     }
   }
@@ -143,8 +148,8 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   }
   const hasInn = new Set<number>();
   const inns = byType.get('inn');
-  for (const [, locposs] of [...firstPass, ...secondPass]) {
-    //console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
+  for (const [scr, locposs] of [...firstPass, ...secondPass]) {
+    console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
     const map = new Map<ConnectionType, HouseType>();
     let first = true;
     for (const locpos of locposs) {
@@ -185,7 +190,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
           rom.spoiler.addHouse(replacement.inside[0] >>> 8, house.outside[0] >>> 8);
         }
         // Make the connection
-        //console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]}`);
+        console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]}`);
         Metalocation.connect(rom, house.outside, replacement.inside);
         // Replace the icon (if applicable)
         if (!first) continue;

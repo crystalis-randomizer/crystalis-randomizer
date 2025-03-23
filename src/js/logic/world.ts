@@ -172,7 +172,6 @@ export class World {
         MezameShrine,
         Oak,
         Shyron_ToolShop,
-        TowerMesia
       },
       flags: {
         AbleToRideDolphin,
@@ -203,7 +202,6 @@ export class World {
     } = this.rom;
     const start = this.entrance(MezameShrine);
     const enterOak = this.entrance(Oak);
-    const mesiaCombineSword = this.entrance(TowerMesia);
     this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
     this.addCheck([start], BowOfMoon.r, [UsedBowOfMoon.id]);
     this.addCheck([start], BowOfSun.r, [UsedBowOfSun.id]);
@@ -212,11 +210,6 @@ export class World {
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
     this.addItemCheck([start], and(GlowingLamp, BrokenStatue),
                       RepairedStatue.id, {lossy: true, unique: true});
-
-    if (this.flagset.shuffleMesiaTower()) {
-      this.addItemCheck([mesiaCombineSword], and(SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder),
-          Crystalis.id, {lossy: false, unique: true});
-    }
 
     // Add shops
     for (const shop of this.rom.shops) {

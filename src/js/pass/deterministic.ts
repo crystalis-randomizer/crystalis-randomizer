@@ -156,7 +156,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   fixFlyableWalls(rom);
   fixMonsterTerrain(rom);
-  fixCrystalis(rom);
+  fixCrystalis(rom, flags);
   fixOpelStatue(rom);
   fixCoinSprites(rom);
   fixChests(rom);
@@ -1332,7 +1332,7 @@ function noBowMode(rom: Rom): void {
       0, 'door', [Crypt_Draygon2.meta.id << 8 | 0x10, 'edge:bottom']);
 }
 
-function fixCrystalis(rom: Rom) {
+function fixCrystalis(rom: Rom, flags: FlagSet) {
   // Fix the shot to be all elements instead of none.
   rom.objects[0x33].elements = 0xf;
   // Copy over the water bridge creation sprites from the water sword to the
@@ -1357,6 +1357,11 @@ function fixCrystalis(rom: Rom) {
       }
     }
   });
+  // Apply four sword requirement to Mesia in Tower if she's shuffled
+  if (flags.shuffleMesiaTower())
+  {
+    rom.trigger(0xa4).conditions.push(rom.flags.SwordOfWind.id, rom.flags.SwordOfFire.id, rom.flags.SwordOfWater.id, rom.flags.SwordOfThunder.id);
+  }
 }
 
 // Enables chests and mimics to appear on every screen by replacing the unused recover graphics

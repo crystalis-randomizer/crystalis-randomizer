@@ -214,6 +214,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixWildWarp(rom);
 
   swapMimicAndRecoverGraphics(rom);
+
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {

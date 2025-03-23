@@ -5,7 +5,7 @@
   "scripts": {
     "tsc-watch": "tsc --watch",
     "flycheck": "elisp/flycheck-tsc-watch",
-    "watch": "nodemon -e '*' --watch src/ --exec 'make web-debug'",
+    "watch": "nodemon -e '*' --watch src/ --exec 'make debug'",
     "unit": "npm run mocha test/**/*.ts test/*.ts",
     "mocha": "TS_NODE_PROJECT=./tsconfig.test.json mocha -r ts-node/register",
     "test": "npm run unit && make all && test/test_cli.sh",

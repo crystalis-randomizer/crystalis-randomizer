@@ -26,23 +26,26 @@ CrystalisShotObjectAction:
   jmp OffsetTailPosition
 FREE_UNTIL $b094
 
+.import CRYSTALIS_BEAM_METASPRITE_UP,CRYSTALIS_BEAM_METASPRITE_RIGHT,CRYSTALIS_BEAM_METASPRITE_DOWN,CRYSTALIS_BEAM_METASPRITE_LEFT
 ;; The tail position is offset by 24px behind,
 ;; so kinda just make it look good or something
 .reloc
 OffsetTailPosition:
+  ; Load the offset for the new metasprite
+  ldy $10
   lda $0360,x
-  sta $0580,x ; store the direction as the extended sprite
+  sta $0580,y
   lsr
   tay
   lda @DirectionTable,y
-  asl
+  asl ; set the carry with the direction to use
   lda @OffsetTable, y
   ldy $10
   bcs @Xposition
 @Yposition:
   adc $00b0,y
   sta $00b0,y
-  jmp SwordProjectileActionJump
+  jmp SwordProjectileActionJump ; @SetNewMetasprite
 @Xposition:
   adc $0070,y
   sta $0070,y
@@ -52,34 +55,42 @@ OffsetTailPosition:
   .byte 0, $ff, 0, $ff
 @OffsetTable:
   .byte $18, -$0f, -$10, $10
+;@DirectionToMetaspriteTable:
+;  .byte CRYSTALIS_BEAM_METASPRITE_UP
+;  .byte CRYSTALIS_BEAM_METASPRITE_RIGHT
+;  .byte CRYSTALIS_BEAM_METASPRITE_DOWN
+;  .byte CRYSTALIS_BEAM_METASPRITE_LEFT
 
-
+.segment "1c", "1d"
 ;; Patch the draw metasprite routine to add an extended metasprite table
-.org $8283
+.org $8283 ; asl tay bcs
   jsr ExtendedMetaspriteTable
   jmp $829d ; unconditional
 FREE_UNTIL $829d
 
 .reloc
 ExtendedMetaspriteTable:
+  cmp #$ff
+  beq @UseExtendedTable
   asl
   tay
-  bcs +
+  bcs @TablePart2
     ; check for sprites in the extended table
-    cpy #$ff
-    beq @UseExtendedTable
-      lda MetaspriteTable,y
-      sta $15
-      lda MetaspriteTable+1,y
-      sta $16
-      rts
-+ 
+    lda MetaspriteTable,y
+    sta $15
+    lda MetaspriteTable+1,y
+    sta $16
+    rts
+@TablePart2:
   lda MetaspriteTablePart2,y
   sta $15
   lda MetaspriteTablePart2+1,y
   sta $16
   rts
 @UseExtendedTable:
+  ; when using the extended table, we bank out prgA temporarily
+  lda #$3d
+  jsr BankSwitch8k_a000
   lda $0580,x
   tay
   lda MetaspriteTablePart3,y
@@ -88,6 +99,15 @@ ExtendedMetaspriteTable:
   sta $16
   rts
 
+; Clear the original Crystalis sword atk metasprite since we'll bank it
+;FREE "1c" [$9041, $9163)
+;
+.reloc
+MetaspriteTablePart3:
+  .word (CrystalisSwordAtkUp)
+  .word (CrystalisSwordAtkRight)
+  .word (CrystalisSwordAtkDown)
+  .word (CrystalisSwordAtkLeft)
 
 ; .segment "10"
 ;; Add a fifth row on the first inventory page

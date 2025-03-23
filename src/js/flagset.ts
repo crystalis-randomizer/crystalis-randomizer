@@ -1214,7 +1214,7 @@ export class FlagSet {
     return this.check(World.ShuffleHouses);
   }
   shuffleMesiaTower() {
-    return this.shuffleHouses();
+    return false; // this.shuffleHouses();
   }
   shuffleAreas() {
     // TODO: consider multiple levels of shuffle?

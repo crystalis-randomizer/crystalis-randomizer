@@ -19,9 +19,94 @@ export class Metasprites extends Array<Metasprite> {
     }
   }
 
+  addCrystalisSwordMetasprites(a: Assembler) {
+    const up = this[0xff];
+    const down = this[0x98]; // old coin metasprite thats replaced
+    const right = this[0xfc]; // unused in vanilla?
+    const left = this[0xfe]; // unused in vanilla?
+    down.used = true;
+    right.used = true;
+    left.used = true;
+
+    // Update the metasprite to remove the tiny single pixel tiles to reduce overhead and per scanline sprite limit
+    up.sprites = up.sprites.map((frames) => frames.filter((spr) => spr[3] != 0xa8));
+    up.size = 7;
+    down.size = 7;
+    right.size = 7;
+    left.size = 7;
+    down.frameMask = 7;
+    right.frameMask = 7;
+    left.frameMask = 7;
+    down.frames = 8;
+    right.frames = 8;
+    left.frames = 8;
+    // Now make sure all of them are the right size. For the in game math, it has to be exactly size number
+    // of sprites per frame.
+    up.sprites = up.sprites.map((frames) => frames.slice(0, up.size));
+
+    // now lets rotate the sprites. we start by calculating the center point for the tail animation
+    // and then rotate each of the sprites so that they line up in the same position.
+
+    // start by converting all dx/dy into signed numbers.
+    const intoSigned = (metasprite: Sprite[][]) => metasprite.map((frames) => frames.map(spr => [
+      spr[0] > 127 && spr[0] != 0x80 ? spr[0] - 256 : spr[0],
+      spr[1] > 127 && spr[1] != 0x80 ? spr[1] - 256 : spr[1],
+      spr[2], spr[3]
+    ]));
+    const asSigned = intoSigned(up.sprites);
+
+    // copy the sprites over to the new directions as deep clones
+
+    // now figure out the bounding box by finding the smallest X and smallest Y for the top left
+    // and the largest x and largest y for the bottom right
+    // const topLeftX = Math.min.apply(0, asSigned.flatMap(frames => frames.map(spr => spr[0])));
+    // const topLeftY = Math.min.apply(0, asSigned.flatMap(frames => frames.map(spr => spr[1])));
+    // const botrightX = Math.max.apply(0, asSigned.flatMap(frames => frames.map(spr => spr[0])));
+    // const botrightY = Math.max.apply(0, asSigned.flatMap(frames => frames.map(spr => spr[1])));
+    //
+    // // Now with the bounding box, we can get the center point
+    // const centerX = botrightX - topLeftX;
+    // const centerY = botrightY - topLeftY;
+
+    // and reflect each sprite about the center point.
+    // For 90deg CW: -y, x
+    // For 90deg CC:  y,-x
+    // For 180deg  : -y,-x
+    right.sprites = asSigned.map(frames => frames.map(spr => [
+      spr[0],
+      spr[1] != 0x80 ? spr[1] * -1 : spr[1],
+      spr[2],
+      spr[3]
+    ]));
+    down.sprites = asSigned.map(frames => frames.map(spr => [
+      spr[0] != 0x80 ? spr[0] * -1 : spr[0],
+      spr[1] != 0x80 ? spr[1] * -1 : spr[1],
+      spr[2],
+      spr[3]
+    ]));
+    left.sprites = asSigned.map(frames => frames.map(spr => [
+      spr[0] != 0x80 ? spr[0] * -1 : spr[0],
+      spr[1],
+      spr[2],
+      spr[3]
+    ]));
+
+    // And now export it so we can update the tail metasprite based on direction
+    a.segment('1c', '1d');
+    a.assign("CRYSTALIS_BEAM_METASPRITE_UP", up.id);
+    a.assign("CRYSTALIS_BEAM_METASPRITE_RIGHT", right.id);
+    a.assign("CRYSTALIS_BEAM_METASPRITE_DOWN", down.id);
+    a.assign("CRYSTALIS_BEAM_METASPRITE_LEFT", left.id);
+    a.export("CRYSTALIS_BEAM_METASPRITE_UP", "CRYSTALIS_BEAM_METASPRITE_RIGHT",
+        "CRYSTALIS_BEAM_METASPRITE_DOWN", "CRYSTALIS_BEAM_METASPRITE_LEFT");
+    return a.module();
+  }
+
   write(): Module[] {
-    // write out the new metasprite data
     const a = this.rom.assembler();
+    const newsprites = this.addCrystalisSwordMetasprites(a)!;
+
+    // write out the new metasprite data
     a.segment('1c', '1d');
     const map = new Map<number, Expr>();
     for (const metasprite of this) {
@@ -34,7 +119,7 @@ export class Metasprites extends Array<Metasprite> {
         metasprite.assembleMirrored(a, map);
       }
     }
-    return [a.module()];
+    return [a.module(), newsprites];
   }
 }
 

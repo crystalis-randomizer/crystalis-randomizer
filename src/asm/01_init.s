@@ -135,6 +135,7 @@ UPDATE_REFS target @ refs
 .segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
 .segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000
 .segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000
+;;; Monster names and metasprite table part 3
 .segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000
 
 ;;; Note: we moved these when we expanded the rom.

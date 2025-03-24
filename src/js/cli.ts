@@ -111,7 +111,7 @@ const main = (...args: string[]) => {
     }
   }
 
-  const flagset = new FlagSet(flags);
+  const flagset = new FlagSet(flags, seed);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const orig_crc = crc32(rom);
   if (!EXPECTED_CRC32S.has(orig_crc)) {

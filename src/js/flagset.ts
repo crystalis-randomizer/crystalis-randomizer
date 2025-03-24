@@ -967,8 +967,11 @@ class DebugMode extends FlagSection {
 
 export class FlagSet {
   private flags: Map<Flag, Mode>;
+  private rawSeed?: string;
 
-  constructor(str: string|Map<Flag, Mode> = '@Casual') {
+  constructor(str: string|Map<Flag, Mode> = '@Casual', rawSeed?: string) {
+    this.rawSeed = rawSeed;
+    console.log(`Raw seed is: ${rawSeed}`);
     if (typeof str !== 'string') {
       this.flags = new Map();
       for (const [k, v] of str) {
@@ -1004,7 +1007,8 @@ export class FlagSet {
     return new FlagSet(
         new Map(
             [...this.flags].map(
-                ([k, v]) => [k, k.opts.optional ? k.opts.optional(v) : v])));
+                ([k, v]) => [k, k.opts.optional ? k.opts.optional(v) : v])),
+                this.rawSeed);
   }
 
   filterRandom(random: Random): FlagSet {
@@ -1013,7 +1017,7 @@ export class FlagSet {
       return random.pick([true, false, ...(k.opts.modes || '')]);
     }
     return new FlagSet(
-        new Map([...this.flags].map(([k, v]) => [k, pick(k, v)])));
+        new Map([...this.flags].map(([k, v]) => [k, pick(k, v)])), this.rawSeed);
   }
 
   toString() {
@@ -1383,5 +1387,9 @@ export class FlagSet {
     if (this.shuffleAreas() && this.preserveUniqueChecks()) {
       throw new UsageError('Wa and Eu are incompatible');
     }
+  }
+  
+  isEasterEgg(): boolean {
+    return (this.rawSeed?.startsWith("JEFFPETERS") == true);
   }
 }

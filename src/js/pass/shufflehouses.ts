@@ -162,7 +162,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
     }
   }
   
-  if (flags.isEasterEgg())
+  if (flags.isEasterEgg() && flags.shuffleMesiaTower())
   {
     for (const [outsideKey, insideKey] of [[TowerMesia.name, MesiaShrine.name], [JoelLighthouse.name, TowerMesia.name]]) {
       const outsideHouse = byLocName.get(outsideKey)!;

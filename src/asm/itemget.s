@@ -144,7 +144,7 @@ PatchStartItemGet:
 .ifdef _ARCHIPELAGO
   lda ArchipelagoFlag
   cmp #$02
-  beq ++
+  beq ReceivingFromAP
     ldy #$01
     lda $23
     jsr SetFlagYA
@@ -158,24 +158,26 @@ PatchStartItemGet:
     lda $0300,y
     ; need this check again because this could actually be a dead mimic
     cmp #$aa
-    beq +
+    beq CheckForGiantInsect
       lda $23
-      cmp #$25 ;Cordel Grass
-      beq ++
-        cmp #$3c ;Kirisa Meadow
-        beq ++
+      cmp #$25 ; Cordel Grass
+      beq RemoveTrigger
+        cmp #$3c ; Kirisa Meadow
+        beq RemoveTrigger
           cmp #$3b ; Underwater channel
-          beq ++
-          bne @bail
-+   lda $23
+          beq RemoveTrigger
+          bne bail
+CheckForGiantInsect:
+    lda $23
     cmp #$07 ; Giant Insect
-    bne ++
+    bne RemoveTrigger
       ; if this is the insect chest, we need to fix the screen scroll
       lda #0 ; SCREEN_MODE_NORMAL
       sta ScreenMode
-++  lda #$00
+RemoveTrigger:
+    lda #$00
     sta $4a0,y
-@bail:
+bail:
     pla
     pla
     pla
@@ -183,7 +185,8 @@ PatchStartItemGet:
     pla
     pla
     rts
-++:
+ReceivingFromAP:
+  ; we're getting an item from the BizHawkClient
 .endif _ARCHIPELAGO
   lda $23
   sta $61fe
@@ -315,7 +318,8 @@ PatchStartItemGet:
 .ifdef _ARCHIPELAGO
   lda ArchipelagoFlag
   cmp #$02
-  beq ++
+  beq ReceivingFromAP
+    ; we're checking a location in-game
     ldy #$01
     lda $23
     jsr SetFlagYA
@@ -332,24 +336,26 @@ PatchStartItemGet:
     ldy $0623
     lda $0300,y
     cmp #$aa
-    beq +
+    beq CheckForGiantInsect
       lda $23
-      cmp #$25 ;Cordel Grass
-      beq ++
-        cmp #$3c ;Kirisa Meadow
-        beq ++
+      cmp #$25 ; Cordel Grass
+      beq RemoveTrigger
+        cmp #$3c ; Kirisa Meadow
+        beq RemoveTrigger
           cmp #$3b ; Underwater channel
-          beq ++
-          bne @NotAMimicOrChest
-+   lda $23
+          beq RemoveTrigger
+          bne NotAMimicOrChest
+CheckForGiantInsect:
+    lda $23
     cmp #$07 ; Giant Insect
-    bne ++
+    bne RemoveTrigger
       ; if this is the insect chest, we need to fix the screen scroll
       lda #0 ; SCREEN_MODE_NORMAL
       sta ScreenMode
-++  lda #$00
+RemoveTrigger:
+    lda #$00
     sta $4a0,y
-@NotAMimicOrChest:
+NotAMimicOrChest:
     pla
     pla
     pla
@@ -357,7 +363,8 @@ PatchStartItemGet:
     pla
     pla
     rts
-++:
+ReceivingFromAP:
+  ; we're getting an item from the BizHawkClient
 .endif _ARCHIPELAGO
   lda $23
   sta $61fe

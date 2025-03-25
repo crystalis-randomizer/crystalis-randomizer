@@ -3,49 +3,38 @@ import {hex, readLittleEndian, seq, tuple} from './util';
 import {Rom} from '../rom';
 import { Module } from '../asm/module';
 import { Assembler } from '../asm/assembler';
-import { Expr } from '../asm/expr';
+import {Expr} from '../asm/expr';
 
 const METASPRITE_TABLE = 0x3845c;
+const NEW_METASPRITE_TABLE = 0xbd00;
 
 // [dx, dy, attributes, pattern id]
 type Sprite = [number, number, number, number];
 
-export class Metasprites extends Array<Metasprite> {
-  
+// We create a new metasprite table since we are running out of room in the main
+// metasprite segment. This allows us a lot more freedom when adding new metasprites.
+// If your metasprite is small enough to fit in the free space in the first table, just
+// use that instead though.
+
+// The Metasprite ptr table for the extended sprites is located at 0xbd00 in the bank 3d
+export class ExtendedMetasprites extends Array<Metasprite> {
   constructor(readonly rom: Rom) {
     super(0x100);
-    for (let id = 0; id < 0x100; id++) {
-      this[id] = new Metasprite(rom, id);
-    }
   }
 
   addCrystalisSwordMetasprites(a: Assembler) {
-    const up = this[0xff];
-    const down = this[0x98]; // old coin metasprite thats replaced
-    const right = this[0xfc]; // unused in vanilla?
-    const left = this[0xfe]; // unused in vanilla?
-    down.used = true;
-    right.used = true;
-    left.used = true;
+    const up = new Metasprite(this.rom, 0);
+    const right = new Metasprite(this.rom, 1);
+    const down = new Metasprite(this.rom, 2);
+    const left = new Metasprite(this.rom, 3);
 
+    const vanillaUp = new Metasprite(this.rom, 0xff);
+    // copy the sprite
     // Update the metasprite to remove the tiny single pixel tiles to reduce overhead and per scanline sprite limit
-    up.sprites = up.sprites.map((frames) => frames.filter((spr) => spr[3] != 0xa8));
-    up.size = 7;
-    down.size = 7;
-    right.size = 7;
-    left.size = 7;
-    down.frameMask = 7;
-    right.frameMask = 7;
-    left.frameMask = 7;
-    down.frames = 8;
-    right.frames = 8;
-    left.frames = 8;
-    // Now make sure all of them are the right size. For the in game math, it has to be exactly size number
-    // of sprites per frame.
-    up.sprites = up.sprites.map((frames) => frames.slice(0, up.size));
-
-    // now lets rotate the sprites. we start by calculating the center point for the tail animation
-    // and then rotate each of the sprites so that they line up in the same position.
+    vanillaUp.sprites = vanillaUp.sprites.map((frames) => frames.filter((spr) => spr[3] != 0xa8));
+    // Now make sure all of them are the right size. For the in game math, it has to be exactly
+    // size+1 number of sprites per frame.
+    vanillaUp.sprites = vanillaUp.sprites.map((frames) => frames.slice(0, up.size+1));
 
     // start by converting all dx/dy into signed numbers.
     const intoSigned = (metasprite: Sprite[][]) => metasprite.map((frames) => frames.map(spr => [
@@ -53,9 +42,9 @@ export class Metasprites extends Array<Metasprite> {
       spr[1] > 127 && spr[1] != 0x80 ? spr[1] - 256 : spr[1],
       spr[2], spr[3]
     ]));
-    const asSigned = intoSigned(up.sprites);
 
     // copy the sprites over to the new directions as deep clones
+    const asSigned = intoSigned(vanillaUp.sprites);
 
     // now figure out the bounding box by finding the smallest X and smallest Y for the top left
     // and the largest x and largest y for the bottom right
@@ -68,58 +57,146 @@ export class Metasprites extends Array<Metasprite> {
     // const centerX = botrightX - topLeftX;
     // const centerY = botrightY - topLeftY;
 
-    // and reflect each sprite about the center point.
-    // For 90deg CW: -y, x
-    // For 90deg CC:  y,-x
-    // For 180deg  : -y,-x
-    right.sprites = asSigned.map(frames => frames.map(spr => [
-      spr[0],
-      spr[1] != 0x80 ? spr[1] * -1 : spr[1],
-      spr[2],
-      spr[3]
-    ]));
-    down.sprites = asSigned.map(frames => frames.map(spr => [
-      spr[0] != 0x80 ? spr[0] * -1 : spr[0],
-      spr[1] != 0x80 ? spr[1] * -1 : spr[1],
-      spr[2],
-      spr[3]
-    ]));
-    left.sprites = asSigned.map(frames => frames.map(spr => [
-      spr[0] != 0x80 ? spr[0] * -1 : spr[0],
-      spr[1],
-      spr[2],
-      spr[3]
-    ]));
+    const GenerateMetasprite = function(m: Metasprite, dir: 'up'|'right'|'down'|'left') {
+      m.used = true;
+      m.size = 7;
+      m.frameMask = 7;
+      m.frames = 8;
+      m.mirrored = null;
+      // reflect each sprite about the center point.
+      // For 90deg CW: -y, x
+      // For 90deg CC:  y,-x
+      // For 180deg  : -y,-x
+      m.sprites = asSigned.map(frames => frames.map(spr => {
+        let newX, newY = 0;
+        const sprOffset = new Map<'up'|'right'|'down'|'left', number[]>([
+          ['up', [0, 24]],
+          ['right', [-40, -8]],
+          ['down', [-8, -48]],
+          ['left', [32, -16]],
+        ]);
+        switch (dir) {
+          case 'up': // no flip
+            newX = spr[0];
+            newY = spr[1];
+            break;
+          case 'right':
+            newX = spr[1] * -1;
+            newY = spr[0];
+            break;
+          case 'down':
+            newX = spr[0] * -1;
+            newY = spr[1] * -1;
+            break;
+          case 'left':
+            newX = spr[1];
+            newY = spr[0] * -1;
+            break;
+        }
+        return [
+          newX + sprOffset.get(dir)![0],
+          newY + sprOffset.get(dir)![1],
+          spr[2],
+          spr[3]
+        ]
+      }));
+    };
+
+    GenerateMetasprite(up, 'up');
+    GenerateMetasprite(right, 'right');
+    GenerateMetasprite(down, 'down');
+    GenerateMetasprite(left, 'left');
 
     // And now export it so we can update the tail metasprite based on direction
-    a.segment('1c', '1d');
     a.assign("CRYSTALIS_BEAM_METASPRITE_UP", up.id);
     a.assign("CRYSTALIS_BEAM_METASPRITE_RIGHT", right.id);
     a.assign("CRYSTALIS_BEAM_METASPRITE_DOWN", down.id);
     a.assign("CRYSTALIS_BEAM_METASPRITE_LEFT", left.id);
     a.export("CRYSTALIS_BEAM_METASPRITE_UP", "CRYSTALIS_BEAM_METASPRITE_RIGHT",
         "CRYSTALIS_BEAM_METASPRITE_DOWN", "CRYSTALIS_BEAM_METASPRITE_LEFT");
-    return a.module();
+    this[up.id] = up;
+    this[right.id] = right;
+    this[down.id] = down;
+    this[left.id] = left;
   }
 
   write(): Module[] {
     const a = this.rom.assembler();
-    const newsprites = this.addCrystalisSwordMetasprites(a)!;
+    a.opts.overwriteMode = 'forbid';
+    a.segment('3d');
+    a.assign("ExtendedMetaspriteTable", NEW_METASPRITE_TABLE);
+    a.export("ExtendedMetaspriteTable");
+
+    this.addCrystalisSwordMetasprites(a);
+
+    const map = new Map<number, Expr>();
+    for (const metasprite of this) {
+      if (!metasprite)
+        continue;
+      if (!metasprite.mirrored && metasprite.used) {
+        const ptr = metasprite.assembleNotMirrored(a);
+        map.set(metasprite.id, ptr);
+        metasprite.writePointerToTable(a, NEW_METASPRITE_TABLE, ptr);
+      }
+    }
+    for (const metasprite of this) {
+      if (!metasprite)
+        continue;
+      if (metasprite.mirrored && metasprite.used) {
+        const ptr = metasprite.assembleMirrored(a, map);
+        metasprite.writePointerToTable(a, NEW_METASPRITE_TABLE, ptr);
+      }
+    }
+    return [a.module()];
+  }
+}
+
+// Updated the metasprites table to use a slightly more efficient split table approach
+// where the lobytes are in one table and the hibytes are in another.
+export class Metasprites extends Array<Metasprite> {
+  
+  constructor(readonly rom: Rom) {
+    super(0x100);
+    for (let id = 0; id < 0x100; id++) {
+      this[id] = new Metasprite(rom, id);
+    }
+    // TODO find metasprites that are unused and set them up here
+    // this[0x98].used = false; // old coin metasprite thats replaced
+    // this[0xfc].used = false; // unused in vanilla?
+    // this[0xfe].used = false; // unused in vanilla?
+
+    // Remove the data for the vanilla crys beam but keep it "used"
+    // as a sentinel value for the extended metasprite table.
+    const vanillaCrysBeam = this[0xff];
+    vanillaCrysBeam.sprites = [[[0x80,0x80,0x80,0x80]]];
+    vanillaCrysBeam.size = 1;
+    vanillaCrysBeam.frameMask = 0;
+    vanillaCrysBeam.frames = 0;
+  }
+
+  write(): Module[] {
+    const a = this.rom.assembler();
+    a.opts.overwriteMode = 'allow';
 
     // write out the new metasprite data
     a.segment('1c', '1d');
+    a.assign("NewMetaspriteTable", NEW_METASPRITE_TABLE);
+    a.export("NewMetaspriteTable");
     const map = new Map<number, Expr>();
     for (const metasprite of this) {
       if (!metasprite.mirrored && metasprite.used) {
-        map.set(metasprite.id, metasprite.assembleNotMirrored(a));
+        const ptr = metasprite.assembleNotMirrored(a);
+        map.set(metasprite.id, ptr);
+        metasprite.writePointerToTable(a, NEW_METASPRITE_TABLE, ptr);
       }
     }
     for (const metasprite of this) {
       if (metasprite.mirrored && metasprite.used) {
-        metasprite.assembleMirrored(a, map);
+        const ptr = metasprite.assembleMirrored(a, map);
+        metasprite.writePointerToTable(a, NEW_METASPRITE_TABLE, ptr);
       }
     }
-    return [a.module(), newsprites];
+    return [a.module()];
   }
 }
 
@@ -235,19 +312,21 @@ export class Metasprite extends Entity {
         a.byte(...this.sprites[frameNum][spriteNum]);
       }
     }
-
-    a.org(this.pointer - 0x30000, `Metasprite_${this.id.toString(16)}_Ptr`);
-    a.word(ptr);
     return ptr;
   }
 
-  assembleMirrored(a: Assembler, map: Map<number, Expr>) {
+  assembleMirrored(a: Assembler, map: Map<number, Expr>) : Expr {
     a.reloc(`Metasprite_${this.id.toString(16)}_Data`);
     const ptr = a.pc();
     a.byte(0xff);
     a.word(map.get(this.mirrored!)!);
+    return ptr;
+  }
 
-    a.org(this.pointer - 0x30000, `Metasprite_${this.id.toString(16)}_Ptr`);
-    a.word(ptr);
+  writePointerToTable(a: Assembler, base: number, ptr: Expr) {
+    a.org(base + this.id, `Metasprite_${this.id.toString(16)}_Ptr_Lo`);
+    a.byte(Expr.loByte(ptr));
+    a.org(base + this.id + 0x100, `Metasprite_${this.id.toString(16)}_Ptr_Hi`);
+    a.byte(Expr.hiByte(ptr));
   }
 }

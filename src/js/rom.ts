@@ -14,7 +14,7 @@ import {ItemGets} from './rom/itemget';
 import {Locations} from './rom/location';
 import {Messages} from './rom/messages';
 import {Metascreens} from './rom/metascreens';
-import {Metasprites} from './rom/metasprite';
+import {ExtendedMetasprites, Metasprites} from './rom/metasprite';
 import {Metatileset, Metatilesets} from './rom/metatileset';
 import {Monster} from './rom/monster';
 import {Npcs} from './rom/npc';
@@ -93,6 +93,7 @@ export class Rom {
   readonly adHocSpawns: AdHocSpawn[];
   readonly metascreens: Metascreens;
   readonly metasprites: Metasprites;
+  readonly extendedMetasprites: ExtendedMetasprites;
   readonly metatilesets: Metatilesets;
   readonly itemGets: ItemGets;
   readonly items: Items;
@@ -199,6 +200,7 @@ export class Rom {
     this.objects = new Objects(this);
     this.adHocSpawns = seq(0x60, i => new AdHocSpawn(this, i));
     this.metasprites = new Metasprites(this);
+    this.extendedMetasprites = new ExtendedMetasprites(this);
     this.messages = new Messages(this);
     this.telepathy = new Telepathy(this);
     this.itemGets = new ItemGets(this);
@@ -392,6 +394,7 @@ export class Rom {
     modules.push(...this.bossKills.write());
     writeAll(this.patterns);
     modules.push(...this.metasprites.write());
+    modules.push(...this.extendedMetasprites.write());
     modules.push(...this.wildWarp.write());
     modules.push(...this.townWarp.write());
     modules.push(...this.coinDrops.write());

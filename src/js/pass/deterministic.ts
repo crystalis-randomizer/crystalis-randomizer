@@ -1332,9 +1332,31 @@ function noBowMode(rom: Rom): void {
       0, 'door', [Crypt_Draygon2.meta.id << 8 | 0x10, 'edge:bottom']);
 }
 
-// For now this just fixes the shot to be all elements instead of none.
 function fixCrystalis(rom: Rom) {
+  // Fix the shot to be all elements instead of none.
   rom.objects[0x33].elements = 0xf;
+  // Copy over the water bridge creation sprites from the water sword to the
+  // crystalis sword page
+  const crystalisSwordPage = 0x46 << 6;
+  const waterSwordPage = 0x44 << 6;
+
+  const copyWaterBridgeTiles = new Map<number, number>([
+    [0x28, 0x28],
+    [0x29, 0x29],
+    [0x2a, 0x2a],
+    [0x2b, 0x2b],
+    [0x2c, 0x2c],
+  ]);
+  copyWaterBridgeTiles.forEach((newaddr, oldaddr) => {
+    const crystalisPixels = rom.patterns.get(crystalisSwordPage, newaddr);
+    for (let x=0; x<8; x++) {
+      for (let y = 0; y < 8; y++) {
+        // Update the pixel so that it uses palette 3 instead of palette 1 for the white color
+        const px = rom.patterns.get(waterSwordPage, oldaddr).pixelAt(y, x);
+        crystalisPixels.setPixelAt(y, x, px != 0 ? px | 0b10 : 0);
+      }
+    }
+  });
 }
 
 // Enables chests and mimics to appear on every screen by replacing the unused recover graphics

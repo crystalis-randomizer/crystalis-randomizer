@@ -730,7 +730,7 @@ function buffDyna(rom: Rom, _flags: FlagSet): void {
   rom.objects[0xb8].immobile = true;
   rom.objects[0xb9].collisionPlane = 1;
   rom.objects[0xb9].immobile = true;
-  rom.objects[0x33].collisionPlane = 2;
+  // rom.objects[0x33].collisionPlane = 2;
   rom.adHocSpawns[0x28].slotRangeLower = 0x1c; // counter
   rom.adHocSpawns[0x29].slotRangeUpper = 0x1c; // laser
   rom.adHocSpawns[0x2a].slotRangeUpper = 0x1c; // bubble

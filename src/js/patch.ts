@@ -271,6 +271,8 @@ async function shuffleInternal(rom: Uint8Array,
   const parsed = new Rom(rom);
   const actualFlagString = String(flags);
   const config = flags.config;
+  (globalThis as any).config = config;
+  (globalThis as any).Config = Config;
   const s: Shuffle = {config, random, rom: parsed};
 
 // (window as any).cave = shuffleCave;

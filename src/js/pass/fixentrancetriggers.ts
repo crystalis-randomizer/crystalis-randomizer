@@ -126,7 +126,9 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
       if (scr.flag === 'custom:true') {
         out.push(exit[0]);
       } else {
-        console.error(`No flag for ${scr.name}`);
+        // The cave connects to an entrance that we're unable to close.
+        // Best effort failed, so just let it go.
+        console.error(`No flag for ${scr.name} connecting from ${loc.name}`);
       }
       continue;
     }

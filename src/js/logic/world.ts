@@ -181,6 +181,7 @@ export class World {
         Shyron_ToolShop,
       },
       flags: {
+        AlwaysTrue,
         BallOfFire, BallOfThunder, BallOfWater, BallOfWind,
         Barrier, BlizzardBracelet, BowOfMoon, BowOfSun,
         BreakStone, BreakIce, BreakIron,
@@ -209,10 +210,11 @@ export class World {
     } = this.rom;
     const start = this.entrance(MezameShrine);
     const enterOak = this.entrance(Oak);
+    this.addCheck([start], Requirement.OPEN, [AlwaysTrue.id]);
     this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
     this.addCheck([start], BowOfMoon.r, [UsedBowOfMoon.id]);
     this.addCheck([start], BowOfSun.r, [UsedBowOfSun.id]);
-    const shellFluteCondition = [ShellFluteItem.itemUseData[0].want] as Condition;
+    const shellFluteCondition = {id: ShellFluteItem.itemUseData[0].want} as Flag;
     this.addCheck([start], and(shellFluteCondition, ShellFlute),
                   [CurrentlyRidingDolphin.id]);
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);

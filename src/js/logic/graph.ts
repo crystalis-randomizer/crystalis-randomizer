@@ -304,7 +304,7 @@ ATTEMPT:
           missingMap.set(
               ns(slot),
               this.graph.get(slot)!
-                  .map(r => '\n    ' + (Bits.bits(r) as ItemIndex[]).map(ni)
+                  .map(r => '\n    | ' + (Bits.bits(r) as ItemIndex[]).map(ni)
                   .join(' & ')).join(''));
         }
         // NOTE: path[i][0] is slot indexes, not items, so this does not work.

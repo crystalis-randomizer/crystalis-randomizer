@@ -1007,6 +1007,7 @@ export class FlagSet {
 
   get config(): Config {
     if (this._config) return this._config;
+    (globalThis as any).configGen = this.configGen;
 
     // TODO - is it a problem to just return 0 for all randoms for now?
     const rand: Random = {
@@ -1018,7 +1019,6 @@ export class FlagSet {
       
     const evaluator = new ScriptEvaluator(rand);
     return this._config = this.configGen.generate(evaluator);
-
   }
 
   get configGen(): ConfigGenerator {

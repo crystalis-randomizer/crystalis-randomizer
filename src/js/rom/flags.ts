@@ -124,7 +124,7 @@ export class Flags {
   [id: number]: Flag;
 
   // 00x
-  0x000 = fixed(0x000, FALSE);
+  AlwaysFalse = fixed(0x000, FALSE);
   0x001 = fixed(0x001);
   0x002 = fixed(0x002);
   0x003 = fixed(0x003);

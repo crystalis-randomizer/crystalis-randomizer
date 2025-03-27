@@ -759,7 +759,7 @@ message Config {
       // possibly do this with SetOrClearFlagsFromBytePair_24y.
     }
     optional RideDolphin ride_dolphin = 3
-      [(default) = HEALED_DOLPHIN,
+      [(default) = NOTHING, // HEALED_DOLPHIN, // TODO - consider this?
        (group.vanilla_dolphin) = BEACH_KENSU];
 
     // What is required for the fisherman to spawn?

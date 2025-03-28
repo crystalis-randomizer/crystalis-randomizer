@@ -971,7 +971,7 @@ export class FlagSet {
 
   constructor(str: string|Map<Flag, Mode> = '@Casual', rawSeed?: string) {
     this.rawSeed = rawSeed;
-    console.log(`Raw seed is: ${rawSeed}`);
+    //console.log(`Raw seed is: ${rawSeed}`);
     if (typeof str !== 'string') {
       this.flags = new Map();
       for (const [k, v] of str) {
@@ -1218,7 +1218,7 @@ export class FlagSet {
     return this.check(World.ShuffleHouses);
   }
   shuffleMesiaTower() {
-    return false; // this.shuffleHouses();
+    return this.shuffleHouses();
   }
   shuffleAreas() {
     // TODO: consider multiple levels of shuffle?

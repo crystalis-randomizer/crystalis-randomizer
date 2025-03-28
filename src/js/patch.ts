@@ -544,7 +544,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
     if (!shop.used || shop.location === 0xff) continue;
     if (isEasterEgg && shop.location === 0xf6)
     {
-      console.log("Plandoing Shyron Shop...");
+      //console.log("Plandoing Shyron Shop...");
       shop.contents = [0x1d, 0x21, 0x22, 0x24];
       continue;
     }
@@ -557,7 +557,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
   }
   if (isEasterEgg)
   {
-    console.log("Limes for everyone!");
+    //console.log("Limes for everyone!");
     const toolShopData = shops[ShopType.TOOL];
     toolShopData.contents = [];
     for (let i = 0; i < toolShopData.shops.length * 4 - 2; i++)

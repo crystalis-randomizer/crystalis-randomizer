@@ -140,6 +140,11 @@ const main = (...args: string[]) => {
       for (const r of s.route) {
         console.log(`Spoiler: ${r.toString()}`);
       }
+      
+      for (const sl of s.slots) {
+        if (sl === undefined) continue;
+        console.log(`Spoiler: ${sl.toString()}`);
+      }
     }
   }));
 };

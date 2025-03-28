@@ -54,7 +54,7 @@ const shops = new Set<HouseType>(['inn', 'armor', 'tool', 'pawn']);
 const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
 function makeConnection(rom: Rom, house: House, replacement: House, first: boolean) {
-  console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} ${house.type} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]} ${replacement.type}`);
+  //console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} ${house.type} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]} ${replacement.type}`);
   Metalocation.connect(rom, house.outside, replacement.inside);
   // Replace the icon (if applicable)
   if (!first) return;
@@ -164,7 +164,9 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   
   if (flags.isEasterEgg() && flags.shuffleMesiaTower())
   {
+    //console.log("Starting funny haha plando.");
     for (const [outsideKey, insideKey] of [[TowerMesia.name, MesiaShrine.name], [JoelLighthouse.name, TowerMesia.name]]) {
+      //console.log(`Connecting outside: ${outsideKey} to inside: ${insideKey}`);
       const outsideHouse = byLocName.get(outsideKey)!;
       const insideHouse = byLocName.get(insideKey)!;
       makeConnection(rom, outsideHouse, insideHouse, true);
@@ -187,7 +189,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   const hasInn = new Set<number>();
   const inns = byType.get('inn');
   for (const [scr, locposs] of [...firstPass, ...secondPass]) {
-    console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
+    //console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
     const map = new Map<ConnectionType, HouseType>();
     let first = true;
     for (const locpos of locposs) {

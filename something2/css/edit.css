@@ -1,0 +1,69 @@
+body {
+  display: flex;
+}
+
+body > nav {
+  width: 100px;
+  padding: 1em;
+}
+
+body > hr {
+  height: 100%;
+  width: 2px;
+  margin: 0;
+  padding: 0;
+  color: #aaa;
+}
+
+body > div {
+  flex-grow: 1;
+}
+
+dialog {
+  display: none;
+  position: absolute;
+  opacity: 80%;
+  background: black;
+  justify-content: center;
+  align-items: center;
+}
+dialog.visible {
+  display: flex;
+}
+
+dialog > div {
+  width: 400px;
+}
+
+/* screen editor */
+
+.row {
+  display: flex;
+}
+
+.screen-editor {
+  display: inline-block;
+}
+
+.screen-grid {
+  display: grid;
+  grid-template-columns: 16px 16px 16px 16px 16px 16px 16px 16px
+                         16px 16px 16px 16px 16px 16px 16px 16px;
+  grid-template-rows: 16px 16px 16px 16px 16px 16px 16px 16px
+                      16px 16px 16px 16px 16px 16px 16px;
+  grid-gap: 0;
+  width: 256px;
+  height: 240px;
+}
+
+.tileset-palette-grid {
+  display: grid;
+  grid-template-columns: 16px 16px 16px 16px 16px 16px 16px 16px
+                         16px 16px 16px 16px 16px 16px 16px 16px
+                         16px 16px 16px 16px 16px 16px 16px 16px
+                         16px 16px 16px 16px 16px 16px 16px 16px;
+  grid-template-rows: 16px 16px 16px 16px 16px 16px 16px 16px;
+  grid-gap: 2px;
+  width: 574px;
+  height: 142px;
+}

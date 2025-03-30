@@ -111,7 +111,7 @@ const main = (...args: string[]) => {
     }
   }
 
-  const flagset = new FlagSet(flags);
+  const flagset = new FlagSet(flags, seed);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const orig_crc = crc32(rom);
   if (!EXPECTED_CRC32S.has(orig_crc)) {
@@ -139,6 +139,11 @@ const main = (...args: string[]) => {
       const s = log.spoiler;
       for (const r of s.route) {
         console.log(`Spoiler: ${r.toString()}`);
+      }
+      
+      for (const sl of s.slots) {
+        if (sl === undefined) continue;
+        console.log(`Spoiler: ${sl.toString()}`);
       }
     }
   }));

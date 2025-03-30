@@ -172,7 +172,6 @@ export class World {
         MezameShrine,
         Oak,
         Shyron_ToolShop,
-        TowerMesia
       },
       flags: {
         AbleToRideDolphin,
@@ -203,7 +202,6 @@ export class World {
     } = this.rom;
     const start = this.entrance(MezameShrine);
     const enterOak = this.entrance(Oak);
-    const mesiaCombineSword = this.entrance(TowerMesia);
     this.addCheck([start], and(BowOfMoon, BowOfSun), [OpenedCrypt.id]);
     this.addCheck([start], BowOfMoon.r, [UsedBowOfMoon.id]);
     this.addCheck([start], BowOfSun.r, [UsedBowOfSun.id]);
@@ -212,11 +210,6 @@ export class World {
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
     this.addItemCheck([start], and(GlowingLamp, BrokenStatue),
                       RepairedStatue.id, {lossy: true, unique: true});
-
-    if (this.flagset.shuffleMesiaTower()) {
-      this.addItemCheck([mesiaCombineSword], and(SwordOfWind, SwordOfFire, SwordOfWater, SwordOfThunder),
-          Crystalis.id, {lossy: false, unique: true});
-    }
 
     // Add shops
     for (const shop of this.rom.shops) {
@@ -421,8 +414,12 @@ export class World {
       slots: this.slots,
       checkName: (check: number) => checkName(this.rom.flags[check]),
       prefill: (random: Random) => {
-        const {Crystalis, MesiaInTower, LeafElder} = this.rom.flags;
+        const {Crystalis, MesiaInTower, LeafElder, InjuredDolphin, EyeGlasses} = this.rom.flags;
         const map = new Map([[MesiaInTower.id, Crystalis.id]]);
+        if (this.flagset.isEasterEgg())
+        {
+            map.set(InjuredDolphin.id, EyeGlasses.id);
+        }
         if (this.flagset.guaranteeSword()) {
           // Pick a sword at random...? inverse weight?
           map.set(LeafElder.id, 0x200 | random.nextInt(4));

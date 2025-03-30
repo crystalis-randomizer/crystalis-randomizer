@@ -28732,16 +28732,16 @@ ObjectActionJump_6c:            ; (also 6d and 6e)
         <@1f78a@>
         <@1f78b@>
         <@1f78e@>
-        <@1f78f DataTable_1f7c1@>
+        <@1f78f BossKillDataTableAlt@>
          <@1f792 _1f7bb@>
         <@1f794@>
-        <@1f797 DataTable_1f7c1+1@>
+        <@1f797 BossKillDataTableAlt+1@>
         <@1f79a@>
-        <@1f79d DataTable_1f7c1+2@>
+        <@1f79d BossKillDataTableAlt+2@>
         <@1f7a0@>
-        <@1f7a3 DataTable_1f7c1+3@>
+        <@1f7a3 BossKillDataTableAlt+3@>
         <@1f7a6@>
-        <@1f7a9 DataTable_1f7c1+4@>
+        <@1f7a9 BossKillDataTableAlt+4@>
         <@1f7ac@>
         <@1f7af@>
         <@1f7b2 +@> ; $1f7b8
@@ -28754,7 +28754,7 @@ _1f7bb:
         <@1f7c0@>
 ;;; --------------------------------
 .org $b7c1            ; NOTE: rewritten by rom/bosskill.ts (this.base2, this.data2)
-DataTable_1f7c1:                 ; This table is read in fives
+BossKillDataTableAlt:                 ; This table is read in fives
         ;; 1st byte is foreground pal3 (2nd NPC palette)
         ;; 2nd byte is foreground pat1 (2nd NPC pattern), seems to be
         ;;     used for treasure chest, and maybe overwrites a temporary
@@ -65284,9 +65284,9 @@ WaitForDialogToBeDismissedInternal:
          <@3d3b0 RemoveSpritesBehindMessageBox@>
          <@3d3b3@>
         <@3d3b5 -@> ; $3d3aa
-        <@3d3b7@>                   ; NOTE: patched by stattracker.s ($f3b7)
+        <@3d3b7@>
         <@3d3b9 ScreenMode@>
-        <@3d3bb@>
+        <@3d3bb Ctrl1NewlyPressed@>
         <@3d3bd GAME_MODE_NORMAL@>
         <@3d3bf GameMode@>
         <@3d3c1@>
@@ -70161,7 +70161,7 @@ HandleWarmBoot:
 .org $f3b6
 HandleNMI:
         <@8635@>
-         <@2f8f6@> ; Clear the NMI flag
+         <@2f8f6@> ; Clear the NMI flag  ; NOTE: patched by stattracker.s ($f3b7)
          <@38143@>
          <@38265 +@> ; $3f3c6
          <@38567@>

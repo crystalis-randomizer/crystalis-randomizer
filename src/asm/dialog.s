@@ -58,21 +58,21 @@ FREE_UNTIL $d280
 ;;; Dialog action $0a is kensu dropping a chest behind - update it to
 ;;; no longer hardcode an item but instead check persondata[0]
 .org $d2f9
-  ldx $0623
-  lda $0680,x
+  ldx LookingAt
+  lda $0680,x ; this holds the persondata[0]
   pha
-  jsr $98a8 ; ReadObjectCoordinatesInto_34_37
-  ldx #$1e  ; slot 1e
-  stx $10
-  lda #$0f  ; boss chest
-  sta $11
-  jsr WriteCoordsAndLoadOneObject
+    jsr ReadObjectCoordinatesInto_34_37
+    ldx #$1e  ; slot 1e
+    stx $10
+    lda #$0f  ; boss chest
+    sta $11
+    jsr WriteCoordsAndLoadOneObject
   pla
-  sta $057e
+  sta $057e   ; itemget ID
   ldx #$02
   stx $055e
   inx
-  stx $061e
+  stx $061e   ; "boss ID" <- 3 in place of rage
   nop
 .assert * = $d31c
 

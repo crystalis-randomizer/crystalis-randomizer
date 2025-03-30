@@ -1,3 +1,12 @@
+KENSU CHEST BUG
+ - consider setting a breakpoint at 7d31c (end of dialog.s action 0a)
+ - step through both config and stable
+ - see where 057e is being read? (break?)
+
+====
+
+
+
 Flag -> Config migration
  * fixed wild warp (pass/wildwarp.ts)
 

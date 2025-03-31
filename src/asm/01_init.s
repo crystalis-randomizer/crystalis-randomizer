@@ -368,10 +368,10 @@ TS_COUNT       = $13
 ;
 
 ; If set, during the next main loop, branch to the Archipelago handling code
-ArchipelagoFlag                      = $6250
+ArchipelagoFlag                      = $657b
 
 ; Item ID to grant the player
-ArchipelagoItemGet                   = $6251
+ArchipelagoItemGet                   = $657c
 
 ;Count of consumables received in Archipelago
 ArchipelagoConsumablesReceivedIdx    = $657d

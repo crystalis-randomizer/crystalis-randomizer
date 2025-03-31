@@ -1224,16 +1224,12 @@ committed to the PPU, and thus lags $b.  The data go in quads:
 $6220..$62ef
 ------------
 Unused in vanilla.  We co-opt at least part of this block for
-crowd control, and another part of this block for Archipelago.
+crowd control.
 
 Crowd Control:
  - $6220 - flag for communicating between CC and the game
  - $6221 - ???
  - $6222 - bits indicating numbers that need to be updated
- 
-Archipelago:
- - $6250 - flag for communicating between BizHawkClient and the game
- - $6251 - Item ID to be received from the AP server
 
 
 $62f0..$62fb
@@ -1304,9 +1300,17 @@ Flags 000..2ff (see flags table)
 $64e0..$657f
 ------------
 Not read, but seems to maybe be copied?  This ends up in the save data.
-Archipelago uses $657d and $657e to store two counts of items received,
-one for consumables, one for non-consumables. NOTE: $657f is used in the
-Stom Fight for ???. Don't make the same mistakes I did.
+Archipelago uses $657b to $657e for the following:
+
+ - $657b: Flag that indicates the status of communication between the
+          game and BizHawkClient. 0 is able to receive, 1 is item pending
+          processing, and 2 is currently processing.
+ - $657c: ID of the item being granted by BizHawkClient
+ - $657d: Number of consumables that have been received from BizHawkClient
+ - $657e: Number of non-consumables that have been received from BizHawkClient
+
+NOTE: $657f is used in the Stom Fight for ???. Don't make the same 
+mistakes I did.
 
 
 $6580..$667f

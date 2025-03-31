@@ -195,7 +195,8 @@ export class Locations extends Array<Location> {
   readonly MtSabreNorth_Cave7       = $(0x39, CAVE);
   // INVALID: 0x3a
   // INVALID: 0x3b
-  readonly Nadare_Inn               = $(0x3c, {area: Areas.Nadare, ...HOUSE});
+  readonly Nadare_Inn               = $(0x3c, {area: Areas.Nadare, ...HOUSE, 
+                                               houseType: 'inn'});
   readonly Nadare_ToolShop          = $(0x3d, {...HOUSE, houseType: 'tool'});
   readonly Nadare_BackRoom          = $(0x3e, {...HOUSE, houseType: 'house'});
   // INVALID: 0x3f

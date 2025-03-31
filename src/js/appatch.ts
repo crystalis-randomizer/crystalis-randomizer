@@ -11,8 +11,10 @@ export class ShuffleData {
   readonly shopInventories: Map<number, Array<number>>;
   readonly thunderWarp: number;
   readonly wildwarps: Array<number>;
-  readonly goa_floors: Array<[number, boolean]>;
+  readonly goaFloors: Array<[number, boolean]>;
   readonly lime_hint: string;
+  readonly areaConnections: Map<string, string>;
+  readonly houseConnections: Map<string, string>;
   readonly fromArchipelago: boolean;
     
   constructor(wallMap: Map<string, number>, 
@@ -25,8 +27,10 @@ export class ShuffleData {
               shopInventories: Map<number, Array<number>>,
               thunderWarp: number,
               wildwarps: Array<number>,
-              goa_floors: Array<[number, boolean]>,
+              goaFloors: Array<[number, boolean]>,
               lime_hint: string,
+              areaConnections: Map<string, string>,
+              houseConnections: Map<string, string>,
               fromArchipelago: boolean) {
     this.wallMap = wallMap;
     this.keyItemNames = keyItemNames;
@@ -38,8 +42,10 @@ export class ShuffleData {
     this.shopInventories = shopInventories;
     this.thunderWarp = thunderWarp;
     this.wildwarps = wildwarps;
-    this.goa_floors = goa_floors;
+    this.goaFloors = goaFloors;
     this.lime_hint = lime_hint;
+    this.areaConnections = areaConnections;
+    this.houseConnections = houseConnections;
     this.fromArchipelago = fromArchipelago;
   }
 }
@@ -59,12 +65,14 @@ export function parseAPCrysJSON(patchDataJson: string, apJson?: string): [string
   for (const [shop, inventory] of Object.entries(shuffleData['shop_inventories'])) {
     shopInventories.set(Number(shop), Object.values(inventory!));
   }
+  let areaConnections = new Map<string, string>(Object.entries(shuffleData['area_connections']));
+  let houseConnections = new Map<string, string>(Object.entries(shuffleData['house_connections']));
   let flags = new FlagSet(patchData['flag_string']);
   let seed = String(patchData['seed']);
   let predetermined = new ShuffleData(wallMap, keyItemNames, tradeInMap, 
                                       shuffleData['rage_trade'], shuffleData['tornel_trade'], bossWeaknesses, 
                                       shuffleData['gbc_cave_exits'], shopInventories, shuffleData['thunder_warp'], 
                                       shuffleData['wildwarps'], shuffleData['goa_floors'], patchData['lime_hint'],
-                                      apJson != undefined);
+                                      areaConnections, houseConnections, apJson != undefined);
   return [seed, flags, predetermined];
 }

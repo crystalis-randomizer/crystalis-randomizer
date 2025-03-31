@@ -226,6 +226,7 @@ const STATUE_NAMES = [
   'SirArchibald Model', // Full Stupid 2022/11/11
   // https://www.youtube.com/playlist?list=PLl7hXG2hSSbJdIi2GqQ12ksmvG7hmIyPQ
   'ClaireDiviner Idol', // Full Stupid 2023/07/06
+  'justchris Trophy',   // 2024 Tournament Winner
 ];
 // TODO - set up combinations that should appear together
 const BOW_NAMES = [

@@ -19,6 +19,7 @@ import { ConnectionType } from '../rom/metascreendata';
 import { FlagSet } from '../flagset';
 import { DefaultMap } from '../util';
 import { UnionFind } from '../unionfind';
+import { ShuffleData } from '../appatch';
 
 interface Area {
   name: string;
@@ -114,7 +115,7 @@ function matchExit(exit: Exit, finder: ExitFinder): boolean {
   return finder.every(f => matchExit(exit, f));
 }
 
-export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
+export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random, predetermined?: ShuffleData) {
   if (!flags.shuffleAreas()) return;
   const {locations: loc} = rom;
 
@@ -251,6 +252,25 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
   //   console.log(`(${exit.conn}) ${exit.loc.name}  <==>  ${exit.reverse.loc.name} (${exit.reverse.conn})`);
   // }
 
+  if (predetermined?.areaConnections) {
+    //do manual swaps based on predetermined
+    for (const [exitKey1, exitKey2] of predetermined.areaConnections) {
+      const exit1 = exits.get(exitKey1);
+      const exit2 = exits.get(exitKey2);
+      if (!exit1) {
+        console.log(`Exit not found for key: ${exitKey1}`); 
+        continue;
+      }
+      if (!exit2) {
+        console.log(`Exit not found for key: ${exitKey2}`); 
+        continue;
+      }
+      exit1.shuffle = false;
+      exit2.shuffle = false;
+      if (exit1.reverse === exit2 && exit2.reverse === exit1) continue;
+      [exit1.reverse, exit2.reverse] = [exit2, exit1];
+    }
+  } 
   // Next find all the non-shuffled exits and UnionFind them!
   const uf = new UnionFind<string>();
   for (const exit of exits.values()) {
@@ -346,7 +366,7 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random) {
 
   for (const exit of exits.values()) {
     if (exit.reverse !== exit.origRev) {
-      function showExit(e: Exit) { return `${e.loc.name} ${e.type}(${e.pos.toString(16)})`; }
+      function showExit(e: Exit) { return `${e.loc.name} ${e.type}(${e.pos.toString(16)}) key: (${e.key})`; }
       console.log(`${showExit(exit)}  =>  ${showExit(exit.reverse)}  (was ${showExit(exit.origRev)})`);
     }
 

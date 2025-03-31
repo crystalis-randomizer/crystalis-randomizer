@@ -55,7 +55,7 @@ export class Preset {
 }
 
 function mapPresetName(name: string) {
-  return name.toLowerCase().replace(/[^a-z]/g, '');
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 // NOT EXPORTED!
@@ -82,7 +82,6 @@ class Presets {
         Vanilla.Shops,
         Vanilla.Dyna,
         [Vanilla.Maps, '!'],
-        [Vanilla.WildWarp, '!'],
         DebugMode.SpoilerLog,
       ]);
 
@@ -202,6 +201,55 @@ class Presets {
         World.RandomizeWallElements,
         World.UnidentifiedKeyItems,
       ]);
+      
+  readonly Wha = new Preset(this, 'Wha!?', `
+      Wh and Wa - the two flags that give this flagset it's name - shuffle all 
+      the houses, overworld connections, and cave connections in the game. 
+      Stumbling out of Mezame Shrine directly into the Desert may leave you 
+      saying "Wha?!"`, [
+        World.ShuffleAreas,
+        World.ShuffleHouses,
+        [World.RandomizeTrades, '?'],
+        [World.UnidentifiedKeyItems, '?'],
+        [World.RandomizeWallElements, '?'],
+        World.ShuffleGoaFloors,
+        World.RandomizeSpriteColors,
+        Routing.StoryMode,
+        Routing.OrbsNotRequired,
+        Glitches.GhettoFlight,
+        Glitches.StatueGlitch,
+        Glitches.MtSabreRequirementSkip,
+        Glitches.StatueGauntletSkip,
+        [Glitches.SwordChargeGlitch, '!'],
+        [Monsters.RandomizeWeaknesses, '?'],
+        NoGuarantees.BattleMagic,
+        HardMode.MaxScalingInTower
+      ]);
+      
+  readonly Wham = new Preset(this, 'Wham!', `
+      This flagset takes everything from the "Wha?!" flagset, and adds only one 
+      flag: Wm. Don't be fooled, however: adding randomized maps will definitely
+      throw a wrench in things. The complicated logic and routing may feel like
+      a punch to the gut - "Wham!"`, [
+        World.RandomizeMaps,
+        World.ShuffleAreas,
+        World.ShuffleHouses,
+        [World.RandomizeTrades, '?'],
+        [World.UnidentifiedKeyItems, '?'],
+        [World.RandomizeWallElements, '?'],
+        World.ShuffleGoaFloors,
+        World.RandomizeSpriteColors,
+        Routing.StoryMode,
+        Routing.OrbsNotRequired,
+        Glitches.GhettoFlight,
+        Glitches.StatueGlitch,
+        Glitches.MtSabreRequirementSkip,
+        Glitches.StatueGauntletSkip,
+        [Glitches.SwordChargeGlitch, '!'],
+        [Monsters.RandomizeWeaknesses, '?'],
+        NoGuarantees.BattleMagic,
+        HardMode.MaxScalingInTower
+      ]);
 
   readonly FullStupid = new Preset(this, 'The Full Stupid', `
       Only a few noble fools have ever completed this.  Be sure to record this
@@ -224,9 +272,40 @@ class Presets {
         World.ShuffleGoaFloors,
         World.UnidentifiedKeyItems,
       ]);
+      
+  readonly Tournament2024 = new Preset(this, 'Tournament 2024', `
+      2024's tournament flags have an emphasis on the randomized
+      wild warp flag. This leads to a much wider variety of early
+      game plays, and lots of interesting potential routing
+      options for clever players.`, [
+        World.RandomizeTrades,
+        [World.UnidentifiedKeyItems, '?'],
+        World.RandomizeWallElements,
+        World.ShuffleGoaFloors,
+        World.RandomizeSpriteColors,
+        World.RandomizeWildWarp,
+        Routing.StoryMode,
+        Routing.OrbsNotRequired,
+        Routing.VanillaDolphin,
+        Glitches.GhettoFlight,
+        Glitches.StatueGlitch,
+        Glitches.MtSabreRequirementSkip,
+        Glitches.StatueGauntletSkip,
+        Glitches.SwordChargeGlitch,
+        Aesthetics.RandomizeMusic,
+        Aesthetics.RandomizeMapColors,
+        Monsters.RandomizeWeaknesses,
+        Monsters.TowerRobots,
+        NoGuarantees.BattleMagic,
+        NoGuarantees.Barrier,
+        NoGuarantees.GasMask,
+        HardMode.MaxScalingInTower,
+        Vanilla.Maps,
+        Vanilla.Shops
+      ]);
 
   readonly Tournament2023 = new Preset(this, 'Tournament 2023', `
-      This year's tournament flags debuts some interesting new flags for a
+      2023's tournament flags debuted some interesting new flags for a
       unique challenge.`, [
         World.RandomizeTrades,
         World.UnidentifiedKeyItems,
@@ -409,7 +488,7 @@ class World extends FlagSection {
 
   static readonly RandomizeWildWarp = World.flag('Ww', {
     name: 'Randomize wild warp',
-    text: `Wild warp will go to Mezame Shrine and 15 other random locations.
+    text: `Wild warp will go to Mezame Shrine and 4-15 other random locations.
            These locations will be considered in-logic.`,
     excludes: ['Vw'],
   });

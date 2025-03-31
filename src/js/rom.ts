@@ -162,8 +162,9 @@ export class Rom {
     this.omitLocalDialogSuffix = Rom.OMIT_LOCAL_DIALOG_SUFFIX.get(rom);
     this.compressedMapData = Rom.COMPRESSED_MAPDATA.get(rom);
     this.writeMonsterNames = Rom.WRITE_MONSTER_NAMES.get(rom);
-
-    // if (crc32(rom) === EXPECTED_CRC32) {
+    
+    // const orig_crc = crc32(rom);
+    // if ((orig_crc != EXPECTED_CRC32_NES && orig_crc != EXPECTED_CRC32_SNK_40TH)) {
     for (const [address, old, value] of ADJUSTMENTS) {
       if (this.prg[address] === old) this.prg[address] = value;
     }
@@ -800,7 +801,9 @@ function pickFile(receiver?: (picker: Element) => void): Promise<Uint8Array> {
   });
 }
 
-export const EXPECTED_CRC32 = 0x1bd39032;
+const EXPECTED_CRC32_NES = 0x1bd39032;
+const EXPECTED_CRC32_SNK_40TH = 0xb305c8ec;
+export const EXPECTED_CRC32S = new Set<number>([EXPECTED_CRC32_NES, EXPECTED_CRC32_SNK_40TH]);
 
 // Format: [address, broken, fixed]
 const ADJUSTMENTS = [
@@ -969,4 +972,6 @@ const ADJUSTMENTS = [
   [0x2f573, 0x02, 0x00],
   // Fix unused karmine treasure chest message 20:18.
   [0x2fae4, 0x5f, 0x00],
+  // Make the SNK 40th anniversary edition ROM match the classic NES ROM
+  [0x2fed2, 0x09, 0x08],
 ] as const;

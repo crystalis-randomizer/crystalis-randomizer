@@ -95,7 +95,12 @@ const {} = {watchArray} as any;
 
 function defines(config: Config,
                  pass: 'early' | 'late'): string {
-  const defines: Record<string, boolean|null> = {
+
+  const zebuStudentMoney =
+    config.towns.initialMoneySource === Config.Towns.InitialMoneySource.STUDENT
+      ? config.towns.initialMoney : 0;
+
+  const defines: Record<string, boolean|number|null> = {
     _ALLOW_TELEPORT_OUT_OF_BOSS: config.enemies.permadeath &&
                                  config.enemies.tetrarchWeaknesses !== Config.Randomization.VANILLA,
     _ALLOW_TELEPORT_OUT_OF_TOWER: true,
@@ -126,9 +131,6 @@ function defines(config: Config,
     _HAZMAT_SUIT: config.items.hazmatSuit,
     _LEATHER_BOOTS_GIVE_SPEED: config.items.addSpeedBoots,
     _MAX_SCALING_IN_TOWER: config.enemies.maxScalingInTower,
-    // TODO: make this configurable?  but maybe allow an empty default?  -1?
-    // How to easily correlate with student having item and/or money?
-    _MONEY_AT_START: Boolean(config.maps.shuffleHouseEntrances || config.maps.shuffleAreaConnections),
     _NERF_FLIGHT: true,
     _NERF_MADO: true,
     _NEVER_DIE: config.debug.neverDie,
@@ -160,7 +162,7 @@ function defines(config: Config,
     _UPDATE_HUD: config.quality.updateHud,
     _WARP_FLAGS_TABLE: true,
     _WARRIOR_RING_TURRET: config.items.warriorRingTurret,
-    _ZEBU_STUDENT_GIVES_ITEM: config.triggers.zebuStudentGivesItem,
+    _ZEBU_STUDENT_GIVES_MONEY: zebuStudentMoney > 0,
   };
 
   const exports = {
@@ -175,6 +177,8 @@ function defines(config: Config,
     deoSpeed_moving: speedMask(config.items.deosPendantMpRestoreWhileWalkingSpeed!),
     psychoArmorSpeed_still: speedMask(config.items.psychoArmorHealSpeed!),
     psychoArmorSpeed_moving: speedMask(config.items.psychoArmorHealWhileWalkingSpeed!),
+    startMoney: config.towns.initialMoneySource === Config.Towns.InitialMoneySource.START ? config.towns.initialMoney : 0,
+    zebuStudentMoney,
   };
 
   function speedMask(speed: number) {

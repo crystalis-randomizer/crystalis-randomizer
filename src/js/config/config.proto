@@ -740,9 +740,6 @@ message Config {
     optional bool whirlpool_item_requires_calm_sea = 1
       [(default) = true,
        (preset.vanilla) = false];
-    optional bool zebu_student_gives_item = 2
-      [(default) = true,
-       (preset.vanilla) = false];
 
     // What is required for the shell flute to successfully summon the dolphin?
     enum RideDolphin {
@@ -1262,6 +1259,27 @@ message Config {
     // TODO - 3 options for (psycho armor|psycho shield|battle armor) in shops
     //      - and maybe an option to just totally randomize armors?
     //      - if other armors dropped, still make them (optionally?) sellable?
+
+    // Amount of money to provide at the start of the game.
+    optional uint32 initial_money = 5
+      [(min) = 0, (max) = 9999,
+       (default) = 100,
+       (preset.mystery) = "=50 + rand(100)"];
+
+    enum InitialMoneySource {
+      // Normal vanilla: Zebu's student gives the money the first time you talk
+      // to him.  Note that this can be problematic when map randomization makes
+      // it difficult to find him.
+      STUDENT = 0;
+      // Money is provided automatically immediately at the start of the game.
+      START = 1;
+      // // Dependent on whether entrances are randomized.  I.e.
+      // config.maps.shuffleHouseEntrances || config.maps.shuffleAreaConnections
+      // START_IF_RANDOM_ENTRANCES = 2;
+    }
+    // Where the initial money comes from.
+    optional InitialMoneySource initial_money_source = 6
+      [(default) = STUDENT];
   }
 
   message Glitches {
@@ -1725,7 +1743,7 @@ enum CheckName {
   VAMPIRE1 = 0x2e;
   OASIS_CAVE_NORTHWEST_CHEST = 0x2f;
   AKAHANA_FLUTE_OF_LIME_TRADEIN = 0x30;
-  ZEBU_STUDENT = 0x31 [(alias) = "MEZAME_SHRINE_RIGHT_CHEST"];
+  ZEBU_STUDENT = 0x31;
   WINDMILL_GUARD_ALARM_FLUTE_TRADEIN = 0x32;
   MT_SABRE_NORTH_BACK_OF_PRISON_CHEST = 0x33;
   ZEBU_IN_SHYRON = 0x34;
@@ -1750,6 +1768,7 @@ enum CheckName {
   KENSU_IN_SWAN = 0x47;
   SLIMED_KENSU = 0x48;
   MEZAME_SHRINE_LEFT_CHEST = 0x49;
+  MEZAME_SHRINE_RIGHT_CHEST = 0x4a;
   SEALED_CAVE_BIG_ROOM_SOUTHWEST_CHEST = 0x50;
   MT_SABRE_WEST_RIGHT_CHEST = 0x52;
   MT_SABRE_NORTH_MIDDLE_CHEST = 0x53;

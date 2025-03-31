@@ -428,33 +428,6 @@ ReloadLocationGraphicsAfterChest:
 +   jmp $d552 ; ExecuteItemOrTriggerAction
 
 
-;;; This lives in the dialog followup action code section, but we
-;;; want to change how it behaves by bailing out if the item is
-;;; already owned.
-.org $d22b
-.assert * = GrantItemInRegisterA
-  jsr @PatchGrantItemInRegisterA
-
-.reloc
-@PatchGrantItemInRegisterA:
-  ;; Version of GrantItemInRegisterA that bails out if the
-  ;; item is already owned.
-  sta $057f
-  lsr
-  lsr
-  lsr
-  tax
-  lda $057f
-  and #$07
-  tay
-  lda SlotFlagsStart,x
-  and PowersOfTwo,y
-  beq +
-   pla
-   pla
-+ rts
-
-
 ;;; ================================================================
 
 ;;; This is a (ff-terminated) key-value table mapping item/trigger ID to

@@ -51,13 +51,6 @@ Multiply16Bit:
 ;;; if the bit we just rotated off $61 is set then add $62
 ;;; carry goes into upper of A
 
-;;; TODO - use this in several more places (i.e. dialog action jump 10 ??)
-.reloc
-WriteCoordsAndLoadOneObject:
-  jsr $9897 ; WriteObjectCoordinatesFrom_34_37
-  jmp $ff80 ; LoadOneObjectData
-
-
 
 ;;; More efficient version of `jsr $0010`, just `jsr Jmp11`.  This can save
 ;;; 4 bytes by not writing #$4c to $10, but also opens up an extra byte of

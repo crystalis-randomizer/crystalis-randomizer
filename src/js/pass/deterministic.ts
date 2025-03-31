@@ -154,7 +154,7 @@ export function deterministic(s: Shuffle): void {
 
   removeWarpTriggers(rom);
   consolidateItemGrants(rom);
-  addMezameTrigger(rom);
+  addMezameTrigger(s);
   normalizeSwords(s);
 
   fixFlyableWalls(rom);
@@ -366,7 +366,10 @@ function consolidateItemGrants(rom: Rom): void {
 }
 
 // Adds a trigger action to mezame.  Use 87 leftover from rescuing zebu.
-function addMezameTrigger(rom: Rom): void {
+function addMezameTrigger(s: Shuffle): void {
+  const {config, rom} = s;
+  const {locations: {MezameShrine}} = rom;
+
   const trigger = rom.nextFreeTrigger('mezame');
   trigger.used = true;
   trigger.conditions = [~rom.flags.AlwaysTrue.id];
@@ -374,6 +377,19 @@ function addMezameTrigger(rom: Rom): void {
   trigger.flags = [rom.flags.AlwaysTrue.id];
   const mezame = rom.locations.MezameShrine;
   mezame.spawns.push(Spawn.of({tile: 0x88, type: 2, id: trigger.id}));
+
+  if (config.maps.mezameChests > 0) {
+    // Add medical herb to mezame left chest
+    MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x95, type: 2, id: 0x49}));
+    rom.flags[0x149].unsafeRename('Mezame Left Chest');
+    rom.itemGets[0x49].itemId = rom.items.MedicalHerb.id;
+  }
+  if (config.maps.mezameChests > 1) {
+    // Add fruit of power to mezame right chest
+    MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x9b, type: 2, id: 0x4a}));
+    rom.flags[0x14a].unsafeRename('Mezame Right Chest');
+    rom.itemGets[0x4a].itemId = rom.items.FruitOfPower.id;
+  }
 }
 
 // The _WARP_FLAGS_TABLE asm option removes the need for explicit triggers
@@ -700,8 +716,8 @@ function alarmFluteIsKeyItem(s: Shuffle): void {
   const {
     items: {AlarmFlute},
     flags: {TalkedToZebuStudent, ZebuStudent},
-    locations: {MezameShrine, Leaf_StudentHouse, WaterfallCave4, ZebuCave},
-    npcs: {WindmillGuard, Zebu},
+    locations: {Leaf_StudentHouse, WaterfallCave4},
+    npcs: {WindmillGuard},
   } = rom;
 
   // Move alarm flute to third row
@@ -712,24 +728,17 @@ function alarmFluteIsKeyItem(s: Shuffle): void {
   // Ensure alarm flute cannot be sold
   AlarmFlute.basePrice = 0;
 
-  
-  if (config.triggers.zebuStudentGivesItem) {
-    // Zebu student (aka windmill guard): secondary item -> alarm flute
-    WindmillGuard.data[1] = 0x31;
-  } else {
-    // Actually make use of the TalkedToZebuStudent flag;
-    WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.
-    const dialog = WindmillGuard.dialog(Leaf_StudentHouse)[0];
-    dialog.condition = ~TalkedToZebuStudent.id;
-    dialog.flags.push(TalkedToZebuStudent.id);
-    replace(Zebu.spawns(ZebuCave), ZebuStudent.id, TalkedToZebuStudent.id);
-    // Alarm flute and a medical herb are in chests in mezame
-    MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x9b, type: 2, id: 0x31}));
-    MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x95, type: 2, id: 0x49}));
-    ZebuStudent.unsafeRename('Mezame Right Chest');
-    rom.flags[0x149].unsafeRename('Mezame Left Chest');
-    rom.itemGets[0x49].itemId = rom.items.MedicalHerb.id;
+  // If student doesn't give money we can simplify the actions.
+  if (
+    config.towns.initialMoneySource !== Config.Towns.InitialMoneySource.STUDENT
+      || !config.towns.initialMoney
+  ) {
+    // just give a simple item, no cash (we're deleting the action)
+    WindmillGuard.dialog(Leaf_StudentHouse)[0].message.action = 0x11;
   }
+  
+  // Zebu student (aka windmill guard): secondary item -> alarm flute
+  WindmillGuard.data[1] = 0x31;
 
   // Remove alarm flute from shops (replace with other items)
   // NOTE - we could simplify this whole thing by just hardcoding indices.

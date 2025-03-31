@@ -45831,9 +45831,9 @@ InitialPrg_6400:
         .byte [@2fe60@],[@2fe61@],[@2fe62@],[@2fe63@],[@2fe64@],[@2fe65@],[@2fe66@],[@2fe67@],[@2fe68@],[@2fe69@],[@2fe6a@],[@2fe6b@],[@2fe6c@],[@2fe6d@],[@2fe6e@],[@2fe6f@]
         .byte [@2fe70@],[@2fe71@],[@2fe72@],[@2fe73@],[@2fe74@],[@2fe75@],[@2fe76@],[@2fe77@],[@2fe78@],[@2fe79@],[@2fe7a@],[@2fe7b@],[@2fe7c@],[@2fe7d@],[@2fe7e@],[@2fe7f@]
         ;; NOTE: $be82 and $be84 patched by attack.s (swap $00 and $1e)
-              initialMoney = [@2fe80@] ; provided by savegame.s
-        .byte initialMoney
-        .byte     [@2fe81@],[@2fe82@],[@2fe83@],[@2fe84@],[@2fe85@],[@2fe86@],[@2fe87@],[@2fe88@],[@2fe89@],[@2fe8a@],[@2fe8b@],[@2fe8c@],[@2fe8d@],[@2fe8e@],[@2fe8f@]
+              startMoney = [@2fe80@] ; provided by savegame.s
+        .byte <startMoney, >startMoney
+        .byte         [@2fe81@],[@2fe82@],[@2fe84@],[@2fe85@],[@2fe86@],[@2fe87@],[@2fe88@],[@2fe89@],[@2fe8a@],[@2fe8b@],[@2fe8c@],[@2fe8d@],[@2fe8e@],[@2fe8f@]
         .byte [@2fe90@],[@2fe91@],[@2fe92@],[@2fe93@],[@2fe94@],[@2fe95@],[@2fe96@],[@2fe97@],[@2fe98@],[@2fe99@],[@2fe9a@],[@2fe9b@],[@2fe9c@],[@2fe9d@],[@2fe9e@],[@2fe9f@]
         .byte [@2fea0@],[@2fea1@],[@2fea2@],[@2fea3@],[@2fea4@],[@2fea5@],[@2fea6@],[@2fea7@],[@2fea8@],[@2fea9@],[@2feaa@],[@2feab@],[@2feac@],[@2fead@],[@2feae@],[@2feaf@]
         .byte [@2feb0@],[@2feb1@],[@2feb2@],[@2feb3@],[@2feb4@],[@2feb5@],[@2feb6@],[@2feb7@],[@2feb8@],[@2feb9@],[@2feba@],[@2febb@],[@2febc@],[@2febd@],[@2febe@],[@2febf@]
@@ -65040,7 +65040,7 @@ DialogAction_16:
         <@3d1ea@>
 ;;; --------------------------------
 .org $d1eb
-DialogAction_10:
+DialogAction_10:                ; NOTE: rewritten by dialog.s
         ;; NPC reveals change magic when talked to (asina and kensu)
         <@3d1eb@>
         <@3d1ed@>
@@ -65050,7 +65050,7 @@ DialogAction_10:
         <@3d1f8 INV_MAGIC_RECOVER@>
         <@3d1fa GrantItemInRegisterA@>
         <@3d1fd@>
-_3d1ff:
+_3d1ff:                         ; NOTE: rewritten by dialog.s
         <@3d1ff@>
         <@3d201 BankSwitch8k_8000@>
         <@3d204 ReadObjectCoordinatesInto_34_37@>
@@ -65065,17 +65065,17 @@ _3d1ff:
         <@3d21a LoadNpcDataForCurrentLocation@>   ; NOTE: patched by dialog.s ($d21a)
 ;;; --------------------------------
 .org $d21d
-DialogAction_11:
+DialogAction_11:                  ; NOTE: rewritten by dialog.s
         ;; Give an item (from $6a0,y), which is the 2nd byte
         <@3d21d LookingAt@>
         <@3d220@>
-        <@3d223 GrantItemInRegisterA@>            ; NOTE: patched by dialog.s ($d223)
-DialogAction_03:
+        <@3d223 GrantItemInRegisterA@>
+DialogAction_03:                  ; NOTE: rewritten by dialog.s
         ;; Give an item (from $680,y)
          <@3d225 LookingAt@>
          <@3d228@>
-GrantItemInRegisterA:
-        <@3d22b@>                           ; NOTE: patched by itemget.s ($d22b)
+GrantItemInRegisterA:             ; NOTE: rewritten by dialog.s
+        <@3d22b@>
         <@3d22e LookingAt@>
         <@3d231@>
          <@3d232@>
@@ -65086,7 +65086,7 @@ GrantItemInRegisterA:
         <@3d23e@>
 ;;; --------------------------------
 .org $d23f
-DialogAction_06:    ; also 0d
+DialogAction_06:    ; also 0d    ; NOTE: rewritten by dialog.s
         ;; NPC walks away (treasure hunter)?
         <@3d23f@>
         <@3d241@>
@@ -65101,7 +65101,7 @@ DialogAction_06:    ; also 0d
         <@3d259@>
 ;;; --------------------------------
 .org $d25a
-DialogAction_0c:
+DialogAction_0c:                    ; NOTE: rewritten by dialog.s
         ;; Dwarf child starts following?
         <@3d25a@>
         <@3d25d@>
@@ -65109,7 +65109,7 @@ DialogAction_0c:
         <@3d262@>
 ;;; --------------------------------
 .org $d263
-DialogAction_09:
+DialogAction_09:                    ; NOTE: rewritten by dialog.s
         ;; Talk to Zebu student
         <@3d263 SFX_TREASURE@>   ; NOTE: patched by dialog.s ($d263)
         <@3d265 StartAudioTrack@>
@@ -65125,7 +65125,7 @@ DialogAction_09:
         <@3d27d DisplayNumberInternal@>   ; NOTE: patched by dialog.s ($d27d)
 ;;; --------------------------------
 .org $d280
-DialogAction_18:
+DialogAction_18:                    ; NOTE: rewritten by dialog.s
         <@3d280@>
         <@3d282@>
         <@3d285@> ; 8000 -> 34000
@@ -65147,7 +65147,7 @@ DialogAction_18:
         <@3d2ad@>
 ;;; --------------------------------
 .org $d2ae
-DialogAction_19:
+DialogAction_19:                    ; NOTE: rewritten by dialog.s
         ;; Give shield ring then walk out
         <@3d2ae INV_SHIELD_RING@>
         <@3d2b0 GrantItemInRegisterA@> ; hard-code rather than $680,x
@@ -65166,7 +65166,7 @@ DialogAction_19:
         <@3d2d2@>
 ;;; --------------------------------
 .org $d2d3
-DialogAction_15:
+DialogAction_15:                ; NOTE: rewritten by dialog.s
         <@3d2d3@>
         <@3d2d6@>
         beq :>rts ; $3d2f3
@@ -65183,10 +65183,10 @@ DialogAction_15:
         <@3d2f3@>
 ;;; --------------------------------
 .org $d2f4
-DialogAction_0a:
+DialogAction_0a:                ; NOTE: rewritten by dialog.s
         <@3d2f4@>
         <@3d2f6 BankSwitch8k_8000@>
-        <@3d2f9@>   ; NOTE: patched by dialog.s ($d2f9)
+        <@3d2f9@>
         <@3d2fc ReadObjectCoordinatesInto_34_37@>
         <@3d2ff@>
         <@3d301@>
@@ -65200,9 +65200,9 @@ DialogAction_0a:
         <@3d314@>
         <@3d317@> ; "Boss ID" 3 (since rage has no chest)
         <@3d319@>
-DialogAction_02_Disappear:
+DialogAction_02_Disappear:        ; NOTE: rewritten by dialog.s
         <@3d31c@>
-_3d31f:
+_3d31f:                           ; NOTE: rewritten by dialog.s
         <@3d31f@>
         <@3d321@>
         <@3d324@>

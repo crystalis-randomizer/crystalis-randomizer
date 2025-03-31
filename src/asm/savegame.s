@@ -229,14 +229,9 @@ CopyCheckpointToMemoryForContinueIndirected:
 ;;; smudge off
 
 
-.segment "17"
-.ifdef _MONEY_AT_START          ; TODO - refactor this away from a .define
-  initialMoney = 100
-.else
-  initialMoney = 0
-.endif
-.export initialMoney
-
+;;; NOTE: .import not needed because it's force-exported by patch.ts
+;; OVERRIDE
+;; .import startMoney
 
 .segment "3c"
 .reloc
@@ -291,7 +286,7 @@ PrepareGameInitialDataTable:
   ;; Various values in the 700 block
   .byte 8
   .word ($0702)
-  .byte initialMoney,$00,$1e,$00,$00,$00,$22,$22
+  .byte <startMoney,>startMoney,$1e,$00,$00,$00,$22,$22
   ;; A few more values in 7xx
   .byte 11
   .word ($0710)

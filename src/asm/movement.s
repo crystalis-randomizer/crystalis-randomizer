@@ -83,9 +83,6 @@ CheckIfStandingStillForWarriorRing:
 
 .segment "fe", "ff"
 
-.org $d29d ; Just set dolphin status bit => also set the flag
-  jsr UpdatePlayerStatusAndDolphinFlag
-
 .org $e7b3 ; just cleared dolphin status => also clear the flag
   jsr UpdatePlayerStatusAndDolphinFlag
 

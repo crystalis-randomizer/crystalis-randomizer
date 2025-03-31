@@ -1043,6 +1043,15 @@ export class FlagSet {
     };
     const any = new Script('?');
 
+    // Special case to make mezame chests appear if entrance shuffle MAY be on.
+    if (
+      !this.check(World.ShuffleAreas, false)
+        || !this.check(World.ShuffleHouses, false)
+    ) {
+      maps().mezameChests = 2;
+      towns().initialMoneySource = Config.Towns.InitialMoneySource.START;
+    }
+
     // WORLD
     set(World.RandomizeMaps, x => maps().dungeonMaps = x, {
       '?': Config.Maps.dungeonMaps.preset.mystery,

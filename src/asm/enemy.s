@@ -57,21 +57,18 @@ DynaShoot:
   pha            ;
    tya           ; Store the shot's direction on stack
    pha           ;
-    lda $70      ; Seed the random number by player's position
+    lda $480     ; Seed the random number by player step count
     adc $08      ; Also seed it with the global counter
     and #$3f     ; Don't overflow
     tay          ;
-    lda $97e4,y  ; Read from Random number table
-    asl          ; Multiply by 8: range is 0..$3f
-    asl          ;
-    asl          ;
+    lda RandomNumbers,y  ; Read from Random number table
     adc #$e0     ; Subtract $20
     adc $70,x    ; Add to pod's position
     sta $70,x    ; And store it back (temporarily)
    pla           ; Pull off the direction
    tay           ;   ...and save it back in Y
    lda $61       ; Pull off the spawn ID
-   jsr $972d     ; AdHocSpawnObject
+   jsr AdHocSpawnObject
   pla            ; Pull off the pod's position
   sta $70,x      ;   ...and restore it
   rts
@@ -87,6 +84,6 @@ DynaShoot2:
   bcc +
    dey
 + pla
-  jmp $972d     ; AdHocSpawnObject
+  jmp AdHocSpawnObject
 
 .endif

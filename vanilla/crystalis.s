@@ -56021,9 +56021,9 @@ ObjectAction70JumpTable:
         .word (ObjectActionJump_70_01) ; 01 object $b3
         .word (ObjectActionJump_70_02) ; 02
         .word (ObjectActionJump_70_03) ; 03
-        .word (ObjectActionJump_70_04) ; 04
-        .word (ObjectActionJump_70_05) ; 05
-        .word (ObjectActionJump_70_06) ; 06 dyna eye (a4)
+        .word (ObjectActionJump_70_04) ; 04 dyna eye (closing)
+        .word (ObjectActionJump_70_05) ; 05 dyna eye (closed)
+        .word (ObjectActionJump_70_06) ; 06 dyna eye (open) (a4)
         .word [@37a4e:w@]
         .word (ObjectActionJump_70_08) ; 08 dyna pod (b4)
         .word (ObjectActionJump_70_09) ; 09 object b5
@@ -56279,7 +56279,7 @@ DataTable_37c34:
         .byte [@37c34@],[@37c35@],[@37c36@]
 ;;; --------------------------------
 .org $bc37
-ObjectActionJump_70_04:
+ObjectActionJump_70_04:         ; dyna eye (closing)
         <@37c37@>
         <@37c39@>
         <@37c3c _37cd7@>
@@ -56295,6 +56295,7 @@ ObjectActionJump_70_04:
         <@37c56@>
         <@37c57 DataTable_37c61@>
         <@37c5a@>
+        ;; Transition to "closed"
         <@37c5d@>
         <@37c60@>
 ;;; --------------------------------
@@ -56303,51 +56304,53 @@ DataTable_37c61:
         .byte [@37c61@],[@37c62@],[@37c63@],[@37c64@],[@37c65@],[@37c66@],[@37c67@],[@37c68@],[@37c69@],[@37c6a@],[@37c6b@],[@37c6c@],[@37c6d@],[@37c6e@],[@37c6f@],[@37c70@]
 ;;; --------------------------------
 .org $bc71
-ObjectActionJump_70_05:
+ObjectActionJump_70_05:         ; dyna eye (closed)
         <@37c71 _37cd7@>
         <@37c74@>
-        bne :<rts ; $37c60
+          bne :<rts ; $37c60
         <@37c79@>
         <@37c7c@>
         <@37c7e@>
         <@37c81@>
         <@37c84@>
         <@37c87@>
-        bne :<rts ; $37c60
+          bne :<rts ; $37c60
+        ;; Transition to "open"
         <@37c8b@>
         <@37c8e@>
         <@37c90@>
         <@37c93@>
 ;;; --------------------------------
 .org $bc94
-ObjectActionJump_70_06:          ; dyna eye
+ObjectActionJump_70_06:          ; dyna eye (open)
         <@37c94 _37cd7@>
         <@37c97@>
         <@37c9a@>
         <@37c9c +@>                    ; NOTE: patched by enemy.s ($bc9c)
-         <@37c9e@>
-         <@37ca0@>
+          <@37c9e@>
+          <@37ca0@>
         <@37ca2 +@> ; $37cc1
-        ;; shoot laser downward
-         <@37ca4@>
-         <@37ca6@> ; Dyna Laser
-         <@37ca8 AdHocSpawnObject@>
+          ;; shoot laser downward
+          <@37ca4@>
+          <@37ca6@> ; Dyna Laser
+          <@37ca8 AdHocSpawnObject@>
         <@37cab +@> ; $37cc1
-         <@37cad@>
-         <@37caf@>
-         <@37cb2@>
-         <@37cb3@>
-         <@37cb5@>
-         <@37cb8@>
-         <@37cbb@>
-         <@37cbc@>
-         <@37cbe@>
+          <@37cad@>
+          <@37caf@>
+          <@37cb2@>
+          <@37cb3@>
+          <@37cb5@>
+          <@37cb8@>
+          <@37cbb@>
+          <@37cbc@>
+          <@37cbe@>
 +       <@37cc1@>
-         bne :<<rts ; $37c60
+          bne :<<rts ; $37c60
         <@37cc6@>
         <@37cc9@>
         <@37ccc@>
-         bne :<<rts ; $37c60
+          bne :<<rts ; $37c60
+        ;; Transition to "closing"
         <@37cd1@>
         <@37cd3@>
         <@37cd6@>
@@ -56360,13 +56363,13 @@ _37cd7:
         <@37cde ScreenMode@>
         <@37ce0@>
         <@37ce2@>
-        bne :>rts ; $37cf5
+          bne :>rts ; $37cf5
         <@37ce6@>
         <@37ce8 ScreenMode@>
         <@37cea@>
--        <@37cec@>
-         <@37cef@>
-         <@37cf2@>
+-         <@37cec@>
+          <@37cef@>
+          <@37cf2@>
         <@37cf3 -@> ; $37cec
         <@37cf5@>
 ;;; --------------------------------
@@ -56403,10 +56406,10 @@ ObjectActionJump_70_0a:
 ObjectActionJump_70_08:          ; dyna pod
         <@37d29@> ; eye knockback - was it just hit?
         <@37d2c ++@> ; $37d68
-         <@37d2e@>
-         <@37d30 +@> ; $37d35
-        ;; Once every 8 seconds, if eye wasn't hit, increment 640,x
-          <@37d32@>
+          <@37d2e@>
+          <@37d30 +@> ; $37d35
+            ;; Once every 8 seconds, if eye wasn't hit, increment 640,x
+            <@37d32@>
 +       <@37d35@>                      ; NOTE: patched by enemy.s ($bd35)
         <@37d36@>
         <@37d37@>
@@ -56415,18 +56418,18 @@ ObjectActionJump_70_08:          ; dyna pod
         <@37d39@>
         <@37d3c@>
         <@37d3e +@> ; $37d41
-         <@37d40@>
+          <@37d40@>
         ;; ----
         ;; Shoot bubbles: left when 64e is 0 mod 8, right when 64f is 4 mod 8
 +       <@37d41@>
         <@37d43@>
-         bne :<rts ; $37d40
+          bne :<rts ; $37d40
         <@37d47@>
         <@37d49@>
         <@37d4b@>
         <@37d4c@>
         <@37d4d DataTable_37d58@>
-         bmi :<rts ; $37d40
+          bmi :<rts ; $37d40
         <@37d52@>
         <@37d53@> ; Dyna Bubble
         <@37d55 AdHocSpawnObject@>         ; NOTE: patched by enemy.s ($bd55)

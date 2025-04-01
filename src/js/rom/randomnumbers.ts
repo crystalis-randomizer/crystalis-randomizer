@@ -18,7 +18,6 @@ export class RandomNumbers {
     const table = buildTable(this.values);
     checkTable(table, this.values);
     a.byte(...table);
-    a.export('RandomNumbers');
     return [a.module()];
   }
 }

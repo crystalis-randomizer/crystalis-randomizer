@@ -1267,7 +1267,7 @@ export class FlagSet {
     // VANILLA
     set(Vanilla.Dyna, x => enemies().buffDyna = x, {
       '?': Config.Enemies.buffDyna.preset.mystery,
-      false: false,
+      false: true,
     });
     set(Vanilla.BonusItems, x => items().vanillaBonusItems = x, {
       // TODO - add_speed_boots, hazmat_suit, adjust_tornado_speed, rabbit_boots_charge_while_walking

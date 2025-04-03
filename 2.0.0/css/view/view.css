@@ -1,0 +1,73 @@
+.main {
+  display: flex;
+  flex-direction: reverse;
+  height: 100%;
+}
+
+.canvas {
+  flex-grow: 1;
+  overflow: auto;
+  position: relative;
+}
+
+.controls {
+  resize: horizontal;
+  white-space: pre;
+  font-family: monospace;
+  overflow: auto;
+  width: 450px;
+}
+
+.controls .show {
+  background: #ffb;
+}
+
+.canvas:hover div.overlay,
+.canvas div.overlay.show {
+  display: block;
+}
+
+.canvas div.overlay {
+  position: absolute;
+  display: none;
+  box-shadow: 0 0 3px 3px #ffb;
+}
+
+.canvas div.overlay > div {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 0 3px 3px inset black;
+}
+
+.canvas div.floater {
+  /* note: currently scales w/ canvas, would be nice for it to be fixed. */
+  position: absolute;
+  /* width: 128px; */
+  /* height: 96px; */
+  white-space: pre;
+  font-family: monospace;
+  display: block;
+  pointer-events: none;
+  background: white;
+  z-index: 100;
+  opacity: .7;
+}
+
+/* could copy this, but for now just embed it all in the control */
+
+/* .canvas > div > div > div { */
+/*   display: none; */
+/*   position: absolute; */
+/*   top: 100%; */
+/*   left: 0; */
+/*   width: 128px; */
+/*   height: 200px; */
+/*   background: white; */
+/*   border: 1px solid black; */
+/*   overflow: auto; */
+/* } */
+
+/* .canvas > div:hover > div > div { */
+/*   display: block; */
+/* } */

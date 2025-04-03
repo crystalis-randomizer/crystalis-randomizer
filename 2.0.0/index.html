@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-131783670-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-131783670-1');
+</script>
+<!DOCTYPE html>
+<title>Crystalis Randomizer</title>
+<link rel="stylesheet" href="css/main.css">
+<script src="js/build_info.js"></script>
+<script type="module" src="js/main.js"></script>
+<script>
+// Display a message if the main script hasn't already removed it.
+setTimeout(function() {
+  if (!document.body.classList.contains('js-works')) {
+    document.body.classList.add('js-broken');
+  }
+}, 1000);
+</script>
+
+<nav>
+  <a class="img if-not-permalink" href="/"><img src="images/crystalis-sword.png"></a>
+  <a href="index">Play</a>
+  <!-- a class="if-not-permalink" id="track-url" href="track">Track</a -->
+  <a href="help">Help</a>
+  <!-- TODO: better process for stable version numbers. -->
+  <span class="version"></span>
+</nav>
+<div></div>
+
+<main>
+  <section class="if-not-permalink">
+    <h1>Introduction</h1>
+    <div>
+      <p>Welcome to Crystalis Randomizer.  This project seeks to
+        provide fresh gameplay experiences through the classic NES game
+        Crystalis.  See the <a href="help">help</a> for more
+        information about gameplay changes and randomization features.
+      <h2>Discord</h2>
+      <p>Join us on our <a href="https://discord.gg/ktyz5E6">discord server</a>.
+    </div>
+  </section>
+
+  <section class="if-release-candidate if-not-permalink">
+    <h1>Release Candidate</h1>
+    <div>
+      <p>This version of the randomizer is a release candidate
+        and is scheduled to be marked "stable" very soon.  If
+        this causes any issues, the previous stable version is
+        still available at
+        <a href="https://crystalisrandomizer.com/stable">https://crystalisrandomizer.com/stable</a>.
+    </div>
+  </section>
+
+  <section class="if-js-broken warning">
+    <h1>Something went wrong!</h1>
+    <div>
+      <p>Something went wrong with the scripts on this page.  This may be
+        caused by attempting to access this with an older browser (recent
+        versions of Chrome, Firefox, and Safari, should all work; Microsoft
+        IE and Edge are both known to fail), or a slow connection is causing
+        the script to take longer to load, or a bug somehow crept into the
+        page.  If you suspect it's the latter, please open your browser's
+        developer tools (usually F12) and send a bug report (to GitHub or Discord)
+        with your browser version (see <a href="about:versions">about:version</a>)
+        and any error messages you find in the developer console.
+    </div>
+  </section>
+
+  <section class="if-failure warning">
+    <h1>Something went wrong!</h1>
+    <div>
+      <p>Something went wrong with the scripts on this page.  Please report
+        the following in the discord's #bug-reports channel:
+      <p>Version: <span class="version"></span>
+        <br>Flags: <span class="flagstring-out"></span>
+        <br>Seed: <span class="seed-out"></span>
+      <p id="error-text">
+    </div>
+  </section>
+
+  <section class="if-invalid warning">
+    <h1>Invalid Flags</h1>
+    <div>
+      <p>The flags are invalid: <span id="invalid-text"></span>
+    </div>
+  </section>
+
+  <section id="getting-started" class="if-js-works">
+    <h1>Getting Started</h1>
+    <div>
+      <p>Please select a standard English ROM of Crystalis.  This should only be
+         required the first time.  The selected image will be stored in your
+         browser's cache.
+      <p><label class="file-picker button">
+        Select Crystalis ROM File
+        <input type="file" accept=".nes" id="pick-file" style="display: none;">
+      </label>
+      <p>You can also run the randomizer locally by installing the
+        <a href="https://nodejs.org">node</a> package:
+        <code style="display: block; margin-top: 0.5em; padding-left: 2em;">
+          npm install -g crystalis-randomizer
+          <br>cryr --flags="Gt Mr Rlpt Sbkm Sct Tasd" Crystalis.nes</code>
+    </div>
+  </section>
+
+  <section id="checksum-warning" class="if-rom-broken warning">
+    <h1>Warning</h1>
+    <div>
+      The selected rom image is not recognized.  The randomization may not work
+      correctly, and the identification stamp will be different.  Please select
+      a new rom image above.
+    </div>
+  </section>
+
+  <section class="if-rom-uploaded expandable">
+    <h1>Presets</h1>
+    <div id="presets">
+      <p>For a quick start, consider using one of the following presets, or else
+      typing in a custom flag string.
+
+      <h2>Custom Flagstring</h2>
+      <div class="flex-row">
+        <input id="flagstring" spellcheck="false" type="text"
+               placeholder="(enter custom flagstring here)">
+        <a id="preset-apply" class="button" href="javascript:">Apply</a>
+      </div>
+      <!-- TODO - consider a visual warning for invalid flag strings -->
+    </div>
+  </section>
+
+  <section class="if-rom-uploaded expandable">
+    <h1>Flags</h1>
+    <div id="select-options"></div>
+  </section>
+
+  <section class="if-rom-uploaded expandable">
+    <h1>Custom Graphics Packs</h1>
+    <div>
+      <h2>Play As</h2>
+      <div class="flex-row">
+        <div class="flex-row">
+          <p> Selecting a sprite will apply the sprite to your Randomized ROM
+          <br>Click [
+          <span>
+            <svg id="download-icon" width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path opacity="0.5" fill-rule="evenodd" clip-rule="evenodd" d="M3 14.25C3.41421 14.25 3.75 14.5858 3.75 15C3.75 16.4354 3.75159 17.4365 3.85315 18.1919C3.9518 18.9257 4.13225 19.3142 4.40901 19.591C4.68577 19.8678 5.07435 20.0482 5.80812 20.1469C6.56347 20.2484 7.56459 20.25 9 20.25H15C16.4354 20.25 17.4365 20.2484 18.1919 20.1469C18.9257 20.0482 19.3142 19.8678 19.591 19.591C19.8678 19.3142 20.0482 18.9257 20.1469 18.1919C20.2484 17.4365 20.25 16.4354 20.25 15C20.25 14.5858 20.5858 14.25 21 14.25C21.4142 14.25 21.75 14.5858 21.75 15V15.0549C21.75 16.4225 21.75 17.5248 21.6335 18.3918C21.5125 19.2919 21.2536 20.0497 20.6517 20.6516C20.0497 21.2536 19.2919 21.5125 18.3918 21.6335C17.5248 21.75 16.4225 21.75 15.0549 21.75H8.94513C7.57754 21.75 6.47522 21.75 5.60825 21.6335C4.70814 21.5125 3.95027 21.2536 3.34835 20.6517C2.74643 20.0497 2.48754 19.2919 2.36652 18.3918C2.24996 17.5248 2.24998 16.4225 2.25 15.0549C2.25 15.0366 2.25 15.0183 2.25 15C2.25 14.5858 2.58579 14.25 3 14.25Z" fill="#1C274C"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 16.75C12.2106 16.75 12.4114 16.6615 12.5535 16.5061L16.5535 12.1311C16.833 11.8254 16.8118 11.351 16.5061 11.0715C16.2004 10.792 15.726 10.8132 15.4465 11.1189L12.75 14.0682V3C12.75 2.58579 12.4142 2.25 12 2.25C11.5858 2.25 11.25 2.58579 11.25 3V14.0682L8.55353 11.1189C8.27403 10.8132 7.79963 10.792 7.49393 11.0715C7.18823 11.351 7.16698 11.8254 7.44648 12.1311L11.4465 16.5061C11.5886 16.6615 11.7894 16.75 12 16.75Z" fill="#1C274C"/>
+            </svg>
+          </span>
+          ] to download as a .ips patch for the Vanilla Crystalis ROM
+          <!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+        </div>
+        <div id="simea-sprite-options" class="flex-row"></div>
+      </div>
+
+      <h2>Community Graphics Packs</h2>
+      <div class="flex-row">
+        <div class="flex-row">
+          <p>Join the <a href="https://discord.gg/ktyz5E6">Crystalis Randomizer Discord</a> for more!
+        </div>
+        <!-- loadSpriteSelectionsFromStorage will populate the list of saved sprites -->
+        <div id="simea-sprite-custom" class="flex-row" style="width: 100%;"></div>
+        <div class="flex-row">
+          <label class="file-picker button">
+            Load Custom Sprite `.nss` File
+            <input type="file" accept=".nss" id="upload-sprite" style="display: none;">
+          </label>
+        </div>
+        <!-- Uncomment this (and the JS code that references this) to debug spritesheet loading -->
+        <!-- <img id="test-spritesheet-upload" width=1024 height=1024> -->
+      </div>
+    </div>
+  </section>
+
+  <section class="if-rom-uploaded">
+    <h1>Generate</h1>
+    <div>
+      <h2>Seed</h2>
+      <p>
+        You may specify a seed for the random number generator, if
+        desired.  If it is left blank, a new seed will be chosen at
+        random each time.  Use the 'new' button to generate a
+        shareable seed, which will be automatically added to the URL.
+      <div class="flex-row">
+        <input id="seed" type="text">
+        <a id="new-seed" class="button">New</a>
+      </div>
+      <h2></h2>
+      <div class="flex-row">
+        <a id="generate" class="button">Generate</a>
+        <a id="spoiler" class="button if-spoiled">Spoiler</a>
+        <a id="race" class="button if-versioned">Race</a>
+        <progress class="if-shuffling" id="progress" max="1"></progress>
+        <!-- a id="share" class="button">Share</a -->
+      </div>
+      <p>Your flag string is <span class="flagstring-out"></span>
+      <p>The checksum for this seed is <span id="checksum">????????</span>
+    </div>
+  </section>
+
+  <section class="if-spoiled expandable">
+    <h1>Spoiler Log</h1>
+    <div>
+      <h2 class="empty-spoiler">Flags</h2>
+      <ul id="spoiler-flags"></ul>
+      <h2 class="empty-spoiler">Item Names</h2>
+      <ul id="spoiler-item-names"></ul>
+      <h2 class="empty-spoiler">Trades</h2>
+      <ul id="spoiler-trades"></ul>
+      <h2 class="empty-spoiler">Wild Warp</h2>
+      <ul id="spoiler-wild-warps"></ul>
+      <h2 class="empty-spoiler">Houses</h2>
+      <ul id="spoiler-houses"></ul>
+      <h2>Item Placement</h2>
+      <ul id="spoiler-items">
+        <li>Generate or seed or spoiler log to populate...
+      </ul>
+      <!--
+      <h2>Enemy Placement</h2>
+      <ul id="spoiler-enemies">
+        <li>Generate or seed or spoiler log to populate...
+      </ul>
+      -->
+      <h2>Route</h2>
+      <ul id="spoiler-route">
+        <li>Generate or seed or spoiler log to populate...
+      </ul>
+      <h2 class="empty-spoiler">Walls</h2>
+      <ul id="spoiler-walls"></ul>
+      <h2 class="empty-spoiler">Mazes</h2>
+      <ul id="spoiler-mazes"></ul>
+    </div>
+  </section>
+</main>

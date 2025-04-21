@@ -1105,10 +1105,10 @@ function preventNpcDespawns(rom: Rom, opts: FlagSet): void {
   Zebu.localDialogs.set(ZebuCave.id, [
     LocalDialog.of(~flags.TalkedToZebuInCave.id,
                    [0x00, 0x1a], [flags.TalkedToZebuInCave.id]),
-    LocalDialog.of(flags.LeafVillagersRescued.id, [0x00, 0x1d]),
-    LocalDialog.of(flags.LeafAbduction.id, [0x00, 0x1c]), // 038 leaf attacked
     LocalDialog.of(flags.ZebuAtWindmill.id, [0x00, 0x1d]), // 039 learned refresh
     LocalDialog.of(flags.UsedWindmillKey.id, [0x00, 0x1b, 0x03]), // => refresh
+    LocalDialog.of(flags.LeafVillagersRescued.id, [0x00, 0x1d]),
+    LocalDialog.of(flags.LeafAbduction.id, [0x00, 0x1c]), // 038 leaf attacked
     LocalDialog.of(~0, [0x00, 0x1d]),
   ]);
   // Don't despawn on getting barrier

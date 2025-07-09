@@ -214,8 +214,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixWildWarp(rom);
 
   swapMimicAndRecoverGraphics(rom);
-  
-  if (flags.shuffleHouses()) removeFortuneTellerCounter(rom);
+
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {
@@ -1526,9 +1525,4 @@ function removeIf<T>(arr: T[], pred: (elem: T) => boolean): void {
   const index = arr.findIndex(pred);
   if (index < 0) throw new Error(`Could not find element in ${arr}`);
   arr.splice(index, 1);
-}
-
-function removeFortuneTellerCounter(rom: Rom) {
-  const screen = rom.screens[rom.metascreens.fortuneTeller.sid];
-  screen.set2d(0x74, screen.get2d(0x84, 0x08));
 }

@@ -54,7 +54,7 @@ const shops = new Set<HouseType>(['inn', 'armor', 'tool', 'pawn']);
 const compat = new Set<HouseType>([...shops, 'house', 'tavern']);
 
 function makeConnection(rom: Rom, house: House, replacement: House, first: boolean) {
-  console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} ${house.type} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]} ${replacement.type}`);
+  //console.log(`connect ${rom.locations[house.outside[0]>>>8].name} ${house.outside[0].toString(16)} ${house.outside[1]} ${house.type} -- ${rom.locations[replacement.inside[0]>>>8].name} ${replacement.inside[0].toString(16)} ${replacement.inside[1]} ${replacement.type}`);
   Metalocation.connect(rom, house.outside, replacement.inside);
   // Replace the icon (if applicable)
   if (!first) return;
@@ -79,7 +79,7 @@ function makeConnection(rom: Rom, house: House, replacement: House, first: boole
 export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   const {
     locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron, TowerMesia, 
-                MesiaShrine, JoelLighthouse, UndergroundChannel},
+                MesiaShrine, JoelLighthouse},
     metascreens: {squareTownNE_house,
                   fortressTownEntrance,
                   mountainPathE_gate},
@@ -122,21 +122,17 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
     //if (location === BoatHouse) continue;
 
     // For non-shops, find the bottom edge
-    let bottomExits!: [[number, ConnectionType, ExitSpec, number]];
+    let bottomExit!: [number, ConnectionType, ExitSpec, number];
     for (const [pos, type, spec] of location.meta.exits()) {
-      // hacky way to prevent shuffling main Underground Channel entrance here
-      if (location.id == UndergroundChannel.id && pos == 0x21) continue;
       // Find absolute Y coordinate of actual exit
       const coord =
           (pos & 0xf0) << 4 |
           (location.meta.get(pos).findExitByType(type).entrance >>> 8);
-      if (!bottomExits || coord > bottomExits[0][3]) {
-        bottomExits = [[pos, type, spec, coord]];
-      } else if (location.id == UndergroundChannel.id && coord == bottomExits[0][3]) {
-        bottomExits.push([pos, type, spec, coord]);
+      if (!bottomExit || coord > bottomExit[3]) {
+        bottomExit = [pos, type, spec, coord];
       }
     }
-    for (const [pos, type, spec] of bottomExits) {
+    for (const [pos, type, spec] of [bottomExit]) {
       // if (type === 'edge:bottom' || shops.has(location.data.houseType) ||
       //    (location.meta.tileset === rom.metatilesets.fortress &&
       //     type === 'stair:down') ||
@@ -192,7 +188,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random) {
   }
   const hasInn = new Set<number>();
   const inns = byType.get('inn');
-  for (const [_, locposs] of [...firstPass, ...secondPass]) {
+  for (const [scr, locposs] of [...firstPass, ...secondPass]) {
     //console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
     const map = new Map<ConnectionType, HouseType>();
     let first = true;

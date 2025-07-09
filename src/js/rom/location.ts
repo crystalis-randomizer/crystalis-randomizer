@@ -240,7 +240,7 @@ export class Locations extends Array<Location> {
   readonly JoelLighthouse           = $(0x62, {area: Areas.Lighthouse,
                                                music: 0, houseType: 'outside'});
   // INVALID: 0x63
-  readonly UndergroundChannel       = $(0x64, {area: Areas.UndergroundChannel, houseType: 'house'});
+  readonly UndergroundChannel       = $(0x64, {area: Areas.UndergroundChannel});
   readonly ZombieTown               = $(0x65, {area: Areas.ZombieTown});
   // INVALID: 0x66
   // INVALID: 0x67

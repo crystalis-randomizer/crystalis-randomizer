@@ -1404,7 +1404,7 @@ export class World {
     }
     if (boss === this.rom.bosses.Insect) {
       extra.push(this.rom.flags.InsectFlute.c, this.rom.flags.GasMask.c);
-    } else if (boss === this.rom.bosses.Draygon2) {
+    } else if (boss === this.rom.bosses.Draygon2 && !this.flagset.noBowMode()) {
       extra.push(this.rom.flags.BowOfTruth.c);
     }
     if (this.flagset.guaranteeRefresh()) {

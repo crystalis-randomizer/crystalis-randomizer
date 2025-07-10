@@ -283,6 +283,8 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
 
+  if (flags.storyMode()) storyMode(parsed);
+  
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
@@ -338,8 +340,6 @@ async function shuffleInternal(rom: Uint8Array,
     parsed.items.MedicalHerb.value = 80;
     parsed.items.FruitOfPower.value = 56;
   }
-
-  if (flags.storyMode()) storyMode(parsed);
 
   // Do this *after* shuffling palettes
   if (flags.blackoutMode()) blackoutMode(parsed);

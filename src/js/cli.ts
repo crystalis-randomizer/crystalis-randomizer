@@ -11,6 +11,7 @@ import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
 import {Spoiler} from "./rom/spoiler";
+import { CharacterSet } from './characters';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -125,8 +126,9 @@ const main = (...args: string[]) => {
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
     const log = flagset.check('Ds') ? {} as {spoiler?: Spoiler}: undefined;
+    const sprite = await CharacterSet.get("simea").get("Simea")!;
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset, undefined, log);
+        await patch.shuffle(orig, s, flagset, [sprite], log);
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;

@@ -162,10 +162,13 @@ export class Sprite {
       }
     }
 
-    const METASPRITE_TABLE = 0x3845c;
+    const NEW_METASPRITE_TABLE_LO = 0x3bd00;
+    const NEW_METASPRITE_TABLE_HI = 0x3bd00 + 0x100;
     // and then apply any patches for the metasprite as well
     for (let [name, [metaid, framenum]] of CustomTilesetMapping.getMetasprite(s.converter)) {
-      const base = readLittleEndian(rom, METASPRITE_TABLE + (metaid << 1)) + 0x30000;
+      const lobyte = rom[NEW_METASPRITE_TABLE_LO + metaid];
+      const hibyte = rom[NEW_METASPRITE_TABLE_HI + metaid];
+      const base = (hibyte << 8 | lobyte) + 0x30000;
       const size = rom[base];
       const frameMask = rom[base + 1];
       const frames = frameMask + 1;
@@ -738,8 +741,12 @@ export async function parseNssFile(filename: string, data: string): Promise<NssF
   const palette = hex2Num(chunk(unRLE(paletteData).slice(0, 32), 2));
   const chrdata = Array.from(new Uint8Array(hexstrToBytes(unRLE((nss.get("CHRMain") || "")))));
   const metasprites = loadMetasprites(nss);
-  const rendered = await createImageFromCHR(new Uint8ClampedArray(chrdata), palette);
-  return new NssFile(filename, chrdata, palette, metasprites, Array.from(new Uint8Array(rendered.data)));
+  let rendered:number[] = [];
+  if (typeof window !== 'undefined') {
+    const renderedimg = await createImageFromCHR(new Uint8ClampedArray(chrdata), palette);
+    rendered = Array.from(new Uint8Array(renderedimg.data));
+  }
+  return new NssFile(filename, chrdata, palette, metasprites, rendered);
 }
 
 const basePaletteColors: number[][] = [

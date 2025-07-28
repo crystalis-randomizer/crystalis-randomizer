@@ -1366,8 +1366,7 @@ function fixCrystalis(rom: Rom, flags: FlagSet) {
   CopyTileLoop(copyWaterBridgeTiles, waterSwordPage);
   CopyTileLoop(copyEnemySpriteDeathTile, windSwordPage);
   // Apply four sword requirement to Mesia in Tower if she's shuffled
-  if (flags.shuffleMesiaTower())
-  {
+  if (flags.shuffleMesiaTower()) {
     rom.trigger(0xa4).conditions.push(rom.flags.SwordOfWind.id, rom.flags.SwordOfFire.id, rom.flags.SwordOfWater.id, rom.flags.SwordOfThunder.id);
   }
 }

@@ -273,6 +273,27 @@ class Presets {
         World.UnidentifiedKeyItems,
       ]);
       
+  readonly Tournament2025 = new Preset(this, 'Tournament 2025', `
+      2025's tournament flags are meant to showcase the changes
+      that allow Crystalis to be used anywhere in the game. It 
+      features more restricted access to several key areas 
+      (Mt. Sabre North and Evil Spirit Island) and even turns on
+      No Bow Mode, which means Tower could be logically relevant!`, [
+        World.ShuffleHouses,
+        World.RandomizeSpriteColors,
+        [World.RandomizeTrades, '?'],
+        [World.RandomizeWallElements, '?'],
+        Routing.StoryMode,
+        Routing.NoBowMode,
+        Routing.OrbsNotRequired,
+        Routing.VanillaDolphin,
+        Glitches.StatueGlitch,
+        [Glitches.SwordChargeGlitch, '!'],
+        [Monsters.RandomizeWeaknesses, '?'],
+        Monsters.TowerRobots,
+        NoGuarantees.BattleMagic
+    ]);
+      
   readonly Tournament2024 = new Preset(this, 'Tournament 2024', `
       2024's tournament flags have an emphasis on the randomized
       wild warp flag. This leads to a much wider variety of early
@@ -1390,6 +1411,6 @@ export class FlagSet {
   }
   
   isEasterEgg(): boolean {
-    return (this.rawSeed?.startsWith("JEFFPETERS") == true);
+    return false; //(this.rawSeed?.startsWith("JEFFPETERS") == true);
   }
 }

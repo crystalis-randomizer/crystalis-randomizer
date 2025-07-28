@@ -1339,6 +1339,7 @@ function fixCrystalis(rom: Rom, flags: FlagSet) {
   // crystalis sword page
   const crystalisSwordPage = 0x46 << 6;
   const waterSwordPage = 0x44 << 6;
+  const windSwordPage = 0x42 << 6;
 
   const copyWaterBridgeTiles = new Map<number, number>([
     [0x28, 0x28],
@@ -1347,16 +1348,23 @@ function fixCrystalis(rom: Rom, flags: FlagSet) {
     [0x2b, 0x2b],
     [0x2c, 0x2c],
   ]);
-  copyWaterBridgeTiles.forEach((newaddr, oldaddr) => {
-    const crystalisPixels = rom.patterns.get(crystalisSwordPage, newaddr);
-    for (let x=0; x<8; x++) {
-      for (let y = 0; y < 8; y++) {
-        // Update the pixel so that it uses palette 3 instead of palette 1 for the white color
-        const px = rom.patterns.get(waterSwordPage, oldaddr).pixelAt(y, x);
-        crystalisPixels.setPixelAt(y, x, px != 0 ? px | 0b10 : 0);
+  const copyEnemySpriteDeathTile = new Map<number, number>([
+    [0x2e, 0x2e],
+  ]);
+  const CopyTileLoop = (copyList: Map<number, number>, inputPage: number, outputPage: number = crystalisSwordPage) => {
+    copyList.forEach((newaddr, oldaddr) => {
+      const outputPixelPage = rom.patterns.get(outputPage, newaddr);
+      for (let x=0; x<8; x++) {
+        for (let y = 0; y < 8; y++) {
+          // Update the pixel so that it uses palette 3 instead of palette 1 for the white color
+          const px = rom.patterns.get(inputPage, oldaddr).pixelAt(y, x);
+          outputPixelPage.setPixelAt(y, x, px != 0 ? px | 0b10 : 0);
+        }
       }
-    }
-  });
+    });
+  };
+  CopyTileLoop(copyWaterBridgeTiles, waterSwordPage);
+  CopyTileLoop(copyEnemySpriteDeathTile, windSwordPage);
   // Apply four sword requirement to Mesia in Tower if she's shuffled
   if (flags.shuffleMesiaTower())
   {

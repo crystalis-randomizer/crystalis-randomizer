@@ -68,6 +68,9 @@ export class ExtendedMetasprites extends Array<Metasprite> {
       // For 90deg CC:  y,-x
       // For 180deg  : -y,-x
       m.sprites = asSigned.map(frames => frames.map(spr => {
+        if (spr[0] == 0x80) {
+          return [0x80, 0x80, 0x80, 0x80];
+        }
         let newX, newY = 0;
         const sprOffset = new Map<'up'|'right'|'down'|'left', number[]>([
           ['up', [0, 24]],

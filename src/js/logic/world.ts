@@ -211,7 +211,6 @@ export class World {
     this.addItemCheck([start], and(GlowingLamp, BrokenStatue),
                       RepairedStatue.id, {lossy: true, unique: true});
     
-
     // Add shops
     for (const shop of this.rom.shops) {
       // leaf and shyron may not always be accessible, so don't rely on them.
@@ -837,10 +836,6 @@ export class World {
     // It seems like probably marking it as (x-1, y-1) .. (x, y) makes the
     // most sense, with the caveat that triggers shifted right by a half
     // tile should go from x .. x+1 instead.
-    
-    if (location == this.rom.locations.UndergroundChannel) {
-        console.log(`Underground Channel trigger: ${spawn.id}`);
-    }
     
     // TODO - consider checking trigger's action: $19 -> push-down message
 

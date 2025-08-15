@@ -10,6 +10,8 @@ import * as patch from './patch';
 import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
+import {Spoiler} from "./rom/spoiler";
+import { CharacterSet } from './characters';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -110,7 +112,7 @@ const main = (...args: string[]) => {
     }
   }
 
-  const flagset = new FlagSet(flags);
+  const flagset = new FlagSet(flags, seed);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const orig_crc = crc32(rom);
   if (!EXPECTED_CRC32S.has(orig_crc)) {
@@ -123,8 +125,10 @@ const main = (...args: string[]) => {
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
+    const log = flagset.check('Ds') ? {} as {spoiler?: Spoiler}: undefined;
+    const sprite = await CharacterSet.get("simea").get("Simea")!;
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset);
+        await patch.shuffle(orig, s, flagset, [sprite], log);
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;
@@ -133,6 +137,17 @@ const main = (...args: string[]) => {
         (resolve, reject) => fs.writeFile(
             filename, shuffled, (err) => err ? reject(err) : resolve('')));
     console.log(`Wrote ${filename}`);
+    if (log && log.spoiler) {
+      const s = log.spoiler;
+      for (const r of s.route) {
+        console.log(`Spoiler: ${r.toString()}`);
+      }
+      
+      for (const sl of s.slots) {
+        if (sl === undefined) continue;
+        console.log(`Spoiler: ${sl.toString()}`);
+      }
+    }
   }));
 };
 

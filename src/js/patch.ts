@@ -283,6 +283,8 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random);
 
+  if (flags.storyMode()) storyMode(parsed);
+  
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
@@ -338,8 +340,6 @@ async function shuffleInternal(rom: Uint8Array,
     parsed.items.MedicalHerb.value = 80;
     parsed.items.FruitOfPower.value = 56;
   }
-
-  if (flags.storyMode()) storyMode(parsed);
 
   // Do this *after* shuffling palettes
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -536,15 +536,36 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
     [ShopType.ARMOR]: {contents: [], shops: []},
     [ShopType.TOOL]: {contents: [], shops: []},
   };
+  
+  let isEasterEgg = _flags.isEasterEgg();
+  
   // Read all the contents.
   for (const shop of rom.shops) {
     if (!shop.used || shop.location === 0xff) continue;
+    if (isEasterEgg && shop.location === 0xf6)
+    {
+      //console.log("Plandoing Shyron Shop...");
+      shop.contents = [0x1d, 0x21, 0x22, 0x24];
+      continue;
+    }
     const data = shops[shop.type];
     if (data) {
       data.contents.push(...shop.contents.filter(x => x !== 0xff));
       data.shops.push(shop);
       shop.contents = [];
     }
+  }
+  if (isEasterEgg)
+  {
+    //console.log("Limes for everyone!");
+    const toolShopData = shops[ShopType.TOOL];
+    toolShopData.contents = [];
+    for (let i = 0; i < toolShopData.shops.length * 4 - 2; i++)
+    {
+        toolShopData.contents.push(0x20);
+    }
+    toolShopData.contents.push(0x1d);
+    toolShopData.contents.push(0x24);
   }
   // Shuffle the contents.  Pick order to drop items in.
   for (const data of Object.values(shops)) {
@@ -559,7 +580,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
       }
       const item = items[0];
       const shop = slots[0];
-      if (shop.contents.length < 4 && !shop.contents.includes(item)) {
+      if (shop.contents.length < 4 && (!shop.contents.includes(item) || isEasterEgg)) {
         shop.contents.push(item);
         items.shift();
       }
@@ -726,11 +747,11 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
 }
 
 function buffDyna(rom: Rom, _flags: FlagSet): void {
-  rom.objects[0xb8].collisionPlane = 1;
+  rom.objects[0xb8].collisionPlane = 4;
   rom.objects[0xb8].immobile = true;
-  rom.objects[0xb9].collisionPlane = 1;
+  rom.objects[0xb9].collisionPlane = 4;
   rom.objects[0xb9].immobile = true;
-  rom.objects[0x33].collisionPlane = 2;
+  // rom.objects[0x33].collisionPlane = 2;
   rom.adHocSpawns[0x28].slotRangeLower = 0x1c; // counter
   rom.adHocSpawns[0x29].slotRangeUpper = 0x1c; // laser
   rom.adHocSpawns[0x2a].slotRangeUpper = 0x1c; // bubble

@@ -175,7 +175,7 @@ async function click(e) {
     } else if (t.id === 'generate') {
       ga('send', 'event', 'Main', 'generate', label);
       const seedHex = patch.parseSeed(seed);
-      const [shuffled, crc] = await shuffleRom(seedHex);
+      const [shuffled, crc] = await shuffleRom(seedHex, seed);
       ga('send', 'timing', 'Main', 'generate', new Date().getTime() - start, label);
       // TODO - should we build the flagset into the filename?
       // Make it an option?
@@ -189,7 +189,7 @@ async function click(e) {
       break;
     } else if (t.id === 'spoiler') {
       ga('send', 'event', 'Main', 'spoiler', label);
-      await shuffleRom(patch.parseSeed(seed));
+      await shuffleRom(patch.parseSeed(seed), seed);
       ga('send', 'timing', 'Main', 'spoiler', new Date().getTime() - start, label);
       break;
     }
@@ -205,7 +205,7 @@ const read = (arr, index, len) => {
   return chars.join('');
 };
 
-const shuffleRom = async (seed) => {
+const shuffleRom = async (seed, rawSeed) => {
   for (const span of document.getElementsByClassName('seed-out')) {
     span.textContent = seed.toString(16).padStart(8, '0');
   }
@@ -213,7 +213,7 @@ const shuffleRom = async (seed) => {
   const progressTracker = new ProgressTracker();
   const orig = rom.slice();
   let done = false;
-  const flagsClone = new FlagSet(String(flags)); // prevent modifying
+  const flagsClone = new FlagSet(String(flags), rawSeed); // prevent modifying
   document.body.classList.add('shuffling');
   const log = flags.check('Ds') ? {} : undefined;
   const showWork = () => {

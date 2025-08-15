@@ -135,6 +135,7 @@ UPDATE_REFS target @ refs
 .segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
 .segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000
 .segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000
+;;; Monster names and metasprite table part 3
 .segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000
 
 ;;; Note: we moved these when we expanded the rom.
@@ -627,14 +628,16 @@ RESERVE_MAPS
 ;;; Metasprite rendering code + data
 .segment "1c","1d"
 .org $845c ; MetaspriteTable
-  .res $100
-.org $855c
-  .res $100 ; MetaspriteTablePart2
+; Metasprite tables are relocated to $c000 - $200 now
+;  .res $100
+;.org $855c
+;  .res $100 ; MetaspriteTablePart2
 ; .org $865c
 ;   .res ($a000 - *) ; All of the actual metasprite data
 ; .org $a000
 ;   .res $1500
-FREE_UNTIL $c000
+FREE_UNTIL $c000 - $200
+  .res $200
 
 ;;; New extended map screens
 .segment "20","21"

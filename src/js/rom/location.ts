@@ -221,7 +221,7 @@ export class Locations extends Array<Location> {
   readonly Portoa_FishermanIsland   = $(0x51, {area: Areas.FishermanHouse,
                                                music: 0});
   readonly MesiaShrine              = $(0x52, {area: Areas.LimeTreeLake,
-                                               ...MESIA});
+                                               ...MESIA, houseType: 'outside'});
   // INVALID: 0x53
   readonly WaterfallCave1           = $(0x54, {area: Areas.WaterfallCave});
   readonly WaterfallCave2           = $(0x55);

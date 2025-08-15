@@ -314,9 +314,9 @@ ATTEMPT:
         // const notHas =
         //     seq(this.items.length, i => i as ItemIndex).filter(i => !has.has(i))
         //         .sort((a, b) => a - b).map(ni);
-        console.error(`Initial fill never reached slots:\n  ${
-                      [...missingMap.keys()].sort()
-                          .map(k => k + missingMap.get(k)!).join('\n  ')}`);
+        // console.error(`Initial fill never reached slots:\n  ${
+        //               [...missingMap.keys()].sort()
+        //                   .map(k => k + missingMap.get(k)!).join('\n  ')}`);
                       // }\nUnavailable items:\n  ${notHas.join('\n  ')}`);
                       // final, this);
         this.lastFailure = `unreachable slots?`;

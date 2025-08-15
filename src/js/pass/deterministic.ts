@@ -156,7 +156,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
 
   fixFlyableWalls(rom);
   fixMonsterTerrain(rom);
-  fixCrystalis(rom);
+  fixCrystalis(rom, flags);
   fixOpelStatue(rom);
   fixCoinSprites(rom);
   fixChests(rom);
@@ -214,6 +214,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixWildWarp(rom);
 
   swapMimicAndRecoverGraphics(rom);
+
 }
 
 function updateGraphicsForStatTracking(rom: Rom): void {
@@ -1331,9 +1332,43 @@ function noBowMode(rom: Rom): void {
       0, 'door', [Crypt_Draygon2.meta.id << 8 | 0x10, 'edge:bottom']);
 }
 
-// For now this just fixes the shot to be all elements instead of none.
-function fixCrystalis(rom: Rom) {
+function fixCrystalis(rom: Rom, flags: FlagSet) {
+  // Fix the shot to be all elements instead of none.
   rom.objects[0x33].elements = 0xf;
+  // Copy over the water bridge creation sprites from the water sword to the
+  // crystalis sword page
+  const crystalisSwordPage = 0x46 << 6;
+  const waterSwordPage = 0x44 << 6;
+  const windSwordPage = 0x42 << 6;
+
+  const copyWaterBridgeTiles = new Map<number, number>([
+    [0x28, 0x28],
+    [0x29, 0x29],
+    [0x2a, 0x2a],
+    [0x2b, 0x2b],
+    [0x2c, 0x2c],
+  ]);
+  const copyEnemySpriteDeathTile = new Map<number, number>([
+    [0x2e, 0x2e],
+  ]);
+  const CopyTileLoop = (copyList: Map<number, number>, inputPage: number, outputPage: number = crystalisSwordPage) => {
+    copyList.forEach((newaddr, oldaddr) => {
+      const outputPixelPage = rom.patterns.get(outputPage, newaddr);
+      for (let x=0; x<8; x++) {
+        for (let y = 0; y < 8; y++) {
+          // Update the pixel so that it uses palette 3 instead of palette 1 for the white color
+          const px = rom.patterns.get(inputPage, oldaddr).pixelAt(y, x);
+          outputPixelPage.setPixelAt(y, x, px != 0 ? px | 0b10 : 0);
+        }
+      }
+    });
+  };
+  CopyTileLoop(copyWaterBridgeTiles, waterSwordPage);
+  CopyTileLoop(copyEnemySpriteDeathTile, windSwordPage);
+  // Apply four sword requirement to Mesia in Tower if she's shuffled
+  if (flags.shuffleMesiaTower()) {
+    rom.trigger(0xa4).conditions.push(rom.flags.SwordOfWind.id, rom.flags.SwordOfFire.id, rom.flags.SwordOfWater.id, rom.flags.SwordOfThunder.id);
+  }
 }
 
 // Enables chests and mimics to appear on every screen by replacing the unused recover graphics

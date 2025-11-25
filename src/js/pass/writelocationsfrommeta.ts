@@ -30,6 +30,7 @@ export function writeLocationsFromMeta(rom: Rom) {
     loc.exits = [];
     loc.entrances = [];
     loc.meta.writeEntrance0();
+    loc.meta.reserveEntrances();
   }
   // Need to make sure Mezame entrance 1 exists, since (unless no-bow mode is
   // on) nothing actually leads to it.

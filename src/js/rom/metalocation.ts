@@ -745,6 +745,21 @@ export class Metalocation {
       dest._exits.set(destTile & 0xff, destType,
                       [this.id << 8 | newPos, newType]);
       newExits.push([newPos, newType, destExit]);
+      if (oldType == this._entrance0 && oldType !== newType) {
+        let isEntrance0 = false;
+        for (const [curPos, curType] of this._exits) {
+          if (curType !== this._entrance0) continue;
+          else {
+            isEntrance0 = (curPos == oldPos);
+            break;
+          }
+        }
+        if (isEntrance0) {
+          //console.log(`Changing Entrance 0 type for ${this.rom.locations[this.id].name}`);
+          this._entrance0 = newType;
+          //this.logEntrances();
+        }
+      }
       this._exits.delete(oldPos, oldType);
     }
     for (const [pos, type, exit] of newExits) {
@@ -1170,6 +1185,13 @@ export class Metalocation {
     // this._exits = new Table(exits);
     // that._exits = new Table(exits);
   }
+  
+  logEntrances() {
+    console.log(`Entrances of #${this.id} ${this.rom.locations[this.id].name}:`);
+    for (const [pos, type] of this._exits) {
+      console.log(`pos: ${hex(pos)}, type: ${type}`);
+    }
+  }
 
   /** Writes the entrance0 if possible. */
   writeEntrance0() {
@@ -1180,6 +1202,32 @@ export class Metalocation {
       this.rom.locations[this.id].entrances[0] =
           Entrance.of({screen: pos, coord: exit.entrance});
       return;
+    }
+  }
+  
+  reserveEntrances() {
+    const srcLoc = this.rom.locations[this.id];
+    const srcExits: Array<[number, ConnectionType]> = [];
+    for (const [srcPos, srcType, [, ]] of this._exits) {
+      srcExits.push([srcPos, srcType]);    
+    }
+    srcExits.sort((n1, n2) => {
+        if (n1[0] != n2[0]) return n1[0] - n2[0];
+        if (n1[1] != n2[1]) return n1[1].localeCompare(n2[1]);
+        return 0;
+    })
+    for (const [srcPos, srcType] of srcExits) {
+      const srcScreen = this._screens[srcPos];
+      const srcExit = srcScreen.data.exits?.find(e => e.type === srcType);
+      if (srcExit && !srcExit.type.startsWith('seamless')) {
+        let srcCoord = srcExit.entrance;
+        let realSrcPos = srcPos;
+        if (srcCoord > 0xefff) { // handle special case in Oak
+          realSrcPos += 0x10;
+          srcCoord -= 0x10000;
+        }
+        srcLoc.findOrAddEntrance(realSrcPos, srcCoord);
+      }
     }
   }
 

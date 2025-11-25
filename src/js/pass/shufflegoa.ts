@@ -19,6 +19,8 @@ function flipSaberaEntrance(exit: Exit) {
   loc.set2d(0x71, [[loc.rom.metascreens.deadEndE_upStair],
                    [loc.rom.metascreens.caveEmpty]]);
   loc.moveExits([0x81, 'stair:down', 0x71, 'stair:up']);
+  // calling this to ensure entrance 0 remains entrance 0
+  loc.moveExits([0x06, 'stair:up', 0x06, 'stair:up']);
   exit[1] = 0x71;
   exit[2] = 'stair:up';
 }

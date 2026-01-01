@@ -3,6 +3,7 @@ import { ConnectionType } from '../rom/metascreendata';
 import { Location, Spawn } from '../rom/location';
 import { Pos, ExitSpec } from '../rom/metalocation';
 import { Flag } from '../rom/flags';
+import { Area, Areas } from '../rom/area';
 
 /**
  * Moves entrance-based triggers that should be attached to
@@ -76,12 +77,21 @@ const triggerDirectionAdjustments = [0x10, 0, 0, 0];
  */
 function fixClosedCaveExits(rom: Rom) {
   const {locations: {MtSabreNorth_Main, ValleyOfWind}} = rom;
-  for (const locPos of findClosedCaveExits(ValleyOfWind, 0x11)) {
+  const sealedPos = 0x11;
+  let caveArea;
+  for (const exit of ValleyOfWind.meta.exits()) {
+    if (exit[0] === sealedPos && (exit[1] === 'cave' || exit[1] === 'gate')) {
+      const exitLoc = rom.locations[exit[2][0] >>> 8];
+      caveArea = exitLoc.data.area;
+    }
+  }
+  for (const locPos of findClosedCaveExits(ValleyOfWind, sealedPos, caveArea)) {
     const loc = rom.locations[locPos >>> 8];
     const pos = locPos & 0xff;
     setCustomFlag(loc, pos, rom.flags.OpenedSealedCave);
+    console.log(`Locking cave entrance in ${loc.name} for Sealed Cave connection`);
   }
-  for (const locPos of findClosedCaveExits(MtSabreNorth_Main, 0x04)) {
+  for (const locPos of findClosedCaveExits(MtSabreNorth_Main, 0x04, Areas.MtSabreNorth)) {
     const loc = rom.locations[locPos >>> 8];
     if (loc.data.fixed) continue; // don't add if there's a fixed slot
     if (loc.spawns.length > 15) continue; // not enough room to add spawns
@@ -94,12 +104,15 @@ function fixClosedCaveExits(rom: Rom) {
     const explosion = Spawn.of({screen: pos, coord: coord - 0x1010,
                                 type: 4, id: 0x2c});
     loc.spawns.splice(1, 0, explosion);
+    console.log(`Locking cave entrance in ${loc.name} for Sabre North connection`);
   }
 }
 
-function findClosedCaveExits(loc: Location, pos: Pos): number[] {
+function findClosedCaveExits(loc: Location, pos: Pos, searchArea: Area|undefined): number[] {
   const seen = new Set<Location|number>([loc, loc.id << 8 | pos]);
   const queue = new Set<ExitSpec>();
+  console.log(`Starting in ${loc.name}`);
+  console.log(`Target area: ${searchArea!.name} id: ${searchArea!.id}`);
   for (const exit of loc.meta.exits()) {
     if (exit[0] === pos && (exit[1] === 'cave' || exit[1] === 'gate')) {
       queue.add(exit[2]);
@@ -125,6 +138,7 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
       const scr = exitLoc.meta.get(exitPos);
       if (scr.flag === 'custom:true') {
         out.push(exit[0]);
+        console.log(`Found lockable entrance at location: ${exitLoc.name}, pos: ${exitPos.toString(16)}`);
       } else {
         console.error(`No flag for ${scr.name}`);
       }
@@ -132,13 +146,15 @@ function findClosedCaveExits(loc: Location, pos: Pos): number[] {
     }
     if (seen.has(exitLoc)) continue;
     seen.add(exitLoc);
+    console.log(`Searching through location: ${exitLoc.name} area: ${exitLoc.data.area.name}, area id: ${exitLoc.data.area.id}`);
+    if (exitLoc.data.area.id != searchArea!.id) continue;
     for (const entrance of exitLoc.meta.exits()) {
       // Don't recurse into a different cave
       if (entrance[1] === 'cave' || entrance[1] === 'gate') continue;
       queue.add(entrance[2]);
     }
   }
-  //console.log(`From ${loc}: ${out.map(x=>x.toString(16))}`);;
+  console.log(`From ${loc}: ${out.map(x=>x.toString(16))}`);;
   return out;
 }
 

@@ -621,6 +621,12 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   if (flags.zebuStudentGivesItem()) {
     // Zebu student (aka windmill guard): secondary item -> alarm flute
     WindmillGuard.data[1] = 0x31;
+    if (flags.oopsAllThunderSword()) {
+      // OATS needs the left chest in mezame for Teleport prefill
+      MezameShrine.spawns.push(Spawn.of({screen: 0, tile: 0x95, type: 2, id: 0x49}));
+      rom.flags[0x149].unsafeRename('Mezame Left Chest');
+      rom.itemGets[0x49].itemId = rom.items.MedicalHerb.id;
+    }
   } else {
     // Actually make use of the TalkedToZebuStudet flag;
     WindmillGuard.data[1] = 0xff; // indicate nothing there: no slot.

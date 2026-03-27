@@ -142,6 +142,7 @@ function defines(flags: FlagSet,
     _SOFT_RESET_SHORTCUT: true,
     _STATS_TRACKING: flags.hasStatTracking(),
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
+    _OOPS_ALL_THUNDER_SWORD: flags.oopsAllThunderSword(),
     _TINK_MODE: !flags.guaranteeMatchingSword(),
     _TRAINER: flags.trainer(),
     _TWELFTH_WARP_POINT: true, // zombie town warp
@@ -319,6 +320,28 @@ async function shuffleInternal(rom: Uint8Array,
     }
   }
   //console.log('fill', fill);
+
+  // Oops! All Thunder Sword: replace non-progression slots with SoT
+  if (flags.oopsAllThunderSword()) {
+    const towns = [
+      parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
+      parsed.locations.Oak.id,        parsed.locations.Nadare.id,
+      parsed.locations.Portoa.id,     parsed.locations.Amazones.id,
+      parsed.locations.Joel.id,       parsed.locations.ZombieTown.id,
+      parsed.locations.Swan.id,       parsed.locations.Shyron.id,
+      parsed.locations.Goa.id,        parsed.locations.Sahara.id,
+    ];
+    const shuffledTowns = random.shuffle([...towns]);
+    let townIdx = 0;
+    for (let slotIdx = 0; slotIdx < 0x70; slotIdx++) {
+      const itemget = parsed.itemGets[parsed.slots[slotIdx]];
+      if (!itemget || itemget.key) continue;
+      parsed.slots[slotIdx] = 0x03; // SoT itemget ID
+      parsed.townWarp.oatsWarpTable.set(slotIdx,
+          shuffledTowns[townIdx % shuffledTowns.length]);
+      townIdx++;
+    }
+  }
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
   //await shuffleDepgraph(parsed, random, log, flags, progress);
@@ -537,35 +560,15 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
     [ShopType.TOOL]: {contents: [], shops: []},
   };
   
-  let isEasterEgg = _flags.isEasterEgg();
-  
   // Read all the contents.
   for (const shop of rom.shops) {
     if (!shop.used || shop.location === 0xff) continue;
-    if (isEasterEgg && shop.location === 0xf6)
-    {
-      //console.log("Plandoing Shyron Shop...");
-      shop.contents = [0x1d, 0x21, 0x22, 0x24];
-      continue;
-    }
     const data = shops[shop.type];
     if (data) {
       data.contents.push(...shop.contents.filter(x => x !== 0xff));
       data.shops.push(shop);
       shop.contents = [];
     }
-  }
-  if (isEasterEgg)
-  {
-    //console.log("Limes for everyone!");
-    const toolShopData = shops[ShopType.TOOL];
-    toolShopData.contents = [];
-    for (let i = 0; i < toolShopData.shops.length * 4 - 2; i++)
-    {
-        toolShopData.contents.push(0x20);
-    }
-    toolShopData.contents.push(0x1d);
-    toolShopData.contents.push(0x24);
   }
   // Shuffle the contents.  Pick order to drop items in.
   for (const data of Object.values(shops)) {
@@ -580,7 +583,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random): void {
       }
       const item = items[0];
       const shop = slots[0];
-      if (shop.contents.length < 4 && (!shop.contents.includes(item) || isEasterEgg)) {
+      if (shop.contents.length < 4 && (!shop.contents.includes(item))) {
         shop.contents.push(item);
         items.shift();
       }

@@ -1,6 +1,6 @@
 import {Module} from '../asm/module';
 import {Rom} from '../rom';
-import { Address, exportLabel, exportValue, Segment, tuple} from './util';
+import { Address, exportLabel, exportValue, relocExportLabel, Segment, tuple} from './util';
 
 // List of town warp locations.
 export class TownWarp {
@@ -9,6 +9,9 @@ export class TownWarp {
 
   // (location, entrance) pair for warp point.
   thunderSwordWarp: readonly [number, number];
+
+  // Oops-all-thunder-sword slot index to town location ID map
+  oatsWarpTable: Map<number, number> = new Map();
 
   constructor(readonly rom: Rom) {
     this.locations = tuple(rom.prg, ADDRESS.offset, COUNT);
@@ -22,6 +25,13 @@ export class TownWarp {
     a.byte(...this.locations);
     exportValue(a, 'thunderSwordWarpLocation', this.thunderSwordWarp[0]);
     exportValue(a, 'thunderSwordWarpEntrance', this.thunderSwordWarp[1]);
+
+    if (this.oatsWarpTable.size > 0) {
+      relocExportLabel(a, 'OopsSlotTownTable', [Segment.$12, Segment.$13, Segment.$fe, Segment.$ff]);
+      for (let i = 0; i < 0x80; i++) {
+        a.byte(this.oatsWarpTable.get(i) ?? 0xff);
+      }
+    }
     return [a.module()];
   }
 }

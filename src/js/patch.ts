@@ -332,8 +332,11 @@ async function shuffleInternal(rom: Uint8Array,
       parsed.locations.Goa.id,        parsed.locations.Sahara.id,
     ];
     const shuffledTowns = random.shuffle([...towns]);
+    const mezameLeftChestSlot = 0x49; // Prefilled with Teleport
+    const mezameRightChestSlot = 0x31; // Prefilled with Speed Boots
     let townIdx = 0;
     for (let slotIdx = 0; slotIdx < 0x70; slotIdx++) {
+      if (slotIdx === mezameLeftChestSlot || slotIdx === mezameRightChestSlot) continue;
       const itemget = parsed.itemGets[parsed.slots[slotIdx]];
       if (!itemget || itemget.key) continue;
       parsed.slots[slotIdx] = 0x03; // SoT itemget ID

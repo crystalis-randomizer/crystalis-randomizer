@@ -217,7 +217,44 @@ FREE_UNTIL $e1ae
 
 ;;; Import thunder sword warp info
 .import thunderSwordWarpLocation, thunderSwordWarpEntrance
+
+.ifdef _OOPS_ALL_THUNDER_SWORD
+.import OopsSlotTownTable
+
+;;; Replace the hardcoded location/entrance loads with a table lookup.
+;;; $61fe holds the slot ID set by PatchStartItemGet.
+.org $d5c9
+  jsr OatsWarpLookup
+  nop  ; pad over the original sta $6c
+  nop  ; pad over the original lda #entrance
+  nop  ; pad over the original sta $6d part
+  nop
+  nop
+
+.reloc
+OatsWarpLookup:
+  ldx $61fe
+  lda OopsSlotTownTable,x
+  cmp #$ff
+  beq @NormalWarp
+    ; OATS slot: use table location, entrance 0
+    sta $6c         ; CurrentLocation
+    lda #$00
+    sta $6d         ; CurrentEntrance
+    rts
+@NormalWarp:
+  ; Not an OATS slot: fall back to normal thunder sword warp
+  lda #thunderSwordWarpLocation
+  sta $6c
+  lda #thunderSwordWarpEntrance
+  sta $6d
+  rts
+
+.else
+
 .org $d5c9
   lda #thunderSwordWarpLocation
 .org $d5cd
   lda #thunderSwordWarpEntrance
+
+.endif ; _OOPS_ALL_THUNDER_SWORD

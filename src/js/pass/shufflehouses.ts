@@ -79,7 +79,7 @@ function makeConnection(rom: Rom, house: House, replacement: House, first: boole
 
 export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random, predetermined?: ShuffleData) {
   const {
-    locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron},
+    locations: {Crypt_Hall1, Goa, GoaFortress_Exit, Shyron, TowerMesia},
     metascreens: {squareTownNE_house,
                   fortressTownEntrance,
                   mountainPathE_gate},
@@ -92,9 +92,14 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random, predeter
     mountainPathE_gate.data.id,
   ]);
 
+  if (flags.shuffleMesiaTower()) {
+    TowerMesia.data.houseType = 'outside';
+  }
+
   if (flags.shuffleAreas()) {
     // Set a few additional locations as palaces
-    for (const loc of [Goa, GoaFortress_Exit, Shyron, Crypt_Hall1]) {
+    const locs = [Goa, GoaFortress_Exit, Shyron, Crypt_Hall1];
+    for (const loc of locs) {
       loc.data.houseType = 'palace';
     }
   }
@@ -181,7 +186,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random, predeter
   }
   const hasInn = new Set<number>();
   const inns = byType.get('inn');
-  for (const [, locposs] of [...firstPass, ...secondPass]) {
+  for (const [scr, locposs] of [...firstPass, ...secondPass]) {
     //console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
     const map = new Map<ConnectionType, HouseType>();
     let first = true;

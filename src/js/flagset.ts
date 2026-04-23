@@ -273,6 +273,27 @@ class Presets {
         World.UnidentifiedKeyItems,
       ]);
       
+  readonly Tournament2025 = new Preset(this, 'Tournament 2025', `
+      2025's tournament flags are meant to showcase the changes
+      that allow Crystalis to be used anywhere in the game. It 
+      features more restricted access to several key areas 
+      (Mt. Sabre North and Evil Spirit Island) and even turns on
+      No Bow Mode, which means Tower could be logically relevant!`, [
+        World.ShuffleHouses,
+        World.RandomizeSpriteColors,
+        [World.RandomizeTrades, '?'],
+        [World.RandomizeWallElements, '?'],
+        Routing.StoryMode,
+        Routing.NoBowMode,
+        Routing.OrbsNotRequired,
+        Routing.VanillaDolphin,
+        Glitches.StatueGlitch,
+        [Glitches.SwordChargeGlitch, '!'],
+        [Monsters.RandomizeWeaknesses, '?'],
+        Monsters.TowerRobots,
+        NoGuarantees.BattleMagic
+    ]);
+      
   readonly Tournament2024 = new Preset(this, 'Tournament 2024', `
       2024's tournament flags have an emphasis on the randomized
       wild warp flag. This leads to a much wider variety of early
@@ -441,7 +462,7 @@ class World extends FlagSection {
   static readonly ShuffleHouses = World.flag('Wh', {
     name: 'Shuffle house entrances',
     text: `Shuffles all the house entrances, as well as a handful of other
-           things, like the palace/fortress-type entrances at the top of
+           things, like the palace/Mesia tower/fortress-type entrances at the top of
            several towns, and standalone houses.`,
     hard: true,
   });
@@ -522,6 +543,14 @@ class Routing extends FlagSection {
            warped to a random town.  This flag disables the warp.  If set as
            "R!t", then the warp will always go to Shyron, like in vanilla.`,
     modes: '!',
+  });
+
+  static readonly OopsAllThunderSword = Routing.flag('Rz', {
+    name: 'Oops! All Thunder Sword',
+    text: `All non-progression item checks are replaced with copies of the
+           Sword of Thunder. Each copy warps the player to a pre-assigned
+           town on pickup. Finding any copy provides the Sword of Thunder
+           for breaking iron walls.`,
   });
 
   static readonly VanillaDolphin = Routing.flag('Rd', {
@@ -967,8 +996,11 @@ class DebugMode extends FlagSection {
 
 export class FlagSet {
   private flags: Map<Flag, Mode>;
+  private rawSeed?: string;
 
-  constructor(str: string|Map<Flag, Mode> = '@Casual') {
+  constructor(str: string|Map<Flag, Mode> = '@Casual', rawSeed?: string) {
+    this.rawSeed = rawSeed;
+    //console.log(`Raw seed is: ${rawSeed}`);
     if (typeof str !== 'string') {
       this.flags = new Map();
       for (const [k, v] of str) {
@@ -1004,7 +1036,8 @@ export class FlagSet {
     return new FlagSet(
         new Map(
             [...this.flags].map(
-                ([k, v]) => [k, k.opts.optional ? k.opts.optional(v) : v])));
+                ([k, v]) => [k, k.opts.optional ? k.opts.optional(v) : v])),
+                this.rawSeed);
   }
 
   filterRandom(random: Random): FlagSet {
@@ -1013,7 +1046,7 @@ export class FlagSet {
       return random.pick([true, false, ...(k.opts.modes || '')]);
     }
     return new FlagSet(
-        new Map([...this.flags].map(([k, v]) => [k, pick(k, v)])));
+        new Map([...this.flags].map(([k, v]) => [k, pick(k, v)])), this.rawSeed);
   }
 
   toString() {
@@ -1206,12 +1239,18 @@ export class FlagSet {
   orbsOptional() {
     return this.check(Routing.OrbsNotRequired);
   }
+  oopsAllThunderSword(): boolean {
+    return true; // this.check(Routing.OopsAllThunderSword);
+  }
 
   shuffleGoaFloors() {
     return this.check(World.ShuffleGoaFloors);
   }
   shuffleHouses() {
     return this.check(World.ShuffleHouses);
+  }
+  shuffleMesiaTower() {
+    return this.shuffleHouses();
   }
   shuffleAreas() {
     // TODO: consider multiple levels of shuffle?
@@ -1380,5 +1419,9 @@ export class FlagSet {
     if (this.shuffleAreas() && this.preserveUniqueChecks()) {
       throw new UsageError('Wa and Eu are incompatible');
     }
+  }
+  
+  isEasterEgg(): boolean {
+    return true; //(this.rawSeed?.startsWith("JEFFPETERS") == true);
   }
 }

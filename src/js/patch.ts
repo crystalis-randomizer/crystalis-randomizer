@@ -145,6 +145,7 @@ function defines(flags: FlagSet,
     _SOFT_RESET_SHORTCUT: true,
     _STATS_TRACKING: flags.hasStatTracking(),
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
+    _OOPS_ALL_THUNDER_SWORD: flags.oopsAllThunderSword(),
     _TINK_MODE: !flags.guaranteeMatchingSword(),
     _TRAINER: flags.trainer(),
     _TWELFTH_WARP_POINT: true, // zombie town warp
@@ -291,6 +292,8 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined?.fromArchipelago == true));
 
+  if (flags.storyMode()) storyMode(parsed);
+  
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
@@ -326,6 +329,31 @@ async function shuffleInternal(rom: Uint8Array,
   }
   //console.log('fill', fill);
 
+  // Oops! All Thunder Sword: replace non-progression slots with SoT
+  if (flags.oopsAllThunderSword()) {
+    const towns = [
+      parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
+      parsed.locations.Oak.id,        parsed.locations.Nadare.id,
+      parsed.locations.Portoa.id,     parsed.locations.Amazones.id,
+      parsed.locations.Joel.id,       parsed.locations.ZombieTown.id,
+      parsed.locations.Swan.id,       parsed.locations.Shyron.id,
+      parsed.locations.Goa.id,        parsed.locations.Sahara.id,
+    ];
+    const shuffledTowns = random.shuffle([...towns]);
+    const mezameLeftChestSlot = 0x49; // Prefilled with Teleport
+    const mezameRightChestSlot = 0x31; // Prefilled with Speed Boots
+    let townIdx = 0;
+    for (let slotIdx = 0; slotIdx < 0x70; slotIdx++) {
+      if (slotIdx === mezameLeftChestSlot || slotIdx === mezameRightChestSlot) continue;
+      const itemget = parsed.itemGets[parsed.slots[slotIdx]];
+      if (!itemget || itemget.key) continue;
+      parsed.slots[slotIdx] = 0x03; // SoT itemget ID
+      parsed.townWarp.oatsWarpTable.set(slotIdx,
+          shuffledTowns[townIdx % shuffledTowns.length]);
+      townIdx++;
+    }
+  }
+
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
   //await shuffleDepgraph(parsed, random, log, flags, progress);
 
@@ -346,8 +374,6 @@ async function shuffleInternal(rom: Uint8Array,
     parsed.items.MedicalHerb.value = 80;
     parsed.items.FruitOfPower.value = 56;
   }
-
-  if (flags.storyMode()) storyMode(parsed);
 
   // Do this *after* shuffling palettes
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -550,6 +576,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: 
     [ShopType.ARMOR]: {contents: [], shops: []},
     [ShopType.TOOL]: {contents: [], shops: []},
   };
+  
   // Read all the contents.
   for (const shop of rom.shops) {
     if (!shop.used || shop.location === 0xff) continue;
@@ -582,7 +609,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: 
       }
       const item = items[0];
       const shop = slots[0];
-      if (shop.contents.length < 4 && !shop.contents.includes(item)) {
+      if (shop.contents.length < 4 && (!shop.contents.includes(item))) {
         shop.contents.push(item);
         items.shift();
       }
@@ -774,11 +801,11 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
 }
 
 function buffDyna(rom: Rom, _flags: FlagSet): void {
-  rom.objects[0xb8].collisionPlane = 1;
+  rom.objects[0xb8].collisionPlane = 4;
   rom.objects[0xb8].immobile = true;
-  rom.objects[0xb9].collisionPlane = 1;
+  rom.objects[0xb9].collisionPlane = 4;
   rom.objects[0xb9].immobile = true;
-  rom.objects[0x33].collisionPlane = 2;
+  // rom.objects[0x33].collisionPlane = 2;
   rom.adHocSpawns[0x28].slotRangeLower = 0x1c; // counter
   rom.adHocSpawns[0x29].slotRangeUpper = 0x1c; // laser
   rom.adHocSpawns[0x2a].slotRangeUpper = 0x1c; // bubble

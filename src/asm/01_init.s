@@ -360,19 +360,22 @@ TS_COUNT       = $13
 ; Short How-To-Use documentation:
 ;
 ; 0. Make sure that there isn't already anything waiting to be run by seeing if
-; ArchipelagoFlag is zero. This gets cleared after the item is granted.
+; ArchipelagoStatusFlag is zero. This gets cleared after the item is granted.
 ;
 ; 1. Set the item ID to grant the player at ArchipelagoItemGet
 ;
-; 2. Set ArchipelagoFlag to 1, and the game will run the update the next time the
+; 2. Set ArchipelagoStatusFlag to 1, and the game will run the update the next time the
 ; player gets back to "normal" play state.
 ;
 
 ; If set, during the next main loop, branch to the Archipelago handling code
-ArchipelagoFlag                      = $657b
+ArchipelagoStatusFlag                = $657a
 
 ; Item ID to grant the player
-ArchipelagoItemGet                   = $657c
+ArchipelagoItemGet                   = $657b
+
+; Item meta data (warp index for Thunder Sword, status duration for traps)
+ArchipelagoItemMetaData              = $657c
 
 ;Count of consumables received in Archipelago
 ArchipelagoConsumablesReceivedIdx    = $657d

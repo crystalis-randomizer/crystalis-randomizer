@@ -414,16 +414,11 @@ export class World {
       slots: this.slots,
       checkName: (check: number) => checkName(this.rom.flags[check]),
       prefill: (random: Random) => {
-        const {Crystalis, MesiaInTower, MezameShrineLeftChest, ZebuStudent,
-               LeafElder, Teleport, LeatherBoots} = this.rom.flags;
+        const {Crystalis, MesiaInTower, LeafElder} = this.rom.flags;
         const map = new Map([[MesiaInTower.id, Crystalis.id]]);
         if (this.flagset.guaranteeSword()) {
           // Pick a sword at random...? inverse weight?
           map.set(LeafElder.id, 0x200 | random.nextInt(4));
-        }
-        if (this.flagset.oopsAllThunderSword()) {
-          map.set(MezameShrineLeftChest.id, Teleport.id);
-          map.set(ZebuStudent.id, LeatherBoots.id);
         }
         return map;
         // TODO - if any items shouldn't be shuffled, then do the pre-fill...

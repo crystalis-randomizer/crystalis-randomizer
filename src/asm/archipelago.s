@@ -13,8 +13,9 @@
 .reloc
 ClearArchipelagoFlagsOnColdBoot:
   lda #0
-  sta ArchipelagoFlag
+  sta ArchipelagoStatusFlag
   sta ArchipelagoItemGet
+  sta ArchipelagoItemMetaData
   jmp UnconditionallyResetCheckpointFile
   ; implicit rts
 
@@ -25,11 +26,11 @@ ClearArchipelagoFlagsOnColdBoot:
 
 .reloc
 HandleArchipelago:
-  lda ArchipelagoFlag
+  lda ArchipelagoStatusFlag
   ;check for an incoming item
   beq @AP_Continue
     lda #$02
-    sta ArchipelagoFlag
+    sta ArchipelagoStatusFlag
     lda ArchipelagoItemGet
     cmp #$70
     bne +
@@ -57,7 +58,8 @@ HandleArchipelago:
     jsr GrantItemInRegisterA
 ++  lda #$00
     sta ArchipelagoItemGet
-    sta ArchipelagoFlag
+    sta ArchipelagoStatusFlag
+    sta ArchipelagoItemMetaData
 @AP_Continue:
   jmp HandleStatusConditions
 

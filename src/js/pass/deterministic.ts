@@ -618,7 +618,7 @@ function alarmFluteIsKeyItem(rom: Rom, flags:FlagSet): void {
   AlarmFlute.basePrice = 0;
 
   
-  if (flags.zebuStudentGivesItem() && !flags.oopsAllThunderSword()) {
+  if (flags.zebuStudentGivesItem()) {
     // Zebu student (aka windmill guard): secondary item -> alarm flute
     WindmillGuard.data[1] = 0x31;
   } else {

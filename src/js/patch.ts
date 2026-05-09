@@ -145,7 +145,6 @@ function defines(flags: FlagSet,
     _SOFT_RESET_SHORTCUT: true,
     _STATS_TRACKING: flags.hasStatTracking(),
     _TELEPORT_ON_THUNDER_SWORD: flags.teleportOnThunderSword(),
-    _OOPS_ALL_THUNDER_SWORD: flags.oopsAllThunderSword(),
     _TINK_MODE: !flags.guaranteeMatchingSword(),
     _TRAINER: flags.trainer(),
     _TWELFTH_WARP_POINT: true, // zombie town warp
@@ -330,7 +329,7 @@ async function shuffleInternal(rom: Uint8Array,
   //console.log('fill', fill);
 
   // Oops! All Thunder Sword: replace non-progression slots with SoT
-  if (flags.oopsAllThunderSword()) {
+  if (predetermined!.fromArchipelago) {
     const towns = [
       parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
       parsed.locations.Oak.id,        parsed.locations.Nadare.id,
@@ -339,18 +338,8 @@ async function shuffleInternal(rom: Uint8Array,
       parsed.locations.Swan.id,       parsed.locations.Shyron.id,
       parsed.locations.Goa.id,        parsed.locations.Sahara.id,
     ];
-    const shuffledTowns = random.shuffle([...towns]);
-    const mezameLeftChestSlot = 0x49; // Prefilled with Teleport
-    const mezameRightChestSlot = 0x31; // Prefilled with Speed Boots
-    let townIdx = 0;
-    for (let slotIdx = 0; slotIdx < 0x70; slotIdx++) {
-      if (slotIdx === mezameLeftChestSlot || slotIdx === mezameRightChestSlot) continue;
-      const itemget = parsed.itemGets[parsed.slots[slotIdx]];
-      if (!itemget || itemget.key) continue;
-      parsed.slots[slotIdx] = 0x03; // SoT itemget ID
-      parsed.townWarp.oatsWarpTable.set(slotIdx,
-          shuffledTowns[townIdx % shuffledTowns.length]);
-      townIdx++;
+    for (let townIdx = 0; townIdx < towns.length; townIdx++) {
+      parsed.townWarp.oatsWarpTable.set(townIdx, towns[townIdx]);
     }
   }
 

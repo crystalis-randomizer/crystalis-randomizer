@@ -545,14 +545,6 @@ class Routing extends FlagSection {
     modes: '!',
   });
 
-  static readonly OopsAllThunderSword = Routing.flag('Rz', {
-    name: 'Oops! All Thunder Sword',
-    text: `All non-progression item checks are replaced with copies of the
-           Sword of Thunder. Each copy warps the player to a pre-assigned
-           town on pickup. Finding any copy provides the Sword of Thunder
-           for breaking iron walls.`,
-  });
-
   static readonly VanillaDolphin = Routing.flag('Rd', {
     name: 'Vanilla Dolphin interactions',
     text: `By default, the randomizer changes a number of dolphin and boat
@@ -1239,9 +1231,6 @@ export class FlagSet {
   orbsOptional() {
     return this.check(Routing.OrbsNotRequired);
   }
-  oopsAllThunderSword(): boolean {
-    return true; // this.check(Routing.OopsAllThunderSword);
-  }
 
   shuffleGoaFloors() {
     return this.check(World.ShuffleGoaFloors);
@@ -1419,9 +1408,5 @@ export class FlagSet {
     if (this.shuffleAreas() && this.preserveUniqueChecks()) {
       throw new UsageError('Wa and Eu are incompatible');
     }
-  }
-  
-  isEasterEgg(): boolean {
-    return true; //(this.rawSeed?.startsWith("JEFFPETERS") == true);
   }
 }

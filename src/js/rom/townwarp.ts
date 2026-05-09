@@ -28,7 +28,7 @@ export class TownWarp {
 
     if (this.oatsWarpTable.size > 0) {
       relocExportLabel(a, 'OopsSlotTownTable', [Segment.$12, Segment.$13, Segment.$fe, Segment.$ff]);
-      for (let i = 0; i < 0x80; i++) {
+      for (let i = 0; i < this.oatsWarpTable.size; i++) {
         a.byte(this.oatsWarpTable.get(i) ?? 0xff);
       }
     }

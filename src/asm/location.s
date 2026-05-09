@@ -218,7 +218,7 @@ FREE_UNTIL $e1ae
 ;;; Import thunder sword warp info
 .import thunderSwordWarpLocation, thunderSwordWarpEntrance
 
-.ifdef _OOPS_ALL_THUNDER_SWORD
+.ifdef _ARCHIPELAGO
 .import OopsSlotTownTable
 
 ;;; Replace the hardcoded location/entrance loads with a table lookup.
@@ -233,21 +233,13 @@ FREE_UNTIL $e1ae
 
 .reloc
 OatsWarpLookup:
-  ldx $61fe
+  lda ArchipelagoItemMetaData
+  and #$0f
+  tax
   lda OopsSlotTownTable,x
-  cmp #$ff
-  beq @NormalWarp
-    ; OATS slot: use table location, entrance 0
-    sta $6c         ; CurrentLocation
-    lda #$00
-    sta $6d         ; CurrentEntrance
-    rts
-@NormalWarp:
-  ; Not an OATS slot: fall back to normal thunder sword warp
-  lda #thunderSwordWarpLocation
-  sta $6c
-  lda #thunderSwordWarpEntrance
-  sta $6d
+  sta $6c         ; CurrentLocation
+  lda #$00
+  sta $6d         ; CurrentEntrance
   rts
 
 .else
@@ -257,4 +249,4 @@ OatsWarpLookup:
 .org $d5cd
   lda #thunderSwordWarpEntrance
 
-.endif ; _OOPS_ALL_THUNDER_SWORD
+.endif ; _ARCHIPELAGO

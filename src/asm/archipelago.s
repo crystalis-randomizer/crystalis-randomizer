@@ -3,9 +3,34 @@
 
 .ifdef _ARCHIPELAGO
 
+.segment "1a"
+
+.org $92f5
+  jsr PatchRemoveObjectY
+  nop
+  nop
+  rts
+
 .define MIMIC_DISPLACEMENT $20
 
 .segment "fe", "ff"
+
+.reloc
+GetStatusJumpTable:
+ .word ($0000) ; unused, will probably crash
+ .word ($92d6) ; paralysis
+ .word ($9313) ; stone
+ .word ($929c) ; poison
+ .word ($934f) ; nuper
+
+.reloc
+PatchRemoveObjectY:
+  lda ArchipelagoStatusFlag
+  cmp #02
+  beq +
+  lda #$00
+  sta $04a0,y
++ rts
 
 .org $f374
   jsr ClearArchipelagoFlagsOnColdBoot
@@ -37,7 +62,7 @@ HandleArchipelago:
       lda $0623
       pha
         jsr FindEmptyOrMonsterSlot
-        bne @AP_Continue ; if a isn't 0 coming out, then we didn't find a slot
+        bne @AP_Finish_Mimic ; if a isn't 0 coming out, then we didn't find a slot
         stx $0623
         lda $70
         sta $70,x
@@ -51,12 +76,29 @@ HandleArchipelago:
         sbc #$00 ;bring in the carry bit
         sta $d0,x
         jsr SpawnMimic
+@AP_Finish_Mimic:
       pla
       sta $0623
-      jmp ++ ;unconditional
-+   sta $23
+      jmp +++ ;unconditional
++   cmp #$ff ; check for status effect 
+    bne ++
+      lda ArchipelagoItemMetaData
+      ; Strategy: read table, jumps to code, code uses rts to come back here
+      asl
+      tax
+      lda GetStatusJumpTable,x
+      sta $10
+      lda GetStatusJumpTable+1,x
+      sta $11
+      lda #$1a
+      jsr BankSwitch8k_8000
+      jsr @jmp ;get a proper callstack
+      jmp +++
+@jmp:
+      jmp ($0010)  
+++  sta $23
     jsr GrantItemInRegisterA
-++  lda #$00
++++ lda #$00
     sta ArchipelagoItemGet
     sta ArchipelagoStatusFlag
     sta ArchipelagoItemMetaData

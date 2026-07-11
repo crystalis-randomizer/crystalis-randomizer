@@ -369,13 +369,13 @@ TS_COUNT       = $13
 ;
 
 ; If set, during the next main loop, branch to the Archipelago handling code
-ArchipelagoStatusFlag                = $657a
+ArchipelagoStatusFlag                = $657b
 
 ; Item ID to grant the player
-ArchipelagoItemGet                   = $657b
+ArchipelagoItemGet                   = $657c
 
 ; Item meta data (warp index for Thunder Sword, status duration for traps)
-ArchipelagoItemMetaData              = $657c
+ArchipelagoItemMetaData              = $657a
 
 ;Count of consumables received in Archipelago
 ArchipelagoConsumablesReceivedIdx    = $657d

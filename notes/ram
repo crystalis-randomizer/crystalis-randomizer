@@ -1301,11 +1301,12 @@ $64e0..$657f
 ------------
 Not read, but seems to maybe be copied?  This ends up in the save data.
 Archipelago uses $657b to $657e for the following:
-
+ - $657a: Item metadata sent by the client. Can be the destination town for Sword of Thunder,
+          or a status effect
  - $657b: Flag that indicates the status of communication between the
           game and BizHawkClient. 0 is able to receive, 1 is item pending
           processing, and 2 is currently processing.
- - $657c: ID of the item being granted by BizHawkClient
+ - $657c: ID of the item being granted by BizHawkClient; FF indicates a status effect
  - $657d: Number of consumables that have been received from BizHawkClient
  - $657e: Number of non-consumables that have been received from BizHawkClient
 

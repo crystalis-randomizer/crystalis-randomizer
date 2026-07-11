@@ -193,7 +193,7 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random, predeterm
   markOutside(loc.CordelPlainWest, loc.CordelPlainEast);
   markOutside(loc.WaterfallValleyNorth, loc.WaterfallValleySouth);
   markOutside(loc.KirisaMeadow);
-  markOutside(loc.LimeTreeLake);
+  markOutside(loc.LimeTreeValley);
   mark(loc.Portoa_FishermanIsland, 'edge:right'); // (Portoa)
   mark(loc.PortoaPalace_ThroneRoom, 'door'); // (underground channel)
   mark(loc.Joel, 'edge:bottom'); // (angry sea)

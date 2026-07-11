@@ -328,8 +328,8 @@ async function shuffleInternal(rom: Uint8Array,
   }
   //console.log('fill', fill);
 
-  // Oops! All Thunder Sword: replace non-progression slots with SoT
-  if (predetermined!.fromArchipelago) {
+  // Oops! All Thunder Sword: create warp table
+  if (predetermined?.fromArchipelago) {
     const towns = [
       parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
       parsed.locations.Oak.id,        parsed.locations.Nadare.id,

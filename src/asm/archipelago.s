@@ -11,13 +11,13 @@
   nop
   rts
 
-.define MIMIC_DISPLACEMENT $20
+.define MIMIC_DISPLACEMENT $18
 
 .segment "fe", "ff"
 
 .reloc
 GetStatusJumpTable:
- .word ($0000) ; unused, will probably crash
+ .word ($cbd3) ; wildwarp
  .word ($92d6) ; paralysis
  .word ($9313) ; stone
  .word ($929c) ; poison
@@ -92,6 +92,14 @@ HandleArchipelago:
       sta $11
       lda #$1a
       jsr BankSwitch8k_8000
+      ; okay this is kind of stupid, but the wildwarp code pops an extra layer of stack
+      ; so if we're going to jump to that code, we'll push an extra layer of stack first
+      txa
+      bne @jsr
+        jsr @jsr
+        lda #$00
+        beq +++
+@jsr:
       jsr @jmp ;get a proper callstack
       jmp +++
 @jmp:

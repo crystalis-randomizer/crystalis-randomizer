@@ -206,8 +206,15 @@ async function click(e) {
       if (apJsonZipEntry) {
         apJson = await apJsonZipEntry.get_string();
       }
-      const patchDataZipEntry = apcrysZipArchive.get('patch_data.json');
-      const patchDataJson = await patchDataZipEntry.get_string();
+      let patchDataJson = undefined
+      if (apcrysZipArchive.has('patch_data.json')) {
+        const patchDataZipEntry = apcrysZipArchive.get('patch_data.json');
+        patchDataJson = await patchDataZipEntry.get_string();
+      } else {
+        const patchDataZipEntry = apcrysZipArchive.get('patch_data.bin');
+        const patchDataB64 = await patchDataZipEntry.get_string();
+        patchDataJson = atob(patchDataB64);
+      }
       const [apSeed, apFlagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
       const seedHex = patch.parseSeed(apSeed);
       const [patched, crc] = await patchRom(seedHex, apFlagset, predetermined);

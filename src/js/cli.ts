@@ -145,9 +145,17 @@ const main = (...args: string[]) => {
       const apBytes: Uint8Array = await apFile.buffer() 
       const apJson: string = decoder.decode(apBytes);
       const patchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.json');
-      const patchDataBytes: Uint8Array = await patchDataFile.buffer();
-      const patchDataJson: string = decoder.decode(patchDataBytes);
-      [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      if (patchDataFile === undefined) {
+        const encodedPatchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.bin');
+        const patchDataBytes = await encodedPatchDataFile.buffer();
+        const patchDataB64: string = decoder.decode(patchDataBytes);
+        const patchDataJson: string = Buffer.from(patchDataB64, 'base64').toString('ascii');
+        [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      } else {
+        const patchDataBytes = await patchDataFile.buffer();
+        const patchDataJson: string = decoder.decode(patchDataBytes);
+        [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      }
     }
     
     const s = patch.parseSeed(seed);

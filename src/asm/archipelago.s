@@ -18,10 +18,10 @@
 .reloc
 GetStatusJumpTable:
  .word ($cbd3) ; wildwarp
- .word ($92d6) ; paralysis
- .word ($9313) ; stone
+ .word ($92cb) ; paralysis
+ .word ($9308) ; stone
  .word ($929c) ; poison
- .word ($934f) ; nuper
+ .word ($934c) ; nuper
 
 .reloc
 PatchRemoveObjectY:
@@ -53,7 +53,9 @@ ClearArchipelagoFlagsOnColdBoot:
 HandleArchipelago:
   lda ArchipelagoStatusFlag
   ;check for an incoming item
-  beq @AP_Continue
+  bne @AP_HasItem
+  jmp HandleStatusConditions
+ @AP_HasItem:
     lda #$02
     sta ArchipelagoStatusFlag
     lda ArchipelagoItemGet
@@ -83,6 +85,13 @@ HandleArchipelago:
 +   cmp #$ff ; check for status effect 
     bne ++
       lda ArchipelagoItemMetaData
+      cmp #$03 ; poison, need to apply Battle Armor before jumping
+      bne @ApplyStatus
+        lda $0713 ; Equipped Armor
+        cmp #$07 ; Battle Armor
+        beq +++ ; if Battle armor is equipped, we're immune to poison, so just jump to the end
+        lda ArchipelagoItemMetaData
+@ApplyStatus:
       ; Strategy: read table, jumps to code, code uses rts to come back here
       asl
       tax
@@ -90,8 +99,8 @@ HandleArchipelago:
       sta $10
       lda GetStatusJumpTable+1,x
       sta $11
-      lda #$1a
-      jsr BankSwitch8k_8000
+      lda #$0d
+      jsr BankSwitch16k
       ; okay this is kind of stupid, but the wildwarp code pops an extra layer of stack
       ; so if we're going to jump to that code, we'll push an extra layer of stack first
       txa
@@ -110,8 +119,7 @@ HandleArchipelago:
     sta ArchipelagoItemGet
     sta ArchipelagoStatusFlag
     sta ArchipelagoItemMetaData
-@AP_Continue:
-  jmp HandleStatusConditions
+    jmp HandleStatusConditions
 
 .reloc
 FindEmptyOrMonsterSlot:

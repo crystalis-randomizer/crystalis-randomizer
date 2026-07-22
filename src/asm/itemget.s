@@ -485,7 +485,6 @@ ItemGetFollowup:
   ;; scaling on the first
   lda ArchipelagoItemMetaData
   and #$f0
-  cmp #$00
   bne +                     ; valid OATS entry => skip difficulty bump
 .endif ; _ARCHIPELAGO
   lda $29

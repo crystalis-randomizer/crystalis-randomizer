@@ -6,22 +6,22 @@
 .segment "1a"
 
 .org $92f5
-  jsr PatchRemoveObjectY
-  nop
-  nop
-  rts
-
-.define MIMIC_DISPLACEMENT $18
+  jmp PatchRemoveObjectY
+FREE_UNTIL $92fb
 
 .segment "fe", "ff"
 
 .reloc
-GetStatusJumpTable:
- .word ($cbd3) ; wildwarp
- .word ($92cb) ; paralysis
- .word ($9308) ; stone
- .word ($929c) ; poison
- .word ($934c) ; nuper
+StatusWildWarp = $cbd3
+StatusParalysis = $92cb
+StatusStone = $9308
+StatusPoison = $929c
+StatusNuper = $934c
+
+GetStatusJumpTableLo:
+  .byte <StatusWildWarp, <StatusParalysis, <StatusStone, <StatusPoison, <StatusNuper
+GetStatusJumpTableHi:
+  .byte >StatusWildWarp, >StatusParalysis, >StatusStone, >StatusPoison, >StatusNuper
 
 .reloc
 PatchRemoveObjectY:
@@ -50,6 +50,9 @@ ClearArchipelagoFlagsOnColdBoot:
   jsr HandleArchipelago
 
 .reloc
+
+.define MIMIC_DISPLACEMENT $18
+
 HandleArchipelago:
   lda ArchipelagoStatusFlag
   ;check for an incoming item
@@ -92,27 +95,11 @@ HandleArchipelago:
         beq +++ ; if Battle armor is equipped, we're immune to poison, so just jump to the end
         lda ArchipelagoItemMetaData
 @ApplyStatus:
-      ; Strategy: read table, jumps to code, code uses rts to come back here
-      asl
       tax
-      lda GetStatusJumpTable,x
-      sta $10
-      lda GetStatusJumpTable+1,x
-      sta $11
       lda #$0d
       jsr BankSwitch16k
-      ; okay this is kind of stupid, but the wildwarp code pops an extra layer of stack
-      ; so if we're going to jump to that code, we'll push an extra layer of stack first
-      txa
-      bne @jsr
-        jsr @jsr
-        lda #$00
-        beq +++
-@jsr:
-      jsr @jmp ;get a proper callstack
+      jsr ArchipelagoStatusJumpHandler
       jmp +++
-@jmp:
-      jmp ($0010)  
 ++  sta $23
     jsr GrantItemInRegisterA
 +++ lda #$00
@@ -120,6 +107,21 @@ HandleArchipelago:
     sta ArchipelagoStatusFlag
     sta ArchipelagoItemMetaData
     jmp HandleStatusConditions
+    
+.reloc
+ArchipelagoStatusJumpHandler:
+      ; Strategy: read table, jumps to code, code uses rts to come back here
+      lda GetStatusJumpTableLo,x
+      sta $10
+      lda GetStatusJumpTableHi,x
+      sta $11
+      ; okay this is kind of stupid, but the wildwarp code pops an extra layer of stack
+      ; so if we're going to jump to that code, we'll push an extra layer of stack first
+      txa
+      bne @jmp
+        jsr @jmp ; no rts needed because the wild warp code pops the extra layer of stack
+@jmp:
+      jmp ($0010)  
 
 .reloc
 FindEmptyOrMonsterSlot:

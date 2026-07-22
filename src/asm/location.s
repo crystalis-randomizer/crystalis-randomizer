@@ -225,11 +225,8 @@ FREE_UNTIL $e1ae
 ;;; $61fe holds the slot ID set by PatchStartItemGet.
 .org $d5c9
   jsr OatsWarpLookup
-  nop  ; pad over the original sta $6c
-  nop  ; pad over the original lda #entrance
-  nop  ; pad over the original sta $6d part
-  nop
-  nop
+  jmp *+5
+FREE_UNTIL $d5d1
 
 .reloc
 OatsWarpLookup:

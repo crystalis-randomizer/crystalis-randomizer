@@ -293,6 +293,18 @@ async function shuffleInternal(rom: Uint8Array,
 
   if (flags.storyMode()) storyMode(parsed);
   
+  // Oops! All Thunder Sword: create warp table
+  if (predetermined?.fromArchipelago) {
+    parsed.townWarp.oatsWarpTable = [
+      parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
+      parsed.locations.Oak.id,        parsed.locations.Nadare.id,
+      parsed.locations.Portoa.id,     parsed.locations.Amazones.id,
+      parsed.locations.Joel.id,       parsed.locations.ZombieTown.id,
+      parsed.locations.Swan.id,       parsed.locations.Shyron.id,
+      parsed.locations.Goa.id,        parsed.locations.Sahara.id,
+    ];
+  }
+  
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
@@ -327,21 +339,6 @@ async function shuffleInternal(rom: Uint8Array,
     }
   }
   //console.log('fill', fill);
-
-  // Oops! All Thunder Sword: create warp table
-  if (predetermined?.fromArchipelago) {
-    const towns = [
-      parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
-      parsed.locations.Oak.id,        parsed.locations.Nadare.id,
-      parsed.locations.Portoa.id,     parsed.locations.Amazones.id,
-      parsed.locations.Joel.id,       parsed.locations.ZombieTown.id,
-      parsed.locations.Swan.id,       parsed.locations.Shyron.id,
-      parsed.locations.Goa.id,        parsed.locations.Sahara.id,
-    ];
-    for (let townIdx = 0; townIdx < towns.length; townIdx++) {
-      parsed.townWarp.oatsWarpTable.set(townIdx, towns[townIdx]);
-    }
-  }
 
   // TODO - set omitItemGetDataSuffix and omitLocalDialogSuffix
   //await shuffleDepgraph(parsed, random, log, flags, progress);
@@ -598,7 +595,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: 
       }
       const item = items[0];
       const shop = slots[0];
-      if (shop.contents.length < 4 && (!shop.contents.includes(item))) {
+      if (shop.contents.length < 4 && !shop.contents.includes(item)) {
         shop.contents.push(item);
         items.shift();
       }

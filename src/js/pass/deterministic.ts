@@ -1351,7 +1351,7 @@ function fixCrystalis(rom: Rom, flags: FlagSet) {
   const copyEnemySpriteDeathTile = new Map<number, number>([
     [0x2e, 0x2e],
   ]);
-  const CopyTileLoop = (copyList: Map<number, number>, inputPage: number, outputPage: number = crystalisSwordPage) => {
+  const copyTileLoop = (copyList: Map<number, number>, inputPage: number, outputPage: number = crystalisSwordPage) => {
     copyList.forEach((newaddr, oldaddr) => {
       const outputPixelPage = rom.patterns.get(outputPage, newaddr);
       for (let x=0; x<8; x++) {
@@ -1363,8 +1363,8 @@ function fixCrystalis(rom: Rom, flags: FlagSet) {
       }
     });
   };
-  CopyTileLoop(copyWaterBridgeTiles, waterSwordPage);
-  CopyTileLoop(copyEnemySpriteDeathTile, windSwordPage);
+  copyTileLoop(copyWaterBridgeTiles, waterSwordPage);
+  copyTileLoop(copyEnemySpriteDeathTile, windSwordPage);
   // Apply four sword requirement to Mesia in Tower if she's shuffled
   if (flags.shuffleMesiaTower()) {
     rom.trigger(0xa4).conditions.push(rom.flags.SwordOfWind.id, rom.flags.SwordOfFire.id, rom.flags.SwordOfWater.id, rom.flags.SwordOfThunder.id);

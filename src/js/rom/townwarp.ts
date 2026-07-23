@@ -11,7 +11,7 @@ export class TownWarp {
   thunderSwordWarp: readonly [number, number];
 
   // Oops-all-thunder-sword slot index to town location ID map
-  oatsWarpTable: Map<number, number> = new Map();
+  oatsWarpTable: number[] = [];
 
   constructor(readonly rom: Rom) {
     this.locations = tuple(rom.prg, ADDRESS.offset, COUNT);
@@ -26,10 +26,10 @@ export class TownWarp {
     exportValue(a, 'thunderSwordWarpLocation', this.thunderSwordWarp[0]);
     exportValue(a, 'thunderSwordWarpEntrance', this.thunderSwordWarp[1]);
 
-    if (this.oatsWarpTable.size > 0) {
+    if (this.oatsWarpTable.length > 0) {
       relocExportLabel(a, 'OopsSlotTownTable', [Segment.$12, Segment.$13, Segment.$fe, Segment.$ff]);
-      for (let i = 0; i < this.oatsWarpTable.size; i++) {
-        a.byte(this.oatsWarpTable.get(i) ?? 0xff);
+      for (let i = 0; i < this.oatsWarpTable.length; i++) {
+        a.byte(this.oatsWarpTable[i] ?? 0xff);
       }
     }
     return [a.module()];

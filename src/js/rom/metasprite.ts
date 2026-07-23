@@ -57,7 +57,7 @@ export class ExtendedMetasprites extends Array<Metasprite> {
     // const centerX = botrightX - topLeftX;
     // const centerY = botrightY - topLeftY;
 
-    const GenerateMetasprite = function(m: Metasprite, dir: 'up'|'right'|'down'|'left') {
+    const generateMetasprite = function(m: Metasprite, dir: 'up'|'right'|'down'|'left') {
       m.used = true;
       m.size = 7;
       m.frameMask = 7;
@@ -105,10 +105,10 @@ export class ExtendedMetasprites extends Array<Metasprite> {
       }));
     };
 
-    GenerateMetasprite(up, 'up');
-    GenerateMetasprite(right, 'right');
-    GenerateMetasprite(down, 'down');
-    GenerateMetasprite(left, 'left');
+    generateMetasprite(up, 'up');
+    generateMetasprite(right, 'right');
+    generateMetasprite(down, 'down');
+    generateMetasprite(left, 'left');
 
     // And now export it so we can update the tail metasprite based on direction
     a.assign("CRYSTALIS_BEAM_METASPRITE_UP", up.id);

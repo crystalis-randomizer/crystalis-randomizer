@@ -142,7 +142,7 @@ PatchStartItemGet:
     jmp MimicOrChest
 @NotAMimicOrChest: ; Just a person so load the item and return
 .ifdef _ARCHIPELAGO
-  lda ArchipelagoFlag
+  lda ArchipelagoStatusFlag
   cmp #$02
   beq ReceivingFromAP
     ldy #$01
@@ -316,7 +316,7 @@ ReplaceObjectAndPatchChest:
 .reloc
 PatchStartItemGet:
 .ifdef _ARCHIPELAGO
-  lda ArchipelagoFlag
+  lda ArchipelagoStatusFlag
   cmp #$02
   beq ReceivingFromAP
     ; we're checking a location in-game
@@ -480,6 +480,13 @@ ItemGetFollowup:
   ;; then instead of a simple `rts` we `pla;bmi >rts;sta $23;jmp ItemGet`.
 
   ;; Check if this is a key item, and maybe increase difficulty.
+.ifdef _ARCHIPELAGO
+  ;; Archipelago can produce multiple Swords of Thunder, only increase 
+  ;; scaling on the first
+  lda ArchipelagoItemMetaData
+  and #$f0
+  bne +                     ; valid OATS entry => skip difficulty bump
+.endif ; _ARCHIPELAGO
   lda $29
   lsr
   lsr
@@ -602,7 +609,7 @@ ReloadLocationGraphicsAfterChest:
   and #$07
   tay
 .ifdef _ARCHIPELAGO
-  lda ArchipelagoFlag
+  lda ArchipelagoStatusFlag
   cmp #02
   beq +
   lda SlotFlagsStart,x

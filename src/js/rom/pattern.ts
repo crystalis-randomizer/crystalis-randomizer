@@ -16,6 +16,13 @@ export class Pattern extends Entity {
   pixelAt(y: number, x: number): number {
     return (this.pixels[y | 8] >> x & 1) << 1 | (this.pixels[y] >> x & 1);
   }
+  setPixelAt(y: number, x: number, palette: number) {
+    const xMask = ~(1 << (x));
+    // update the lo plane with the new palette
+    this.pixels[y] = (this.pixels[y] & xMask) | (palette & 0b01) << x;
+    // update the hi plane with the new palette
+    this.pixels[y | 8] = (this.pixels[y | 8] & xMask) | ((palette & 0b10) >> 1) << x;
+  }
 
   flipH(): Pattern {
     return new Pattern(this.rom, -1, this.pixels.map(reverseBits));

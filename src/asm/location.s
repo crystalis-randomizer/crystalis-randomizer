@@ -217,7 +217,33 @@ FREE_UNTIL $e1ae
 
 ;;; Import thunder sword warp info
 .import thunderSwordWarpLocation, thunderSwordWarpEntrance
+
+.ifdef _ARCHIPELAGO
+.import OopsSlotTownTable
+
+;;; Replace the hardcoded location/entrance loads with a table lookup.
+;;; $61fe holds the slot ID set by PatchStartItemGet.
+.org $d5c9
+  jsr OatsWarpLookup
+  jmp *+5
+FREE_UNTIL $d5d1
+
+.reloc
+OatsWarpLookup:
+  lda ArchipelagoItemMetaData
+  and #$0f
+  tax
+  lda OopsSlotTownTable,x
+  sta $6c         ; CurrentLocation
+  lda #$00
+  sta $6d         ; CurrentEntrance
+  rts
+
+.else
+
 .org $d5c9
   lda #thunderSwordWarpLocation
 .org $d5cd
   lda #thunderSwordWarpEntrance
+
+.endif ; _ARCHIPELAGO

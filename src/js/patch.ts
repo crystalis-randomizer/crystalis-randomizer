@@ -291,6 +291,20 @@ async function shuffleInternal(rom: Uint8Array,
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined?.fromArchipelago == true));
 
+  if (flags.storyMode()) storyMode(parsed);
+  
+  // Oops! All Thunder Sword: create warp table
+  if (predetermined?.fromArchipelago) {
+    parsed.townWarp.oatsWarpTable = [
+      parsed.locations.Leaf.id,       parsed.locations.Brynmaer.id,
+      parsed.locations.Oak.id,        parsed.locations.Nadare.id,
+      parsed.locations.Portoa.id,     parsed.locations.Amazones.id,
+      parsed.locations.Joel.id,       parsed.locations.ZombieTown.id,
+      parsed.locations.Swan.id,       parsed.locations.Shyron.id,
+      parsed.locations.Goa.id,        parsed.locations.Sahara.id,
+    ];
+  }
+  
   // This wants to go as late as possible since we need to pick up
   // all the normalization and other handling that happened before.
   const world = new World(parsed, flags);
@@ -346,8 +360,6 @@ async function shuffleInternal(rom: Uint8Array,
     parsed.items.MedicalHerb.value = 80;
     parsed.items.FruitOfPower.value = 56;
   }
-
-  if (flags.storyMode()) storyMode(parsed);
 
   // Do this *after* shuffling palettes
   if (flags.blackoutMode()) blackoutMode(parsed);
@@ -550,6 +562,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: 
     [ShopType.ARMOR]: {contents: [], shops: []},
     [ShopType.TOOL]: {contents: [], shops: []},
   };
+  
   // Read all the contents.
   for (const shop of rom.shops) {
     if (!shop.used || shop.location === 0xff) continue;
@@ -774,11 +787,11 @@ function shuffleWildWarp(rom: Rom, _flags: FlagSet, random: Random): void {
 }
 
 function buffDyna(rom: Rom, _flags: FlagSet): void {
-  rom.objects[0xb8].collisionPlane = 1;
+  rom.objects[0xb8].collisionPlane = 4;
   rom.objects[0xb8].immobile = true;
-  rom.objects[0xb9].collisionPlane = 1;
+  rom.objects[0xb9].collisionPlane = 4;
   rom.objects[0xb9].immobile = true;
-  rom.objects[0x33].collisionPlane = 2;
+  // rom.objects[0x33].collisionPlane = 2;
   rom.adHocSpawns[0x28].slotRangeLower = 0x1c; // counter
   rom.adHocSpawns[0x29].slotRangeUpper = 0x1c; // laser
   rom.adHocSpawns[0x2a].slotRangeUpper = 0x1c; // bubble

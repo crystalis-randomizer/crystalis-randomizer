@@ -129,6 +129,7 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random, predeterm
       // Skip Tower entirely, since we don't shuffle it.
       if (location === loc.CordelPlainEast && (exitSpec[0] & 0x0f) < 5) continue;
       if (location === loc.CordelPlainWest && (exitSpec[0] & 0x0f) > 4) continue;
+      // jroweboy && !flags.shuffleMesiaTower()
       if (location.isTower()) continue;
       const exit = makeExit(location, exitSpec);
       // Skip the Fortune Teller entirely since it confuses the logic:
@@ -192,7 +193,7 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random, predeterm
   markOutside(loc.CordelPlainWest, loc.CordelPlainEast);
   markOutside(loc.WaterfallValleyNorth, loc.WaterfallValleySouth);
   markOutside(loc.KirisaMeadow);
-  markOutside(loc.LimeTreeLake);
+  markOutside(loc.LimeTreeValley);
   mark(loc.Portoa_FishermanIsland, 'edge:right'); // (Portoa)
   mark(loc.PortoaPalace_ThroneRoom, 'door'); // (underground channel)
   mark(loc.Joel, 'edge:bottom'); // (angry sea)
@@ -209,6 +210,10 @@ export function shuffleAreas(rom: Rom, flags: FlagSet, random: Random, predeterm
   markOutside(loc.SaharaOutsideCave);
   markOutside(loc.DesertCave2);
   mark(loc.Desert2, 'stair:down');
+  // jroweboy
+  // mark(loc.Tower1, 'door');
+  // mark(loc.TowerDyna, 'door');
+
   if (!flags.shuffleHouses()) {
     // Also mark the fortresses/palaces
     const palaces: [Location, ExitFinder][] = [

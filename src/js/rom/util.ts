@@ -546,6 +546,8 @@ export class Segment {
   static readonly $0e = new Segment('0e', 0x0e, 0x8000);
   static readonly $0f = new Segment('0f', 0x0f, 0xa000);
   static readonly $10 = new Segment('10', 0x10, 0x8000);
+  static readonly $12 = new Segment('12', 0x12, 0xa000);
+  static readonly $13 = new Segment('13', 0x13, 0x8000);
 
   static readonly $14 = new Segment('14', 0x14, 0x8000);
   static readonly $15 = new Segment('15', 0x15, 0xa000);

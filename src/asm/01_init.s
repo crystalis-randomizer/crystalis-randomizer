@@ -135,6 +135,7 @@ UPDATE_REFS target @ refs
 .segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
 .segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000
 .segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000
+;;; Monster names and metasprite table part 3
 .segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000
 
 ;;; Note: we moved these when we expanded the rom.
@@ -359,19 +360,22 @@ TS_COUNT       = $13
 ; Short How-To-Use documentation:
 ;
 ; 0. Make sure that there isn't already anything waiting to be run by seeing if
-; ArchipelagoFlag is zero. This gets cleared after the item is granted.
+; ArchipelagoStatusFlag is zero. This gets cleared after the item is granted.
 ;
 ; 1. Set the item ID to grant the player at ArchipelagoItemGet
 ;
-; 2. Set ArchipelagoFlag to 1, and the game will run the update the next time the
+; 2. Set ArchipelagoStatusFlag to 1, and the game will run the update the next time the
 ; player gets back to "normal" play state.
 ;
 
 ; If set, during the next main loop, branch to the Archipelago handling code
-ArchipelagoFlag                      = $657b
+ArchipelagoStatusFlag                = $657b
 
 ; Item ID to grant the player
 ArchipelagoItemGet                   = $657c
+
+; Item meta data (warp index for Thunder Sword, status duration for traps)
+ArchipelagoItemMetaData              = $657a
 
 ;Count of consumables received in Archipelago
 ArchipelagoConsumablesReceivedIdx    = $657d
@@ -658,14 +662,16 @@ RESERVE_MAPS
 ;;; Metasprite rendering code + data
 .segment "1c","1d"
 .org $845c ; MetaspriteTable
-  .res $100
-.org $855c
-  .res $100 ; MetaspriteTablePart2
+; Metasprite tables are relocated to $c000 - $200 now
+;  .res $100
+;.org $855c
+;  .res $100 ; MetaspriteTablePart2
 ; .org $865c
 ;   .res ($a000 - *) ; All of the actual metasprite data
 ; .org $a000
 ;   .res $1500
-FREE_UNTIL $c000
+FREE_UNTIL $c000 - $200
+  .res $200
 
 ;;; New extended map screens
 .segment "20","21"

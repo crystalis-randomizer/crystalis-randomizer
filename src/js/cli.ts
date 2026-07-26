@@ -11,6 +11,8 @@ import {UsageError, breakLines} from './util';
 import * as version from './version';
 import {disableAsserts} from './assert';
 import {parseAPCrysJSON} from './appatch';
+import {Spoiler} from "./rom/spoiler";
+import { CharacterSet } from './characters';
 
 // Usage: node cli.js [--flags=<FLAGS>] [--seed=<SEED>] rom.nes
 
@@ -124,7 +126,7 @@ const main = (...args: string[]) => {
     }
   }
 
-  let flagset = new FlagSet(flags);
+  let flagset = new FlagSet(flags, seed);
   const rom = new Uint8Array(fs.readFileSync(args[0]).buffer);
   const orig_crc = crc32(rom);
   if (!EXPECTED_CRC32S.has(orig_crc)) {
@@ -143,16 +145,26 @@ const main = (...args: string[]) => {
       const apBytes: Uint8Array = await apFile.buffer() 
       const apJson: string = decoder.decode(apBytes);
       const patchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.json');
-      const patchDataBytes: Uint8Array = await patchDataFile.buffer();
-      const patchDataJson: string = decoder.decode(patchDataBytes);
-      [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      if (patchDataFile === undefined) {
+        const encodedPatchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.bin');
+        const patchDataBytes = await encodedPatchDataFile.buffer();
+        const patchDataB64: string = decoder.decode(patchDataBytes);
+        const patchDataJson: string = Buffer.from(patchDataB64, 'base64').toString('ascii');
+        [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      } else {
+        const patchDataBytes = await patchDataFile.buffer();
+        const patchDataJson: string = decoder.decode(patchDataBytes);
+        [seed, flagset, predetermined] = parseAPCrysJSON(patchDataJson, apJson);
+      }
     }
     
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
+    const log = flagset.check('Ds') ? {} as {spoiler?: Spoiler}: undefined;
+    const sprite = await CharacterSet.get("simea").get("Simea")!;
     const [shuffled, c] =
-        await patch.shuffle(orig, s, flagset, undefined, predetermined);
+        await patch.shuffle(orig, s, flagset, [sprite], predetermined, log);
     const n = args[0].replace('.nes', '');
     const f = String(flagset).replace(/ /g, '');
     const v = version.VERSION;
@@ -161,6 +173,17 @@ const main = (...args: string[]) => {
         (resolve, reject) => fs.writeFile(
             filename, shuffled, (err) => err ? reject(err) : resolve('')));
     console.log(`Wrote ${filename}`);
+    if (log && log.spoiler) {
+      const s = log.spoiler;
+      for (const r of s.route) {
+        console.log(`Spoiler: ${r.toString()}`);
+      }
+      
+      for (const sl of s.slots) {
+        if (sl === undefined) continue;
+        console.log(`Spoiler: ${sl.toString()}`);
+      }
+    }
   }));
 };
 

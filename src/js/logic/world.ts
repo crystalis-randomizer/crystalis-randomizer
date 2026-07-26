@@ -180,7 +180,7 @@ export class World {
         BreakStone, BreakIce, BreakIron,
         BrokenStatue, BuyHealing, BuyWarp,
         ClimbWaterfall, ClimbSlope8, ClimbSlope9, ClimbSlope10,
-        CrossPain, CurrentlyRidingDolphin,
+        CrossPain, Crystalis, CurrentlyRidingDolphin,
         Flight, FlameBracelet, FormBridge,
         GasMask, GlowingLamp,
         InjuredDolphin,
@@ -210,7 +210,7 @@ export class World {
     this.addCheck([enterOak], and(LeadingChild), [RescuedChild.id]);
     this.addItemCheck([start], and(GlowingLamp, BrokenStatue),
                       RepairedStatue.id, {lossy: true, unique: true});
-
+    
     // Add shops
     for (const shop of this.rom.shops) {
       // leaf and shyron may not always be accessible, so don't rely on them.
@@ -234,10 +234,16 @@ export class World {
     let formBridge: Requirement = SwordOfWater.r;
     let breakIron: Requirement = SwordOfThunder.r;
     if (!this.flagset.orbsOptional()) {
-      const wind2 = or(BallOfWind, TornadoBracelet);
-      const fire2 = or(BallOfFire, FlameBracelet);
-      const water2 = or(BallOfWater, BlizzardBracelet);
-      const thunder2 = or(BallOfThunder, StormBracelet);
+      let wind2 = or(BallOfWind, TornadoBracelet);
+      let fire2 = or(BallOfFire, FlameBracelet);
+      let water2 = or(BallOfWater, BlizzardBracelet);
+      let thunder2 = or(BallOfThunder, StormBracelet);
+      if (this.flagset.shuffleMesiaTower()) {
+        wind2 = or(BallOfWind, TornadoBracelet, Crystalis);
+        fire2 = or(BallOfFire, FlameBracelet, Crystalis);
+        water2 = or(BallOfWater, BlizzardBracelet, Crystalis);
+        thunder2 = or(BallOfThunder, StormBracelet, Crystalis);
+      }
       breakStone = Requirement.meet(breakStone, wind2);
       breakIce = Requirement.meet(breakIce, fire2);
       formBridge = Requirement.meet(formBridge, water2);
@@ -826,14 +832,14 @@ export class World {
     // It seems like probably marking it as (x-1, y-1) .. (x, y) makes the
     // most sense, with the caveat that triggers shifted right by a half
     // tile should go from x .. x+1 instead.
-
+    
     // TODO - consider checking trigger's action: $19 -> push-down message
 
     // TODO - pull out this.recordTriggerTerrain() and this.recordTriggerCheck()
     const trigger = this.rom.trigger(spawn.id);
     if (!trigger) throw new Error(`Missing trigger ${spawn.id.toString(16)}`);
 
-    const requirements = this.filterRequirements(trigger.conditions);
+    let requirements = this.filterRequirements(trigger.conditions);
     let antiRequirements = this.filterAntiRequirements(trigger.conditions);
 
     const tile = TileId.from(location, spawn);
@@ -842,6 +848,9 @@ export class World {
     const checks = [];
     for (const flag of trigger.flags) {
       const f = this.flag(flag);
+      if (f == this.rom.flags.EnteredUndergroundChannel) {
+        requirements = Requirement.meet(requirements, this.rom.flags.TalkedToFortuneTeller.r);
+      }
       if (f?.logic.track) {
         checks.push(f.id);
       }
@@ -1394,7 +1403,7 @@ export class World {
     }
     if (boss === this.rom.bosses.Insect) {
       extra.push(this.rom.flags.InsectFlute.c, this.rom.flags.GasMask.c);
-    } else if (boss === this.rom.bosses.Draygon2) {
+    } else if (boss === this.rom.bosses.Draygon2 && !this.flagset.noBowMode()) {
       extra.push(this.rom.flags.BowOfTruth.c);
     }
     if (this.flagset.guaranteeRefresh()) {

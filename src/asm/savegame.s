@@ -27,6 +27,10 @@ CheckForLowHpMp:
     bcs +
      lda #PITY_HP_AMOUNT
 +   sta PlayerHP
+.ifdef _ARCHIPELAGO
+    ;; OATS: always restore to at least 21 MP (enough for Teleport)
+    lda #21
+.else
     ;; Check if we've ever found any swords
     lda ItemFlagsStart
     and #$0f
@@ -36,6 +40,7 @@ CheckForLowHpMp:
      lda #$01
     .byte $2c             ; skip next instruction
 +    lda #PITY_MP_AMOUNT
+.endif ; _ARCHIPELAGO
     ;; Now compare with MP - if it's less, set the minimum.
     cmp PlayerMP
     bcc +

@@ -3,9 +3,34 @@
 
 .ifdef _ARCHIPELAGO
 
-.define MIMIC_DISPLACEMENT $20
+.segment "1a"
+
+.org $92f5
+  jmp PatchRemoveObjectY
+FREE_UNTIL $92fb
 
 .segment "fe", "ff"
+
+.reloc
+StatusWildWarp = $cbd3
+StatusParalysis = $92cb
+StatusStone = $9308
+StatusPoison = $929c
+StatusNuper = $934c
+
+GetStatusJumpTableLo:
+  .byte <StatusWildWarp, <StatusParalysis, <StatusStone, <StatusPoison, <StatusNuper
+GetStatusJumpTableHi:
+  .byte >StatusWildWarp, >StatusParalysis, >StatusStone, >StatusPoison, >StatusNuper
+
+.reloc
+PatchRemoveObjectY:
+  lda ArchipelagoStatusFlag
+  cmp #02
+  beq +
+  lda #$00
+  sta $04a0,y
++ rts
 
 .org $f374
   jsr ClearArchipelagoFlagsOnColdBoot
@@ -13,8 +38,9 @@
 .reloc
 ClearArchipelagoFlagsOnColdBoot:
   lda #0
-  sta ArchipelagoFlag
+  sta ArchipelagoStatusFlag
   sta ArchipelagoItemGet
+  sta ArchipelagoItemMetaData
   jmp UnconditionallyResetCheckpointFile
   ; implicit rts
 
@@ -24,19 +50,24 @@ ClearArchipelagoFlagsOnColdBoot:
   jsr HandleArchipelago
 
 .reloc
+
+.define MIMIC_DISPLACEMENT $18
+
 HandleArchipelago:
-  lda ArchipelagoFlag
+  lda ArchipelagoStatusFlag
   ;check for an incoming item
-  beq @AP_Continue
+  bne @AP_HasItem
+  jmp HandleStatusConditions
+ @AP_HasItem:
     lda #$02
-    sta ArchipelagoFlag
+    sta ArchipelagoStatusFlag
     lda ArchipelagoItemGet
     cmp #$70
     bne +
       lda $0623
       pha
         jsr FindEmptyOrMonsterSlot
-        bne @AP_Continue ; if a isn't 0 coming out, then we didn't find a slot
+        bne @AP_Finish_Mimic ; if a isn't 0 coming out, then we didn't find a slot
         stx $0623
         lda $70
         sta $70,x
@@ -50,16 +81,47 @@ HandleArchipelago:
         sbc #$00 ;bring in the carry bit
         sta $d0,x
         jsr SpawnMimic
+@AP_Finish_Mimic:
       pla
       sta $0623
-      jmp ++ ;unconditional
-+   sta $23
+      jmp +++ ;unconditional
++   cmp #$ff ; check for status effect 
+    bne ++
+      lda ArchipelagoItemMetaData
+      cmp #$03 ; poison, need to apply Battle Armor before jumping
+      bne @ApplyStatus
+        lda $0713 ; Equipped Armor
+        cmp #$07 ; Battle Armor
+        beq +++ ; if Battle armor is equipped, we're immune to poison, so just jump to the end
+        lda ArchipelagoItemMetaData
+@ApplyStatus:
+      tax
+      lda #$0d
+      jsr BankSwitch16k
+      jsr ArchipelagoStatusJumpHandler
+      jmp +++
+++  sta $23
     jsr GrantItemInRegisterA
-++  lda #$00
++++ lda #$00
     sta ArchipelagoItemGet
-    sta ArchipelagoFlag
-@AP_Continue:
-  jmp HandleStatusConditions
+    sta ArchipelagoStatusFlag
+    sta ArchipelagoItemMetaData
+    jmp HandleStatusConditions
+    
+.reloc
+ArchipelagoStatusJumpHandler:
+      ; Strategy: read table, jumps to code, code uses rts to come back here
+      lda GetStatusJumpTableLo,x
+      sta $10
+      lda GetStatusJumpTableHi,x
+      sta $11
+      ; okay this is kind of stupid, but the wildwarp code pops an extra layer of stack
+      ; so if we're going to jump to that code, we'll push an extra layer of stack first
+      txa
+      bne @jmp
+        jsr @jmp ; no rts needed because the wild warp code pops the extra layer of stack
+@jmp:
+      jmp ($0010)  
 
 .reloc
 FindEmptyOrMonsterSlot:

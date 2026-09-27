@@ -716,8 +716,8 @@ export class Objects extends EntityArray<ObjectData> {
     type: 'projectile',
   });
 
-  constructor(readonly rom: Rom) {
-    super(0x100);
+  constructor(rom: Rom) {
+    super(rom, 0x100);
 
     for (const key in this) {
       const obj = this[key as keyof this];

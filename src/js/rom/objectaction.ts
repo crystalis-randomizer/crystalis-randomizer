@@ -193,5 +193,5 @@ export class ObjectActions extends EntityArray<ObjectAction> {
   dyna = new ObjectAction(this, 0x70, 'boss');
   giantBug = new ObjectAction(this, 0x7f, 'boss');
 
-  constructor(readonly rom: Rom) { super(); }
+  constructor(rom: Rom) { super(rom); }
 }

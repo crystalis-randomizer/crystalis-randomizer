@@ -5,17 +5,18 @@ import { Cpu } from './cpu';
 import { NesFile } from './nes';
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
+import * as path from 'node:path';
 
-export async function nodeSmudger(src: string): Promise<string> {
+export async function nodeSmudger(src: string, romDir = '.'): Promise<string> {
   const match = /smudge sha1 ([0-9a-f]{40})/.exec(src);
   //if (!match) throw usage(1, 'no sha1 tag, must specify rom');
   if (!match) return src;
   const shaTag = match[1];
-  const dirs = await fs.promises.opendir('.');
+  const dirs = await fs.promises.opendir(romDir);
   let fullRom: Uint8Array|undefined = undefined;
   for await (const dir of dirs) {
     if (/\.nes$/.test(dir.name)) {
-      const data = await fs.promises.readFile(dir.name);
+      const data = await fs.promises.readFile(path.join(romDir, dir.name));
       const sha = Array.from(
         new Uint8Array(await crypto.subtle.digest('SHA-1', data)),
         x => x.toString(16).padStart(2, '0')).join('');

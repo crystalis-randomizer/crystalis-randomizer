@@ -1,4 +1,5 @@
 import {Rom} from '../rom';
+import {RomOwned} from './entity';
 import {Metascreen} from './metascreen';
 import {Metatile} from './metatile';
 import {TileEffects} from './tileeffects';
@@ -8,7 +9,7 @@ import {ConnectionType, Feature, featureMask,
         MetascreenData} from './metascreendata.js';
 
 // NOTE: Must be initialized BEFORE Metascreens
-export class Metatilesets implements Iterable<Metatileset> {
+export class Metatilesets extends RomOwned implements Iterable<Metatileset> {
 
   private _all: Metatileset[] = [];
 
@@ -61,7 +62,8 @@ export class Metatilesets implements Iterable<Metatileset> {
 
   readonly tower = this.tileset(0xac, {});
 
-  constructor(private readonly rom: Rom) {
+  constructor(rom: Rom) {
+    super(rom);
     // Tag names for debugging...
     for (const key in this as object) {
       const value = (this as any)[key] as unknown;

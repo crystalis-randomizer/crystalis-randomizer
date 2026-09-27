@@ -121,8 +121,8 @@ export class Npcs extends EntityArray<Npc> {
 
   movementScripts: MovementScript[];
 
-  constructor(readonly rom: Rom) {
-    super(0xcd);
+  constructor(rom: Rom) {
+    super(rom, 0xcd);
     for (const key in this) {
       const npc = this[key];
       if (!this.hasOwnProperty(key) || !(npc instanceof Npc)) continue;

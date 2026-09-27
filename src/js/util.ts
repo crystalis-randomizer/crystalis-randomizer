@@ -548,16 +548,16 @@ class SetMultimapSetView<K, V> implements Set<V> {
   delete(elem: V): boolean {
     return this.mutateSet(s => s.delete(elem));
   }
-  [Symbol.iterator](): IterableIterator<V> {
+  [Symbol.iterator](): SetIterator<V> {
     return this.getCurrentSet()[Symbol.iterator]();
   }
-  values(): IterableIterator<V> {
+  values(): SetIterator<V> {
     return this.getCurrentSet().values();
   }
-  keys(): IterableIterator<V> {
+  keys(): SetIterator<V> {
     return this.getCurrentSet().keys();
   }
-  entries(): IterableIterator<[V, V]> {
+  entries(): SetIterator<[V, V]> {
     return this.getCurrentSet().entries();
   }
   forEach<T>(callback: (value: V, key: V, set: Set<V>) => void, thisArg?: T): void {

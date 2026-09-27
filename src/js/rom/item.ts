@@ -433,8 +433,8 @@ export class Items extends EntityArray<Item> {
   readonly Change           = new Item(this, 0x47);
   readonly Flight           = new Item(this, 0x48);
 
-  constructor(readonly rom: Rom) {
-    super(0x49);
+  constructor(rom: Rom) {
+    super(rom, 0x49);
     this.armorDefense = tuple(rom.prg, ARMOR_DEFENSE_TABLE.offset, 9);
     this.shieldDefense = tuple(rom.prg, SHIELD_DEFENSE_TABLE.offset, 9);
   }

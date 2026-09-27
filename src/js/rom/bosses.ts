@@ -2,6 +2,7 @@ import { Module } from '../asm/module';
 import { die } from '../assert';
 import { Rom } from '../rom';
 import { Flag } from './flags';
+import { RomOwned } from './entity';
 import { Npc } from './npc';
 import { Mutable, readLittleEndian, upperCamelToSpaces, readValue, exportValue } from './util.js';
 
@@ -20,7 +21,7 @@ interface BossData {
 
 // Represents a boss slot.  Note that the specific object is tied most tightly
 // to the boss kill (drop), rather than the specific identity of the boss.
-export class Bosses implements Iterable<Boss> {
+export class Bosses extends RomOwned implements Iterable<Boss> {
 
   readonly Vampire1 = new Boss(this, {
     flag: this.rom.flags.Vampire1,
@@ -131,7 +132,8 @@ export class Bosses implements Iterable<Boss> {
   private readonly all: Boss[] = [];
   private flags?: Set<number>;
 
-  constructor(readonly rom: Rom) {
+  constructor(rom: Rom) {
+    super(rom);
     for (const key in this) {
       if (!this.hasOwnProperty(key)) continue;
       const boss = this[key];

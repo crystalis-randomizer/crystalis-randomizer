@@ -30,8 +30,8 @@ export class ItemGets extends EntityArray<ItemGet> {
 
   actionGrants = new Map<number, number>();
 
-  constructor(readonly rom: Rom) {
-    super(0x71);
+  constructor(rom: Rom) {
+    super(rom, 0x71);
     for (let i = 0; i < 0x71; i++) {
       this[i] = new ItemGet(rom, i);
     }

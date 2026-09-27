@@ -12,8 +12,8 @@ export class Shops extends EntityArray<Shop> {
   armorShopScaling: number[] = new Array(48).fill(0);
   basePrices: number[];
 
-  constructor(readonly rom: Rom) {
-    super(44); // 4 * rom.shopCount);
+  constructor(rom: Rom) {
+    super(rom, 44); // 4 * rom.shopCount);
     for (let i = 0; i < 44; i++) {
       this[i] = new Shop(rom, i);
     }

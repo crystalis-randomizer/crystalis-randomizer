@@ -41,7 +41,7 @@ interface Check {
 export class World {
 
   /** Builds and caches Terrain objects. */
-  readonly terrainFactory = new Terrains(this.rom);
+  readonly terrainFactory: Terrains;
 
   /** Terrains mapped by TileId. */
   readonly terrains = new Map<TileId, Terrain>();
@@ -112,6 +112,7 @@ export class World {
 
   constructor(readonly rom: Rom, readonly flagset: FlagSet,
               readonly tracker = false) {
+    this.terrainFactory = new Terrains(rom);
     // Set up some initial state
     if (flagset.alwaysMimics()) {
       const swords = [rom.flags.SwordOfWind, rom.flags.SwordOfFire, rom.flags.SwordOfWater, rom.flags.SwordOfThunder];

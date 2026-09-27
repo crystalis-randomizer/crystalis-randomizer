@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node
+#!/usr/bin/env bun
 
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';

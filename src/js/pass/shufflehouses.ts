@@ -186,7 +186,7 @@ export function shuffleHouses(rom: Rom, flags: FlagSet, random: Random, predeter
   }
   const hasInn = new Set<number>();
   const inns = byType.get('inn');
-  for (const [scr, locposs] of [...firstPass, ...secondPass]) {
+  for (const [_, locposs] of [...firstPass, ...secondPass]) {
     //console.log(`shuffling screen ${scr.toString(16)}: ${[...locposs].map(l=>l.toString(16)).join(',')}`);
     const map = new Map<ConnectionType, HouseType>();
     let first = true;

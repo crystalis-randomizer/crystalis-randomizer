@@ -1,4 +1,4 @@
-#!/usr/bin/env -S node
+#!/usr/bin/env bun
 
 // Outputs a symbols.json file, which is just an array of all symbols
 // defined and/or referenced in the file(s), from the token stream.
@@ -10,28 +10,22 @@ import { TokenSource } from '../asm/token';
 import { Tokenizer } from '../asm/tokenizer';
 import { TokenStream } from '../asm/tokenstream';
 
-async function main() {
-  let files: string[] = [];
-  let outfile: string|undefined = undefined;
-  for (let i = 2; i < process.argv.length; i++) {
-    const arg = process.argv[i];
-    if (arg === '--help') {
-      usage(0);
-    } else if (arg === '-o') {
-      if (outfile) usage();
-      outfile = process.argv[++i];
-    } else {
-      files.push(arg);
-    }
-  }
-  if (!files.length) {
-    files.push('/dev/stdin');
-  }
-  if (!outfile) outfile = '/dev/stdout';
+export interface SymbolsJson {
+  symbols: string[];
+  overrides: string[];
+  defs: string[];
+}
 
-  async function tokenizer(path: string) {
-    const src = await nodeSmudger(String(await fs.promises.readFile(path)));
-    return new Tokenizer(src, path, {lineContinuations: true});
+export interface SourceFile {
+  filename: string;
+  contents: string;
+}
+
+export async function extractSymbols(files: readonly SourceFile[],
+                                     romDir = '.'): Promise<SymbolsJson> {
+  async function tokenizer({filename, contents}: SourceFile) {
+    const src = await nodeSmudger(contents, romDir);
+    return new Tokenizer(src, filename, {lineContinuations: true});
   }
 
   const symbols = new Set<string>();
@@ -69,11 +63,37 @@ async function main() {
   }
   symbols.delete('x');
   symbols.delete('y');
-  fs.writeFileSync(outfile, JSON.stringify({
+  return {
     symbols: [...symbols],
     overrides: [...overrides],
     defs: [...defs],
-  }));
+  };
+}
+
+async function main() {
+  let files: string[] = [];
+  let outfile: string|undefined = undefined;
+  for (let i = 2; i < process.argv.length; i++) {
+    const arg = process.argv[i];
+    if (arg === '--help') {
+      usage(0);
+    } else if (arg === '-o') {
+      if (outfile) usage();
+      outfile = process.argv[++i];
+    } else {
+      files.push(arg);
+    }
+  }
+  if (!files.length) {
+    files.push('/dev/stdin');
+  }
+  if (!outfile) outfile = '/dev/stdout';
+
+  const sources = await Promise.all(files.map(async filename => ({
+    filename,
+    contents: String(await fs.promises.readFile(filename)),
+  })));
+  fs.writeFileSync(outfile, JSON.stringify(await extractSymbols(sources)));
 }
 
 function usage(code = 1, message = '') {
@@ -82,4 +102,4 @@ function usage(code = 1, message = '') {
   process.exit(code);
 }
 
-main();
+if (import.meta.main) main();

@@ -2,7 +2,7 @@
 
 set -ex
 
-cli='node -r source-map-support/register target/debug/bin/cryr'
+cli='bun target/cli/cli.js'
 
 # Ignore tests if the most recent commit has a message NO_SQ=1
 if git log -n 1 | grep -q NO_SQ=1; then exit 0; fi

@@ -27,7 +27,7 @@ chdir $root;
 print LOG ("pwd: " . `pwd`) if $log;
 print LOG "PATH: $ENV{PATH}\n" if $log;
 
-open TSC, '-|', 'npm run tsc 2>&1';
+open TSC, '-|', 'bun --bun tsc -p . 2>&1';
 
 while ($_ = <TSC>) {
   print LOG "LINE: $_" if $log;

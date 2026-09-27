@@ -61,6 +61,17 @@ esac
   echo "if (typeof global !== 'undefined') global['__VERSION__'] = __VERSION__;"
 } >| "target/build/build_info.js"
 
+# The same info as JSON, which src/js/build_info.macro.ts inlines into the CLI.
+{
+  echo "{"
+  echo "  \"STATUS\": \"$status\","
+  echo "  \"VERSION\": \"$dir\","
+  echo "  \"LABEL\": \"$label\","
+  echo "  \"HASH\": \"$GITHUB_SHA\","
+  echo "  \"DATE\": $(date +%s000)"
+  echo "}"
+} >| "target/build/build_info.json"
+
 # Intended use: 'eval $(build_info.sh)'
 if [ -n "$GITHUB_ENV" ]; then
   echo "dir=$dir" >> "$GITHUB_ENV"

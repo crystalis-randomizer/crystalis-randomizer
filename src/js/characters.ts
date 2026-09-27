@@ -1,5 +1,4 @@
 import { spritesheets } from './data';
-import { readLittleEndian } from './rom/util';
 
 type OAMSprite = [number, number, number, number];
 type Frame = Map<number, OAMSprite[]>;
@@ -66,7 +65,7 @@ export async function generatePreviewImage(nss: NssFile): Promise<string> {
   return offscreenCanvas.toDataURL('image/png');
 }
 
-async function createImageFromCHR(buffer: ArrayBuffer, palette:number[]): Promise<ImageData> {
+async function createImageFromCHR(buffer: Uint8ClampedArray, palette:number[]): Promise<ImageData> {
   const tileCount = buffer.byteLength / 16; // 16 bytes per tile
   const pixelsPerTile = 8;
   // TODO: if we start supporting two color mesia, then we need to handle multiple palettes
@@ -617,7 +616,7 @@ function chunk(str: string, size: number): string[] {
   return str.match(new RegExp('.{1,' + size + '}', 'g')) || [];
 }
 
-function hexstrToBytes(str: string): ArrayBuffer {
+function hexstrToBytes(str: string): Uint8Array {
   const bytes = chunk(str, 2).map(s => parseInt(s, 16));
   return new Uint8Array(bytes);
 }

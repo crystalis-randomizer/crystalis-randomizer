@@ -2,7 +2,9 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "rootDir": "src/js",
-    "module": "es6",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
   },
   "include": [
     "src/js/**/*.ts"

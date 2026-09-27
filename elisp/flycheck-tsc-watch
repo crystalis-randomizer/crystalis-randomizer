@@ -10,7 +10,7 @@ use FindBin;
 use File::Basename qw/dirname/;
 
 my $root = dirname($FindBin::Bin);
-open TSC, '-|', 'npx', 'tsc', '--watch', '-p', "$root/tsconfig.test.json";
+open TSC, '-|', 'bun', '--bun', 'tsc', '--watch', '-p', "$root/tsconfig.test.json";
 my $out = "$root/.tsc.out";
 my $run = "$root/.tsc.run";
 open FILE, '>', $out;

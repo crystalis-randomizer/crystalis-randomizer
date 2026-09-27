@@ -2,17 +2,12 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "rootDirs": ["src/js", "test"],
-    "module": "commonjs",
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*", "dist/test/*"],
-    },
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
   },
   "include": [
     "src/js/**/*.ts",
     "test/**/*.ts",
-    "test/*.ts",
-  ],
-  "exclude": [
   ],
 }

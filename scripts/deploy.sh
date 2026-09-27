@@ -21,7 +21,7 @@ esac
 # was just tested.  Assumes a valid ssh-agent for pushing.
 
 pages="index.html check.html help.html"
-subdirs="js css images"
+subdirs="assets"
 
 # Clone the existing gh-pages repo
 git clone --depth=1 -b gh-pages "git@github.com:$GITHUB_REPOSITORY" deploy
@@ -30,7 +30,7 @@ git clone --depth=1 -b gh-pages "git@github.com:$GITHUB_REPOSITORY" deploy
 
 # Just pull favicon straight from master...?
 if [ "$GITHUB_REF" = refs/heads/master ]; then
-  cp target/release/favicon.ico "deploy/"
+  cp src/favicon.ico "deploy/"
 fi
 
 # If the branch exists, wipe it out.
@@ -47,38 +47,33 @@ if [ -d "deploy/$dir" ]; then
   rm -rf "deploy/$dir"
 fi
 
-# Make directories and copy the relevant files.
-mkdir -p "deploy/$dir/view"
-mkdir -p "deploy/$dir/js/view"
-mkdir -p "deploy/$dir/css/view"
-mkdir -p "deploy/$dir/images/spritesheets"
+# Copy the bundled site (pages, plus hashed files under assets/).
+cp -r target/web/. "deploy/$dir/"
+# Only kept so that the next deploy can find PREV (above).
+mkdir -p "deploy/$dir/js"
 cp target/build/build_info.js "deploy/$dir/js/"
 cat target/build/build_info.js >&2
-cp target/release/js/*.js "deploy/$dir/js/"
-cp target/build/build_info.js "deploy/$dir/js/" # Clobber empty file from target/release
-cp target/release/css/*.css "deploy/$dir/css/"
-cp target/release/css/view/*.css "deploy/$dir/css/view/"
-cp target/release/images/*.png "deploy/$dir/images/"
-cp target/release/images/spritesheets/*.nss "deploy/$dir/images/spritesheets/"
 
-# Prepend the analytics tag to each .html file.
-for a in target/release/*.html target/release/view/*.html; do
-  cat target/release/ga.tag ${a} >| "deploy/$dir/${a#target/release/}"
+# Prepend the analytics tag and the build info to each .html file.
+for a in target/web/*.html target/web/view/*.html; do
+  {
+    cat src/ga.tag
+    echo '<script>'
+    cat target/build/build_info.js
+    echo '</script>'
+    cat "$a"
+  } >| "deploy/$dir/${a#target/web/}"
 done
 
 # Also make the minimum necessary dirs for permalinks
 sha=sha/$commit
-mkdir -p "deploy/$sha/js"
-mkdir -p "deploy/$sha/css"
+mkdir -p "deploy/$sha"
 echo '<script>var CR_PERMALINK = true;</script>' > deploy/$sha/index.html
 echo '<script type="module">document.body.classList.add("permalink")</script>' \
      > deploy/$sha/help.html
 cat deploy/$dir/index.html >> deploy/$sha/index.html
 cat deploy/$dir/help.html >> deploy/$sha/help.html
-cp deploy/$dir/js/main.js deploy/$sha/js/
-cp deploy/$dir/js/build_info.js deploy/$sha/js/
-cp deploy/$dir/js/*-????????.js deploy/$sha/js/
-cp deploy/$dir/css/main.css deploy/$sha/css/main.css
+cp -r deploy/$dir/assets deploy/$sha/
 scripts/dedupe.sh deploy/$sha deploy/sha/files
 
 # Link stable and current if necessary.
@@ -117,5 +112,5 @@ if $link_stable; then
   # Do an NPM release - first update package.json
   rm -rf deploy
   sed -i '3 s/0\.0\.0/'"$dir"'/' package.json
-  npm publish
+  bun publish
 fi

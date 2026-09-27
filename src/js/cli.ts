@@ -1,6 +1,6 @@
-#!/usr/bin/env -S node --inspect 
+#!/usr/bin/env bun
 
-import '../../target/build/build_info'; // side effect global set (affects version module)
+import './build_info'; // side effect global set (affects version module)
 
 import {EXPECTED_CRC32S} from './rom.js';
 import {FlagSet, Preset} from './flagset';
@@ -141,12 +141,12 @@ const main = (...args: string[]) => {
       const unzipper = require('unzipper');
       const decoder: TextDecoder = new TextDecoder('utf-8');
       const apcrysDir = await unzipper.Open.file(apPatchPath);
-      const apFile = apcrysDir.files.find(f => f.path === 'archipelago.json');
+      const apFile = apcrysDir.files.find((f: {path: string}) => f.path === 'archipelago.json');
       const apBytes: Uint8Array = await apFile.buffer() 
       const apJson: string = decoder.decode(apBytes);
-      const patchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.json');
+      const patchDataFile = apcrysDir.files.find((f: {path: string}) => f.path === 'patch_data.json');
       if (patchDataFile === undefined) {
-        const encodedPatchDataFile = apcrysDir.files.find(f => f.path === 'patch_data.bin');
+        const encodedPatchDataFile = apcrysDir.files.find((f: {path: string}) => f.path === 'patch_data.bin');
         const patchDataBytes = await encodedPatchDataFile.buffer();
         const patchDataB64: string = decoder.decode(patchDataBytes);
         const patchDataJson: string = Buffer.from(patchDataB64, 'base64').toString('ascii');

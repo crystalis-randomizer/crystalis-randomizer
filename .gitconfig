@@ -1,4 +1,7 @@
 [filter "disasm"]
-        clean = js65 --clean
-        smudge = js65 --smudge
+        # js65 rehydrate/dehydrate don't support --stdin/--stdout, so use the
+        # device files.  With no --rom, js65 searches the repo for the ROM
+        # matching the file's `smudge sha1` header.
+        clean = js65 dehydrate -o /dev/stdout /dev/stdin
+        smudge = js65 rehydrate -o /dev/stdout /dev/stdin
         required

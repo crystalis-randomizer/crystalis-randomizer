@@ -1,6 +1,6 @@
-#!/usr/bin/env -S node -r esm --inspect 
+#!/usr/bin/env bun
 
-import './build_info.js'; // side effect global set (affects version module)
+import './build_info'; // side effect global set (affects version module)
 
 import {EXPECTED_CRC32S} from './rom.js';
 import {FlagSet, Preset} from './flagset.js';

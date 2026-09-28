@@ -50054,7 +50054,7 @@ CollisionJump_03_ParalysisBeam:
           ;; ----
 +        <@3500e@>
         <@3500f -@> ; $34fff
-SetOrClearParalysisFlag::
+SetOrClearParalysisFlag:
         ;; Input: $12 = FF to set, 00 to clear
         ;;        $13 = NPC ID to handle
         <@35011@>

@@ -7,15 +7,10 @@
 // TODO - extract identifiers from all the *.s files?
 //      - cross-reference and only write the ones that are referenced?
 
+import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
-import { Assembler } from '../asm/assembler';
-import { Cpu } from '../asm/cpu';
-import { Expr } from '../asm/expr';
-import { nodeSmudger } from '../asm/nodesmudger';
-import { Preprocessor } from '../asm/preprocessor';
-import { TokenSource } from '../asm/token';
-import { Tokenizer } from '../asm/tokenizer';
-import { TokenStream } from '../asm/tokenstream';
+import * as path from 'node:path';
+import { assemble, type Expr } from 'js65';
 import type { SourceFile, SymbolsJson } from './extract-symbols';
 
 const FAIL_ON_BAD_OVERRIDE = true;
@@ -61,18 +56,23 @@ export async function extractRefs(files: readonly SourceFile[],
     }
   }
 
-  // assemble
-  async function tokenizer({filename, contents}: SourceFile) {
-    const src = await nodeSmudger(contents, romDir);
-    return new Tokenizer(src, filename, {lineContinuations: true});
-  }
-
   const isRelevant = syms ? (s: string) => syms!.has(s) : () => true;
+
+  const smudged = new Map<string, string>();
+  for (const file of files) {
+    smudged.set(file.filename, rehydrate(file, romDir));
+  }
 
   const errors: string[] = [];
   const labels: Label[] = [];
   const refs: Ref[] = [];
-  const asm = new Assembler(Cpu.P02, {
+  // Include every file from one top-level source so they share a single
+  // scope, as if they were one concatenated file.
+  const code = files.map(f => `.include ${JSON.stringify(f.filename)}\n`).join('');
+  const result = assemble([{type: 'source', name: 'extract-refs.s', code}], {
+    includePaths: ['.'],
+    lineContinuations: true,
+    lint: {enabled: false},
     refExtractor: {
       label(name: string, org: number, segments: readonly string[]) {
         if (defs?.has(name)) errors.push(`Undeclared OVERRIDE: ${name}`);
@@ -81,21 +81,25 @@ export async function extractRefs(files: readonly SourceFile[],
         labels.push({name, org, segments});
       },
       ref(expr: Expr, bytes: number, org: number,
-          segments: readonly string[]) {
-        const offset = asm.orgToOffset(org);
+          segments: readonly string[], offset: number|undefined) {
         if (offset == null) return;
-        const used = Expr.symbols(expr);
-        if (!used.some(isRelevant)) return;
-        expr = Expr.strip(expr);
-        refs.push({expr, bytes, org, segments, offset});
+        if (!symbols(expr).some(isRelevant)) return;
+        refs.push({expr: strip(expr), bytes, org, segments, offset});
       },
     },
+  }, {
+    resolveText: (_bases, filename) => {
+      const content = smudged.get(filename);
+      return content != null ? {baseIndex: 0, content} : undefined;
+    },
+    resolveBinary: () => undefined,
   });
-  const toks = new TokenStream();
-  const sources = await Promise.all(files.map(tokenizer));
-  toks.enter(TokenSource.concat(...sources));
-  const pre = new Preprocessor(toks, asm);
-  asm.tokens(pre);
+  if (!result.success) {
+    throw new Error(result.messages.filter(m => m.level === 'error').map(m => {
+      const at = m.source ? `${m.source.file}:${m.source.line}: ` : '';
+      return at + m.message;
+    }).join('\n'));
+  }
   for (const sym of overrides || []) {
     errors.push(`Vanilla missing OVERRIDE: ${sym}`);
   }
@@ -105,6 +109,39 @@ export async function extractRefs(files: readonly SourceFile[],
     for (const e of errors) console.error(e);
   }
   return {refs, labels};
+}
+
+/** Lists the symbols used in an expression (duplicates included). */
+function symbols(expr: Expr, out: string[] = []): string[] {
+  for (const arg of expr.args || []) symbols(arg, out);
+  if (expr.op === 'sym' && expr.sym) out.push(expr.sym);
+  return out;
+}
+
+/** Drops source info from an expression to keep refs.json small. */
+function strip(expr: Expr): Expr {
+  const out = {...expr};
+  if (out.args) out.args = out.args.map(strip);
+  delete out.source;
+  return out;
+}
+
+const JS65 = path.resolve(import.meta.dir, '../../../node_modules/.bin/js65');
+
+function rehydrate({filename, contents}: SourceFile, romDir: string): string {
+  const match = /smudge sha1 ([0-9a-f]{40})/.exec(contents);
+  if (!match) return contents;
+  const rom = fs.readdirSync(romDir).filter(f => f.endsWith('.nes'))
+      .map(f => path.join(romDir, f))
+      .find(f => crypto.createHash('sha1').update(fs.readFileSync(f))
+                     .digest('hex') === match[1]);
+  if (!rom) throw new Error(`${filename}: could not find rom with sha ${match[1]}`);
+  const proc = Bun.spawnSync([JS65, 'rehydrate', '-r', rom, '--stdin'],
+                             {stdin: Buffer.from(contents)});
+  if (!proc.success) {
+    throw new Error(`js65 rehydrate ${filename} failed:\n${proc.stderr}`);
+  }
+  return proc.stdout.toString();
 }
 
 async function main() {

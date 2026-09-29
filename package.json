@@ -41,6 +41,7 @@
   "packageManager": "bun@1.3.14",
   "dependencies": {
     "@shortercode/webzip": "^1.1.1-0",
+    "js65": "^2.2.2",
     "unzipper": "^0.12.1"
   }
 }

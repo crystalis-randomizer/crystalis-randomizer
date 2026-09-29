@@ -16,6 +16,5 @@
   },
   "exclude": [
     "unused/*.ts",
-    "asm/*.ts",
   ]
 }

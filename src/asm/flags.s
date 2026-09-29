@@ -69,6 +69,10 @@ SetFlagYA:
   bne -
 
 
+.ifdef _SHUFFLE_NPCS
+.import ShyronMassacrePattern0, ShyronMassacrePattern1
+.endif
+
 ;;; Fix post-massacre Shyron sprites.  When we do sprite calculations,
 ;;; we don't really have any way to take into account the fact that
 ;;; post-massacre the game swaps $51 into pat1.  But pat0 is unused so
@@ -82,8 +86,15 @@ SetFlagYA:
   bne +     ; if not, then return
   lda $6484 ; check flag 027
   bpl +     ; if it's unset then return
+.ifdef _SHUFFLE_NPCS
+  ;; Shuffled NPCs get new post-massacre banks (npcgraphics.ts).
+  lda #ShyronMassacrePattern0
+  sta $07f4
+  lda #ShyronMassacrePattern1
+.else
   lda #$51
   sta $07f4
+.endif
   sta $07f5
 + rts
   ;; and we save 14 bytes, to boot.

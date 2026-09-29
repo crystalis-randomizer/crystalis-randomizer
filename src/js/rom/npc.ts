@@ -85,7 +85,7 @@ export class Npcs extends EntityArray<Npc> {
   DeadAkahana = new Npc(this, 0x70);
   DeadStomsGirlfriend = new Npc(this, 0x71);
   DeadStom = new Npc(this, 0x72);
-  // unused 73
+  AbductedLeafElder = new Npc(this, 0x73); // note: unused in vanilla (0d)
   KensuInSwan = new Npc(this, 0x74); // note: unused in vanilla (7e)
   SlimedKensu = new Npc(this, 0x75);
   // generic 76..7a

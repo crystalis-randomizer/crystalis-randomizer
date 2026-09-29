@@ -378,7 +378,7 @@ export class Flags {
   0x0d7 = dialogToggle('Portoa queen 3');
   0x0d8 = dialogProgression('Kensu rescued');
   0x0d9 = dialogToggle('Stoned pair');
-  0x0da = dialogProgression('Kensu gone from tavern');
+  KensuGoneFromTavern = fixed(0x0da); // exported to rando dialog.s
   0x0db = dialogToggle('In Sabera\'s trap');
   0x0dc = obsolete(0x16f); // chest: magic ring
   0x0dd = obsolete(0x170); // mimic?? medical herb??

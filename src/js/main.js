@@ -296,6 +296,8 @@ const shuffleRom = async (seed, rawSeed) => {
                        ['wind', 'fire', 'water', 'thunder'][newElement]}`));
     replaceSpoiler('spoiler-wild-warps', s.wildWarps.map(({name}) => name));
     replaceSpoiler('spoiler-houses', s.houses.map(({house, town}) => `${house}: ${town}`.replace(/\s*-\s*/g, ' ')));
+    replaceSpoiler('spoiler-npcs',
+                   s.npcs.map(({npc, from, to}) => `${npc}: ${from} => ${to}`).sort());
   }
   document.getElementById('checksum').textContent =
       // shifted by header

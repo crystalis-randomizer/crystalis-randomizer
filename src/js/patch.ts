@@ -19,6 +19,7 @@ import { shuffleMazes } from './pass/shufflemazes';
 import { shuffleMimics } from './pass/shufflemimics';
 import { shuffleMonsterPositions } from './pass/shufflemonsterpositions';
 import { shuffleMonsters } from './pass/shufflemonsters';
+import { shuffleNpcs } from './pass/shufflenpcs';
 import { shufflePalettes } from './pass/shufflepalettes';
 import { shuffleTrades } from './pass/shuffletrades';
 import { standardMapEdits } from './pass/standardmapedits';
@@ -44,6 +45,7 @@ import { Sprite } from './characters';
 import { ShuffleData } from './appatch';
 
 const EXPAND_PRG: boolean = true;
+const EXPAND_CHR: boolean = true;
 const ASM = ModuleId('asm');
 const ASM_FALLBACK = ModuleId('asm-fallback');
 
@@ -138,6 +140,7 @@ function defines(flags: FlagSet,
     _REQUIRE_HEALED_DOLPHIN_TO_RIDE: flags.requireHealedDolphinToRide(),
     _REVERSIBLE_SWAN_GATE: true,
     _SAHARA_RABBITS_REQUIRE_TELEPATHY: flags.saharaRabbitsRequireTelepathy(),
+    _SHUFFLE_NPCS: flags.shuffleNpcs(),
     _SIMPLIFY_INVISIBLE_CHESTS: true,
     _SOFT_RESET_SHORTCUT: true,
     _STATS_TRACKING: flags.hasStatTracking(),
@@ -165,6 +168,32 @@ function patchGraphics(rom: Uint8Array, sprites: Sprite[]) {
 
 const SHARED_ALIAS = '__shared_';
 
+export function expandRom(rom: Uint8Array): Uint8Array {
+  if (EXPAND_PRG && rom.length < 0x80000) {
+    const newRom = new Uint8Array(rom.length + 0x40000);
+    newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
+    newRom.subarray(0x80010).set(rom.subarray(0x40010));
+    newRom[4] <<= 1;
+    rom = newRom;
+
+    const prg = rom.subarray(0x10);
+    // const src = smudge(await reader.read('crystalis.s'), Cpu.P02, prg);
+    // const assembled = Linker.assemble(src);
+    // prg.subarray(0, assembled.length).set(assembled);
+    prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
+  }
+  if (EXPAND_CHR && rom[5] < 32) {
+    const newRom = new Uint8Array(rom.length + (32 - rom[5]) * 0x2000);
+    newRom.set(rom);
+    newRom[5] = 32;
+    rom = newRom;
+    // Locations load bank $ff to mean "not loaded", which used to mirror $7f.
+    const chr = rom.subarray(0x10 + (rom[6] & 4 ? 512 : 0) + (rom[4] << 14));
+    chr.copyWithin(0xff << 10, 0x7f << 10, 0x80 << 10);
+  }
+  return rom;
+}
+
 export async function shuffle(rom: Uint8Array,
                               seed: number,
                               originalFlags: FlagSet,
@@ -179,21 +208,7 @@ export async function shuffle(rom: Uint8Array,
   if (rom.length > expectedSize) rom = rom.slice(0, expectedSize);
 
   //rom = watchArray(rom, 0x85fa + 0x10);
-  if (EXPAND_PRG && rom.length < 0x80000) {
-    if (rom.length < 0x80000) {
-        const newRom = new Uint8Array(rom.length + 0x40000);
-        newRom.subarray(0, 0x40010).set(rom.subarray(0, 0x40010));
-        newRom.subarray(0x80010).set(rom.subarray(0x40010));
-        newRom[4] <<= 1;
-        rom = newRom;
-    }
-
-    const prg = rom.subarray(0x10);
-    // const src = smudge(await reader.read('crystalis.s'), Cpu.P02, prg);
-    // const assembled = Linker.assemble(src);
-    // prg.subarray(0, assembled.length).set(assembled);
-    prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
-  }
+  rom = expandRom(rom);
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
@@ -288,6 +303,7 @@ async function shuffleInternal(rom: Uint8Array,
   // NOTE: Shuffle mimics and monsters *after* shuffling maps, but before logic.
   if (flags.shuffleMimics()) shuffleMimics(parsed, flags, random);
   if (flags.shuffleMonsters()) shuffleMonsters(parsed, flags, random, (predetermined?.fromArchipelago == true));
+  shuffleNpcs(parsed, flags, random);
 
   if (flags.storyMode()) storyMode(parsed);
   
@@ -695,7 +711,7 @@ function shuffleShops(rom: Rom, _flags: FlagSet, random: Random, predetermined: 
  * that we've made this change is to set the 0x20 bit on the 3rd
  * spawn byte (i.e. the spawn type).
  */
-function updateWallSpawnFormat(rom: Rom) {
+export function updateWallSpawnFormat(rom: Rom) {
   for (const location of rom.locations) {
     if (!location.used) continue;
     for (const spawn of location.spawns) {

@@ -122,3 +122,56 @@ FREE_UNTIL $d280
 ;;; Allow dynamically changing dialog pointers
 .import CommonWords, UncommonWords, PersonNames, ItemNames
 .import MessageTableBanks, MessageTableParts
+
+.ifdef _SHUFFLE_NPCS
+;;; NPCs that walk away usually use hardcoded offsets, so we need to load
+;;; the correct offset from LookingAt instead
+.segment "fe", "ff"
+.org $d23f ; DialogFollowupActionJump_06
+  jmp NpcWalkAway
+FREE_UNTIL $d25a
+
+.org $d2b3 ; DialogFollowupActionJump_19, after granting the item
+  ldx LookingAt
+  lda #$0d   ; movement script
+  sta ObjectMovementScript,x
+  jmp NpcWalkAwayX
+FREE_UNTIL $d2d3
+
+.reloc
+NpcWalkAway:
+  ldx LookingAt
+NpcWalkAwayX:
+  lda #$32
+  sta ObjectActionScript,x
+  lda #$00
+  sta ObjectHitbox,x
+  sta ObjectMovementScriptPos,x
+  sta ObjectShooterShooting,x
+  lda #$01
+  sta ObjectAnimationCounter,x
+  lda #$ff
+  sta ObjectMovementSpeedMask,x
+  rts
+
+;;; The original game only sets the tavern kensu (soldier form) "has left"
+;;; flag when you walk out the door, not when you reveal him, so we hook that
+;;; here and make him disappear for real.
+.import TavernKensuSlotOffset, KensuGoneFromTavernFlag
+.org $d1c0 ; DialogFollowupActionJump_13, at jsr ReloadNpcDataForCurrentLocation
+  jmp TavernKensuTeleportAway
+FREE_UNTIL $d1ca
+
+.reloc
+TavernKensuTeleportAway:
+  jsr ReloadNpcDataForCurrentLocation
+  ; his flag is fixed, but this is 
+  lda $6480 + (KensuGoneFromTavernFlag >> 3)
+  ora #(1 << (KensuGoneFromTavernFlag & 7))
+  sta $6480 + (KensuGoneFromTavernFlag >> 3)
+  lda LookingAt
+  clc
+  adc #TavernKensuSlotOffset
+  tay
+  jmp _3d31f
+.endif

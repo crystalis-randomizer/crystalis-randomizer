@@ -304,43 +304,9 @@ export class Metasprite extends Entity {
 
   assembleNotMirrored(a: Assembler) : Expr {
     a.reloc(`Metasprite_${this.id.toString(16)}_Data`);
-    
-    const ptr = a.pc();
-    a.byte(this.size);
-    a.byte(this.frameMask);
-    // Each frame gets a pointer so the draw routine doesn't need to multiply
-    // frame * size * 4 to find it. This also means frames don't need padding,
-    // and identical frames can share their data.
-    const frameLabel = (f: number) => `Metasprite_${this.id.toString(16)}_Frame_${f}`;
-    const frameBytes: number[][] = [];
-    const frameOwner: number[] = [];
-    for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
-      const frame = this.sprites[frameNum];
-      if (!frame) {
-        throw new Error(`metasprite ${hex(this.id)} is missing frame ${frameNum}`);
-      }
-      // The draw loop stops at `size` sprites or the first $80 dx, so only
-      // write the sprites that are drawn and end short frames with one $80.
-      const bytes: number[] = [];
-      for (const sprite of frame) {
-        if (sprite[0] === 0x80 || bytes.length === this.size * 4) break;
-        bytes.push(...sprite);
-      }
-      if (bytes.length < this.size * 4) bytes.push(0x80);
-      const key = bytes.join(',');
-      const owner = frameBytes.findIndex((b, i) => frameOwner[i] === i && b.join(',') === key);
-      frameBytes.push(bytes);
-      frameOwner.push(owner >= 0 ? owner : frameNum);
-    }
-    for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
-      a.word(a.symbol(frameLabel(frameOwner[frameNum])));
-    }
-    for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
-      if (frameOwner[frameNum] !== frameNum) continue;
-      a.label(frameLabel(frameNum));
-      a.byte(...frameBytes[frameNum]);
-    }
-    return ptr;
+    return assembleMetaspriteData(a, `Metasprite_${this.id.toString(16)}`,
+                                  this.size, this.frameMask, this.sprites,
+                                  this.frames);
   }
 
   assembleMirrored(a: Assembler, map: Map<number, Expr>) : Expr {
@@ -357,4 +323,51 @@ export class Metasprite extends Entity {
     a.org(base + this.id + 0x100, `Metasprite_${this.id.toString(16)}_Ptr_Hi`);
     a.byte(hiByte(ptr));
   }
+}
+
+/**
+ * Writes metasprite data at the current pc and returns its address:
+ * [size, frameMask, frame pointers..., frame data...].  `label` prefixes the
+ * frame labels.
+ */
+export function assembleMetaspriteData(a: Assembler, label: string,
+                                       size: number, frameMask: number,
+                                       sprites: readonly (readonly number[])[][],
+                                       frames = frameMask + 1): Expr {
+  const ptr = a.pc();
+  a.byte(size);
+  a.byte(frameMask);
+  // Each frame gets a pointer so the draw routine doesn't need to multiply
+  // frame * size * 4 to find it. This also means frames don't need padding,
+  // and identical frames can share their data.
+  const frameLabel = (f: number) => `${label}_Frame_${f}`;
+  const frameBytes: number[][] = [];
+  const frameOwner: number[] = [];
+  for (let frameNum = 0; frameNum < frames; ++frameNum) {
+    const frame = sprites[frameNum];
+    if (!frame) {
+      throw new Error(`metasprite ${label} is missing frame ${frameNum}`);
+    }
+    // The draw loop stops at `size` sprites or the first $80 dx, so only
+    // write the sprites that are drawn and end short frames with one $80.
+    const bytes: number[] = [];
+    for (const sprite of frame) {
+      if (sprite[0] === 0x80 || bytes.length === size * 4) break;
+      bytes.push(...sprite);
+    }
+    if (bytes.length < size * 4) bytes.push(0x80);
+    const key = bytes.join(',');
+    const owner = frameBytes.findIndex((b, i) => frameOwner[i] === i && b.join(',') === key);
+    frameBytes.push(bytes);
+    frameOwner.push(owner >= 0 ? owner : frameNum);
+  }
+  for (let frameNum = 0; frameNum < frames; ++frameNum) {
+    a.word(a.symbol(frameLabel(frameOwner[frameNum])));
+  }
+  for (let frameNum = 0; frameNum < frames; ++frameNum) {
+    if (frameOwner[frameNum] !== frameNum) continue;
+    a.label(frameLabel(frameNum));
+    a.byte(...frameBytes[frameNum]);
+  }
+  return ptr;
 }

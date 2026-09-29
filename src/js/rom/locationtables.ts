@@ -164,6 +164,11 @@ export class Spawn extends DataTuple {
   /** Pattern bank shift (0 or 1) to store in 380,x:20. */
   patternBank = this.prop([2, 0x80, 7]);
 
+  /** placeholder while the NPC hasn't appeared yet for NPC shuffle */
+  placeholder = this.booleanProp(2, 3);
+  /** placeholder once the NPC has left for good for NPC shuffle. */
+  gonePlaceholder = this.booleanProp(2, 4);
+
 // patternBank: {get(this: any): number { return this.data[2] >>> 7; },
 //               set(this: any, v: number) { if (this.data[3] === 120) debugger;
 //                                           if (v) this.data[2] |= 0x80; else this.data[2] &= 0x7f; }},

@@ -159,6 +159,16 @@ export class Patterns implements Iterable<Pattern> {
     | oo..o__|
     |  o..o__|
   `, {' ': 0, '.': 1, '_': 2, 'o': 3});
+  public static readonly NPC_PLACEHOLDER_CORNER = parsePattern(`
+    |########|
+    |###     |
+    |#o##    |
+    |#.o##   |
+    |# .o##  |
+    |#  .o## |
+    |#   .o##|
+    |#    .o#|
+  `, {' ': 0, '.': 1, 'o': 2, '#': 3});
   private static readonly BLANK_TILE_TEMPLATE = `
     |        |
     |        |

@@ -22,6 +22,6 @@ for preset in $($cli --list-presets); do
   }
 
   # Make sure the output has the right size.
-  wc -c test/test_out.nes | grep -q 655376
+  wc -c test/test_out.nes | grep -q 786448
   rm -f test/test_out.nes
 done

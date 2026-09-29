@@ -37,6 +37,9 @@ interface Check {
 //  3. start unionfind
 //  4. fill ...?
 
+/** Goa, Brynmaer, and Swan taverns. */
+const TAVERNS = new Set([0xbf, 0xc6, 0xef]);
+
 /** Stores all the relevant information about the world's logic. */
 export class World {
 
@@ -804,6 +807,7 @@ export class World {
 
   processLocationSpawns(location: Location) {
     for (const spawn of location.spawns) {
+      if (!spawn.used) continue; // skipped by the game, too
       if (spawn.isTrigger()) {
         this.processTrigger(location, spawn);
       } else if (spawn.isNpc()) {
@@ -987,7 +991,7 @@ export class World {
       if (antiReq) this.addTerrain(hitbox, this.terrainFactory.statue(antiReq));
     }
 
-    // Fortune teller can be talked to across the desk.
+    // Fortune teller can be talked to across the counter
     if (npc === this.rom.npcs.FortuneTeller) {
       hitbox = Hitbox.adjust(hitbox, [0, 0], [2, 0]);
     }

@@ -94,8 +94,10 @@ ObjectDelay            := $05a0
 ObjectSpriteX          := $05c0
 ObjectSpriteY          := $05e0
 ObjectBossMode         := $0600
-;;; 620 ?
+ObjectMovementSpeedMask   := $0600 ; NPC movement speed
+ObjectMovementScriptPos   := $0620 ; for NPCs that have a movement script, which "step" its on
 ObjectShooterShooting     := $0640
+ObjectMovementScript      := $0680
 ObjectIdentity            := $0680 ; ID of persondata
 ObjectDirMetaspriteBase   := $06c0
 ObjectShootMetaspriteBase := $06e0

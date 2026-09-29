@@ -178,6 +178,15 @@ export class Graph {
     this.unlocks = new Keyed(unlocks.map(spread));
   }
 
+  /** Returns the ids of any slots that nothing can ever reach. */
+  unreachableSlots(): SlotId[] {
+    const out: SlotId[] = [];
+    for (let i = 0 as SlotIndex; i < this.slots.length; i++) {
+      if (!this.graph.get(i)?.length) out.push(this.slots.get(i)!);
+    }
+    return out;
+  }
+
   /**
    * Do one or more samples of an arbitrary-ordered item pickup to
    * measure roughly the weight of each item and slot.

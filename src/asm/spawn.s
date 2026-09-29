@@ -10,6 +10,8 @@
 ;;;  3. Change spawn handling to repurpose $fe or $fd in the first byte
 ;;;  4. Allow randomizing flyer spawn positions (for rage skip)
 ;;;  5. Handled renormalized/scaled enemy stats
+;;;  6. Draw placeholders for shuffled NPCs that haven't appeared yet, or
+;;;     that have left for good
 
 
 .segment "1a", "1b", "fe", "ff" ;.bank $34000 $8000:$4000
@@ -137,6 +139,74 @@ RandomizeFlyerSpawnPosition:
   iny      ; Replace 3 bytes at 3e1c9
   lda $2c
   rts
+
+.endif
+
+
+.ifdef _SHUFFLE_NPCS
+.import NpcPlaceholderMetasprite, NpcGonePlaceholderMetasprite
+
+.segment "0e", "0f"
+.org $80d0 ; CheckNpcSpawnCondition when a flag doesn't match
+  jmp NpcSpawnConditionFailed
+
+.reloc
+NpcSpawnConditionFailed:
+  ;; $20 is still nonzero, and :20 is set if the flag was negated.
+  lda $26
+  and #$20
+  ora #$01
+  sta $20
+  rts
+
+.segment "fe", "ff"
+.org $e357 ; LoadPersonObjectData when the spawn condition fails
+  jmp NpcSpawnFailed
+FREE_UNTIL $e35c
+
+.reloc
+NpcSpawnFailed:
+  lda $20
+  and #$20
+  bne @Gone
+  lda $2e
+  and #$08
+  beq @Despawn
+  lda #NpcPlaceholderMetasprite
+  sta $0580,x
+  jmp @Draw
+@Gone:
+  lda $2e
+  and #$10
+  beq @Despawn
+  lda #NpcGonePlaceholderMetasprite
+  sta $0580,x
+@Draw:
+  ;; The statue action never walks, turns, or starts a dialog.
+  lda #$31
+  sta ObjectActionScript,x
+  ;; Draw from the extended metasprite table, at the id in $0580,x. The
+  ;; statue action copies ObjectDirMetaspriteBase into ObjectMetasprite
+  ;; every frame.
+  lda #$ff
+  sta ObjectMetasprite,x
+  sta ObjectDirMetaspriteBase,x
+  lda #$00
+  sta ObjectDeathChain,x ; no pattern offset
+  sta ObjectDirection,x
+  sta ObjectShootMetaspriteBase,x ; not animated
+  lda ObjectHitbox,x
+  and #$0f
+  sta ObjectHitbox,x
+  lda ObjectOnScreen,x
+  and #$dd
+  ora #$01
+  sta ObjectOnScreen,x
+  jmp NpcDataJump_Finish
+@Despawn:
+  lda #$00
+  sta ObjectActionScript,x
+  jmp NpcDataJump_Finish
 
 .endif
 

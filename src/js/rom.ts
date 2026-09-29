@@ -660,6 +660,16 @@ export class Rom {
     throw new Error('Could not find an unused trigger.');
   }
 
+  allocChrBank(): number {
+    const bank = this.nextChrBank;
+    if (bank >= 0xff || (bank + 1) << 10 > this.chr.length) {
+      throw new Error(`Out of CHR banks (CHR is ${this.chr.length >> 10}KB)`);
+    }
+    this.nextChrBank++;
+    return bank;
+  }
+  private nextChrBank = 0x80;
+
   // compressMapData(): void {
   //   if (this.compressedMapData) return;
   //   this.compressedMapData = true;

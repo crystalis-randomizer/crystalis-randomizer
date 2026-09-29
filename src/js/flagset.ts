@@ -507,6 +507,19 @@ class World extends FlagSection {
            together.`,
   });
 
+  static readonly ShuffleNpcs = World.flag('Wn', {
+    name: 'Shuffle NPCs',
+    text: `Villagers and story characters are moved between towns, houses,
+           and caves. NPCs keep their dialog, and any items they give or
+           trades they accept, but their colors may be wrong. There are two
+           placeholder sprites for NPCs that should not spawn. An X indicates
+           that the spawn condition has not been met yet (for instance, the
+           Abducted Leaf Elder does not spawn until the Leaf Abduction happens),
+           and an O indicates that the condition is completed (for instance, you
+           talked to dead Stom and now he's gone forever).`,
+    hard: true,
+  });
+
   static readonly RandomizeWildWarp = World.flag('Ww', {
     name: 'Randomize wild warp',
     text: `Wild warp will go to Mezame Shrine and 4-15 other random locations.
@@ -1242,6 +1255,9 @@ export class FlagSet {
     return this.check(Routing.OrbsNotRequired);
   }
 
+  shuffleNpcs() {
+    return this.check(World.ShuffleNpcs);
+  }
   shuffleGoaFloors() {
     return this.check(World.ShuffleGoaFloors);
   }

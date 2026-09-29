@@ -18,6 +18,7 @@ export class Spoiler {
   readonly unidentifiedItems: UnidentifiedItem[] = [];
   readonly wildWarps: WildWarp[] = [];
   readonly houses: House[] = [];
+  readonly npcs: MovedNpc[] = [];
   flags: string = '';
 
   // TODO - shops, boss weaknesses
@@ -61,6 +62,10 @@ export class Spoiler {
     });
   }
 
+  addNpc(npcId: number, npc: string, from: string, to: string): void {
+    this.npcs.push({npcId, npc, from, to});
+  }
+
   formatCondition(id: number): string {
     return this.rom.flags[id]?.name
   }
@@ -73,6 +78,13 @@ export class Spoiler {
     }
     return terms.join(', ');
   }
+}
+
+interface MovedNpc {
+  npcId: number;
+  npc: string;
+  from: string;
+  to: string;
 }
 
 interface Maze {

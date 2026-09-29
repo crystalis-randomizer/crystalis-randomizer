@@ -1,4 +1,4 @@
-import { Module } from '../asm/module';
+import type { Module } from 'js65';
 import { die } from '../assert';
 import { Rom } from '../rom';
 import { Flag } from './flags';

@@ -1,6 +1,7 @@
 // General utilities for rom package.
 
-import { Expr } from '../asm/expr';
+import type { Expr } from 'js65';
+import { invert } from '../asmutil';
 import { refsBySymbol } from '../data';
 
 export function upperCamelToSpaces(upperCamel: string): string {
@@ -630,7 +631,9 @@ export class Address {
 }
 
 interface IAssembler {
-  segment(...s: (string|Segment)[]): void;
+  // NOTE: js65 would merge a Segment object into its segment definition,
+  // so only pass names.
+  segment(...s: string[]): void;
   org(o: number, n?: string): void;
   free(size: number): void;
   reloc(name?: string): void;
@@ -652,7 +655,7 @@ export function exportLabel(a: IAssembler, name: string) {
 
 export function relocExportLabel(a: IAssembler, name: string,
                                  seg?: Array<string|Segment>) {
-  if (seg?.length) a.segment(...seg);
+  if (seg?.length) a.segment(...seg.map(s => typeof s === 'string' ? s : s.name));
   a.reloc(name);
   a.label(name);
   a.export(name);
@@ -672,7 +675,7 @@ export function readValue(symbol: string, prg: Uint8Array, seg?: Segment): numbe
   if (!refsBySymbol().get(symbol)?.length) throw new Error(`No mappings for ${symbol}`);
   for (const ref of refsBySymbol().get(symbol) || []) {
     const val = prg[ref.offset] | (ref.bytes === 2 ? prg[ref.offset + 1] << 8 : 0);
-    const inv = Expr.invert(ref.expr, symbol, val);
+    const inv = invert(ref.expr, symbol, val);
     if (inv != null) values.add(inv);
   }
   if (values.size !== 1) {

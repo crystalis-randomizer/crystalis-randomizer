@@ -1,5 +1,4 @@
-import { Assembler } from '../asm/assembler';
-import { Module } from '../asm/module';
+import { Assembler, type Module } from 'js65';
 import { Rom } from '../rom';
 import { Entity } from './entity';
 import { free, readLittleEndian, Segment, writeLittleEndian } from './util';

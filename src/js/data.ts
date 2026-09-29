@@ -1,7 +1,7 @@
 import { data as loadData } from './data.macro' with {type: 'macro'};
 import type { Data } from './data.macro';
 import { RefsJson, Ref } from './tools/extract-refs';
-import { Expr } from './asm/expr';
+import { symbols } from './asmutil';
 
 // These are all unused directly, we just have it so that it forces
 // the bundler to re-run whenever a file changes.
@@ -76,7 +76,7 @@ export const refs = (): RefsJson => clone(data.refs);
 export const refsBySymbol = memoize((): ReadonlyMap<string, readonly Ref[]> => {
   const map = new Map<string, Ref[]>();
   for (const ref of refs().refs) {
-    const syms = Expr.symbols(ref.expr);
+    const syms = symbols(ref.expr);
     if (syms.length !== 1) continue;
     let vals = map.get(syms[0]);
     if (!vals) map.set(syms[0], vals = []);

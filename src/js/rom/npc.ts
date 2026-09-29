@@ -1,5 +1,4 @@
-import {Assembler} from '../asm/assembler';
-import {Module} from '../asm/module';
+import { Assembler, type Module } from 'js65';
 import {Entity, EntityArray} from './entity';
 import {Entrance} from './locationtables';
 import {Location} from './location';

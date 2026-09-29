@@ -5,7 +5,7 @@ import { ObjectData } from './objectdata';
 import { Monster } from './monster';
 import { lowerCamelToSpaces, relocExportLabel } from './util';
 import { EntityArray } from './entity';
-import { Module } from '../asm/module';
+import type { Module } from 'js65';
 
 // Manual data about monsters.  Every monster needs at least an ID-to-name mapping,
 // We also can't expect to get the difficulty mapping automatically, so that's

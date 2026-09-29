@@ -1,5 +1,4 @@
-import {Assembler} from '../asm/assembler';
-import {Module} from '../asm/module';
+import { Assembler, type Module } from 'js65';
 import {Entity, EntityArray} from './entity';
 import {MessageId} from './messageid';
 import {hex, readString, tuple,
@@ -185,7 +184,7 @@ export class Item extends Entity {
 
     const menuNameEncoded =
         MENU_NAME_ENCODE.reduce((s, [d, e]) => s.replace(d, e), this.menuName);
-    a.segment($10, $fe, $ff); // TODO(sdh): consolidate these back into just $10
+    a.segment($10.name, $fe.name, $ff.name); // TODO(sdh): consolidate these back into just $10
     a.reloc(`ItemMenuName_${hex(this.id)}`);
     const menuNameAddr = a.pc();
     a.byte(menuNameEncoded, 0xff);

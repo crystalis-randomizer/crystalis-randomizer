@@ -1,6 +1,6 @@
 // Base class for all the different entity types.
 
-import {Module} from '../asm/module';
+import type { Module } from 'js65';
 import {Rom} from '../rom';
 import {hex} from './util';
 

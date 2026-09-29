@@ -1,6 +1,4 @@
-import {Assembler} from '../asm/assembler';
-import {Expr} from '../asm/expr';
-import {Module} from '../asm/module';
+import { Assembler, type Expr, type Module } from 'js65';
 import {Area, Areas} from './area';
 import {Entity} from './entity';
 import {Metalocation} from './metalocation';

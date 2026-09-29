@@ -1,10 +1,9 @@
-import { Module } from '../asm/module';
+import { hiByte, loByte, type Expr, type Module } from 'js65';
 import { Entity } from './entity';
 import { Location } from './location';
 import { readLittleEndian, readLengthDelimitedString } from './util';
 import { Constraint } from './constraint';
 import type { Objects } from './objects';
-import { Expr } from '../asm/expr';
 
 // NOTE: Would be nice to call this Object, but that seems confusing...
 export class ObjectData extends Entity {
@@ -103,9 +102,9 @@ export class ObjectData extends Entity {
         a.byte(...this.displayName);
       }
       a.org(0xa000 | this.id, `EnemyNameTableLo_${this.id}`);
-      a.byte(addr != null ? Expr.loByte(addr) : 0);
+      a.byte(addr != null ? loByte(addr) : 0);
       a.org(0xa100 | this.id, `EnemyNameTableHi_${this.id}`);
-      a.byte(addr != null ? Expr.hiByte(addr) : 0);
+      a.byte(addr != null ? hiByte(addr) : 0);
     }
 
     return [a.module()];

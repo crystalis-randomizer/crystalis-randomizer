@@ -1,7 +1,5 @@
-// import {Assembler} from './asm/assembler.js';
-import {Assembler} from './asm/assembler';
-import {Linker} from './asm/linker';
-import {Module} from './asm/module';
+import {Assembler, Cpu, link, type Module} from 'js65';
+import {formatErrors} from './asmutil';
 import {AdHocSpawn} from './rom/adhocspawn';
 //import {Areas} from './rom/area.js';
 import {BossKills} from './rom/bosskill';
@@ -39,7 +37,6 @@ import {Trigger, Triggers} from './rom/trigger';
 import {hex, seq} from './rom/util';
 import {WildWarp} from './rom/wildwarp';
 import {UnionFind} from './unionfind';
-import { Cpu } from './asm/cpu';
 
 export type ModuleId = symbol & {__moduleId__: never};
 export const ModuleId = (name: string) => Symbol(name) as ModuleId;
@@ -408,18 +405,17 @@ export class Rom {
     // Reserve the global space 142c0...142f0 ???
     // const this.assembler().
 
-    const linker = new Linker();
-    linker.base(this.prg, 0);
-    for (const m of modules) {
-      linker.read(m);
+    // The linker writes into its base rom in place, so link onto a copy
+    // unless the output is going to this.prg anyway.
+    const base = data === this.prg ? this.prg : this.prg.slice();
+    const result = link(modules, {baseRom: base}, 'binary');
+    if (!result.success) throw new Error(formatErrors(result.messages));
+    if (data !== this.prg) { // TODO - clean this up
+      data.set(result.data);
+      return;
     }
-    const out = linker.link();
-    out.apply(data);
-    if (data !== this.prg) return; // TODO - clean this up
-    //linker.report();
-    const exports = linker.exports();
+    const {exports} = result;
 
-    
     this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;
     this.shopCount = 11;
     this.shopDataTablesAddress = exports.get('ShopData')?.offset || 0;

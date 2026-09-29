@@ -56,7 +56,7 @@ export async function data(): Promise<Data> {
   checkWatchImports([...asm, ...spritesheets, VANILLA]);
 
   const sources = asm.map(read);
-  const symbols = await extractSymbols(sources, ROOT);
+  const symbols = extractSymbols(sources);
   const refs = await extractRefs([read(VANILLA)], symbols, ROOT);
   return {
     sources: byBasename(sources),

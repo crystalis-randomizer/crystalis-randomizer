@@ -1,5 +1,4 @@
-import {Assembler} from '../asm/assembler';
-import {Module} from '../asm/module';
+import { Assembler, type Module } from 'js65';
 import {Rom} from '../rom';
 import {Entity, EntityArray} from './entity';
 import {MessageId} from './messageid';

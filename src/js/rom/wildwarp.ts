@@ -1,4 +1,4 @@
-import {Module} from '../asm/module';
+import type { Module } from 'js65';
 import {Rom} from '../rom';
 import {Address, Segment, exportValue, tuple} from './util';
 

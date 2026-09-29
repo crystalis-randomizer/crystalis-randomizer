@@ -1,5 +1,4 @@
-import {Expr} from '../asm/expr';
-import {Module} from '../asm/module';
+import type { Expr, Module } from 'js65';
 import {Rom} from '../rom';
 import {MessageId} from './messageid';
 import {Data, Segment, free,

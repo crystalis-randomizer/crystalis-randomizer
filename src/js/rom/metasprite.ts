@@ -1,9 +1,7 @@
 import {Entity} from './entity';
 import {hex, readLittleEndian, seq, tuple} from './util';
 import {Rom} from '../rom';
-import { Module } from '../asm/module';
-import { Assembler } from '../asm/assembler';
-import {Expr} from '../asm/expr';
+import { Assembler, hiByte, loByte, type Expr, type Module } from 'js65';
 
 const METASPRITE_TABLE = 0x3845c;
 const NEW_METASPRITE_TABLE = 0xbd00;
@@ -328,8 +326,8 @@ export class Metasprite extends Entity {
 
   writePointerToTable(a: Assembler, base: number, ptr: Expr) {
     a.org(base + this.id, `Metasprite_${this.id.toString(16)}_Ptr_Lo`);
-    a.byte(Expr.loByte(ptr));
+    a.byte(loByte(ptr));
     a.org(base + this.id + 0x100, `Metasprite_${this.id.toString(16)}_Ptr_Hi`);
-    a.byte(Expr.hiByte(ptr));
+    a.byte(hiByte(ptr));
   }
 }

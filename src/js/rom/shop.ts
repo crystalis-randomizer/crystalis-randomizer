@@ -1,4 +1,4 @@
-import {Module} from '../asm/module';
+import type { Module } from 'js65';
 import {Rom} from '../rom';
 import {Entity, EntityArray} from './entity';
 import {readLittleEndian, seq, tuple} from './util';

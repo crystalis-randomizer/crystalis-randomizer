@@ -3,55 +3,8 @@
 
 ;;; Initialization. This must come before all other modules.
 
-;;; Tag for labels that we expect to override vanilla
-.define OVERRIDE
-
-;;; Nicer syntax for declaring free sections
-.define FREE {seg [start, end)} \
-    .pushseg seg .eol \
-    .org start .eol \
-    .free end - start .eol \
-    .popseg
-.define FREE {seg [start, end]} .noexpand FREE seg [start, end + 1)
-
-
-;;; Relocate a block of code and update refs
-;;; Usage:
-;;;   RELOCATE segments [start, end) refs...
-;;; Where |segments| is an optional comma-separated list of segment
-;;; names, and |refs| is a space-separated list of addresses whose
-;;; contents point to |start| and that need to be updated to point to
-;;; whereever it eventually ended up.  If no segments are specified
-;;; then the relocation will stay within the current segment.
-.define RELOCATE {seg [start, end) refs .eol} \
-.org start .eol \
-: FREE_UNTIL end .eol \
-.ifnblank seg .eol \
-.pushseg seg .eol \
-.endif .eol \
-.reloc .eol \
-: .move (end-start), :-- .eol \
-.ifnblank seg .eol \
-.popseg .eol \
-.endif .eol \
-UPDATE_REFS :- @ refs
-
-;;; Update a handful of refs to point to the given address.
-;;; Usage:
-;;;   UPDATE_REFS target @ refs...
-;;; Where |refs| is a space-separated list of addresses, and
-;;; |target| is an address or label to insert into each ref.
-.define UPDATE_REFS {target @ ref refs .eol} \
-.org ref .eol \
-  .word (target) .eol \
-UPDATE_REFS target @ refs
-.define UPDATE_REFS {target @ .eol}
-
-
-.macro FREE_UNTIL end
-  .assert * <= end
-  .free end - *
-.endmacro
+;;; Provides OVERRIDE, FREE, FREE_UNTIL, RELOCATE, UPDATE_REFS, FALLTHROUGH
+.macpack common
 
 
 ;;; TODO - this macro is currently broken!
@@ -64,83 +17,83 @@ UPDATE_REFS target @ refs
 ;;   .move bytes, S
 ;; .endmacro
 
-.segment "00"   :bank $00 :size $2000 :off $00000 :mem $8000
-.segment "01"   :bank $01 :size $2000 :off $02000 :mem $a000
-.segment "02"   :bank $02 :size $2000 :off $04000 :mem $8000
-.segment "03"   :bank $03 :size $2000 :off $06000 :mem $a000
-.segment "04"   :bank $04 :size $2000 :off $08000 :mem $8000
-.segment "05"   :bank $05 :size $2000 :off $0a000 :mem $a000
-.segment "06"   :bank $06 :size $2000 :off $0c000 :mem $8000
-.segment "07"   :bank $07 :size $2000 :off $0e000 :mem $a000
-.segment "08"   :bank $08 :size $2000 :off $10000 :mem $8000
-.segment "09"   :bank $09 :size $2000 :off $12000 :mem $a000
-.segment "0a"   :bank $0a :size $2000 :off $14000 :mem $8000
-.segment "0b"   :bank $0b :size $2000 :off $16000 :mem $a000
-.segment "0c"   :bank $0c :size $2000 :off $18000 :mem $8000
-.segment "0d"   :bank $0d :size $2000 :off $1a000 :mem $a000
-.segment "0e"   :bank $0e :size $2000 :off $1c000 :mem $8000
-.segment "0f"   :bank $0f :size $2000 :off $1e000 :mem $a000
-.segment "10"   :bank $10 :size $2000 :off $20000 :mem $8000
-.segment "11"   :bank $11 :size $2000 :off $22000 :mem $a000
-.segment "12"   :bank $12 :size $2000 :off $24000 :mem $8000
-.segment "13"   :bank $13 :size $2000 :off $26000 :mem $a000
-.segment "14"   :bank $14 :size $2000 :off $28000 :mem $8000
-.segment "14:a" :bank $14 :size $2000 :off $28000 :mem $a000
-.segment "15"   :bank $15 :size $2000 :off $2a000 :mem $a000
-.segment "16"   :bank $16 :size $2000 :off $2c000 :mem $8000
+.segment "00"   :bank $00 :size $2000 :off $00000 :mem $8000 :dedupe
+.segment "01"   :bank $01 :size $2000 :off $02000 :mem $a000 :dedupe
+.segment "02"   :bank $02 :size $2000 :off $04000 :mem $8000 :dedupe
+.segment "03"   :bank $03 :size $2000 :off $06000 :mem $a000 :dedupe
+.segment "04"   :bank $04 :size $2000 :off $08000 :mem $8000 :dedupe
+.segment "05"   :bank $05 :size $2000 :off $0a000 :mem $a000 :dedupe
+.segment "06"   :bank $06 :size $2000 :off $0c000 :mem $8000 :dedupe
+.segment "07"   :bank $07 :size $2000 :off $0e000 :mem $a000 :dedupe
+.segment "08"   :bank $08 :size $2000 :off $10000 :mem $8000 :dedupe
+.segment "09"   :bank $09 :size $2000 :off $12000 :mem $a000 :dedupe
+.segment "0a"   :bank $0a :size $2000 :off $14000 :mem $8000 :dedupe
+.segment "0b"   :bank $0b :size $2000 :off $16000 :mem $a000 :dedupe
+.segment "0c"   :bank $0c :size $2000 :off $18000 :mem $8000 :dedupe
+.segment "0d"   :bank $0d :size $2000 :off $1a000 :mem $a000 :dedupe
+.segment "0e"   :bank $0e :size $2000 :off $1c000 :mem $8000 :dedupe
+.segment "0f"   :bank $0f :size $2000 :off $1e000 :mem $a000 :dedupe
+.segment "10"   :bank $10 :size $2000 :off $20000 :mem $8000 :dedupe
+.segment "11"   :bank $11 :size $2000 :off $22000 :mem $a000 :dedupe
+.segment "12"   :bank $12 :size $2000 :off $24000 :mem $8000 :dedupe
+.segment "13"   :bank $13 :size $2000 :off $26000 :mem $a000 :dedupe
+.segment "14"   :bank $14 :size $2000 :off $28000 :mem $8000 :dedupe
+.segment "14:a" :bank $14 :size $2000 :off $28000 :mem $a000 :dedupe
+.segment "15"   :bank $15 :size $2000 :off $2a000 :mem $a000 :dedupe
+.segment "16"   :bank $16 :size $2000 :off $2c000 :mem $8000 :dedupe
 ;;; 15..17 store messages, all accessed via the a000 slot
-.segment "16:a" :bank $16 :size $2000 :off $2c000 :mem $a000
-.segment "17"   :bank $17 :size $2000 :off $2e000 :mem $a000
-.segment "18"   :bank $18 :size $2000 :off $30000 :mem $8000
-.segment "19"   :bank $19 :size $2000 :off $32000 :mem $a000
-.segment "1a"   :bank $1a :size $2000 :off $34000 :mem $8000
-.segment "1b"   :bank $1b :size $2000 :off $36000 :mem $a000
-.segment "1c"   :bank $1c :size $2000 :off $38000 :mem $8000
-.segment "1d"   :bank $1d :size $2000 :off $3a000 :mem $a000
-.segment "1e"   :bank $1e :size $2000 :off $3c000 :mem $c000
-.segment "1f"   :bank $1f :size $2000 :off $3e000 :mem $e000
+.segment "16:a" :bank $16 :size $2000 :off $2c000 :mem $a000 :dedupe
+.segment "17"   :bank $17 :size $2000 :off $2e000 :mem $a000 :dedupe
+.segment "18"   :bank $18 :size $2000 :off $30000 :mem $8000 :dedupe
+.segment "19"   :bank $19 :size $2000 :off $32000 :mem $a000 :dedupe
+.segment "1a"   :bank $1a :size $2000 :off $34000 :mem $8000 :dedupe
+.segment "1b"   :bank $1b :size $2000 :off $36000 :mem $a000 :dedupe
+.segment "1c"   :bank $1c :size $2000 :off $38000 :mem $8000 :dedupe
+.segment "1d"   :bank $1d :size $2000 :off $3a000 :mem $a000 :dedupe
+.segment "1e"   :bank $1e :size $2000 :off $3c000 :mem $c000 :dedupe
+.segment "1f"   :bank $1f :size $2000 :off $3e000 :mem $e000 :dedupe
 
 ;;; Expanded rom segments??? consider doing these programmatically?
 ;;; Plane 4 - reserved for map data
-.segment "20"   :bank $20 :size $2000 :off $40000 :mem $8000
-.segment "21"   :bank $21 :size $2000 :off $42000 :mem $a000
-.segment "22"   :bank $22 :size $2000 :off $44000 :mem $8000
-.segment "23"   :bank $23 :size $2000 :off $46000 :mem $a000
-.segment "24"   :bank $24 :size $2000 :off $48000 :mem $8000
-.segment "25"   :bank $25 :size $2000 :off $4a000 :mem $a000
-.segment "26"   :bank $26 :size $2000 :off $4c000 :mem $8000
-.segment "27"   :bank $27 :size $2000 :off $4e000 :mem $a000
+.segment "20"   :bank $20 :size $2000 :off $40000 :mem $8000 :dedupe
+.segment "21"   :bank $21 :size $2000 :off $42000 :mem $a000 :dedupe
+.segment "22"   :bank $22 :size $2000 :off $44000 :mem $8000 :dedupe
+.segment "23"   :bank $23 :size $2000 :off $46000 :mem $a000 :dedupe
+.segment "24"   :bank $24 :size $2000 :off $48000 :mem $8000 :dedupe
+.segment "25"   :bank $25 :size $2000 :off $4a000 :mem $a000 :dedupe
+.segment "26"   :bank $26 :size $2000 :off $4c000 :mem $8000 :dedupe
+.segment "27"   :bank $27 :size $2000 :off $4e000 :mem $a000 :dedupe
 ;;; Plane 5 - reserved for map data
-.segment "28"   :bank $28 :size $2000 :off $50000 :mem $8000
-.segment "29"   :bank $29 :size $2000 :off $52000 :mem $a000
-.segment "2a"   :bank $2a :size $2000 :off $54000 :mem $8000
-.segment "2b"   :bank $2b :size $2000 :off $56000 :mem $a000
-.segment "2c"   :bank $2c :size $2000 :off $58000 :mem $8000
-.segment "2d"   :bank $2d :size $2000 :off $5a000 :mem $a000
-.segment "2e"   :bank $2e :size $2000 :off $5c000 :mem $8000
-.segment "2f"   :bank $2f :size $2000 :off $5e000 :mem $a000
+.segment "28"   :bank $28 :size $2000 :off $50000 :mem $8000 :dedupe
+.segment "29"   :bank $29 :size $2000 :off $52000 :mem $a000 :dedupe
+.segment "2a"   :bank $2a :size $2000 :off $54000 :mem $8000 :dedupe
+.segment "2b"   :bank $2b :size $2000 :off $56000 :mem $a000 :dedupe
+.segment "2c"   :bank $2c :size $2000 :off $58000 :mem $8000 :dedupe
+.segment "2d"   :bank $2d :size $2000 :off $5a000 :mem $a000 :dedupe
+.segment "2e"   :bank $2e :size $2000 :off $5c000 :mem $8000 :dedupe
+.segment "2f"   :bank $2f :size $2000 :off $5e000 :mem $a000 :dedupe
 ;;; Plane 6 - currently unused
-.segment "30"   :bank $30 :size $2000 :off $60000 :mem $8000
-.segment "31"   :bank $31 :size $2000 :off $62000 :mem $a000
-.segment "32"   :bank $32 :size $2000 :off $64000 :mem $8000
-.segment "33"   :bank $33 :size $2000 :off $66000 :mem $a000
-.segment "34"   :bank $34 :size $2000 :off $68000 :mem $8000
-.segment "35"   :bank $35 :size $2000 :off $6a000 :mem $a000
-.segment "36"   :bank $36 :size $2000 :off $6c000 :mem $8000
-.segment "37"   :bank $37 :size $2000 :off $6e000 :mem $a000
+.segment "30"   :bank $30 :size $2000 :off $60000 :mem $8000 :dedupe
+.segment "31"   :bank $31 :size $2000 :off $62000 :mem $a000 :dedupe
+.segment "32"   :bank $32 :size $2000 :off $64000 :mem $8000 :dedupe
+.segment "33"   :bank $33 :size $2000 :off $66000 :mem $a000 :dedupe
+.segment "34"   :bank $34 :size $2000 :off $68000 :mem $8000 :dedupe
+.segment "35"   :bank $35 :size $2000 :off $6a000 :mem $a000 :dedupe
+.segment "36"   :bank $36 :size $2000 :off $6c000 :mem $8000 :dedupe
+.segment "37"   :bank $37 :size $2000 :off $6e000 :mem $a000 :dedupe
 ;;; Plane 7 - available for code/data
 ;;;  - we move parts out of higher-value pages into here.
-.segment "38"   :bank $38 :size $2000 :off $70000 :mem $8000
-.segment "39"   :bank $39 :size $2000 :off $72000 :mem $a000
-.segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000
-.segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000
-.segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000
+.segment "38"   :bank $38 :size $2000 :off $70000 :mem $8000 :dedupe
+.segment "39"   :bank $39 :size $2000 :off $72000 :mem $a000 :dedupe
+.segment "3a"   :bank $3a :size $2000 :off $74000 :mem $8000 :dedupe
+.segment "3b"   :bank $3b :size $2000 :off $76000 :mem $a000 :dedupe
+.segment "3c"   :bank $3c :size $2000 :off $78000 :mem $8000 :dedupe
 ;;; Monster names and metasprite table part 3
-.segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000
+.segment "3d"   :bank $3d :size $2000 :off $7a000 :mem $a000 :dedupe
 
 ;;; Note: we moved these when we expanded the rom.
-.segment "fe"   :bank $1e :size $2000 :off $7c000 :mem $c000
-.segment "ff"   :bank $1f :size $2000 :off $7e000 :mem $e000
+.segment "fe"   :bank $1e :size $2000 :off $7c000 :mem $c000 :dedupe
+.segment "ff"   :bank $1f :size $2000 :off $7e000 :mem $e000 :dedupe
 
 FREE "38" [$8000, $a000)
 FREE "39" [$a000, $c000)
@@ -548,7 +501,7 @@ RESERVE_MAPS
 RESERVE_MAPS
 .segment "06","07"
 RESERVE_MAPS
-.undefine RESERVE_MAPS
+.delmacro RESERVE_MAPS
 
 ;;; NPC data
 .segment "04","05"

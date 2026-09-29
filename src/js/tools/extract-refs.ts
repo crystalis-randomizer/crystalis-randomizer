@@ -11,6 +11,7 @@ import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { assemble, type Expr } from 'js65';
+import { formatErrors, strip, symbols } from '../asmutil';
 import type { SourceFile, SymbolsJson } from './extract-symbols';
 
 const FAIL_ON_BAD_OVERRIDE = true;
@@ -95,10 +96,7 @@ export async function extractRefs(files: readonly SourceFile[],
     resolveBinary: () => undefined,
   });
   if (!result.success) {
-    throw new Error(result.messages.filter(m => m.level === 'error').map(m => {
-      const at = m.source ? `${m.source.file}:${m.source.line}: ` : '';
-      return at + m.message;
-    }).join('\n'));
+    throw new Error(formatErrors(result.messages));
   }
   for (const sym of overrides || []) {
     errors.push(`Vanilla missing OVERRIDE: ${sym}`);
@@ -109,21 +107,6 @@ export async function extractRefs(files: readonly SourceFile[],
     for (const e of errors) console.error(e);
   }
   return {refs, labels};
-}
-
-/** Lists the symbols used in an expression (duplicates included). */
-function symbols(expr: Expr, out: string[] = []): string[] {
-  for (const arg of expr.args || []) symbols(arg, out);
-  if (expr.op === 'sym' && expr.sym) out.push(expr.sym);
-  return out;
-}
-
-/** Drops source info from an expression to keep refs.json small. */
-function strip(expr: Expr): Expr {
-  const out = {...expr};
-  if (out.args) out.args = out.args.map(strip);
-  delete out.source;
-  return out;
 }
 
 const JS65 = path.resolve(import.meta.dir, '../../../node_modules/.bin/js65');

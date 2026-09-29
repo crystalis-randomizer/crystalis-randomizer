@@ -4,11 +4,7 @@
 // defined and/or referenced in the file(s), from the token stream.
 
 import * as fs from 'node:fs';
-import { Cpu } from '../asm/cpu';
-import { nodeSmudger } from '../asm/nodesmudger';
-import { TokenSource } from '../asm/token';
-import { Tokenizer } from '../asm/tokenizer';
-import { TokenStream } from '../asm/tokenstream';
+import { Cpu } from 'js65';
 
 export interface SymbolsJson {
   symbols: string[];
@@ -21,37 +17,59 @@ export interface SourceFile {
   contents: string;
 }
 
-export async function extractSymbols(files: readonly SourceFile[],
-                                     romDir = '.'): Promise<SymbolsJson> {
-  async function tokenizer({filename, contents}: SourceFile) {
-    const src = await nodeSmudger(contents, romDir);
-    return new Tokenizer(src, filename, {lineContinuations: true});
-  }
+// Matches one token copied and joined together from the old js65 tokenizer.
+// The js65 upstream doesn't export the tokenizer, so this'll have to do.
+const TOKEN = new RegExp([
+  /(@+[a-z0-9_]*|(?:(?:::)?[a-z_][a-z0-9_]*)+|:(?:[+-]\d+|[-+]+|<+rts|>*rts))/,
+  /|\.[a-z]+/,
+  /|(:|\++|-+|&&?|\|\|?|[#*/,=~!^]|<[<>=]?|>[>=]?)/,
+  /|[[\]{}()]|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[$%]?[0-9a-z_]+/,
+].map(r => r.source).join(''), 'iy');
 
+/** Splits a source file into lines of tokens (ignoring comments). */
+function* lines(contents: string): Generator<Array<{ident?: string, op?: string}>> {
+  let tokens = [];
+  let pos = 0;
+  while (pos < contents.length) {
+    // Skip whitespace, comments, and line continuations.
+    pos += /^(?:[ \t\r]|;[^\n]*|\\\r?\n)*/.exec(contents.slice(pos))![0].length;
+    if (pos >= contents.length || contents[pos] === '\n') {
+      yield tokens;
+      tokens = [];
+      pos++;
+      continue;
+    }
+    TOKEN.lastIndex = pos;
+    const match = TOKEN.exec(contents);
+    if (!match) throw new Error(`Syntax error: ${contents.slice(pos, pos + 20)}`);
+    tokens.push({ident: match[1], op: match[2]});
+    pos = TOKEN.lastIndex;
+  }
+  if (tokens.length) yield tokens;
+}
+
+export function extractSymbols(files: readonly SourceFile[]): SymbolsJson {
   const symbols = new Set<string>();
   const overrides = new Set<string>();
   const defs = new Set<string>();
-  const toks = new TokenStream();
-  const sources = await Promise.all(files.map(tokenizer));
-  toks.enter(TokenSource.concat(...sources));
-  let line;
   let override = false;
-  while ((line = toks.next())) {
-    for (let i = 0; i < line.length; i++) {
-      const t = line[i];
-      if (t.token === 'ident' && !/^[@:]/.test(t.str)) {
-        symbols.add(t.str);
-        const next = line[i + 1];
-        if (next?.token === 'op' && /^[:=]$/.test(next.str)) {
-          (override ? overrides : defs).add(t.str);
-        } else if (override) {
-          overrides.add(t.str);
+  for (const {contents} of files) {
+    for (const line of lines(contents)) {
+      for (let i = 0; i < line.length; i++) {
+        const t = line[i].ident;
+        if (t && !/^[@:]/.test(t)) {
+          symbols.add(t);
+          if (/^[:=]$/.test(line[i + 1]?.op ?? '')) {
+            (override ? overrides : defs).add(t);
+          } else if (override) {
+            overrides.add(t);
+          }
         }
+        override = t === 'OVERRIDE';
       }
-      override = t.token === 'ident' && t.str === 'OVERRIDE';
     }
   }
-  for (const op of Object.keys(Cpu.P02.table)) {
+  for (const op of Cpu.P02.names) {
     symbols.delete(op);
   }
   for (const s of overrides) {
@@ -93,7 +111,7 @@ async function main() {
     filename,
     contents: String(await fs.promises.readFile(filename)),
   })));
-  fs.writeFileSync(outfile, JSON.stringify(await extractSymbols(sources)));
+  fs.writeFileSync(outfile, JSON.stringify(extractSymbols(sources)));
 }
 
 function usage(code = 1, message = '') {

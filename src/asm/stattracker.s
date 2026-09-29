@@ -358,21 +358,21 @@ UpdateAttributeTable:
 
 .pushseg "3d"
 
-.define Remainder  $a0
-.define Dividend   $a3
-.define Divisor    $a6
-.define DivTmp     $a9
+Remainder  := $a0
+Dividend   := $a3
+Divisor    := $a6
+DivTmp     := $a9
 
 .define Hex0        $b0
-.define DecOnes     $b1
-.define DecTens     $b2
-.define DecHundreds $b3
+DecOnes     := $b1
+DecTens     := $b2
+DecHundreds := $b3
 
-.define TmpHoursOnes   $90
-.define TmpMinutesOnes $91
-.define TmpMinutesTens $92
-.define TmpSecondsOnes $93
-.define TmpSecondsTens $94
+TmpHoursOnes   := $90
+TmpMinutesOnes := $91
+TmpMinutesTens := $92
+TmpSecondsOnes := $93
+TmpSecondsTens := $94
 
 .reloc
 DrawAllStats:

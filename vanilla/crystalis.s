@@ -1,21 +1,21 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
-.define PpuCtrlShadow        $00
-.define PpuMaskShadow        $01
+PpuCtrlShadow        := $00
+PpuMaskShadow        := $01
 
-.define ScreenXLo            $02     ; also stored in $34,$36 during map scroll
-.define ScreenXHi            $03
-.define ScreenYLo            $04
-.define ScreenYHi            $05
+ScreenXLo            := $02     ; also stored in $34,$36 during map scroll
+ScreenXHi            := $03
+ScreenYLo            := $04
+ScreenYHi            := $05
 
-.define GlobalCounter        $08
+GlobalCounter        := $08
 
-.define NametableBufferReadOffset   $0a
-.define NametableBufferWriteOffset  $0b
-.define NametableBufferTempValue    $0c
-.define NametableBufferBytesWritten $0d ; seems to be unused?
+NametableBufferReadOffset   := $0a
+NametableBufferWriteOffset  := $0b
+NametableBufferTempValue    := $0c
+NametableBufferBytesWritten := $0d ; seems to be unused?
 
-.define MainLoopMode         $40
-.define GameMode             $41
+MainLoopMode         := $40
+GameMode             := $41
 
 .define Ctrl1CurrentlyPressed $43
 .define Ctrl2CurrentlyPressed $44
@@ -32,140 +32,140 @@
 .define Ctrl1NewlyPressedAB   $4d ; in normal mode, may add A or B repeats
 .define Ctrl2NewlyPressedAB   $4e ; in normal mode, may add A or B repeats
 
-.define ScreenMode  $51
+ScreenMode  := $51
 
-.define CurrentLocation   $6c
-.define CurrentEntrance   $6d
-.define PrgPageShadowLo   $6e
-.define PrgPageShadowHi   $6f
+CurrentLocation   := $6c
+CurrentEntrance   := $6d
+PrgPageShadowLo   := $6e
+PrgPageShadowHi   := $6f
 
-.define PlayerXLo   $70
-.define PlayerXHi   $90
-.define PlayerYLo   $b0
-.define PlayerYHi   $d0
+PlayerXLo   := $70
+PlayerXHi   := $90
+PlayerYLo   := $b0
+PlayerYHi   := $d0
 
 ;;; Both absolute and zeropage versions...
-.define ObjXLo      $70
-.define ObjXHi      $90
-.define ObjYLo      $b0
-.define ObjYHi      $d0
-.define ObjectXLo   $0070
-.define ObjectXHi   $0090
-.define ObjectYLo   $00b0
-.define ObjectYHi   $00d0
+ObjXLo      := $70
+ObjXHi      := $90
+ObjYLo      := $b0
+ObjYHi      := $d0
+ObjectXLo   := $0070
+ObjectXHi   := $0090
+ObjectYLo   := $00b0
+ObjectYHi   := $00d0
 
-.define ChannelDataPtrLo    $011a
-.define ChannelDataPtrHi    $0120
+ChannelDataPtrLo    := $011a
+ChannelDataPtrHi    := $0120
 
-.define SpriteRam           $0200
-.define SpriteRamY          $0200
-.define SpriteRamPattern    $0201
-.define SpriteRamAttributes $0202
-.define SpriteRamX          $0203
+SpriteRam           := $0200
+SpriteRamY          := $0200
+SpriteRamPattern    := $0201
+SpriteRamAttributes := $0202
+SpriteRamX          := $0203
 
-.define ObjectMetasprite       $0300
+ObjectMetasprite       := $0300
 ;;; if this is $80 when object dies, then next object dies too.
 ;;; might only apply for bosses? it's also added to pattern id of each sprite.
-.define ObjectDeathChain       $0320
-.define ObjectKnockback        $0340 ; upper bit(s)
-.define ObjectSpeed            $0340 ; lower nibble
-.define ObjectDirection        $0360
-.define ObjectOnScreen         $0380 ; sign bit: minus if off-screen
-.define ObjectTerrain          $0380
-.define ObjectHitbox           $03a0
-.define ObjectHP               $03c0
-.define ObjectAttack           $03e0
-.define ObjectDefense          $0400
-.define ObjectLevel            $0420 ; also :40 selects ext hitboxes
-.define ObjectChildSpawn       $0440
-.define ObjectTerrainSusceptibility  $0460
-.define ObjectTimer            $0480
-.define ObjectActionScript     $04a0 ; also includes presence in :80
-.define ObjectReplacement      $04c0 ; ???
-.define ObjectAnimationCounter $04e0 ; also used as a "step counter"
-.define ObjectGoldDropBucket   $0500 ; hi nibble
-.define ObjectElementalDefense $0500 ; lo nibble
-.define ObjectExperiencePoints $0520
-.define ObjectDamageType       $0540
-.define ObjectProjectileStatus $0560
+ObjectDeathChain       := $0320
+ObjectKnockback        := $0340 ; upper bit(s)
+ObjectSpeed            := $0340 ; lower nibble
+ObjectDirection        := $0360
+ObjectOnScreen         := $0380 ; sign bit: minus if off-screen
+ObjectTerrain          := $0380
+ObjectHitbox           := $03a0
+ObjectHP               := $03c0
+ObjectAttack           := $03e0
+ObjectDefense          := $0400
+ObjectLevel            := $0420 ; also :40 selects ext hitboxes
+ObjectChildSpawn       := $0440
+ObjectTerrainSusceptibility  := $0460
+ObjectTimer            := $0480
+ObjectActionScript     := $04a0 ; also includes presence in :80
+ObjectReplacement      := $04c0 ; ???
+ObjectAnimationCounter := $04e0 ; also used as a "step counter"
+ObjectGoldDropBucket   := $0500 ; hi nibble
+ObjectElementalDefense := $0500 ; lo nibble
+ObjectExperiencePoints := $0520
+ObjectDamageType       := $0540
+ObjectProjectileStatus := $0560
 ;;; 560 ? other effects?
 ;;; 580 - alternative metasprite ID?
-.define ObjectDelay            $05a0
-.define ObjectSpriteX          $05c0
-.define ObjectSpriteY          $05e0
-.define ObjectBossMode         $0600
+ObjectDelay            := $05a0
+ObjectSpriteX          := $05c0
+ObjectSpriteY          := $05e0
+ObjectBossMode         := $0600
 ;;; 620 ?
-.define ObjectShooterShooting     $0640
-.define ObjectIdentity            $0680 ; ID of persondata
-.define ObjectDirMetaspriteBase   $06c0
-.define ObjectShootMetaspriteBase $06e0
+ObjectShooterShooting     := $0640
+ObjectIdentity            := $0680 ; ID of persondata
+ObjectDirMetaspriteBase   := $06c0
+ObjectShootMetaspriteBase := $06e0
 
-.define LookingAt               $0623 ; slot index currently looking at
+LookingAt               := $0623 ; slot index currently looking at
 
-.define PlayerMetaspriteBase    $0301
-.define PlayerMaxHP             $03c0
-.define PlayerHP                $03c1
-.define PlayerAttack            $03e1
-.define PlayerArmorDef          $0401
-.define PlayerShieldDef         $0400
-.define PlayerLevel             $0421
-.define PlayerJumpDisplacement  $0620
-.define PlayerSwordChargeAmount $06c0
-.define PlayerMoney             $0702 ; 2 bytes
-.define PlayerExp               $0704 ; 2 bytes
-.define PlayerExpToNextLevel    $0706 ; 2 bytes
-.define PlayerMP                $0708
-.define PlayerMaxMP             $0709
-.define PlayerStatus            $0710
+PlayerMetaspriteBase    := $0301
+PlayerMaxHP             := $03c0
+PlayerHP                := $03c1
+PlayerAttack            := $03e1
+PlayerArmorDef          := $0401
+PlayerShieldDef         := $0400
+PlayerLevel             := $0421
+PlayerJumpDisplacement  := $0620
+PlayerSwordChargeAmount := $06c0
+PlayerMoney             := $0702 ; 2 bytes
+PlayerExp               := $0704 ; 2 bytes
+PlayerExpToNextLevel    := $0706 ; 2 bytes
+PlayerMP                := $0708
+PlayerMaxMP             := $0709
+PlayerStatus            := $0710
 
-.define CurrentlyInPawnShop     $07dd ; ff if in pawn shop, 00 otherwise
+CurrentlyInPawnShop     := $07dd ; ff if in pawn shop, 00 otherwise
 
-.define Inventory_ScratchSortRow         $60e0
+Inventory_ScratchSortRow         := $60e0
 
 ;;; Individual bytes store the selected column number, with the
 ;;; sign bit clear if selected, set if unselected.
-.define InventoryMenu_CurrentPage             $6424
-.define InventoryMenu_RowSize                 $6426 ; # columns per row this page
-.define InventoryMenu_CurrentItem             $6427 ; Offset from page
-.define InventoryMenu_SelectedSword           $6428
-.define InventoryMenu_SelectedArmor           $6429
-.define InventoryMenu_SelectedShield          $642a
-.define InventoryMenu_SelectedBracelet        $642b
-.define InventoryMenu_SelectedConsumableItem  $642c
-.define InventoryMenu_SelectedPassiveItem     $642d
-.define InventoryMenu_SelectedQuestItem       $642e
-.define InventoryMenu_SelectedMagic           $642f
+InventoryMenu_CurrentPage             := $6424
+InventoryMenu_RowSize                 := $6426 ; # columns per row this page
+InventoryMenu_CurrentItem             := $6427 ; Offset from page
+InventoryMenu_SelectedSword           := $6428
+InventoryMenu_SelectedArmor           := $6429
+InventoryMenu_SelectedShield          := $642a
+InventoryMenu_SelectedBracelet        := $642b
+InventoryMenu_SelectedConsumableItem  := $642c
+InventoryMenu_SelectedPassiveItem     := $642d
+InventoryMenu_SelectedQuestItem       := $642e
+InventoryMenu_SelectedMagic           := $642f
 
 ;;; These slots store item IDs, all in the same value space.
-.define Inventory                        $6430
-.define Inventory_Swords                 $6430
-.define Inventory_Armors                 $6434
-.define Inventory_Shields                $6438
-.define Inventory_Bracelets              $643c
-.define Inventory_ConsumableItems        $6440
-.define Inventory_PassiveItems           $6448
-.define Inventory_QuestItems             $6450
-.define Inventory_Magics                 $6458
+Inventory                        := $6430
+Inventory_Swords                 := $6430
+Inventory_Armors                 := $6434
+Inventory_Shields                := $6438
+Inventory_Bracelets              := $643c
+Inventory_ConsumableItems        := $6440
+Inventory_PassiveItems           := $6448
+Inventory_QuestItems             := $6450
+Inventory_Magics                 := $6458
 
-.define CurrentLocationFlags $62f0 ; 16 bytes
+CurrentLocationFlags := $62f0 ; 16 bytes
 
-.define ShopMenu_CurrentItemIndex        $6427
-.define ShopMenu_CurrentItemId           $646c
-.define ShopMenu_CurrentShopIndex        $646d
-.define ShopMenu_AllItemIds              $6470
-.define ShopMenu_CurrentItemPrice        $6474
-.define ShopMenu_AllPrices               $6478
+ShopMenu_CurrentItemIndex        := $6427
+ShopMenu_CurrentItemId           := $646c
+ShopMenu_CurrentShopIndex        := $646d
+ShopMenu_AllItemIds              := $6470
+ShopMenu_CurrentItemPrice        := $6474
+ShopMenu_AllPrices               := $6478
 
-.define VromPalettes         $3f00
-.define PPUCTRL   $2000
-.define PPUMASK   $2001
-.define PPUSTATUS $2002
-.define OAMADDR   $2003
-.define OAMDATA   $2004
-.define PPUSCROLL $2005
-.define PPUADDR   $2006
-.define PPUDATA   $2007
-.define OAMDMA    $4014
+VromPalettes         := $3f00
+PPUCTRL   := $2000
+PPUMASK   := $2001
+PPUSTATUS := $2002
+OAMADDR   := $2003
+OAMDATA   := $2004
+PPUSCROLL := $2005
+PPUADDR   := $2006
+PPUDATA   := $2007
+OAMDMA    := $4014
 
 .define PULSE1_DUTY       $4000
 .define PULSE1_VOLUME     $4000
@@ -179,51 +179,51 @@
 .define PULSE2_TIMER_LO   $4006
 .define PULSE2_TIMER_HI   $4007
 .define PULSE2_LOAD       $4007
-.define TRIANGLE_CTL      $4008
-.define TRIANGLE_TIMER_LO $400A
-.define TRIANGLE_TIMER_HI $400B
-.define TRIANGLE_LOAD     $400B
-.define NOISE_VOLUME      $400C
-.define NOISE_PERIOD      $400E
-.define NOISE_LOAD        $400F
-.define DMC_ENABLE        $4010
-.define DMC_LOAD_COUNTER  $4011
-.define DMC_SAMPLE_ADDR   $4012
-.define DMC_SAMPLE_LENGTH $4013
-.define APU_STATUS        $4015
-.define APU_FRAME_COUNTER $4017
+TRIANGLE_CTL      := $4008
+TRIANGLE_TIMER_LO := $400A
+TRIANGLE_TIMER_HI := $400B
+TRIANGLE_LOAD     := $400B
+NOISE_VOLUME      := $400C
+NOISE_PERIOD      := $400E
+NOISE_LOAD        := $400F
+DMC_ENABLE        := $4010
+DMC_LOAD_COUNTER  := $4011
+DMC_SAMPLE_ADDR   := $4012
+DMC_SAMPLE_LENGTH := $4013
+APU_STATUS        := $4015
+APU_FRAME_COUNTER := $4017
 
-.define BANKSELECT $8000
-.define BANKDATA   $8001
-.define IRQLATCH   $c000
-.define IRQRELOAD  $c001
-.define IRQDISABLE $e000
-.define IRQENABLE  $e001
+BANKSELECT := $8000
+BANKDATA   := $8001
+IRQLATCH   := $c000
+IRQRELOAD  := $c001
+IRQDISABLE := $e000
+IRQENABLE  := $e001
 
 ;;; 0 for no sword, 1 = wind, 4 = thunder
 ;;; This is kept in sync w/ inventory, changing it does not actually
 ;;; select the sword in inventory (see $6428), but it does allow
 ;;; swinging a sword that is not actually owned.
-.define EquippedSword $0711
+EquippedSword := $0711
 ;;; 0 for no magic, 1 for refresh, etc - see MAGIC_* constants.
-.define EquippedMagic $0712
+EquippedMagic := $0712
 ;;; 0 for no armor, 1 = leather ($15), ..., 8 = psycho ($1c)
-.define EquippedArmor $0713
+EquippedArmor := $0713
 ;;; 0 for no shield, 1 = carapace ($d), ..., 8 = psycho ($14)
-.define EquippedShield $0714
+EquippedShield := $0714
 ;;; 0 for no item, otherwise per ITEM_* constant; includes quest items.
-.define EquippedConsumableItem $0715
+EquippedConsumableItem := $0715
 ;;; 0 for no item, otherwise per ITEM_* constant.
-.define EquippedPassiveItem $0716
+EquippedPassiveItem := $0716
 ;;; 0 for no ball, 1-4 for ball of wind-thunder, 5-8 for bracelet.
 ;;; Does not actually affect how the attack happens, in case it
 ;;; disagrees with $0711 or $0719.  The actual attack is dictated
 ;;; by $0711.
-.define EquippedBracelet $0718
+EquippedBracelet := $0718
 ;;; 0 for no ball, 1 for ball, 2 for bracelet; takes into account
 ;;; cross-equippage (i.e. if owned bracelet but not equipped then
 ;;; it's 1, but if a cross-elemental ball is equipped, then it's 0).
-.define MaxChargeLevel $0719
+MaxChargeLevel := $0719
 
 .define MAPDATA_BANK $5
 .define NPCDATA_BANK $6

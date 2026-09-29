@@ -106,24 +106,22 @@ FREE "3d" [$a000, $c000)
 ;; .segment "3e"   :bank $3e :size $2000 :off $7c000 :mem $8000
 ;; .segment "3f"   :bank $3f :size $2000 :off $7e000 :mem $a000
 
-; Workaround compiler issue that forces values set using `=`
-; to use absolute addressing instead of zp by using .define
-.define PpuCtrlShadow $00
-.define PpuMaskShadow $01
+PpuCtrlShadow := $00
+PpuMaskShadow := $01
 
 ;;; NOTE: These were used by the cleanup.s code to try to fix NMI.
-;; .define NmiDisable $06 ; Set to 1 to disable NMI processing
-;; .define NmiSkipped $07 ; Set to $06 if NMI was skipped
-;; .define OamDisable $09 ; Set to $00 to have OAM run
+;; NmiDisable := $06 ; Set to 1 to disable NMI processing
+;; NmiSkipped := $07 ; Set to $06 if NMI was skipped
+;; OamDisable := $09 ; Set to $00 to have OAM run
 
-.define NmtBufReadOffset  $0a
-.define NmtBufWriteOffset $0b
-.define NmtBufTempValue   $0c
+NmtBufReadOffset  := $0a
+NmtBufWriteOffset := $0b
+NmtBufTempValue   := $0c
 
 ;;; Various global definitions.
-.define GameMode   $41
-.define BankSelectShadow $50
-.define ScreenMode $51
+GameMode   := $41
+BankSelectShadow := $50
+ScreenMode := $51
 
 ObjectRecoil = $340
 ObjectHP = $3c0
@@ -149,10 +147,10 @@ EquippedPassiveItem    = $716
 
 ; Screen values are written in the main game loop, and are copied to the scroll values
 ; during NMI. So the IRQ will read from the scroll values and the game will write to Screen
-.define ScreenXLo   $02
-.define ScreenXHi   $03
-.define ScreenYLo   $04
-.define ScreenYHi   $05
+ScreenXLo   := $02
+ScreenXHi   := $03
+ScreenYLo   := $04
+ScreenYHi   := $05
 
 ScrollXLo = $07d8
 ScrollXHi = $07d9

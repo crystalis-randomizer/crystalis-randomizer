@@ -26679,7 +26679,7 @@ _1e84d:
         <@1e871@>
         <@1e873@>
         <@1e875@>
-        <@1e878@>
+        dec a:$00d0,x
         <@1e87b@>
         <@1e87d@>
 ;;; --------------------------------
@@ -26875,7 +26875,7 @@ BossPatternJump_0b:              ; Kelbesque 1
         <@1ea05 ObjectTimer@>
         <@1ea08@>
         <@1ea0a _1ea37@>
-         <@1ea0c@>
+         lda a:$00b0,x
          <@1ea0f@>
          <@1ea11 +@> ; $1ea19
           <@1ea13@>
@@ -28025,10 +28025,10 @@ _1f278:
          <@1f2bd AdHocSpawnObject@>
          bcc :>rts ; $1f2d1
          <@1f2c2@>
-         <@1f2c4@>
+         lda a:$00b0,y
          <@1f2c7@>
          <@1f2c8@>
-         <@1f2ca@>
+         sta a:$00b0,y
          <@1f2cd@>
         <@1f2cf -@> ; $1f2ad
         <@1f2d1@>
@@ -28242,20 +28242,20 @@ _1f425:
         <@1f461 AdHocSpawnObject@>
         bcc :>rts ; $1f48a
         <@1f466@>
-        <@1f468@>
+        lda a:$00b0,y
         <@1f46b@>
         <@1f46c@>
-        <@1f46e@>
+        sta a:$00b0,y
         <@1f471@>
         <@1f474@>
         <@1f476@>
-        <@1f478@>
+        lda a:$0070,y
         <@1f47b@>
         <@1f47c@>
         <@1f47e@>
         <@1f480 +@> ; $1f484
          <@1f482@>
-+       <@1f484@>
++       sta a:$0070,y
         <@1f487@>
         <@1f48a@>
 ;;; --------------------------------
@@ -28504,18 +28504,18 @@ _1f642:
         <@1f651 AdHocSpawnObject@>
         bcc :<rts ; $1f641
         <@1f656@>
-        <@1f658@>
+        lda a:$0070,y
         <@1f65b@>
         <@1f65c@>
         <@1f65e@>
         <@1f660 +@> ; $1f665
          <@1f662@>
          <@1f663@>
-+       <@1f665@>
-        <@1f668@>
++       sta a:$0070,y
+        lda a:$00b0,y
         <@1f66b@>
         <@1f66c@>
-        <@1f66e@>
+        sta a:$00b0,y
         <@1f671@>
 ;;; --------------------------------
 .org $b672
@@ -28538,10 +28538,10 @@ BossPatternJump_31:              ; Draygon2 6
         <@1f692 AdHocSpawnObject@>
          bcc :>rts ; $1f6a2
         <@1f697@>
-        <@1f699@>
+        lda a:$00b0,y
         <@1f69c@>
         <@1f69d@>
-        <@1f69f@>
+        sta a:$00b0,y
         <@1f6a2@>
 ;;; --------------------------------
 .org $b6a3
@@ -28787,7 +28787,7 @@ ObjectActionJump_6f:
            <@1f845@>
            <@1f847@>
            <@1f849 +@> ; $1f84e
-            <@1f84b@>
+            jsr a:$0010
 +         <@1f84e@>
           <@1f84f@>
          <@1f850@>
@@ -28898,8 +28898,8 @@ BossKillJump_Draygon2:
         <@1f90b -@> ; $1f903
         <@1f90d DrawAllObjectSprites@>
         <@1f910@>
--        <@1f912@>
-         <@1f915@>
+-        lda a:$003c,y
+         sta a:$0034,y
          <@1f918@>
         <@1f919 -@> ; $1f912
         <@1f91b@>
@@ -32596,7 +32596,7 @@ _21912:
 .org $9953
 FindCurrentShopIndex:
         <@21953@>
-        <@21955@>
+        lda a:$006c
 -        <@21958 ShopLocations@>
          <@2195b +@> ; $21965
          <@2195d@>
@@ -33035,7 +33035,7 @@ _21c85:
         <@21c97 DataTable_21da0@>
         <@21c9a@>
         <@21c9d@>
-        <@21c9f@>
+        sta a:$0012
         <@21ca2@>
         <@21ca4@>
         <@21ca6 Menu_UpdateSprite@> ; 3
@@ -33086,7 +33086,7 @@ CopyThreePagesOfBytesByLookup:
         <@21cf0@>
         <@21cf1@>
 -        <@21cf3 CopyPageBytesTable@>
-         <@21cf6@>
+         sta a:$0010,y
          <@21cf9@>
          <@21cfa@>
          <@21cfb@>
@@ -33615,9 +33615,9 @@ MainLoop_EndingSequence:
         <@22109@>
         <@2210a@>
         <@2210b CreditsModeTable@>
-        <@2210e@>
+        sta a:$008e
         <@22111 CreditsModeTable+1@>
-        <@22114@>
+        sta a:$008f
         <@22117@>
 ;;; --------------------------------
 .org $a11a
@@ -33639,9 +33639,9 @@ _22120:
         <@2212f@>
         <@22130@>
         <@22131 JumpTable_22140@>
-        <@22134@>
+        sta a:$008e
         <@22137 JumpTable_22140+1@>
-        <@2213a@>
+        sta a:$008f
         <@2213d@>
 ;;; --------------------------------
 .org $a140
@@ -33662,9 +33662,9 @@ CreditsModeRunScene:
         <@22155@>
         <@22156@>
         <@22157 EndCreditsSceneTable@>
-        <@2215a@>
+        sta a:$008e
         <@2215d EndCreditsSceneTable+1@>
-        <@22160@>
+        sta a:$008f
         <@22163@>
 ;;; --------------------------------
 .org $a166
@@ -34374,7 +34374,7 @@ CreditScene_1a:
         <@226dd@>
         <@226df@>
         <@226e1 +@> ; $226e6
-         <@226e3@>
+         inc a:$0070
 +       <@226e6@>
         <@226e8@>
         <@226ea +@> ; $226ed
@@ -49998,7 +49998,7 @@ CheckAllObjectCollisions:
          <@34faa@>
          <@34fac CheckHitbox@> ; set carry if hit
          <@34faf +@>
-          <@34fb1@>
+          jsr a:$0020
 +        <@34fb4@>
          <@34fb6@>
         <@34fb8 -@> ; $34f87
@@ -52370,7 +52370,7 @@ _36022:
 +       <@36030@>
         <@36032 DataTable_36092@> ; 0 or 8
         <@36035@>
-        <@36036@> ; $43 or $4b
+        lda a:$0043,y ; $43 or $4b
         <@36039 +@> ; $3603c
          <@3603b@>
          ;; ----
@@ -52950,7 +52950,7 @@ ObjectActionJump_5f:
         <@3641d +@> ; $36422
          <@3641f TowerEscalatorCheckInitialSetup@>
 +       <@36422@>
--        <@36424@>
+-        lda a:$00d0,y
          <@36427@>
          <@36429 +@> ; $3643b
           <@3642b@>
@@ -54342,17 +54342,17 @@ _36dc8:
          <@36dcc@>
          <@36dce@>
          <@36dd1 +@> ; $36dfe
-          <@36dd3@>
+          lda a:$0090,y
           <@36dd6@>
-          <@36dd8@>
+          lda a:$0070,y
           <@36ddb@>
           <@36ddd _36e07@>
           <@36de0@>
           <@36de2 +@> ; $36dfe
            <@36de4@>
-           <@36de6@>
+           lda a:$00d0,y
            <@36de9@>
-           <@36deb@>
+           lda a:$00b0,y
            <@36dee@>
            <@36df0 _36e07@>
            <@36df3@>
@@ -54702,10 +54702,10 @@ ObjectActionJump_36:
         <@37081 AdHocSpawnObject@>
         <@37084 ObjectActionJump_57@>
         <@37086@>
-        <@37088@>
+        lda a:$00b0,y
         <@3708b@>
         <@3708c@>
-        <@3708e@>
+        sta a:$00b0,y
         <@37091 ObjectActionJump_57@>
 ;;; --------------------------------
 .org $b094
@@ -55401,7 +55401,7 @@ ObjectActionJump_5e:  ; Tower defense mechs (waiting for release)
         <@37601@>
 -        <@37603@>
          <@37606 +@> ; $37616
-          <@37608@>
+          lda a:$00d0,y
           <@3760b@>
           <@3760d +@> ; $37616
            <@3760f@>
@@ -56263,14 +56263,14 @@ ObjectActionJump_70_06:          ; dyna eye
          <@37ca8 AdHocSpawnObject@>
         <@37cab +@> ; $37cc1
          <@37cad@>
-         <@37caf@>
+         lda a:$0070,y
          <@37cb2@>
          <@37cb3@>
-         <@37cb5@>
-         <@37cb8@>
+         sta a:$0070,y
+         lda a:$00b0,y
          <@37cbb@>
          <@37cbc@>
-         <@37cbe@>
+         sta a:$00b0,y
 +       <@37cc1@>
          bne :<<rts ; $37c60
         <@37cc6@>
@@ -56294,7 +56294,7 @@ _37cd7:
         <@37ce8 ScreenMode@>
         <@37cea@>
 -        <@37cec@>
-         <@37cef@>
+         sta a:$0058,y
          <@37cf2@>
         <@37cf3 -@> ; $37cec
         <@37cf5@>
@@ -63242,7 +63242,7 @@ StageNametableWriteFromTable:
         ;; used in the nametablebuffer header (See WriteNametableDataToPpu)
          <@3c4ac@>
 -         <@3c4ae@>
-          <@3c4b0@>
+          sta a:$0020,y
           <@3c4b3@>
           <@3c4b4@>
          <@3c4b6 -@> ; $3c4ae
@@ -63786,7 +63786,7 @@ MainLoop:
         <@3c90f@>
         <@3c911 MainLoopJumpTable+1@>
         <@3c914@>
-        <@3c916@>
+        jsr a:$0010
         <@3c919@>
         <@3c91b@>
         <@3c91d MainLoop@> ; Note: this is actually unconditional
@@ -63881,11 +63881,11 @@ MainLoopJump_00_PrepareGame:
         <@3c9b7@>
         <@3c9ba@>
         <@3c9bd@>
-        <@3c9c0@>
-        <@3c9c3@>
-        <@3c9c6@>
-        <@3c9c9@>
-        <@3c9cc ScreenMode@>
+        sta a:$0002
+        sta a:$0003
+        sta a:$0004
+        sta a:$0005
+        <@3c9c0 ScreenMode@>
         <@3c9ce@>
         <@3c9d0 PlayerMP@>
         <@3c9d3 PlayerMaxMP@>
@@ -64357,7 +64357,7 @@ _3ccdd:
         ;; Routines 60..6f are in a different page
             <@3cd23@>
             <@3cd25 BankSwitch8k_a000@>
-+          <@3cd28@>
++          jsr a:$0010
 _3cd2b:
           <@3cd2b@>
           <@3cd2c@>
@@ -64462,13 +64462,13 @@ _3cdd5:
          <@3cdeb@>
          <@3cded@>
          <@3cdee@>
-         <@3cdf0@>
+         lda a:$0070,y
          <@3cdf3@>
-         <@3cdf5@>
+         lda a:$0090,y
          <@3cdf8@>
-         <@3cdfa@>
+         lda a:$00b0,y
          <@3cdfd@>
-         <@3cdff@>
+         lda a:$00d0,y
          <@3ce02@>
          <@3ce04@>
         <@3ce06@>
@@ -65880,7 +65880,7 @@ HandleItemOrTrigger:
         <@3d84c@>
         <@3d84e JumpTable_3d885+1@>
         <@3d851@>
-        <@3d853@>
+        jsr a:$0010
         ;; Handle the output
         <@3d856@>
         <@3d858 +@> ; $3d880
@@ -66135,9 +66135,9 @@ _3da0c:
         <@3da14 BankSwitch8k_8000@>
         <@3da17 LoadPalettesForLocation@>
         <@3da1a@>
-        <@3da1c@>
+        sta a:$0058
         <@3da1f@>
-        <@3da21@>
+        sta a:$0059
         <@3da24@>
         <@3da26@>
         <@3da29@>
@@ -67411,7 +67411,7 @@ NpcDataJump_1_PersonOrBoss:      ; Called from $3e215 - Conditional appearance?
         ;; into $20..$23.
         <@3e2cc@>
 -        <@3e2ce@>
-         <@3e2d0@>
+         sta a:$0020,y
          <@3e2d3@>
         <@3e2d4 -@> ; $3e2ce
         <@3e2d6@>
@@ -68515,7 +68515,7 @@ _3ea41:
 .org $ea5f
 _3ea5f:
         ;; if $3c,y > 0, dec $30,x; if < 0 then inc, if == 0 then nothing
-        <@3ea5f@>
+        lda a:$003c,y
         beq :>rts ; $3ea71
          <@3ea64 +@> ; $3ea6a
           <@3ea66@>
@@ -69927,9 +69927,9 @@ HandleReset:
         <@3f2f2@>
         <@3f2f4@>
         <@3f2f6 DataTable_3f422@>
-        <@3f2f9@>
+        sta a:$0054
         <@3f2fc DataTable_3f422+1@>
-        <@3f2ff@>
+        sta a:$0055
         <@3f302@>
         <@3f305@>
         <@3f307@>
@@ -70224,7 +70224,7 @@ HandleStatusBarAndNextFrame:      ; IRQ callback 01
         <@3f4bd BANKSELECT@>
         <@3f4c0@>
         <@3f4c2 BANKDATA@>
-        <@3f4c5@>
+        lda a:$0050
         <@3f4c8 BANKSELECT@>
         <@3f4cb@>
         <@3f4cd@>
@@ -70403,7 +70403,7 @@ InventoryUpdateCHRROMForMagic:
         <@3f62b BANKSELECT@>
         <@3f62e@>
         <@3f630 BANKDATA@>
-        <@3f633@>
+        lda a:$0050
         <@3f636 BANKSELECT@>
         <@3f639@>
         <@3f63b@>
@@ -70622,8 +70622,8 @@ ScreenModeJumpTable_04:
          ;; ----
 +       <@3f7aa@>
         <@3f7ac@>
-        <@3f7ae@>
-        <@3f7b1 IRQDISABLE@>
+        sta a:$0001
+        <@3f7ae IRQDISABLE@>
         <@3f7b4@>
 ;;; --------------------------------
 .org $f7b5

@@ -12,5 +12,6 @@ $js65 --no-lint --no-debuginfo -o target/vanilla/reassembled.bin \
 xxd target/vanilla/reassembled.bin > target/vanilla/reassembled.prg
 xxd -o -16 "$rom" | sed 1d | head -16384 > target/vanilla/original.prg
 
-git diff --no-index --word-diff target/vanilla/{original,reassembled}.prg \
+git diff --no-index --word-diff \
+    target/vanilla/original.prg target/vanilla/reassembled.prg \
   && echo OK >& 2

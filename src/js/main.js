@@ -182,7 +182,7 @@ async function click(e) {
     } else if (t.id === 'generate') {
       ga('send', 'event', 'Main', 'generate', label);
       const seedHex = patch.parseSeed(seed);
-      const [shuffled, crc] = await shuffleRom(seedHex, seed);
+      const [shuffled, crc, labels] = await shuffleRom(seedHex, seed);
       ga('send', 'timing', 'Main', 'generate', new Date().getTime() - start, label);
       // TODO - should we build the flagset into the filename?
       // Make it an option?
@@ -193,6 +193,7 @@ async function click(e) {
               ['_', seedHex.toString(16).padStart(8, 0),
                '_', crc.toString(16).padStart(8, 0), '.nes'].join(''));
       download(shuffled, filename);
+      if (labels) download(labels, filename.replace(/\.nes$/, '.mlb'));
       break;
     } else if (t.id === 'spoiler') {
       ga('send', 'event', 'Main', 'spoiler', label);
@@ -244,7 +245,7 @@ const shuffleRom = async (seed, rawSeed) => {
   let done = false;
   const flagsClone = new FlagSet(String(flags), rawSeed); // prevent modifying
   document.body.classList.add('shuffling');
-  const log = flags.check('Ds') ? {} : undefined;
+  const log = flags.check('Ds') || flags.check('Dm') ? {} : undefined;
   const showWork = () => {
     if (done) return;
     progressEl.value = progressTracker.value();
@@ -274,7 +275,7 @@ const shuffleRom = async (seed, rawSeed) => {
   }
   done = true;
   document.body.classList.remove('shuffling');
-  if (log && log.spoiler) {
+  if (log && log.spoiler && flags.check('Ds')) {
     const s = log.spoiler;
     if (s.flags) replaceSpoiler('spoiler-flags', [s.flags]);
     replaceSpoiler('spoiler-items', sortBy(s.slots.filter(x => x), x => x.item));
@@ -299,7 +300,7 @@ const shuffleRom = async (seed, rawSeed) => {
   document.getElementById('checksum').textContent =
       // shifted by header
       read(shuffled, 0x27895, 4) + read(shuffled, 0x27896, 4);
-  return [shuffled, crc];
+  return [shuffled, crc, log?.labels];
 };
 
 const patchRom = async (seed, apFlags, predetermined) => {

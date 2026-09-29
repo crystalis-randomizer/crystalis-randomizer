@@ -979,6 +979,13 @@ class DebugMode extends FlagSection {
     name: 'Player never dies',
   });
 
+  static readonly MesenLabels = DebugMode.flag('Dm', {
+    name: 'Generate Mesen labels',
+    text: `Downloads a Mesen label file (.mlb) alongside the rom, with the
+           labels and comments for the seed.`,
+    optional: OPTIONAL,
+  });
+
   static readonly NoShuffle = DebugMode.flag('Dn', {
     name: 'Do not shuffle items',
     text: `Items will not be shuffled. WARNING: This disables the logic and
@@ -1173,6 +1180,9 @@ export class FlagSet {
   }
   neverDie(): boolean {
     return this.check(DebugMode.NeverDie);
+  }
+  mesenLabels(): boolean {
+    return this.check(DebugMode.MesenLabels);
   }
   noShuffle(): boolean {
     return this.check(DebugMode.NoShuffle);

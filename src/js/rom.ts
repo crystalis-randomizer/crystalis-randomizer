@@ -1,4 +1,4 @@
-import {Assembler, Cpu, link, type Module} from 'js65';
+import {Assembler, Cpu, link, type Module, type SourceContents} from 'js65';
 import {formatErrors} from './asmutil';
 import {AdHocSpawn} from './rom/adhocspawn';
 //import {Areas} from './rom/area.js';
@@ -110,6 +110,11 @@ export class Rom {
   readonly messages: Messages;
 
   readonly modules = new Map<ModuleId, Module>();
+
+  // When set, the patch sources are recorded here so that the final link
+  // can emit its Mesen labels (.mlb) and the linked modules into debugInfo.
+  sourceContents?: SourceContents;
+  debugInfo?: {labels: string, modules: readonly Module[]};
 
   spoiler?: Spoiler;
 
@@ -408,12 +413,15 @@ export class Rom {
     // The linker writes into its base rom in place, so link onto a copy
     // unless the output is going to this.prg anyway.
     const base = data === this.prg ? this.prg : this.prg.slice();
-    const result = link(modules, {baseRom: base}, 'binary');
+    const sources = data === this.prg ? this.sourceContents : undefined;
+    const result =
+        link(modules, {baseRom: base, debugLevel: 0}, 'binary', sources);
     if (!result.success) throw new Error(formatErrors(result.messages));
     if (data !== this.prg) { // TODO - clean this up
       data.set(result.data);
       return;
     }
+    if (sources) this.debugInfo = {labels: result.debugInfo, modules};
     const {exports} = result;
 
     this.uniqueItemTableAddress = exports.get('KeyItemData')!.offset!;

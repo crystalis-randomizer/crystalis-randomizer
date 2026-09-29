@@ -161,7 +161,8 @@ const main = (...args: string[]) => {
     const s = patch.parseSeed(seed);
     console.log(`Seed: ${s.toString(16)}`);
     const orig = rom.slice();
-    const log = flagset.check('Ds') ? {} as {spoiler?: Spoiler}: undefined;
+    const log = flagset.check('Ds') || flagset.check('Dm') ?
+        {} as {spoiler?: Spoiler, labels?: string} : undefined;
     const sprite = await CharacterSet.get("simea").get("Simea")!;
     const [shuffled, c] =
         await patch.shuffle(orig, s, flagset, [sprite], predetermined, log);
@@ -173,7 +174,14 @@ const main = (...args: string[]) => {
         (resolve, reject) => fs.writeFile(
             filename, shuffled, (err) => err ? reject(err) : resolve('')));
     console.log(`Wrote ${filename}`);
-    if (log && log.spoiler) {
+    if (log && log.labels) {
+      const mlb = filename.replace(/\.nes$/, '.mlb');
+      await new Promise(
+          (resolve, reject) => fs.writeFile(
+              mlb, log.labels!, (err) => err ? reject(err) : resolve('')));
+      console.log(`Wrote ${mlb}`);
+    }
+    if (log && log.spoiler && flagset.check('Ds')) {
       const s = log.spoiler;
       for (const r of s.route) {
         console.log(`Spoiler: ${r.toString()}`);

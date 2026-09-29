@@ -1,4 +1,4 @@
-import { assemble, Assembler, Cpu, type Module } from 'js65';
+import { assemble, Assembler, Cpu, SourceContents, type Module } from 'js65';
 import { formatErrors, symbols } from './asmutil';
 import { crc32 } from './crc32';
 import { FlagSet } from './flagset';
@@ -34,6 +34,7 @@ import { fixTilesets } from './rom/screenfix';
 import { Shop, ShopType } from './rom/shop';
 import { Spoiler } from './rom/spoiler';
 import { hex, seq, watchArray } from './rom/util';
+import { mergeLabels } from './mesenlabels';
 import { sources, refs } from './data';
 import { DefaultMap } from './util';
 import * as version from './version';
@@ -167,7 +168,7 @@ export async function shuffle(rom: Uint8Array,
                               originalFlags: FlagSet,
                               spriteReplacements?: Sprite[],
                               predetermined?: ShuffleData,
-                              log?: {spoiler?: Spoiler},
+                              log?: {spoiler?: Spoiler, labels?: string},
                               progress?: ProgressTracker,
                             ): Promise<readonly [Uint8Array, number]> {
   // Trim overdumps (main.js already does this, but there are other entrypoints)
@@ -218,7 +219,7 @@ async function shuffleInternal(rom: Uint8Array,
                                originalFlags: FlagSet,
                                originalSeed: number,
                                random: Random,
-                               log: {spoiler?: Spoiler}|undefined,
+                               log: {spoiler?: Spoiler, labels?: string}|undefined,
                                progress: ProgressTracker|undefined,
                                spriteReplacements: Sprite[]|undefined,
                                predetermined: ShuffleData|undefined,
@@ -247,6 +248,7 @@ async function shuffleInternal(rom: Uint8Array,
   if (actualFlagString !== originalFlagString) {
     parsed.spoiler.flags = actualFlagString;
   }
+  if (flags.mesenLabels()) parsed.sourceContents = new SourceContents();
 
   // Make deterministic changes.
   deterministic(parsed, flags);
@@ -428,13 +430,14 @@ async function shuffleInternal(rom: Uint8Array,
     const result = assemble([{type: 'source', name: 'patch.s', code}], {
       lineContinuations: true,
       lint: {enabled: false},
+      generateDebugInfo: !!parsed.sourceContents,
     }, {
       resolveText: (_bases, filename) => {
         const content = files.get(filename);
         return content != null ? {baseIndex: 0, content} : undefined;
       },
       resolveBinary: () => undefined,
-    });
+    }, parsed.sourceContents);
     if (!result.success) throw new Error(formatErrors(result.messages));
     const patch = result.modules[0];
     // The public assemble() can't set overwriteMode, which only marks chunks.
@@ -564,6 +567,12 @@ async function shuffleInternal(rom: Uint8Array,
   fixSkippableExits(parsed);
 
   parsed.writeData();
+  if (log && parsed.debugInfo) {
+    const {VANILLA_LABELS} = await import('./vanillalabels');
+    const {labels, modules} = parsed.debugInfo;
+    log.labels =
+        mergeLabels(VANILLA_LABELS, labels, modules, parsed.modules.get(ASM)!);
+  }
 
   // Patch graphics and update any metasprites after everything is done so the hashes will match
   const sprites = spriteReplacements ? spriteReplacements : [];

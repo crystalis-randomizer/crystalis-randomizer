@@ -10,7 +10,7 @@
 import * as crypto from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { assemble, type Expr } from 'js65';
+import { assemble, link, SourceContents, type Expr } from 'js65';
 import { formatErrors, strip, symbols } from '../asmutil';
 import type { SourceFile, SymbolsJson } from './extract-symbols';
 
@@ -109,9 +109,26 @@ export async function extractRefs(files: readonly SourceFile[],
   return {refs, labels};
 }
 
+export function extractLabels(file: SourceFile, romDir = '.'): string {
+  const sources = new SourceContents();
+  const code = rehydrate(file, romDir);
+  const result = assemble([{type: 'source', name: file.filename, code}], {
+    lineContinuations: true,
+    lint: {enabled: false},
+    generateDebugInfo: true,
+  }, {
+    resolveText: () => undefined,
+    resolveBinary: () => undefined,
+  }, sources);
+  if (!result.success) throw new Error(formatErrors(result.messages));
+  const linked = link(result.modules, {debugLevel: 0}, 'binary', sources);
+  if (!linked.success) throw new Error(formatErrors(linked.messages));
+  return linked.debugInfo;
+}
+
 const JS65 = path.resolve(import.meta.dir, '../../../node_modules/.bin/js65');
 
-function rehydrate({filename, contents}: SourceFile, romDir: string): string {
+export function rehydrate({filename, contents}: SourceFile, romDir: string): string {
   const match = /smudge sha1 ([0-9a-f]{40})/.exec(contents);
   if (!match) return contents;
   const rom = fs.readdirSync(romDir).filter(f => f.endsWith('.nes'))
@@ -131,10 +148,13 @@ async function main() {
   let files: string[] = [];
   let symbolTable: SymbolsJson|undefined = undefined;
   let outfile: string|undefined = undefined;
+  let mlb = false;
   for (let i = 2; i < process.argv.length; i++) {
     const arg = process.argv[i];
     if (arg === '--help') {
       usage(0);
+    } else if (arg === '--mlb') {
+      mlb = true;
     } else if (arg === '-o') {
       if (outfile) usage();
       outfile = process.argv[++i];
@@ -156,14 +176,15 @@ async function main() {
     files.push('/dev/stdin');
   }
   if (!outfile) outfile = '/dev/stdout';
+  if (mlb && (files.length > 1 || symbolTable)) usage(1, '--mlb takes a single file');
 
   const sources = await Promise.all(files.map(async filename => ({
     filename,
     contents: String(await fs.promises.readFile(filename)),
   })));
   try {
-    const result = await extractRefs(sources, symbolTable);
-    fs.writeFileSync(outfile, JSON.stringify(result));
+    fs.writeFileSync(outfile, mlb ? extractLabels(sources[0]) :
+        JSON.stringify(await extractRefs(sources, symbolTable)));
   } catch (err) {
     console.error((err as Error).message);
     process.exit(1);
@@ -172,7 +193,8 @@ async function main() {
 
 function usage(code = 1, message = '') {
   if (message) console.error(`js65: ${message}`);
-  console.error(`Usage: extract-refs [-s SYMBOLS] [-o FILE] [FILE...]`);
+  console.error(`Usage: extract-refs [-s SYMBOLS] [-o FILE] [FILE...]
+       extract-refs --mlb [-o FILE] [FILE]`);
   process.exit(code);
 }
 

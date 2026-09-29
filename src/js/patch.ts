@@ -1,10 +1,5 @@
-import { Assembler } from './asm/assembler';
-import { Cpu } from './asm/cpu';
-import { Preprocessor } from './asm/preprocessor';
-import { smudge } from './asm/smudge';
-import { TokenSource } from './asm/token';
-import { TokenStream } from './asm/tokenstream';
-import { Tokenizer } from './asm/tokenizer';
+import { assemble, Assembler, Cpu, type Module } from 'js65';
+import { formatErrors, symbols } from './asmutil';
 import { crc32 } from './crc32';
 import { FlagSet } from './flagset';
 import { Graph } from './logic/graph';
@@ -49,6 +44,7 @@ import { ShuffleData } from './appatch';
 
 const EXPAND_PRG: boolean = true;
 const ASM = ModuleId('asm');
+const ASM_FALLBACK = ModuleId('asm-fallback');
 
 // trivial interface for updating a progress bar.
 export interface ProgressTracker {
@@ -195,7 +191,6 @@ export async function shuffle(rom: Uint8Array,
     // prg.subarray(0, assembled.length).set(assembled);
     prg.subarray(0x7c000, 0x80000).set(prg.subarray(0x3c000, 0x40000));
   }
-  const origPrg = rom.slice(0x10); // do this before any mutation
 
   deterministicPreParse(rom.subarray(0x10)); // TODO - trainer...
 
@@ -209,7 +204,7 @@ export async function shuffle(rom: Uint8Array,
   // const maxAttempts = 1;
   for (let i = 0; i < maxAttempts; i++) { // for now, we'll try 5 attempts
     try {
-      return await shuffleInternal(rom, originalFlags, seed, random, log, progress, spriteReplacements, predetermined, origPrg);
+      return await shuffleInternal(rom, originalFlags, seed, random, log, progress, spriteReplacements, predetermined);
     } catch (error) {
       if (error.name === 'UsageError') throw error;
       attemptErrors.push(error);
@@ -227,7 +222,6 @@ async function shuffleInternal(rom: Uint8Array,
                                progress: ProgressTracker|undefined,
                                spriteReplacements: Sprite[]|undefined,
                                predetermined: ShuffleData|undefined,
-                               origPrg: Uint8Array,
                               ): Promise<readonly [Uint8Array, number]>  {
   const originalFlagString = String(originalFlags);
   const flags = originalFlags.filterRandom(random);
@@ -411,33 +405,90 @@ async function shuffleInternal(rom: Uint8Array,
   // Probably just want to move the optional passes into a separate
   // file that runs afterwards all on its own.
 
-  async function asm(pass: 'early' | 'late') {
-    // First synthesize the flags file
-    const flagFile = defines(flags, pass, predetermined);
-    const asm = new Assembler(Cpu.P02, {overwriteMode: 'forbid'});
-    const toks = new TokenStream();
-    // Then read all the patch sources
-    toks.enter(TokenSource.concat(
-        new Tokenizer(flagFile, 'flags.s'),
-        ...sources()
-            .map(({filename, contents}) => new Tokenizer(
-                smudge(contents, Cpu.P02, origPrg),
-                filename,
-                {lineContinuations: true}))));
-    const pre = new Preprocessor(toks, asm);
-    asm.tokens(pre);
-    // Last apply all the fallbacks
+  // Assembles the patch sources, and then the vanilla labels and refs
+  // (from refs.json) that the patches don't replace, as a second module.
+  function asm(pass: 'early' | 'late'): [Module, Module] {
     const refsJson = refs();
+    // Symbols that may cross between the two modules.
+    const shared = new Set(refsJson.labels.map(l => l.name));
+    for (const ref of refsJson.refs) {
+      for (const sym of symbols(ref.expr)) shared.add(sym);
+    }
+
+    // First synthesize the flags file, then read all the patch sources.
+    const files = new Map<string, string>([
+      ['defines.s', defines(flags, pass, predetermined)],
+      ...sources().map(({filename, contents}) => [filename, contents] as const),
+    ]);
+    // Create the "header" for the shared symbols from the flags.
+    const code = [
+      ...[...files.keys()].map(f => `.include ${JSON.stringify(f)}\n`),
+      ...[...shared].map(s => `.ifdef ${s}\n.global ${s}\n.endif\n`),
+    ].join('');
+    const result = assemble([{type: 'source', name: 'patch.s', code}], {
+      lineContinuations: true,
+      lint: {enabled: false},
+    }, {
+      resolveText: (_bases, filename) => {
+        const content = files.get(filename);
+        return content != null ? {baseIndex: 0, content} : undefined;
+      },
+      resolveBinary: () => undefined,
+    });
+    if (!result.success) throw new Error(formatErrors(result.messages));
+    const patch = result.modules[0];
+    // The public assemble() can't set overwriteMode, which only marks chunks.
+    for (const chunk of patch.chunks || []) {
+      chunk.overwrite = 'forbid';
+    }
+    // Find which shared symbols the patches define (or explicitly import),
+    // and which vanilla labels they need from the fallbacks.
+    const autoImports = new Set(patch.autoImports?.map(i => i.name));
+    const defined = new Set<string>();
+    for (const {export: name, expr} of patch.symbols || []) {
+      if (name) defined.add(name);
+      if (expr?.op === 'im' && !autoImports.has(expr.sym!)) defined.add(expr.sym!);
+    }
+    // Find the PRG offsets the patches write or free.
+    const segmentData = new Map(patch.segments?.map(s => [s.name, s]));
+    function toOffset(segments: readonly string[], org: number) {
+      for (const name of segments) {
+        const s = segmentData.get(name);
+        if (s?.memory == null || s.size == null) continue;
+        if (org < s.memory || org >= s.memory + s.size) continue;
+        return s.offset != null ? s.offset + org - s.memory : undefined;
+      }
+      return undefined;
+    }
+    const written: Array<readonly [number, number]> = [];
+    for (const chunk of patch.chunks || []) {
+      if (chunk.org == null || !chunk.data.length) continue;
+      const offset = toOffset(chunk.segments, chunk.org);
+      if (offset != null) written.push([offset, offset + chunk.data.length]);
+    }
+    for (const segment of patch.segments || []) {
+      for (const [start, end] of segment.free || []) {
+        const offset = toOffset([segment.name], start);
+        if (offset != null) written.push([offset, offset + end - start]);
+      }
+    }
+    const isWritten = (offset: number) =>
+        written.some(([start, end]) => offset >= start && offset < end);
+
+    // Last apply all the fallbacks
+    const fallback = new Assembler(Cpu.P02, {overwriteMode: 'forbid'});
     let segments: readonly string[] = [];
+    function segment(s: readonly string[]) {
+      if (segments.length !== s.length || segments.some((x, i) => x !== s[i])) {
+        fallback.segment(...(segments = s));
+      }
+    }
     for (const label of refsJson.labels) {
-      if (!asm.definedSymbol(label.name)) {
-        //console.error(`LABEL: ${label.name}`);
-        if (segments.length !== label.segments.length ||
-            segments.some((s, i) => s !== label.segments[i])) {
-          asm.segment(...(segments = label.segments));
-        }
-        asm.org(label.org);
-        asm.label(label.name);
+      if (!defined.has(label.name)) {
+        segment(label.segments);
+        fallback.org(label.org);
+        fallback.label(label.name);
+        if (autoImports.has(label.name)) fallback.export(label.name);
       }
     }
     for (const ref of refsJson.refs) {
@@ -448,24 +499,20 @@ async function shuffleInternal(rom: Uint8Array,
 
       // NOTE: Handle PRG expansion here.
       const offset = ref.offset + (ref.offset >= 0x3c000 ? 0x40000 : 0);
-      if (!asm.isWritten(offset)) {
-        //console.error(`REF ${offset.toString(16)} in ${ref.segments.join(',')}`, ref.expr);
-        if (segments.length !== ref.segments.length ||
-            segments.some((s, i) => s !== ref.segments[i])) {
-          asm.segment(...(segments = ref.segments));
-        }
-        asm.org(ref.org);
+      if (!isWritten(offset)) {
+        segment(ref.segments);
+        fallback.org(ref.org);
         if (ref.bytes === 1) {
-          asm.byte(ref.expr);
+          fallback.byte(ref.expr);
         } else if (ref.bytes === 2) {
-          asm.word(ref.expr);
+          fallback.word(ref.expr);
         } else {
           throw new Error(`bad bytes: ${ref.bytes}`);
         }
       }
     }
-    // Done
-    return asm.module();
+    if (fallback.hasErrors()) throw new Error(formatErrors(fallback.getMessages()));
+    return [patch, fallback.module()];
   }
 
 //     const asm = new Assembler(Cpu.P02);
@@ -489,9 +536,13 @@ async function shuffleInternal(rom: Uint8Array,
   parsed.messages.compress(); // pull this out to make writeData a pure function
   const prgCopy = rom.slice(16);
 
-  parsed.modules.set(ASM, await asm('early'));
+  const setAsm = ([patch, fallback]: [Module, Module]) => {
+    parsed.modules.set(ASM, patch);
+    parsed.modules.set(ASM_FALLBACK, fallback);
+  };
+  setAsm(asm('early'));
   parsed.writeData(prgCopy);
-  parsed.modules.set(ASM, await asm('late'));
+  setAsm(asm('late'));
 
   const hasGraphics = spriteReplacements?.some((spr) => Sprite.isCustom(spr)) || false;
 

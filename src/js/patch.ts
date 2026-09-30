@@ -163,6 +163,8 @@ function patchGraphics(rom: Uint8Array, sprites: Sprite[]) {
   }
 }
 
+const SHARED_ALIAS = '__shared_';
+
 export async function shuffle(rom: Uint8Array,
                               seed: number,
                               originalFlags: FlagSet,
@@ -425,7 +427,14 @@ async function shuffleInternal(rom: Uint8Array,
     // Create the "header" for the shared symbols from the flags.
     const code = [
       ...[...files.keys()].map(f => `.include ${JSON.stringify(f)}\n`),
-      ...[...shared].map(s => `.ifdef ${s}\n.global ${s}\n.endif\n`),
+      // TODO: hacky workaround to force imported symbols to stay in the module
+      // so that we can properly replace them with the correct values later.
+      // We replace whole chunks of code and make them reloc in the JS side of the
+      // assembly, and these would not get replaced properly because they are not
+      // referenced in the files.
+      // We really need some .weak linker symbol or something later.
+      ...[...shared].map(s => `.ifdef ${s}\n.global ${s}\n${
+          SHARED_ALIAS}${s} = ${s}\n.endif\n`),
     ].join('');
     const result = assemble([{type: 'source', name: 'patch.s', code}], {
       lineContinuations: true,

@@ -159,6 +159,7 @@ export function deterministic(rom: Rom, flags: FlagSet): void {
   fixCrystalis(rom, flags);
   fixOpelStatue(rom);
   fixCoinSprites(rom);
+  moveRageGraphics(rom);
   fixChests(rom);
   preventBossSoftlocks(rom);
 
@@ -486,6 +487,28 @@ function fixCoinSprites(rom: Rom): void {
     }
   }
   rom.objects[0x0c].metasprite = 0xa9;
+}
+
+/**
+ * Rage uses 32 tiles in the NPC banks, we can safely move him out to make room for
+ * other NPCs in NPC shuffle. There's two chunks of unused tiles elsewhere.
+ */
+function moveRageGraphics(rom: Rom): void {
+  const [bank] = rom.locations.LimeTreeLake.spritePatterns;
+  for (let i = 0; i < 0x10; i++) {
+    rom.patterns.set(0x2f << 6, 0x20 | i,
+                     rom.patterns.get(bank << 6, 0x20 | i).pixels);
+    rom.patterns.set(0x73 << 6, 0x10 | i,
+                     rom.patterns.get(bank << 6, 0x30 | i).pixels);
+  }
+  rom.locations.LimeTreeLake.spritePatterns = [0x2f, 0x73];
+  for (const id of [0xb0, 0xb1, 0xba, 0xbb]) {
+    for (const frame of rom.metasprites[id].sprites) {
+      for (const sprite of frame) {
+        if (sprite[0] !== 0x80 && sprite[3] >= 0xb0) sprite[3] += 0x20;
+      }
+    }
+  }
 }
 
 /**

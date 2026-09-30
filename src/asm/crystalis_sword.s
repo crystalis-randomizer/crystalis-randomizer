@@ -1,6 +1,5 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
-.macpack common
 
 .import ExtendedMetaspriteTable, NewMetaspriteTable
 
@@ -111,8 +110,24 @@ DrawMetaspriteLookupFrame:
   sta $16
   lda $18
   sta $15
-  jmp $8301
-FREE_UNTIL $8301
+  ; Replaces the vanilla setup at $8301 to shave off some more cycles
+  ; $18 = $380,x << 1
+  ; $19 = behind bg bit
+  lda $0380,x
+  asl
+  sta $18
+  and #$20
+  sta $19
+  ; $1a = $320,x + ($380,x:20 << 1)
+  ; Vanilla added in $1a, which was always 0 and read $380,x again
+  ; even though $18 already has that bit at $40.
+  lda $18
+  and #$40
+  clc
+  adc $0320,x
+  sta $1a
+  jmp $831e
+FREE_UNTIL $831e
 
 .org $832b
   ldy #$00 ; ($15) points directly at the frame's sprites now

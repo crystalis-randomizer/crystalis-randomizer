@@ -66,43 +66,35 @@ OffsetTailPosition:
 ;  .byte CRYSTALIS_BEAM_METASPRITE_LEFT
 
 .segment "1c"
-;; Patch the draw metasprite routine to add an extended metasprite table
+;; Patch the draw metasprite routine to add an extended metasprite table.
+;; Every caller maps bank $0e (1c/1d) before drawing, so the main table in 1d
+;; is already at $a000 and only the extended table needs a bank switch.
 .org $8283 ; asl tay bcs
-  jmp LoadFromMetaspriteTable
-; This section is required to be in address space $8000 since we bank out the other half
-.org $828a
-LoadFromExtendedTable:
-  lda #$3d
-  jsr BankSwitch8k_a000
-  lda $0580,x
+  cmp #$ff
+  bne @Normal
+    ; when using the extended table, we bank out prgA temporarily
+    lda #$3d
+    jsr BankSwitch8k_a000
+    ldy $0580,x
+    jmp DrawFromExtendedTable
+@Normal:
   tay
+  lda NewMetaspriteTable,y
+  sta $15
+  lda NewMetaspriteTable+$0100,y
+  sta $16
+.assert * = $829d
+
+.reloc
+DrawFromExtendedTable:
   lda ExtendedMetaspriteTable,y
   sta $15
   lda ExtendedMetaspriteTable+$0100,y
   sta $16
-.assert * = $829d
-
-; This is a bit of a hack, normally we would make this a reloc function, but it needs
-; to be placed in 1c, and the linker places chunks from largest to smallest. So
-; by the time it gets to this chunk, its already filled all of 1c and throws an error
-; here. We can work around this by setting this to a known free address
-; (ie where the metasprite table used to be)
-.org $845c
-LoadFromMetaspriteTable:
-  cmp #$ff
-  beq @UseExtendedTable
-    tay
-    lda #$1d
-    jsr BankSwitch8k_a000
-    ; check for sprites in the extended table
-    lda NewMetaspriteTable,y
-    sta $15
-    lda NewMetaspriteTable+$0100,y
-    sta $16
-    jmp $829d ; unconditional
-@UseExtendedTable:
-  ; when using the extended table, we bank out prgA temporarily
-  jmp LoadFromExtendedTable
+  ; draw the rest of the metasprite then restore bank 1d
+  jsr $829d
+  lda #$1d
+  jmp BankSwitch8k_a000
 
 ; Clear the original Crystalis sword atk metasprite since we'll bank it
 ;FREE "1c" [$9041, $9163)

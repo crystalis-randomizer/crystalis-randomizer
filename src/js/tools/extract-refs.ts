@@ -18,12 +18,19 @@ const FAIL_ON_BAD_OVERRIDE = true;
 
 export interface RefsJson {
   labels: readonly Label[];
+  assigns: readonly Assign[];
   refs: readonly Ref[];
 }
 export interface Label {
   segments: readonly string[];
   org: number;
   name: string;
+}
+// A constant assignment (i.e. `Foo := $12`), which isn't a label, but is
+// treated as one in the debug format.
+export interface Assign {
+  name: string;
+  value: number;
 }
 export interface Ref {
   segments: readonly string[];
@@ -66,6 +73,7 @@ export async function extractRefs(files: readonly SourceFile[],
 
   const errors: string[] = [];
   const labels: Label[] = [];
+  const assigns: Assign[] = [];
   const refs: Ref[] = [];
   // Include every file from one top-level source so they share a single
   // scope, as if they were one concatenated file.
@@ -80,6 +88,10 @@ export async function extractRefs(files: readonly SourceFile[],
         overrides?.delete(name);
         if (!isRelevant(name)) return;
         labels.push({name, org, segments});
+      },
+      assign(name: string, value: number) {
+        if (!isRelevant(name)) return;
+        assigns.push({name, value});
       },
       ref(expr: Expr, bytes: number, org: number,
           segments: readonly string[], offset: number|undefined) {
@@ -106,7 +118,7 @@ export async function extractRefs(files: readonly SourceFile[],
     if (FAIL_ON_BAD_OVERRIDE) throw new Error(errors.join('\n'));
     for (const e of errors) console.error(e);
   }
-  return {refs, labels};
+  return {refs, labels, assigns};
 }
 
 export function extractLabels(file: SourceFile, romDir = '.'): string {

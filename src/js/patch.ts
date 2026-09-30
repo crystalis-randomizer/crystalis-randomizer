@@ -414,7 +414,7 @@ async function shuffleInternal(rom: Uint8Array,
   function asm(pass: 'early' | 'late'): [Module, Module] {
     const refsJson = refs();
     // Symbols that may cross between the two modules.
-    const shared = new Set(refsJson.labels.map(l => l.name));
+    const shared = new Set([...refsJson.labels, ...refsJson.assigns].map(l => l.name));
     for (const ref of refsJson.refs) {
       for (const sym of symbols(ref.expr)) shared.add(sym);
     }
@@ -501,6 +501,15 @@ async function shuffleInternal(rom: Uint8Array,
         fallback.org(label.org);
         fallback.label(label.name);
         if (autoImports.has(label.name)) fallback.export(label.name);
+      }
+    }
+    // Constants defined with := are treated as labels for debug purposes
+    for (const {name, value} of refsJson.assigns) {
+      if (!defined.has(name)) {
+        fallback.assign(name, value);
+        if (autoImports.has(name)) {
+          fallback.export(name);
+        }
       }
     }
     for (const ref of refsJson.refs) {

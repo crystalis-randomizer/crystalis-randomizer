@@ -308,10 +308,37 @@ export class Metasprite extends Entity {
     const ptr = a.pc();
     a.byte(this.size);
     a.byte(this.frameMask);
+    // Each frame gets a pointer so the draw routine doesn't need to multiply
+    // frame * size * 4 to find it. This also means frames don't need padding,
+    // and identical frames can share their data.
+    const frameLabel = (f: number) => `Metasprite_${this.id.toString(16)}_Frame_${f}`;
+    const frameBytes: number[][] = [];
+    const frameOwner: number[] = [];
     for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
-      for (let spriteNum = 0; spriteNum < this.sprites[frameNum].length; ++spriteNum) {
-        a.byte(...this.sprites[frameNum][spriteNum]);
+      const frame = this.sprites[frameNum];
+      if (!frame) {
+        throw new Error(`metasprite ${hex(this.id)} is missing frame ${frameNum}`);
       }
+      // The draw loop stops at `size` sprites or the first $80 dx, so only
+      // write the sprites that are drawn and end short frames with one $80.
+      const bytes: number[] = [];
+      for (const sprite of frame) {
+        if (sprite[0] === 0x80 || bytes.length === this.size * 4) break;
+        bytes.push(...sprite);
+      }
+      if (bytes.length < this.size * 4) bytes.push(0x80);
+      const key = bytes.join(',');
+      const owner = frameBytes.findIndex((b, i) => frameOwner[i] === i && b.join(',') === key);
+      frameBytes.push(bytes);
+      frameOwner.push(owner >= 0 ? owner : frameNum);
+    }
+    for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
+      a.word(a.symbol(frameLabel(frameOwner[frameNum])));
+    }
+    for (let frameNum = 0; frameNum < this.frames; ++frameNum) {
+      if (frameOwner[frameNum] !== frameNum) continue;
+      a.label(frameLabel(frameNum));
+      a.byte(...frameBytes[frameNum]);
     }
     return ptr;
   }

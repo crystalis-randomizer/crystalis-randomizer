@@ -164,6 +164,8 @@ export class Sprite {
     const NEW_METASPRITE_TABLE_LO = 0x3bd00;
     const NEW_METASPRITE_TABLE_HI = 0x3bd00 + 0x100;
     // and then apply any patches for the metasprite as well
+    // Identical frames share data, so make sure no two patches write the same frame
+    const patchedFrames = new Map<number, string>();
     for (let [name, [metaid, framenum]] of CustomTilesetMapping.getMetasprite(s.converter)) {
       const lobyte = rom[NEW_METASPRITE_TABLE_LO + metaid];
       const hibyte = rom[NEW_METASPRITE_TABLE_HI + metaid];
@@ -172,17 +174,28 @@ export class Sprite {
       const frameMask = rom[base + 1];
       const frames = frameMask + 1;
 
-      if (framenum > frames) {
+      if (framenum >= frames) {
         console.warn(`Custom metasprite ${name} with the id ${metaid}
           and frame number ${framenum} greater than the vanilla frame count: ${frames}`);
         hasErrors = true;
         continue;
       }
-      const ms = rom.subarray(base + 2 + framenum * size * 4);
+      // The header is followed by a pointer to each frame's sprites
+      const frameLo = rom[base + 2 + framenum * 2];
+      const frameHi = rom[base + 3 + framenum * 2];
+      const frameAddr = (frameHi << 8 | frameLo) + 0x30000;
+      if (patchedFrames.has(frameAddr)) {
+        console.warn(`Custom metasprite ${name} shares its frame data with ${patchedFrames.get(frameAddr)}`);
+        hasErrors = true;
+        continue;
+      }
+      patchedFrames.set(frameAddr, name);
+      const ms = rom.subarray(frameAddr);
       const sprites = s.nssdata.metasprites.get(metaid)!.get(framenum)!;
       // count the number of sprites in the vanilla game as a check for good data
+      // (frames with fewer than `size` sprites end with a single $80 byte)
       let index = 0;
-      while ((index/4) < size && !arraysEqual(Array.from(ms.subarray(index, index+4)), [0x80, 0x80, 0x80, 0x80])) {
+      while ((index/4) < size && ms[index] !== 0x80) {
         index += 4;
       }
       if (sprites.length != (index / 4)) {

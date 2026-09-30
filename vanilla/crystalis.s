@@ -17,20 +17,20 @@ NametableBufferBytesWritten := $0d ; seems to be unused?
 MainLoopMode         := $40
 GameMode             := $41
 
-.define Ctrl1CurrentlyPressed $43
-.define Ctrl2CurrentlyPressed $44
-.define Ctrl1MenuRepeatTimer  $45 ; in menus only
-.define Ctrl2MenuRepeatTimer  $46 ; in menus only
-.define Ctrl1FrameCountA      $45 ; in normal mode
-.define Ctrl2FrameCountA      $46 ; in normal mode
-.define Ctrl1FrameCountB      $47 ; in normal mode
-.define Ctrl2FrameCountB      $48 ; in normal mode
-.define Ctrl1CurrentDirection $49 ; in normal mode
-.define Ctrl2CurrentDirection $4a ; in normal mode
-.define Ctrl1NewlyPressed     $4b
-.define Ctrl2NewlyPressed     $4c
-.define Ctrl1NewlyPressedAB   $4d ; in normal mode, may add A or B repeats
-.define Ctrl2NewlyPressedAB   $4e ; in normal mode, may add A or B repeats
+Ctrl1CurrentlyPressed := $43
+Ctrl2CurrentlyPressed := $44
+Ctrl1MenuRepeatTimer  := $45 ; in menus only
+Ctrl2MenuRepeatTimer  := $46 ; in menus only
+Ctrl1FrameCountA      := $45 ; in normal mode
+Ctrl2FrameCountA      := $46 ; in normal mode
+Ctrl1FrameCountB      := $47 ; in normal mode
+Ctrl2FrameCountB      := $48 ; in normal mode
+Ctrl1CurrentDirection := $49 ; in normal mode
+Ctrl2CurrentDirection := $4a ; in normal mode
+Ctrl1NewlyPressed     := $4b
+Ctrl2NewlyPressed     := $4c
+Ctrl1NewlyPressedAB   := $4d ; in normal mode, may add A or B repeats
+Ctrl2NewlyPressedAB   := $4e ; in normal mode, may add A or B repeats
 
 ScreenMode  := $51
 
@@ -167,18 +167,18 @@ PPUADDR   := $2006
 PPUDATA   := $2007
 OAMDMA    := $4014
 
-.define PULSE1_DUTY       $4000
-.define PULSE1_VOLUME     $4000
-.define PULSE1_SWEEP      $4001
-.define PULSE1_TIMER_LO   $4002
-.define PULSE1_TIMER_HI   $4003
-.define PULSE1_LOAD       $4003
-.define PULSE2_DUTY       $4004
-.define PULSE2_VOLUME     $4004
-.define PULSE2_SWEEP      $4005
-.define PULSE2_TIMER_LO   $4006
-.define PULSE2_TIMER_HI   $4007
-.define PULSE2_LOAD       $4007
+PULSE1_DUTY       := $4000
+PULSE1_VOLUME     := $4000
+PULSE1_SWEEP      := $4001
+PULSE1_TIMER_LO   := $4002
+PULSE1_TIMER_HI   := $4003
+PULSE1_LOAD       := $4003
+PULSE2_DUTY       := $4004
+PULSE2_VOLUME     := $4004
+PULSE2_SWEEP      := $4005
+PULSE2_TIMER_LO   := $4006
+PULSE2_TIMER_HI   := $4007
+PULSE2_LOAD       := $4007
 TRIANGLE_CTL      := $4008
 TRIANGLE_TIMER_LO := $400A
 TRIANGLE_TIMER_HI := $400B

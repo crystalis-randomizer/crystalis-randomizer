@@ -1,5 +1,6 @@
 ;;; smudge sha1 fd0dcde4f1708b30d5c3de1e463f1dde89c5cb64
 ;;; smudge off
+.macpack common
 
 .import ExtendedMetaspriteTable, NewMetaspriteTable
 
@@ -84,6 +85,37 @@ OffsetTailPosition:
   lda NewMetaspriteTable+$0100,y
   sta $16
 .assert * = $829d
+
+;; Metasprite data now has a per-frame pointer table after the header
+;; [size, frameMask, frame0 lo, frame0 hi, frame1 lo, frame1 hi, ...]
+;; so the frame is a table lookup instead of multiplying frame * size * 4.
+;; This replaces the old multiply code.
+.org $82b9
+DrawMetaspriteLookupFrame:
+  ; A = sprite count, y = 0
+  sta $17
+  iny
+  lda ObjectAnimationCounter,x ; step counter picks the animation frame
+  lsr
+  lsr
+  lsr
+  and ($15),y ; frameMask
+  asl
+  tay
+  iny
+  iny
+  lda ($15),y
+  sta $18 ; temp, overwritten below with $380,x << 1
+  iny
+  lda ($15),y
+  sta $16
+  lda $18
+  sta $15
+  jmp $8301
+FREE_UNTIL $8301
+
+.org $832b
+  ldy #$00 ; ($15) points directly at the frame's sprites now
 
 .reloc
 DrawFromExtendedTable:

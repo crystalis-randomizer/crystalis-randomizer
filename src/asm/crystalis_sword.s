@@ -113,7 +113,7 @@ DrawMetaspriteLookupFrame:
   ; Replaces the vanilla setup at $8301 to shave off some more cycles
   ; $18 = $380,x << 1
   ; $19 = behind bg bit
-  lda $0380,x
+  lda ObjectOnScreen,x
   asl
   sta $18
   and #$20
@@ -124,13 +124,13 @@ DrawMetaspriteLookupFrame:
   lda $18
   and #$40
   clc
-  adc $0320,x
+  adc ObjectDeathChain,x
   sta $1a
-  jmp $831e
-FREE_UNTIL $831e
-
-.org $832b
+  ; Vanilla stored a knockback flag in $1d here, but nothing ever reads it.
+  ldx $10 ; next OAM slot
   ldy #$00 ; ($15) points directly at the frame's sprites now
+  jmp $832d
+FREE_UNTIL $832d
 
 .reloc
 DrawFromExtendedTable:

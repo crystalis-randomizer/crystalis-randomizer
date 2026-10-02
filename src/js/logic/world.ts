@@ -37,9 +37,6 @@ interface Check {
 //  3. start unionfind
 //  4. fill ...?
 
-/** Goa, Brynmaer, and Swan taverns. */
-const TAVERNS = new Set([0xbf, 0xc6, 0xef]);
-
 /** Stores all the relevant information about the world's logic. */
 export class World {
 

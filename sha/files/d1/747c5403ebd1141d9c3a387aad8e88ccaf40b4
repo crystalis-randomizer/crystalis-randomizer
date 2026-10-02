@@ -1,0 +1,5 @@
+import{hex,init_util2,init_messages,Rom,init_rom}from"./check-1s6j2z0t.js";init_rom();init_messages();init_util2();var run=async()=>{let rom=await Rom.load();window.rom=rom;let text=document.createElement("div");text.style.whiteSpace="pre",text.style.fontFamily="monospace",document.body.appendChild(text),await rom.writeData();let used=rom.messages.uses(),messages=[];for(let part=0;part<rom.messages.parts.length;part++)for(let id=0;id<rom.messages.parts[part].length;id++){let head=`${hex(part)}:${hex(id)}`,message=rom.messages.parts[part][id],body=message.text.replace(/\n/g,`
+      `).replace(/_/g,"…"),index=body.indexOf(`
+`),addr=`${" ".repeat(40)}$${message.addr.toString(16)}`,uses=used.get(head);if(addr+=uses?` (${[...uses].join(", ")})`:" (unused?)",index<0)index=body.length;else addr=addr+`
+`;body=body.replace(/\n|$/,addr.substring(index)),messages.push(`${head} ${body}`)}messages.push("","","Abbreviations:");for(let{bytes,str}of rom.messages.buildAbbreviationTable())messages.push(`${bytes.map(hex).join(" ")} ${str}`);text.textContent=messages.join(`
+`)};run();

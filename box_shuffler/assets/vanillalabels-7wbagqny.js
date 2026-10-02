@@ -1,4 +1,4 @@
-import{__esm,init_crystalis}from"./check-1s6j2z0t.js";var VANILLA_LABELS=`NesInternalRam:0:PpuCtrlShadow:
+var VANILLA_LABELS=`NesInternalRam:0:PpuCtrlShadow:
 NesInternalRam:1:PpuMaskShadow:
 NesInternalRam:2:ScreenXLo:
 NesInternalRam:3:ScreenXHi:
@@ -16950,4 +16950,4 @@ NesPrgRom:3ffe3-3ffef::;; --------------------------------\\n;; NOTE NOT COVERED
 NesPrgRom:3fffa-3fffb:NMIVector:
 NesPrgRom:3fffc-3fffd:ResetVector:
 NesPrgRom:3fffe-3ffff:IRQVector:
-`;var init_vanillalabels=__esm(()=>{init_crystalis()});init_vanillalabels();export{VANILLA_LABELS};
+`;export{VANILLA_LABELS};

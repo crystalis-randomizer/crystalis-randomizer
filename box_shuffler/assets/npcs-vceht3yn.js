@@ -1,3 +1,0 @@
-import{loadRom}from"./check-q6mqnff0.js";import{__chunks,init_rom}from"./check-1s6j2z0t.js";__chunks(import.meta.url,["vceht3yn","q6mqnff0","1s6j2z0t","yae75bvk","4mt4nyqd"],[["./npcs-vceht3yn.js",1,2],["./check-q6mqnff0.js",3,2],["./check-1s6j2z0t.js"],["./check-yae75bvk.js",2],["./vanillalabels-4mt4nyqd.js",2]],0);
-init_rom();var run=async()=>{let showUnused=/unused/.test(window.location.hash),mixPalettes=/(-|no)pal/.test(window.location.hash),usedByTileset={};for(let i=128;i<176;i+=4)usedByTileset[i]=new Set;let rom=await loadRom(),s="";for(let npc of rom.npcs)if(npc.used)s+=`${npc.dump()}
-`;let out=document.createElement("pre");out.textContent=s,document.body.appendChild(out)};run();

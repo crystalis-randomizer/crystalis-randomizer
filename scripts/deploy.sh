@@ -48,6 +48,7 @@ if [ -d "deploy/$dir" ]; then
 fi
 
 # Copy the bundled site (pages, plus hashed files under assets/).
+mkdir -p "deploy/$dir"
 cp -r target/web/. "deploy/$dir/"
 # Only kept so that the next deploy can find PREV (above).
 mkdir -p "deploy/$dir/js"

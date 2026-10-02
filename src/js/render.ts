@@ -2,9 +2,10 @@
 
 import { CharacterSet, Sprite, generateThumbnailImage } from './characters';
 import {FlagSection, FlagSet, Preset} from './flagset';
-// import * as Ips from module('./tools/ips');
-const Ips:any = require('./tools/ips');
-const Main:any = require('./main');
+// @ts-ignore: untyped JS module
+import * as Ips from './tools/ips';
+// @ts-ignore: untyped JS module
+import * as Main from './main';
 
 export function renderPresets(presets: HTMLElement) {
   let first = true;
